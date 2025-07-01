@@ -1,5 +1,5 @@
 import React from 'react';
-
+import './DocumentArchive.css';
 const DocumentArchive = () => {
   return (
     <div className="document-archive">

@@ -7,7 +7,10 @@ const NavBar = ({ user, onLogout }) => {
       <div className="flex justify-between items-center">
         <div className="flex items-center space-x-4">
           <h1 className="text-xl font-bold">DMS Dashboard</h1>
-          <a href="/" className="hover:text-blue-200">Dashboard</a>
+          
+          <Link to="" className="hover:text-blue-200" style={{ textDecoration: 'none', color: 'inherit' }}>
+      Dashboard
+    </Link>
           {user && user.role === 'admin' && (
     <Link to="/admin/tools" className="nav-btn" style={{ textDecoration: 'none', color: 'inherit' }}>
       Admin Tools
