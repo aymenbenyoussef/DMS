@@ -9,7 +9,7 @@ const NavBar = ({ user, onLogout }) => {
           <h1 className="text-xl font-bold">DMS Dashboard</h1>
           <a href="/" className="hover:text-blue-200">Dashboard</a>
           {user && user.role === 'admin' && (
-    <Link to="../Admin/Admin_tools" className="nav-btn" style={{ textDecoration: 'none', color: 'inherit' }}>
+    <Link to="/admin/tools" className="nav-btn" style={{ textDecoration: 'none', color: 'inherit' }}>
       Admin Tools
     </Link>)}
         </div>
