@@ -5,10 +5,13 @@ from flask_jwt_extended import (
     JWTManager, create_access_token, jwt_required, get_jwt_identity, get_jwt
 )
 from db import db
+from datetime import timedelta
+
 
 app = Flask(__name__)
 CORS(app)
-
+#CORS(app, supports_credentials=True)
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=4)
 app.config['JWT_SECRET_KEY'] = 'dms-secret-key-2025'  # Change for production
 jwt = JWTManager(app)
 
@@ -230,22 +233,24 @@ def get_folders():
     company_id = request.args.get('company_id')
     parent_id = request.args.get('parent_id')
     
-    if not company_id:
-        return jsonify({"msg": "Company ID is required"}), 400
-
     try:
-        folders = db.get_folders_by_company(
-            company_id, 
-            parent_id=int(parent_id) if parent_id else None
-        )
+        if company_id:
+            folders = db.get_folders_by_company(
+                company_id, 
+                parent_id=int(parent_id) if parent_id else None
+            )
+        else:
+            folders = db.get_all_folders(parent_id=int(parent_id) if parent_id else None)  # nouvelle méthode à créer dans db.py
         return jsonify(folders), 200
     except Exception as e:
         return jsonify({"msg": str(e)}), 500
 
+
 @app.route('/folders', methods=['POST'])
 @jwt_required()
 def create_folder():
-    current_user = get_jwt_identity()
+    claims = get_jwt()
+    current_user_id = claims.get('id')
     data = request.get_json()
     
     required_fields = ['name', 'company_id']
@@ -255,13 +260,14 @@ def create_folder():
     try:
         folder_id = db.create_folder(
             name=data['name'],
-            created_by=current_user['id'],
+            created_by=current_user_id,
             company_id=data['company_id'],
             parent_id=data.get('parent_id')
         )
+        folder = db.get_folder_by_id(folder_id)
         return jsonify({
             "msg": "Folder created successfully",
-            "folder_id": folder_id
+            "folder": folder
         }), 201
     except Exception as e:
         return jsonify({"msg": str(e)}), 400

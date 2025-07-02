@@ -366,6 +366,16 @@ class DatabaseManager:
         """
         return self.execute_query(query, (name, parent_id, company_id, created_by))
 
+    def get_all_folders(self, parent_id=None):
+        if parent_id is None:
+            query = "SELECT * FROM folders"
+            params = ()
+        else:
+            query = "SELECT * FROM folders WHERE parent_id = %s"
+            params = (parent_id,)
+        return self.execute_query(query, params, fetch=True)
+        
+
     def get_folders_by_company(self, company_id, parent_id=None):
         if parent_id is None:
             query = """
@@ -387,12 +397,7 @@ class DatabaseManager:
             return self.execute_query(query, (company_id, parent_id), fetch=True)
 
     def get_folder_by_id(self, folder_id):
-        query = """
-            SELECT f.*, u.username as created_by_name
-            FROM folders f
-            LEFT JOIN users u ON f.created_by = u.id
-            WHERE f.id = %s
-        """
+        query = "SELECT * FROM folders WHERE id = %s"
         result = self.execute_query(query, (folder_id,), fetch=True)
         return result[0] if result else None
 

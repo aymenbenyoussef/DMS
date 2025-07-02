@@ -76,6 +76,7 @@ const folders = {
   create: (folderData) => API.post('/folders', folderData),
   update: (folderId, folderData) => API.put(`/folders/${folderId}`, folderData),
   delete: (folderId) => API.delete(`/folders/${folderId}`),
+  getAll: () => API.get('/folders'),
 };
 
 // Export the API instance and endpoint groups

@@ -3,7 +3,7 @@ import React from 'react';
 import NavBar from './NavBar';
 import SideBar from './Sidebar';
 
-const Layout = ({ children, user, onLogout }) => {
+const Layout = ({ children, user, onLogout ,}) => {
   return (
     <div className="min-h-screen bg-gray-100">
       <NavBar user={user} onLogout={onLogout} />

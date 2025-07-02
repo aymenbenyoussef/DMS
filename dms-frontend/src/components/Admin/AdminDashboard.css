@@ -1,9 +1,24 @@
-.admin-dashboard {
-  padding: 30px;
-  font-family: Arial, sans-serif;
-  background: #f5f5f5;
-  overflow-y: auto;
+:root {
+  --sidebar-width: 280px;
+  
+}
 
+.admin-dashboard {
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  box-sizing: border-box;
+  
+  
+  
+  /* Adjust width to take full width minus sidebar width + some gap */
+  width: 1100px; /* 250px sidebar + 20px gap */
+
+  /* Add left margin so content starts after sidebar */
+  margin:0 20px;
+
+  /* Keep horizontal margins removed to avoid extra gaps */
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
 .dashboard-header {
