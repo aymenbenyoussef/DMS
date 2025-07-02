@@ -6,10 +6,64 @@ from flask_jwt_extended import (
 )
 from db import db
 from datetime import timedelta
+from werkzeug.utils import secure_filename
+import os
+
+UPLOAD_FOLDER = 'uploads'
+ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'docx', 'txt'}
 
 
 app = Flask(__name__)
 CORS(app)
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route('/upload', methods=['POST'])
+@jwt_required()
+def upload_file():
+    current_user = get_jwt_identity()
+    
+    if 'file' not in request.files:
+        return jsonify({"msg": "No file part in the request"}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"msg": "No selected file"}), 400
+    
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        
+        # To avoid overwriting files, you might want to make the filename unique
+        # For example, prefix with user id + timestamp
+        import time
+        filename = f"{current_user}_{int(time.time())}_{filename}"
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+        file.save(file_path)
+        
+        # Save file info and path to DB
+        # Adjust according to your db.py and schema
+        try:
+            document_id = db.create_document(
+                owner_id=current_user['id'],
+                company_id=request.form.get('company_id'),  # sent from client
+                filename=filename,
+                document_type=request.form.get('document_type', 'non_invoice'),
+                file_path=file_path  # <-- save the path here!
+            )
+            return jsonify({"msg": "File uploaded successfully", "document_id": document_id}), 201
+        except Exception as e:
+            return jsonify({"msg": f"Database error: {str(e)}"}), 500
+    else:
+        return jsonify({"msg": "File type not allowed"}), 400
+
+
 #CORS(app, supports_credentials=True)
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=4)
 app.config['JWT_SECRET_KEY'] = 'dms-secret-key-2025'  # Change for production
@@ -189,26 +243,46 @@ def get_documents():
 @app.route('/documents', methods=['POST'])
 @jwt_required()
 def create_document():
-    current_user = get_jwt_identity()
-    data = request.get_json()
-    
-    required_fields = ['company_id', 'filename', 'document_type']
-    if not data or not all(field in data for field in required_fields):
-        return jsonify({"msg": "Missing required fields"}), 400
+    current_user_claims = get_jwt()
+    current_user_id = current_user_claims.get('id')
 
-    if data['document_type'] not in ['invoice', 'non_invoice']:
+    # Use form fields instead of JSON
+    company_id = request.form.get('company_id')
+    document_type = request.form.get('document_type')
+    folder_id = request.form.get('folder_id')
+    
+    if not company_id or not document_type:
+        return jsonify({"msg": "Missing company_id or document_type"}), 400
+
+    if document_type not in ['invoice', 'non_invoice']:
         return jsonify({"msg": "Invalid document type"}), 400
+
+    # Check the uploaded file
+    if 'file' not in request.files:
+        return jsonify({"msg": "No file part"}), 400
+
+    file = request.files['file']
+
+    if file.filename == '':
+        return jsonify({"msg": "No selected file"}), 400
+
+    filename = secure_filename(file.filename)
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    file.save(file_path)
+
+    file_size = os.path.getsize(file_path)
 
     try:
         document_id = db.create_document(
-            owner_id=current_user['id'],
-            company_id=data['company_id'],
-            filename=data['filename'],
-            document_type=data['document_type']
+            owner_id=current_user_id,
+            company_id=company_id,
+            filename=filename,
+            document_type=document_type,
+            folder_id=folder_id,
+            file_path=file_path,
+            file_size=file_size
         )
-        
-        # Add to history
-        db.add_document_history(document_id, current_user['id'], 'Document created')
+        db.add_document_history(document_id, current_user_id, 'Document created')
         
         return jsonify({
             "msg": "Document created successfully",

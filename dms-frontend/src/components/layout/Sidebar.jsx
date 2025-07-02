@@ -25,7 +25,6 @@ const Sidebar = ({ isAdmin, userId }) => {
     fetchFolders();
 
     const onFolderCreated = () => {
-      //console.log('folderCreated event caught in Sidebar');
       fetchFolders();}
     window.addEventListener("folderCreated", onFolderCreated);
 

@@ -4,11 +4,15 @@ import API from '../api';
 const DocumentArchive = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [folderName, setFolderName] = useState('');
   const [error, setError] = useState('');
   const selectedCompanyId = 1;
   const [successMessage, setSuccessMessage] = React.useState('');
   const [folders, setFolders] = useState([]);
+  const [selectedFile, setSelectedFile] = useState(null); // 🔹 Nouveau
+  const [uploadError, setUploadError] = useState('');
+
 
   const openModal = () => {
     setIsModalOpen(true);
@@ -19,6 +23,52 @@ const DocumentArchive = () => {
     setFolderName('');
   };
 
+  const openUploadModal = () => {
+    setIsUploadModalOpen(true);
+  };
+
+  const closeUploadModal = () => {
+    setIsUploadModalOpen(false);
+    setSelectedFile(null);
+  };
+
+  /*upload file*/
+  const handleUploadFile = async () => {
+  if (!selectedFile) return alert("Please select a file first.");
+
+  const formData = new FormData();
+  formData.append("file", selectedFile);
+  formData.append("company_id", 1);  // pass your company id here
+  formData.append("document_type", "non_invoice");   // or "invoice", adjust as needed
+
+  try {
+    const response = await fetch("http://localhost:5000/documents", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.msg || "Upload failed");
+    }
+    const data = await response.json();
+    alert("File uploaded successfully");
+    setSelectedFile(null);
+    closeUploadModal();
+  } catch (err) {
+    alert("Upload error: " + err.message);
+  }
+};
+          
+  /*//////////////////////*/
+  
+  
+  const handleFileChange = (e) => {
+    setSelectedFile(e.target.files[0]);
+  };
   const fetchFolders = async () => {
   try {
     const response = await API.folders.getAll();
@@ -67,8 +117,7 @@ useEffect(() => {
     setFolders((prevFolders) => [...prevFolders, data.folder]);
 
     window.dispatchEvent(new Event("folderCreated"));
-    console.log('folderCreated event dispatched');
-    
+
     setSuccessMessage('Dossier créé avec succès !');
     console.log('Dossier créé avec succès');
 
@@ -90,6 +139,9 @@ useEffect(() => {
         <h1 className="archive-title">Document Archive</h1>
         <button className="new-folder-btn" onClick={openModal}>
           + New Folder
+        </button>
+        <button className="upload-file" onClick={openUploadModal}>
+          + Upload File
         </button>
       </div>
 
@@ -118,7 +170,7 @@ useEffect(() => {
             placeholder="Search documents..." 
             className="search-input"
           />
-          <button className="upload-btn">
+          <button className="search-btn">
             Search
           </button>
         </div>
@@ -158,6 +210,27 @@ useEffect(() => {
             <div className="modal-actions">
               <button onClick={createFolder}>Create</button>
               <button onClick={closeModal}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Modal d'upload de fichier */}
+      {isUploadModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h2>Upload File</h2>
+            <div className="modal-content">
+              <input
+                type="file"
+                onChange={handleFileChange}
+              />
+              {selectedFile && (
+                <p>Selected file: {selectedFile.name}</p>
+              )}
+            </div>
+            <div className="modal-actions">
+              <button onClick={handleUploadFile}>Upload</button>
+              <button onClick={closeUploadModal}>Close</button>
             </div>
           </div>
         </div>

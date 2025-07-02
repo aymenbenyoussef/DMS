@@ -265,12 +265,17 @@ class DatabaseManager:
             return False
 
     # Document management methods
-    def create_document(self, owner_id, company_id, filename, document_type, folder_id=None, file_path=None, file_size=0):
+    def create_document(self, owner_id, company_id, filename, document_type, file_path, folder_id=None, file_size=0):
         query = """
-            INSERT INTO documents (filename, document_type, owner_id, company_id, folder_id, file_path, file_size)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO documents (filename, document_type, owner_id, company_id, folder_id, file_path, file_size)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
         """
-        return self.execute_query(query, (filename, document_type, owner_id, company_id, folder_id, file_path, file_size))
+        cursor = self.connection.cursor()
+        cursor.execute(query, (filename, document_type, owner_id, company_id, folder_id, file_path, file_size))
+        self.connection.commit()
+        doc_id = cursor.lastrowid
+        cursor.close()
+        return doc_id
 
     def get_documents_by_company(self, company_id, document_type=None):
         if document_type:
