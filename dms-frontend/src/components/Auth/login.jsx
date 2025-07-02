@@ -1,5 +1,6 @@
 // src/components/Auth/Login.jsx
 import React, { useState } from 'react';
+import './login.css';
 
 const Login = ({ onLogin, error }) => {
   const [formData, setFormData] = useState({ username: '', password: '' });
@@ -18,39 +19,38 @@ const Login = ({ onLogin, error }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-2xl font-bold text-center mb-6">Connexion DMS</h2>
+    <div className="login-container">
+      <div className="login-card">
+        <h2 className="login-title">Connexion DMS</h2>
+        <p className="login-subtitle">Accédez à votre espace personnel</p>
         
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          <div className="login-error">
             {error}
           </div>
         )}
         
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              Nom d'utilisateur
-            </label>
+        <form onSubmit={handleSubmit} className="login-form">
+          <div className="form-group">
+            <label className="form-label">Nom d'utilisateur</label>
             <input
               type="text"
               value={formData.username}
               onChange={(e) => setFormData({...formData, username: e.target.value})}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="form-input"
+              placeholder="Entrez votre nom d'utilisateur"
               required
             />
           </div>
           
-          <div className="mb-6">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              Mot de passe
-            </label>
+          <div className="form-group">
+            <label className="form-label">Mot de passe</label>
             <input
               type="password"
               value={formData.password}
               onChange={(e) => setFormData({...formData, password: e.target.value})}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="form-input"
+              placeholder="Entrez votre mot de passe"
               required
             />
           </div>
@@ -58,16 +58,20 @@ const Login = ({ onLogin, error }) => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline disabled:opacity-50"
+            className="login-button"
           >
-            {loading ? 'Connexion...' : 'Se connecter'}
+            {loading ? 'Connexion en cours...' : 'Se connecter'}
           </button>
         </form>
         
-        <div className="mt-4 text-sm text-gray-600">
+        <div className="test-accounts">
           <p>Comptes de test :</p>
-          <p>Admin: admin / admin123</p>
-          <p>User: user / user123</p>
+          <div className="test-account-item">
+            <span className="test-account-label">Administrateur:</span> admin / admin123
+          </div>
+          <div className="test-account-item">
+            <span className="test-account-label">Utilisateur:</span> user / user123
+          </div>
         </div>
       </div>
     </div>
