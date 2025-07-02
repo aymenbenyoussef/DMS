@@ -1,16 +1,35 @@
 // src/components/Layout/Layout.jsx
-import React from 'react';
+import React, { useState } from 'react';
 import NavBar from './NavBar';
 import SideBar from './Sidebar';
+import './layout.css';
 
-const Layout = ({ children, user, onLogout ,}) => {
+const Layout = ({ children, user, onLogout }) => {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
   return (
-    <div className="min-h-screen bg-gray-100">
-      <NavBar user={user} onLogout={onLogout} />
-      <div className="flex">
-        <SideBar user={user} />
-        <main className="flex-1 p-6">
-          {children}
+    <div className="layout">
+      <NavBar 
+        user={user} 
+        onLogout={onLogout} 
+        toggleSidebar={toggleSidebar}
+      />
+      
+      <div className="layout-content">
+        <SideBar 
+          user={user} 
+          isOpen={sidebarOpen} 
+          toggleSidebar={toggleSidebar}
+        />
+        
+        <main className={`main-content ${sidebarOpen ? 'sidebar-open' : ''}`}>
+          <div className="content-container">
+            {children}
+          </div>
         </main>
       </div>
     </div>

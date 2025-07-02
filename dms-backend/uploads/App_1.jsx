@@ -4,12 +4,9 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { jwtDecode } from 'jwt-decode';
 import Layout from './components/layout/layout';
 import Login from './components/Auth/login';
-import Dashboard from './components/DocumentArchive';
+import Dashboard from './components/Dashboard/Dashboard';
 import AdminUsers from './components/Admin/AdminUsers';
-import AdminTools from './components/Admin/Admin_Tools';
-import UserTools from './components/Admin/User_Tools';
-import Profile from './components/Auth/Profile';
-import Settings from './components/Auth/Settings';
+import AdminTools from './components/Admin/Admin_Tools'
 import './App.css';
 
 // API configuration remains the same as in your original file
@@ -136,18 +133,18 @@ function App() {
         <Routes>
           <Route path="/" element={<Dashboard user={user} />} />
           {user.role === 'admin' && (
-            <Route path="/admin/users" element={<AdminUsers />} />
+            <Route path="/admin/useres" element={<AdminUsers />} />
           )}
 
           <Route path="*" element={<Navigate to="/" replace />} />
           <Route 
-        path="/admin/tools" element={<AdminTools /> }/>
-        <Route 
-        path="/User/tools" element={<UserTools/>} />  
-        <Route 
-        path="/profile" element={<Profile user={user}/>} /> 
-        <Route 
-        path="/settings" element={<Settings user={user}/>} /> 
+        path="/admin/tools" 
+  element={
+    
+      <AdminTools />  // Now points to your static tools hub
+    
+  } 
+/>
         </Routes>
       </Layout>
     </Router>
