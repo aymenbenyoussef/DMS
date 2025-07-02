@@ -15,6 +15,10 @@ const NavBar = ({ user, onLogout }) => {
     <Link to="/admin/tools" className="nav-btn" style={{ textDecoration: 'none', color: 'inherit' }}>
       Admin Tools
     </Link>)}
+    {user && user.role === 'user' && (
+    <Link to="/user/tools" className="nav-btn" style={{ textDecoration: 'none', color: 'inherit' }}>
+      User Tools
+    </Link>)}
         </div>
         <div className="flex items-center space-x-4">
           {user && (

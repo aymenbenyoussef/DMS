@@ -6,7 +6,8 @@ import Layout from './components/layout/layout';
 import Login from './components/Auth/login';
 import Dashboard from './components/DocumentArchive';
 import AdminUsers from './components/Admin/AdminUsers';
-import AdminTools from './components/Admin/Admin_Tools'
+import AdminTools from './components/Admin/Admin_Tools';
+import UserTools from './components/Admin/User_Tools';
 import './App.css';
 
 // API configuration remains the same as in your original file
@@ -139,12 +140,12 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
           <Route 
         path="/admin/tools" 
-        element={
-    
-        <AdminTools />  // Now points to your static tools hub
-    
-  } 
-/>
+        element={<AdminTools />  } 
+          />
+          <Route 
+        path="/user/tools" 
+        element={<UserTools />  } 
+          />
         </Routes>
       </Layout>
     </Router>

@@ -8,23 +8,14 @@ const AdminDashboard = () => {
     { icon: '👥', label: 'Groups management' },
     
     { icon: '💾', label: 'Backup tools' },
-    { icon: '📄', label: 'Log files management' },
-    { icon: '🗂️', label: 'Categories' },
-    { icon: '🔖', label: 'Attributes' },
-    { icon: '🗃️', label: 'Contents overview' },
-    { icon: '📊', label: 'Charts' },
-    { icon: '✅', label: 'Folder/Document check' },
-    { icon: '📈', label: 'Timeline' },
-    { icon: '⚙️', label: 'Settings' },
-    { icon: '🔌', label: 'Manage extensions' },
-    { icon: '⏰', label: 'Scheduler' },
+    
     
   ];
 
   return (
     <div className="admin-dashboard">
       <div className="dashboard-header">
-        <h1 className="dashboard-title">Admin Dashboard</h1>
+        <h1 className="dashboard-title">User Dashboard</h1>
         
       </div>
       <link to="/admin/users" className='Users management'></link>
