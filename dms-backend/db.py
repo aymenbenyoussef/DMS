@@ -79,7 +79,7 @@ class DatabaseManager:
                     password_hash VARCHAR(255) NOT NULL,
                     role ENUM('admin', 'user') DEFAULT 'user',
                     is_active BOOLEAN DEFAULT TRUE,
-                    user_limit INT DEFAULT 0,
+                    user_limit INT DEFAULT 1,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
@@ -266,7 +266,7 @@ class DatabaseManager:
         """
         return self.execute_query(query, (user_id,), fetch=True)
 
-    def add_user_to_company(self, user_id, company_id):
+    """def add_user_to_company(self, user_id, company_id):
         query = "INSERT INTO user_companies (user_id, company_id) VALUES (%s, %s)"
         return self.execute_query(query, (user_id, company_id))
 
@@ -276,7 +276,7 @@ class DatabaseManager:
             self.execute_query(query, (user_id, company_id))
             return True
         except:
-            return False
+            return False"""
 
     # Document management methods
     def create_document(self, owner_id, company_id, filename, document_type, file_path, folder_id=None, file_size=0):
@@ -359,7 +359,7 @@ class DatabaseManager:
         try:
             self.execute_query(query, (document_id,))
             return True
-        except:
+        except: 
             return False
 
     # Document history methods
