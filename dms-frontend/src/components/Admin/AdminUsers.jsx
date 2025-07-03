@@ -64,7 +64,7 @@ const AdminUsers = () => {
         password: '',
         role: 'user',
         is_active: true,
-        user_limit: 0
+        user_limit: 1
       });
       setEditingUser(null);
       setActiveTab('list');
@@ -116,13 +116,13 @@ const AdminUsers = () => {
   return (
     <div className="admin-users">
       <div className="admin-header">
-        <h1>Gestion des Utilisateurs</h1>
+        <h1>User Management</h1>
         <div className="admin-tabs">
           <button 
             className={`tab-btn ${activeTab === 'list' ? 'active' : ''}`}
             onClick={() => setActiveTab('list')}
           >
-            Liste des Utilisateurs
+            Users List
           </button>
           <button 
             className={`tab-btn ${activeTab === 'form' ? 'active' : ''}`}
@@ -138,7 +138,7 @@ const AdminUsers = () => {
               });
             }}
           >
-            {editingUser ? 'Modifier Utilisateur' : 'Ajouter Utilisateur'}
+            {editingUser ? 'Modify User' : 'Add User'}
           </button>
         </div>
       </div>
@@ -153,11 +153,11 @@ const AdminUsers = () => {
               <thead>
                 <tr>
                   <th>ID</th>
-                  <th>Nom d'utilisateur</th>
-                  <th>Rôle</th>
-                  <th>Statut</th>
-                  <th>Limite d'utilisateurs</th>
-                  <th>Date de création</th>
+                  <th>User Name</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>User limit</th>
+                  <th>Creation date</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -176,7 +176,7 @@ const AdminUsers = () => {
                         className={`status-btn ${user.is_active ? 'active' : 'inactive'}`}
                         onClick={() => toggleUserStatus(user.id, user.is_active)}
                       >
-                        {user.is_active ? 'Actif' : 'Inactif'}
+                        {user.is_active ? 'Active' : 'inactive'}
                       </button>
                     </td>
                     <td>{user.user_limit}</td>
@@ -187,13 +187,13 @@ const AdminUsers = () => {
                           className="btn-edit"
                           onClick={() => handleEdit(user)}
                         >
-                          Modifier
+                          Modify
                         </button>
                         <button
                           className="btn-delete"
                           onClick={() => handleDelete(user.id)}
                         >
-                          Supprimer
+                          Delete
                         </button>
                       </div>
                     </td>
@@ -207,10 +207,10 @@ const AdminUsers = () => {
 
       {activeTab === 'form' && (
         <div className="user-form">
-          <h2>{editingUser ? 'Modifier Utilisateur' : 'Ajouter Nouvel Utilisateur'}</h2>
+          <h2>{editingUser ? 'Modify User' : 'Add New User'}</h2>
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label htmlFor="username">Nom d'utilisateur</label>
+              <label htmlFor="username">User Name</label>
               <input
                 type="text"
                 id="username"
@@ -218,13 +218,13 @@ const AdminUsers = () => {
                 value={formData.username}
                 onChange={handleInputChange}
                 required
-                placeholder="Entrez le nom d'utilisateur"
+                placeholder="Enter User Name"
               />
             </div>
 
             <div className="form-group">
               <label htmlFor="password">
-                {editingUser ? 'Nouveau mot de passe (laisser vide pour ne pas changer)' : 'Mot de passe'}
+                {editingUser ? 'New password (leave blank to avoid changing)' : 'Password'}
               </label>
               <input
                 type="password"
@@ -233,12 +233,12 @@ const AdminUsers = () => {
                 value={formData.password}
                 onChange={handleInputChange}
                 required={!editingUser}
-                placeholder="Entrez le mot de passe"
+                placeholder="Enter Password"
               />
             </div>
 
             <div className="form-group">
-              <label htmlFor="role">Rôle</label>
+              <label htmlFor="role">Role</label>
               <select
                 id="role"
                 name="role"
@@ -246,21 +246,21 @@ const AdminUsers = () => {
                 onChange={handleInputChange}
                 required
               >
-                <option value="user">Utilisateur</option>
-                <option value="admin">Administrateur</option>
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
               </select>
             </div>
 
             <div className="form-group">
-              <label htmlFor="user_limit">Limite d'utilisateurs</label>
+              <label htmlFor="user_limit">User limit</label>
               <input
                 type="number"
                 id="user_limit"
                 name="user_limit"
                 value={formData.user_limit}
                 onChange={handleInputChange}
-                min="0"
-                placeholder="0 = illimité"
+                min="1"
+                placeholder="1 = illimité"
               />
             </div>
 
@@ -272,20 +272,20 @@ const AdminUsers = () => {
                   checked={formData.is_active}
                   onChange={handleInputChange}
                 />
-                Utilisateur actif
+                Active user
               </label>
             </div>
 
             <div className="form-actions">
               <button type="submit" disabled={loading} className="btn-primary">
-                {loading ? 'En cours...' : (editingUser ? 'Mettre à jour' : 'Créer')}
+                {loading ? 'Loading...' : (editingUser ? 'Update' : 'Create')}
               </button>
               <button 
                 type="button" 
                 onClick={() => setActiveTab('list')}
                 className="btn-secondary"
               >
-                Annuler
+                Cancel
               </button>
             </div>
           </form>
