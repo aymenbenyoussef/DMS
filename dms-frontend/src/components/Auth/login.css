@@ -118,3 +118,8 @@
   font-weight: 600;
   color: #2c3e50;
 }
+.field-error {
+  color: red;
+  font-size: 0.875rem;  /* un peu plus petit que le texte normal */
+  margin-top: 4px;      /* un petit espacement au-dessus */
+}
