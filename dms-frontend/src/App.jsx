@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { jwtDecode } from 'jwt-decode';
 import Layout from './components/layout/layout';
 import Login from './components/Auth/login';
-import Dashboard from './components/DocumentArchive';
+import Dashboard from './components/Dashboard/Dashboard';
 import AdminUsers from './components/Admin/AdminUsers';
 import AdminTools from './components/Admin/Admin_Tools';
 import UserTools from './components/Admin/User_Tools';
@@ -12,6 +12,8 @@ import Profile from './components/Auth/Profile';
 import Settings from './components/Auth/Settings';
 import AddComp from './components/Admin/AddCompany';
 import './App.css';
+import { AppContext } from './components/context';  
+import DocumentArchive from './components/DocumentArchive';
 
 // API configuration remains the same as in your original file
 const API_BASE = 'http://localhost:5000';
@@ -78,12 +80,27 @@ const api = {
   }
 };
 
+// Create context provider component
+const AppProvider = ({ children }) => {
+  const [selectedCompany, setSelectedCompany] = useState(null);
+  const [selectedFolder, setSelectedFolder] = useState(null);
+
+  return (
+    <AppContext.Provider value={{
+      selectedCompany,
+      selectedFolder,
+      setSelectedCompany,
+      setSelectedFolder
+    }}>
+      {children}
+    </AppContext.Provider>
+  );
+};
+
 function App() {
   const [user, setUser] = useState(null);
   const [authError, setAuthError] = useState('');
   const [loading, setLoading] = useState(true);
-  const [selectedCompany, setSelectedCompany] = useState(null);
-  const [selectedFolder, setSelectedFolder] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -146,28 +163,30 @@ function App() {
   }
 
   return (
-    <Router>
-      <Layout user={user} onLogout={handleLogout}>
-        <Routes>
-          <Route path="/" element={<Dashboard user={user} />} />
-          {user.role === 'admin' && (
-            <Route path="/admin/users" element={<AdminUsers />} />
-          )}
+    <AppProvider>
+      <Router>
+        <Layout user={user} onLogout={handleLogout}>
+          <Routes>
+            <Route path="/" element={<Dashboard user={user} />} />
+            {user.role === 'admin' && (
+              <Route path="/admin/users" element={<AdminUsers />} />
+            )}
 
-          <Route path="*" element={<Navigate to="/" replace />} />
-          <Route 
-        path="/admin/tools" element={<AdminTools /> }/>
-        <Route 
-        path="/User/tools" element={<UserTools/>} />  
-        <Route 
-        path="/profile" element={<Profile user={user}/>} /> 
-        <Route 
-        path="/settings" element={<Settings user={user}/>} /> 
-        <Route 
-        path="/AddComp" element={<AddComp user={user}/>} />
-        </Routes>
-      </Layout>
-    </Router>
+            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route 
+              path="/admin/tools" element={<AdminTools /> }/>
+            <Route 
+              path="/User/tools" element={<UserTools/>} />  
+            <Route 
+              path="/profile" element={<Profile user={user}/>} /> 
+            <Route 
+              path="/settings" element={<Settings user={user}/>} /> 
+            <Route 
+              path="/AddComp" element={<AddComp user={user}/>} />
+          </Routes>
+        </Layout>
+      </Router>
+    </AppProvider>
   );
 }
 

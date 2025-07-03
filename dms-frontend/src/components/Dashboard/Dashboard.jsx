@@ -1,31 +1,16 @@
-import React from 'react';
-import Sidebar from '../layout/Sidebar';
+import React, { useContext } from 'react';
 import DocumentArchive from '../DocumentArchive';
+import { AppContext } from '../context';
 
-const Dashboard = ({ 
-  user, 
-  selectedCompany, 
-  setSelectedCompany, 
-  selectedFolder, 
-  setSelectedFolder 
-}) => {
+const Dashboard = ({ user }) => {
+  const { selectedCompany, selectedFolder } = useContext(AppContext);
+
   return (
-    <div className="dashboard-container">
-      <Sidebar 
-        onCompanySelect={(company) => {
-          setSelectedCompany(company);
-          setSelectedFolder(null);
-        }}
-        onFolderSelect={setSelectedFolder}
-      />
-      <div className="main-content">
-        <DocumentArchive 
-          selectedCompany={selectedCompany} 
-          selectedFolder={selectedFolder}
-          setSelectedFolder={setSelectedFolder}
-        />
-      </div>
-    </div>
+    <DocumentArchive 
+      user={user} 
+      selectedCompany={selectedCompany} 
+      selectedFolder={selectedFolder} 
+    />
   );
 };
 

@@ -1,17 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import './DocumentArchive.css';
 import API from '../api';
+import { AppContext } from './context';
 
-const DocumentArchive = () => {
+const DocumentArchive = ({ user, selectedCompany, selectedFolder }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [folderName, setFolderName] = useState('');
   const [error, setError] = useState('');
-  const selectedCompanyId = 1;
-  const [successMessage, setSuccessMessage] = React.useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [folders, setFolders] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploadError, setUploadError] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
+  const { setSelectedFolder } = useContext(AppContext);
 
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => {
@@ -25,12 +27,35 @@ const DocumentArchive = () => {
     setSelectedFile(null);
   };
 
-  const handleUploadFile = async () => {
-    if (!selectedFile) return alert("Please select a file first.");
+  // Handle drag events
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      setSelectedFile(e.dataTransfer.files[0]);
+      handleUploadFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleUploadFile = async (file = null) => {
+    const fileToUpload = file || selectedFile;
+    if (!fileToUpload) return alert("Please select a file first.");
+    if (!selectedFolder) return;
 
     const formData = new FormData();
-    formData.append("file", selectedFile);
-    formData.append("company_id", 1);
+    formData.append("file", fileToUpload);
+    formData.append("company_id", selectedCompany.id);
+    formData.append("folder_id", selectedFolder.id);
     formData.append("document_type", "non_invoice");
 
     try {
@@ -55,15 +80,21 @@ const DocumentArchive = () => {
   const handleFileChange = (e) => setSelectedFile(e.target.files[0]);
 
   const fetchFolders = async () => {
+    if (!selectedCompany) return;
+    
     try {
-      const response = await API.folders.getAll();
+      const response = await API.folders.getByCompany(selectedCompany.id);
       setFolders(response.data);
     } catch (error) {
       console.error('Erreur lors du chargement des dossiers', error);
     }
   };
 
-  useEffect(() => { fetchFolders(); }, []);
+  useEffect(() => { 
+    if (selectedCompany) {
+      fetchFolders();
+    }
+  }, [selectedCompany]);
 
   const createFolder = async () => {
     if (folderName.trim() === '') {
@@ -71,7 +102,7 @@ const DocumentArchive = () => {
       return;
     }
 
-    if (!selectedCompanyId) {
+    if (!selectedCompany) {
       setError('Aucune entreprise sélectionnée.');
       return;
     }
@@ -88,7 +119,7 @@ const DocumentArchive = () => {
         },
         body: JSON.stringify({
           name: folderName.trim(),
-          company_id: selectedCompanyId
+          company_id: selectedCompany.id
         }),
       });
 
@@ -97,13 +128,29 @@ const DocumentArchive = () => {
         throw new Error(data.msg || 'Erreur lors de la création du dossier');
       }
       const data = await response.json();
-      setFolders((prevFolders) => [...prevFolders, data.folder]);
-      window.dispatchEvent(new Event("folderCreated"));
+      
+      // Update folders state
+      setFolders(prev => [...prev, data.folder]);
+      
+      // Update company in context to include new folder
+      selectedCompany.folders = [...(selectedCompany.folders || []), data.folder];
+      
       setSuccessMessage('Dossier créé avec succès !');
       closeModal();
     } catch (err) {
       setError(err.message);
     }
+  };
+
+  // Get breadcrumb path
+  const getBreadcrumb = () => {
+    if (selectedFolder && selectedCompany) {
+      return `${selectedCompany.name} > ${selectedFolder.name}`;
+    }
+    if (selectedCompany) {
+      return `${selectedCompany.name} >`;
+    }
+    return 'DMS >';
   };
 
   return (
@@ -112,17 +159,21 @@ const DocumentArchive = () => {
       <div className="archive-header">
         <h1>Document Archive</h1>
         <div className="header-buttons">
-          <button className="new-folder-btn" onClick={openModal}>
-            + New Folder
-          </button>
-          <button className="upload-file" onClick={openUploadModal}>
-            + Upload File
-          </button>
+          {selectedCompany && !selectedFolder && (
+            <button className="new-folder-btn" onClick={openModal}>
+              + New Folder
+            </button>
+          )}
+          {selectedFolder && (
+            <button className="upload-file" onClick={openUploadModal}>
+              + Upload File
+            </button>
+          )}
         </div>
       </div>
 
       {/* Breadcrumb */}
-      <div className="breadcrumb">DMS › DMS-M1 Documents</div>
+      <div className="breadcrumb">{getBreadcrumb()}</div>
 
       {/* Stats Cards */}
       <div className="stats-container">
@@ -139,6 +190,18 @@ const DocumentArchive = () => {
           <p>0 Active</p>
         </div>
       </div>
+
+      {/* Drag & Drop Area (only shown when folder is selected) */}
+      {selectedFolder && (
+        <div 
+          className={`drop-zone ${isDragging ? 'dragging' : ''}`}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          <p>Drag & Drop files here to upload</p>
+        </div>
+      )}
 
       {/* Search Section */}
       <div className="search-section">
@@ -197,34 +260,6 @@ const DocumentArchive = () => {
         </div>
       </div>
 
-      {/* Document Details */}
-      <div className="document-details">
-        <h3>Document Details</h3>
-        <div className="detail-item">
-          <span>MyCV.pdf</span>
-        </div>
-        <div className="detail-row">
-          <div className="detail-item">
-            <span className="label">Size:</span>
-            <span>687 KB</span>
-          </div>
-          <div className="detail-item">
-            <span className="label">Type:</span>
-            <span>PDF</span>
-          </div>
-        </div>
-        <div className="detail-row">
-          <div className="detail-item">
-            <span className="label">Uploaded:</span>
-            <span>27/06/2025</span>
-          </div>
-          <div className="detail-item">
-            <span className="label">Status:</span>
-            <span className="status-badge">GETED</span>
-          </div>
-        </div>
-      </div>
-
       {/* Create Folder Modal */}
       {isModalOpen && (
         <div className="modal-overlay">
@@ -257,7 +292,7 @@ const DocumentArchive = () => {
               {selectedFile && <p>Selected file: {selectedFile.name}</p>}
             </div>
             <div className="modal-actions">
-              <button onClick={handleUploadFile}>Upload</button>
+              <button onClick={() => handleUploadFile()}>Upload</button>
               <button onClick={closeUploadModal}>Close</button>
             </div>
           </div>
