@@ -11,6 +11,7 @@ import UserTools from './components/Admin/User_Tools';
 import Profile from './components/Auth/Profile';
 import Settings from './components/Auth/Settings';
 import AddComp from './components/Admin/AddCompany';
+import AddUsers from  './components/Admin/AddUsers';
 import './App.css';
 import { AppContext } from './components/context';  
 import DocumentArchive from './components/DocumentArchive';
@@ -183,6 +184,8 @@ function App() {
               path="/settings" element={<Settings user={user}/>} /> 
             <Route 
               path="/AddComp" element={<AddComp user={user}/>} />
+              <Route 
+              path="/AddUsers" element={<AddUsers />} />
           </Routes>
         </Layout>
       </Router>

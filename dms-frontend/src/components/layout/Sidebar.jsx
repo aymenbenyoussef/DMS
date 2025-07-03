@@ -37,6 +37,13 @@ const Sidebar = ({ user }) => {
     if (user?.id) {
       fetchCompanies();
     }
+    const handler = () => fetchCompanies();
+    window.addEventListener('companyAdded', handler);
+
+    // cleanup
+    return () => {
+      window.removeEventListener('companyAdded', handler);
+    };
   }, [user]);
 
   return (
