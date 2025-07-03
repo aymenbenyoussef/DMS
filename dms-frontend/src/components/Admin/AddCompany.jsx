@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import API from '../../api';
 import './AdminUsers.css'; // Tu peux la renommer en AdminCompanies.css si besoin
+import { useNavigate } from 'react-router-dom';
 
 const AdminCompanies = ({user}) => {
   const [formData, setFormData] = useState({
@@ -14,6 +15,7 @@ const AdminCompanies = ({user}) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const navigate = useNavigate();
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -64,6 +66,8 @@ const AdminCompanies = ({user}) => {
   } finally {
     setLoading(false);
   }
+  window.dispatchEvent(new Event('companyAdded'));
+    navigate('/');
 };
 
   return (

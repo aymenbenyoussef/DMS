@@ -36,6 +36,12 @@ const Sidebar = ({ user }) => {
   if (user?.id) {
     fetchCompanies();
   }
+  const handler = () => fetchCompanies();
+    window.addEventListener('companyAdded', handler);
+
+    // cleanup
+    return () => {
+      window.removeEventListener('companyAdded', handler);};
 }, [user]);
 
 
@@ -75,10 +81,11 @@ const Sidebar = ({ user }) => {
             </li>
             
           ))}
+          {user && user.role === 'user' && (
           <Link to="/AddComp" className="btn-primary">
               <span className="nav-icon"></span>
               <span>Add new company</span>
-            </Link>
+            </Link>)}
         </ul>
         
       )}
