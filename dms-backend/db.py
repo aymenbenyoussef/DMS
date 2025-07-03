@@ -64,6 +64,9 @@ class DatabaseManager:
                 CREATE TABLE IF NOT EXISTS companies (
                     id INT AUTO_INCREMENT PRIMARY KEY,
                     name VARCHAR(255) NOT NULL UNIQUE,
+                    address VARCHAR(100) NOT NULL ,
+                    email VARCHAR(100) NOT NULL,
+                    phone int(20) NOT NULL,            
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
@@ -239,9 +242,20 @@ class DatabaseManager:
             return False
 
     # Company management methods
-    def create_company(self, name):
-        query = "INSERT INTO companies (name) VALUES (%s)"
-        return self.execute_query(query, (name,))
+    def create_company(self, company_data):
+        query = """
+            INSERT INTO companies (name, address, email, phone)
+            VALUES (%s, %s, %s, %s)
+        """
+        params = (
+            company_data["name"],
+            company_data.get("address", ""),
+            company_data.get("email", ""),
+            company_data.get("phone", ""),
+            
+        )
+        
+        return self.execute_query(query, params)
 
     def get_user_companies(self, user_id):
         query = """

@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 
 const AdminDashboard = () => {
   const tiles = [
-    { icon: '👤', label: 'Users management' ,link: '/admin/users'},
+    { icon: '👤', label: 'Add company' ,link: '/AddComp'},
     { icon: '👥', label: 'Groups management' },
     
     { icon: '💾', label: 'Backup tools' },

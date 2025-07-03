@@ -206,25 +206,31 @@ def get_companies():
     except Exception as e:
         return jsonify({"msg": str(e)}), 500
 
+
+
+
 @app.route('/companies', methods=['POST'])
 @jwt_required()
 def create_company():
-    current_user = get_jwt_identity()
-    data = request.get_json()
+    # Récupérez les claims complets du JWT au lieu de juste l'identity
+    claims = get_jwt()
+    current_user_id = claims['id']  # Accédez directement à l'ID depuis les claims
     
-    if not data or 'name' not in data:
+    data = request.get_json()
+
+    if not data or 'name' not in data or not data['name'].strip():
         return jsonify({"msg": "Company name is required"}), 400
 
     try:
-        company_id = db.create_company(data['name'])
-        # Associate user with the company
-        db.add_user_to_company(current_user['id'], company_id)
+        company_id = db.create_company(data)
+        db.add_user_to_company(current_user_id, company_id)  # Utilisez l'ID directement
         return jsonify({
             "msg": "Company created successfully",
             "company_id": company_id
         }), 201
     except Exception as e:
-        return jsonify({"msg": str(e)}), 400
+        return jsonify({"msg": f"Error creating company: {str(e)}"}), 400
+
 
 # Document management routes
 @app.route('/documents', methods=['GET'])

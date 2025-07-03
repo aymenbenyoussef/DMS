@@ -10,6 +10,7 @@ import AdminTools from './components/Admin/Admin_Tools';
 import UserTools from './components/Admin/User_Tools';
 import Profile from './components/Auth/Profile';
 import Settings from './components/Auth/Settings';
+import AddComp from './components/Admin/AddCompany';
 import './App.css';
 
 // API configuration remains the same as in your original file
@@ -25,6 +26,18 @@ const api = {
     return response.json();
   },
   
+  createCompany: async (token, companyData) => {
+    const response = await fetch(`${API_BASE}/companies`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(companyData)
+    });
+    return response.json();
+  },
+
   getUsers: async (token) => {
     const response = await fetch(`${API_BASE}/admin/users`, {
       headers: { 'Authorization': `Bearer ${token}` }
@@ -148,6 +161,8 @@ function App() {
         path="/profile" element={<Profile user={user}/>} /> 
         <Route 
         path="/settings" element={<Settings user={user}/>} /> 
+        <Route 
+        path="/AddComp" element={<AddComp user={user}/>} />
         </Routes>
       </Layout>
     </Router>
