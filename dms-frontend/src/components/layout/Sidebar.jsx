@@ -2,178 +2,82 @@
 import React, { useState, useEffect } from 'react';
 import API from '../../api';
 import './Sidebar.css';
+import { Link } from 'react-router-dom';
 
-const Sidebar = ({ isAdmin, userId }) => {
-  const [folders, setFolders] = useState([]);
-  const [showModal, setShowModal] = useState(false);
-  const [newFolderName, setNewFolderName] = useState('');
-  const [parentFolderId, setParentFolderId] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+const Sidebar = ({ user }) => {
+  const [companies, setCompanies] = useState([]);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const fetchFolders = async () => {
-      try {
-        const response = await API.folders.getAll();
-        setFolders(response.data);
-      } catch (err) {
-        setError('Erreur lors du chargement des dossiers');
-        console.error(err);
-      }
-    };
-
-    fetchFolders();
-
-    const onFolderCreated = () => {
-      fetchFolders();}
-    window.addEventListener("folderCreated", onFolderCreated);
-
-    return () => {
-      window.removeEventListener("folderCreated", onFolderCreated);
-    };
-  }, []);
-
-  const openCreateModal = (parentId = null) => {
-    setParentFolderId(parentId);
-    setNewFolderName('');
-    setError('');
-    setShowModal(true);
-  };
-
-  const closeCreateModal = () => {
-    setShowModal(false);
-    setNewFolderName('');
-    setParentFolderId(null);
-    setError('');
-  };
-
-  const handleCreateFolder = async () => {
-    if (!newFolderName.trim()) {
-      setError('Le nom du dossier est requis.');
-      return;
-    }
-
-    setIsSubmitting(true);
-    setError('');
-
+  const fetchCompanies = async () => {
     try {
-      const response = await API.post('/folders', {
-        name: newFolderName.trim(),
-        parent_id: parentFolderId,
-        user_id: userId
-      });
+      const response = await API.companies.getAll();
+      console.log("Companies data:", response.data);
+      
+      const data = response.data;
 
-      setFolders(prev => [...prev, response.data.folder]);
-      closeCreateModal();
+      // Si c'est un tableau direct
+      if (Array.isArray(data)) {
+        setCompanies(data);
+      }
+      // Si c'est un objet avec une clé
+      else if (data && Array.isArray(data.companies)) {
+        setCompanies(data.companies);
+      }
+      else {
+        throw new Error("Format inattendu des données reçues");
+      }
     } catch (err) {
-      setError(err.response?.data?.message || 'Échec de la création du dossier');
-    } finally {
-      setIsSubmitting(false);
+      console.error('Failed to load companies:', err.response?.data || err.message);
+      setError(`Erreur de chargement: ${err.response?.data?.msg || err.message}`);
     }
   };
 
-  if (error) return <div className="sidebar-error">{error}</div>;
+  if (user?.id) {
+    fetchCompanies();
+  }
+}, [user]);
+
 
   return (
     <aside className="sidebar">
       <header className="sidebar-header">
-        <svg className="folder-icon" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z" />
-        </svg>
-        <h2>Folders</h2>
+        <svg xmlns="http://www.w3.org/2000/svg" className="company-icon" viewBox="0 0 24 24" fill="currentColor">
+  <path d="M3 21v-2h18v2H3zm2-3V3h6v15H5zm8 0V7h6v11h-6z" />
+</svg>
+        <h2>Companies</h2>
       </header>
 
-      {folders.length === 0 ? (
+      {error && <div className="error-message">{error}</div>}
+
+      {companies.length === 0 ? (
         <section className="empty-folders">
-          <p>Aucun dossier trouvé</p>
-          {isAdmin && (
-            <button
-              className="btn-new-folder"
-              onClick={() => openCreateModal()}
-              aria-label="Créer un nouveau dossier"
-            >
-              + Nouveau dossier
-            </button>
+          {user && user.role === 'user' && (
+            <Link to="/AddComp" className="btn-primary">
+              <span className="nav-icon"></span>
+              <span>Add new company</span>
+            </Link>
           )}
         </section>
       ) : (
-        <>
-          <ul className="folder-list" role="list">
-            {folders.map(folder => (
-              <li
-                key={folder.id}
-                className="folder-item"
-                tabIndex={0}
-                role="button"
-                onClick={() => isAdmin && openCreateModal(folder.id)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter' && isAdmin) openCreateModal(folder.id);
-                }}
-                aria-label={`Dossier: ${folder.name}${folder.parent_id ? ', sous-dossier' : ''}`}
-              >
-                <svg className="folder-icon small" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z" />
-                </svg>
-                <span className="folder-name">{folder.name}</span>
-                {folder.parent_id && (
-                  <span className="folder-sub">(Sous-dossier)</span>
-                )}
-              </li>
-            ))}
-          </ul>
-
-          {isAdmin && (
-            <button
-              className="btn-new-folder btn-root"
-              onClick={() => openCreateModal()}
-              aria-label="Créer un dossier racine"
+        <ul className="folder-list" role="list">
+          {companies.map(company => (
+            <li
+              key={company.id}
+              className="folder-item"
+              tabIndex={0}
+              role="button"
             >
-              + Nouveau dossier racine
-            </button>
-          )}
-        </>
+              <svg xmlns="http://www.w3.org/2000/svg" className="company-icon" viewBox="0 0 24 24" fill="currentColor">
+  <path d="M3 21v-2h18v2H3zm2-3V3h6v15H5zm8 0V7h6v11h-6z" />
+</svg>
+              <span className="company-name">{company.name}</span>
+            </li>
+          ))}
+        </ul>
       )}
 
-      {showModal && (
-        <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-          <div className="modal">
-            <h3 id="modal-title">Créer un nouveau dossier</h3>
-            {parentFolderId && (
-              <p className="modal-subtitle">
-                Création d'un sous-dossier dans : <strong>{folders.find(f => f.id === parentFolderId)?.name}</strong>
-              </p>
-            )}
-            <input
-              type="text"
-              className="input-folder-name"
-              value={newFolderName}
-              onChange={e => setNewFolderName(e.target.value)}
-              placeholder="Nom du dossier"
-              aria-describedby="error-message"
-              autoFocus
-            />
-            {error && <p id="error-message" className="error-message">{error}</p>}
-            <div className="modal-actions">
-              <button
-                type="button"
-                className="btn-cancel"
-                onClick={closeCreateModal}
-                disabled={isSubmitting}
-              >
-                Annuler
-              </button>
-              <button
-                type="button"
-                className="btn-confirm"
-                onClick={handleCreateFolder}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? 'Création...' : 'Créer'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      
     </aside>
   );
 };

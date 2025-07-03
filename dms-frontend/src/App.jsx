@@ -82,6 +82,8 @@ function App() {
   const [user, setUser] = useState(null);
   const [authError, setAuthError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [selectedCompany, setSelectedCompany] = useState(null);
+  const [selectedFolder, setSelectedFolder] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -134,7 +136,7 @@ function App() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-xl">Chargement...</div>
+        <div className="text-xl">Loading...</div>
       </div>
     );
   }
