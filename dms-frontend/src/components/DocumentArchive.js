@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import './DocumentArchive.css';
 import API from '../api';
 import { AppContext } from './context';
+import { useNavigate } from 'react-router-dom';
 
 const DocumentArchive = ({ user, selectedCompany, selectedFolder }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -14,7 +15,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedFolder }) => {
   const [uploadError, setUploadError] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const { setSelectedFolder } = useContext(AppContext);
-
+  const navigate = useNavigate();
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => {
     setIsModalOpen(false);
@@ -136,10 +137,21 @@ const DocumentArchive = ({ user, selectedCompany, selectedFolder }) => {
       selectedCompany.folders = [...(selectedCompany.folders || []), data.folder];
       
       setSuccessMessage('Dossier créé avec succès !');
-      closeModal();
+      // Dispatch custom event with folder data
+      window.dispatchEvent(new CustomEvent('folderAdded', {
+      detail: {
+        companyId: selectedCompany.id,
+        folder: data.folder
+      }
+    }));
+    
+    closeModal();
+    navigate('/');
     } catch (err) {
       setError(err.message);
     }
+    
+    
   };
 
   // Get breadcrumb path

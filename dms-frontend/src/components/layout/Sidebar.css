@@ -221,6 +221,7 @@
 }
 .btn-primary {
   display: inline-flex;
+  
   align-items: center;
   padding: 8px 16px;
   margin-left : 20px;
@@ -244,4 +245,48 @@
   color: #000000; /* ou la couleur que tu veux */
   margin-right: 8px;
   
+}
+.folder-name{
+  margin-left: 0px;
+}
+.folder-icon {
+  width: 18px;
+  height: 18px;
+  color: #000000; /* ou la couleur que tu veux */
+ 
+  margin-left: 50px;}
+
+  .expand-icon {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.2s;
+}
+
+.company-header.expanded .expand-icon {
+  transform: rotate(180deg);
+}
+
+.folder-list {
+  list-style: none;
+  padding: 0;
+  margin: 5px 0 5px 40px;
+  
+}
+
+.folder-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 15px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.folder-item:hover {
+  background-color: #34495e;
+}
+
+.folder-name {
+  font-size: 0.9rem;
 }
