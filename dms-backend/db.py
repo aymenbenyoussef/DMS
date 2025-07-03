@@ -81,7 +81,7 @@ class DatabaseManager:
                     password_hash VARCHAR(255) NOT NULL,
                     role ENUM('admin', 'user') DEFAULT 'user',
                     is_active BOOLEAN DEFAULT TRUE,
-                    user_limit INT DEFAULT 0,
+                    user_limit INT DEFAULT 1,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
@@ -362,7 +362,7 @@ class DatabaseManager:
         try:
             self.execute_query(query, (document_id,))
             return True
-        except:
+        except: 
             return False
 
     # Document history methods
