@@ -219,3 +219,26 @@
   font-weight: 600;
   text-align: center;
 }
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 16px;
+  background-color: #007bff; /* Bleu Bootstrap */
+  color: white;
+  border: none;
+  border-radius: 4px;
+  text-decoration: none; /* important pour Link */
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-primary:hover {
+  background-color: #0056b3;
+}
+.company-icon {
+  width: 24px;
+  height: 24px;
+  color: #000000; /* ou la couleur que tu veux */
+  margin-right: 8px;
+}

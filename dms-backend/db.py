@@ -259,6 +259,25 @@ class DatabaseManager:
         )
         
         return self.execute_query(query, params)
+    
+    #/////////
+    
+    def get_all_companies(self, user_id):
+        if (user_id == 1):
+            query = "SELECT * FROM companies "
+            param=()
+        else:
+            query = "SELECT * FROM companies WHERE user_id = %s"
+            param=(user_id,)
+        try:
+            result = self.execute_query(query, param, fetch=True)
+            # Vérification du résultat
+            if not result:
+                return []
+            return result
+        except Exception as e:
+            print(f"Database error: {e}")
+            raise
 
     def get_user_companies(self, user_id):
         query = """
@@ -269,10 +288,10 @@ class DatabaseManager:
         """
         return self.execute_query(query, (user_id,), fetch=True)
 
-    """def add_user_to_company(self, user_id, company_id):
+    def add_user_to_company(self, user_id, company_id):
         query = "INSERT INTO user_companies (user_id, company_id) VALUES (%s, %s)"
         return self.execute_query(query, (user_id, company_id))
-
+    """
     def remove_user_from_company(self, user_id, company_id):
         query = "DELETE FROM user_companies WHERE user_id = %s AND company_id = %s"
         try:
