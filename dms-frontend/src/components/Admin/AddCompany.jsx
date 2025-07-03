@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import API from '../../api';
 import './AdminUsers.css'; // Tu peux la renommer en AdminCompanies.css si besoin
 
-const AdminCompanies = () => {
+const AdminCompanies = ({user}) => {
   const [formData, setFormData] = useState({
     name: '',
     address: '',
@@ -42,8 +42,11 @@ const AdminCompanies = () => {
       setLoading(false);
       return;
     }
-
-    await API.companies.create(formData);
+     const dataToSend = {
+      ...formData,
+      user_id: user.id
+    };
+    await API.companies.create(dataToSend);
     setSuccess('Entreprise créée avec succès');
 
     // Réinitialiser le formulaire
@@ -52,6 +55,7 @@ const AdminCompanies = () => {
       address: '',
       email: '',
       phone: '',
+      
     });
   } catch (err) {
     const errorMsg = err.response?.data?.msg || "Erreur lors de la création de l'entreprise";

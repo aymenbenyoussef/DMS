@@ -63,11 +63,13 @@ class DatabaseManager:
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS companies (
                     id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id int ,
                     name VARCHAR(255) NOT NULL UNIQUE,
                     address VARCHAR(100) NOT NULL ,
                     email VARCHAR(100) NOT NULL,
                     phone int(20) NOT NULL,            
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(id)
                 )
             """)
 
@@ -244,14 +246,15 @@ class DatabaseManager:
     # Company management methods
     def create_company(self, company_data):
         query = """
-            INSERT INTO companies (name, address, email, phone)
-            VALUES (%s, %s, %s, %s)
+            INSERT INTO companies (name, address, email, phone,user_id)
+            VALUES (%s, %s, %s, %s,%s)
         """
         params = (
             company_data["name"],
             company_data.get("address", ""),
             company_data.get("email", ""),
             company_data.get("phone", ""),
+            company_data["user_id"]
             
         )
         
@@ -266,7 +269,7 @@ class DatabaseManager:
         """
         return self.execute_query(query, (user_id,), fetch=True)
 
-    def add_user_to_company(self, user_id, company_id):
+    """def add_user_to_company(self, user_id, company_id):
         query = "INSERT INTO user_companies (user_id, company_id) VALUES (%s, %s)"
         return self.execute_query(query, (user_id, company_id))
 
@@ -276,7 +279,7 @@ class DatabaseManager:
             self.execute_query(query, (user_id, company_id))
             return True
         except:
-            return False
+            return False"""
 
     # Document management methods
     def create_document(self, owner_id, company_id, filename, document_type, file_path, folder_id=None, file_size=0):
