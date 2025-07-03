@@ -73,8 +73,14 @@ const Sidebar = ({ user }) => {
 </svg>
               <span className="company-name">{company.name}</span>
             </li>
+            
           ))}
+          <Link to="/AddComp" className="btn-primary">
+              <span className="nav-icon"></span>
+              <span>Add new company</span>
+            </Link>
         </ul>
+        
       )}
 
       
