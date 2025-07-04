@@ -119,11 +119,13 @@ const AdminUsers = ({user}) => {
       
       setFormData({
         username: '',
+        surname:'',
+        email:'',
         password: '',
         role: 'user',
         is_active: true,
         user_limit: 1,
-        companies: [] // Reset companies
+        //companies: [] // Reset companies
       });
       setFormData2({
         user: user.id,
@@ -148,7 +150,7 @@ const AdminUsers = ({user}) => {
       role: user.role,
       is_active: user.is_active,
       user_limit: user.user_limit,
-      companies: user.companies || [] // Include companies
+      //companies: user.companies || [] // Include companies
     });
     setActiveTab('form1');
   };
@@ -210,6 +212,8 @@ const AdminUsers = ({user}) => {
               setEditingUser(null);
               setFormData({
                 username: '',
+                surname:'',
+                email:'',
                 password: '',
                 role: 'user',
                 is_active: true,
@@ -227,6 +231,8 @@ const AdminUsers = ({user}) => {
               setEditingUser(null);
               setFormData({
                 username: '',
+                surname:'',
+                email:'',
                 password: '',
                 role: 'user',
                 is_active: true,
@@ -263,9 +269,9 @@ const AdminUsers = ({user}) => {
               <label htmlFor="username">User surname</label>
               <input
                 type="text"
-                id="username"
-                name="username"
-                value={formData.username}
+                id="surname"
+                name="surname"
+                value={formData.surname}
                 onChange={handleInputChange}
                 required
                 placeholder="Enter user surname"
@@ -275,9 +281,9 @@ const AdminUsers = ({user}) => {
               <label htmlFor="username">Email</label>
               <input
                 type="text"
-                id=""
-                name=""
-                value={formData.username}
+                id="email"
+                name="email"
+                value={formData.email}
                 onChange={handleInputChange}
                 required
                 placeholder="Enter email"

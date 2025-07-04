@@ -140,6 +140,8 @@ def create_user():
     try:
         user_id = db.create_user(
             username=data['username'],
+            surname=data['surname'],
+            email=data['email'],
             password=data['password'],
             role=data.get('role', 'user'),
             is_active=data.get('is_active', True),

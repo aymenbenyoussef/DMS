@@ -84,9 +84,9 @@ class DatabaseManager:
                     role ENUM('admin', 'user') DEFAULT 'user',
                     is_active BOOLEAN DEFAULT TRUE,
                     user_limit INT DEFAULT 1,
-                    company_id int ,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (company_id) REFERENCES companies(id)
+                    
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    
                 )
             """)
 
