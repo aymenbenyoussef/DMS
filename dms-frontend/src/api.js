@@ -45,6 +45,7 @@ const users = {
 const admin = {
   getUsers: () => API.get('/admin/users'),
   createUser: (userData) => API.post('/admin/users', userData),
+  //createUserComp: (userData) => API.post('/admin/users', userData),
   updateUser: (userId, userData) => API.put(`/admin/users/${userId}`, userData),
   deleteUser: (userId) => API.delete(`/admin/users/${userId}`),
 };

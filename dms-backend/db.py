@@ -200,15 +200,37 @@ class DatabaseManager:
         return bcrypt.checkpw(password.encode('utf-8'), hashed_password.encode('utf-8'))
 
     # User management methods
-    def create_user(self, username, surname, email, password, role='user', is_active=True, user_limit=0):
-        # Hash du mot de passe
+    def create_user(self,username,surname,email,password,role='user',is_active=True,user_limit=0,companies=None):
+        # 1) Hash du mot de passe
         hashed_password = self.hash_password(password)
+
+        # 2) Insertion dans users
         query = """
         INSERT INTO users (username, surname, email, password_hash, role, is_active, user_limit)
         VALUES (%s, %s, %s, %s, %s, %s, %s)
         """
         params = (username, surname, email, hashed_password, role, is_active, user_limit)
-        return self.execute_query(query, params)
+
+        # On exécute et on récupère l'ID du nouvel utilisateur
+        new_user_id = self.execute_query(query, params)
+
+        # 3) Si on a une liste de companies, on remplit la table de jointure
+        if companies:
+            for comp_id in companies:
+                # Insertion ligne par ligne
+                link_query = """
+                    INSERT INTO user_companies (user_id, company_id)
+                    VALUES (%s, %s)
+                    """
+                # On peut capturer d'éventuelles erreurs de duplication
+                try:
+                    self.execute_query(link_query, (new_user_id, comp_id))
+                except Exception as e:
+                    # par exemple ignore si (user, company) existe déjà
+                    print(f"Warning: cannot link user {new_user_id} to company {comp_id}: {e}")
+
+        return new_user_id
+
 
     def get_user_by_username(self, username):
         query = "SELECT * FROM users WHERE username = %s"

@@ -145,7 +145,8 @@ def create_user():
             password=data['password'],
             role=data.get('role', 'user'),
             is_active=data.get('is_active', True),
-            user_limit=data.get('user_limit', 0)
+            user_limit=data.get('user_limit', 0),
+            companies=data['companies'],
         )
         return jsonify({
             "msg": "User created successfully",

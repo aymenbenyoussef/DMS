@@ -13,12 +13,9 @@ const AdminUsers = ({user}) => {
     role: 'user',
     is_active: true,
     user_limit: 0,
-    //companies: [] // Added companies array
-  });
-  const[formdata2,setFormData2 ]= useState({
-    user:'',
     companies: [] // Added companies array
   });
+  
   const [editingUser, setEditingUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -114,6 +111,7 @@ const AdminUsers = ({user}) => {
       } else {
         // Create new user
         await API.admin.createUser(formData);
+        //await API.admin.createUserComp(formdata2);
         setSuccess('Utilisateur créé avec succès');
       }
       
@@ -125,12 +123,9 @@ const AdminUsers = ({user}) => {
         role: 'user',
         is_active: true,
         user_limit: 1,
-        //companies: [] // Reset companies
+        companies: [] // Reset companies
       });
-      setFormData2({
-        user: user.id,
-        companies: []
-      })
+      
       setEditingUser(null);
       setActiveTab('list');
       fetchUsers();
