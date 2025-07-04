@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import DocumentArchive from '../DocumentArchive';
+import DocumentArchive from './DocumentArchive';
 import { AppContext } from '../context';
 
 const Dashboard = ({ user }) => {

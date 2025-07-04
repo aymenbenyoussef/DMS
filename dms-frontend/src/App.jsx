@@ -14,7 +14,7 @@ import AddComp from './components/Admin/AddCompany';
 import AddUsers from  './components/Admin/AddUsers';
 import './App.css';
 import { AppContext } from './components/context';  
-import DocumentArchive from './components/DocumentArchive';
+//import DocumentArchive from './components/Dashboard/DocumentArchive';
 
 // API configuration remains the same as in your original file
 const API_BASE = 'http://localhost:5000';
