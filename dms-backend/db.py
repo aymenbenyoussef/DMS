@@ -63,13 +63,13 @@ class DatabaseManager:
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS companies (
                     id INT AUTO_INCREMENT PRIMARY KEY,
-                    user_id int ,
+                    
                     name VARCHAR(255) NOT NULL UNIQUE,
                     address VARCHAR(100) NOT NULL ,
                     email VARCHAR(100) NOT NULL,
                     phone int(20) NOT NULL,            
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (user_id) REFERENCES users(id)
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    
                 )
             """)
 
@@ -78,11 +78,15 @@ class DatabaseManager:
                 CREATE TABLE IF NOT EXISTS users (
                     id INT AUTO_INCREMENT PRIMARY KEY,
                     username VARCHAR(50) NOT NULL UNIQUE,
+                    surname VARCHAR(50) NOT NULL UNIQUE,
+                    email VARCHAR(50) NOT NULL UNIQUE,
                     password_hash VARCHAR(255) NOT NULL,
                     role ENUM('admin', 'user') DEFAULT 'user',
                     is_active BOOLEAN DEFAULT TRUE,
                     user_limit INT DEFAULT 1,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    company_id int ,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (company_id) REFERENCES companies(id)
                 )
             """)
 
@@ -159,20 +163,35 @@ class DatabaseManager:
 
     def create_default_users(self):
         try:
-            # Check if admin user exists
-            admin_exists = self.get_user_by_username('admin')
-            if not admin_exists:
-                self.create_user('admin', 'admin123', 'admin', True, 0)
+        # Admin
+            if not self.get_user_by_username('admin'):
+                self.create_user(
+                'admin',             # username
+                'Administrator',     # surname
+                'admin@dms.local',   # email
+                'admin123',          # mot de passe
+                'admin',             # rôle
+                True,                # is_active
+                0                    # user_limit
+                )
                 print("Default admin user created: admin/admin123")
 
-            # Check if regular user exists
-            user_exists = self.get_user_by_username('user')
-            if not user_exists:
-                self.create_user('user', 'user123', 'user', True, 0)
+        # User normal
+            if not self.get_user_by_username('user'):
+                self.create_user(
+                'user',
+                'Standard',
+                'user@dms.local',
+                'user123',
+                'user',
+                True,
+                0
+                )
                 print("Default user created: user/user123")
 
         except Exception as e:
             print(f"Error creating default users: {e}")
+
 
     def hash_password(self, password):
         return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
@@ -181,13 +200,15 @@ class DatabaseManager:
         return bcrypt.checkpw(password.encode('utf-8'), hashed_password.encode('utf-8'))
 
     # User management methods
-    def create_user(self, username, password, role='user', is_active=True, user_limit=0):
+    def create_user(self, username, surname, email, password, role='user', is_active=True, user_limit=0):
+        # Hash du mot de passe
         hashed_password = self.hash_password(password)
         query = """
-            INSERT INTO users (username, password_hash, role, is_active, user_limit)
-            VALUES (%s, %s, %s, %s, %s)
+        INSERT INTO users (username, surname, email, password_hash, role, is_active, user_limit)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
         """
-        return self.execute_query(query, (username, hashed_password, role, is_active, user_limit))
+        params = (username, surname, email, hashed_password, role, is_active, user_limit)
+        return self.execute_query(query, params)
 
     def get_user_by_username(self, username):
         query = "SELECT * FROM users WHERE username = %s"

@@ -16,6 +16,7 @@ const AdminUsers = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [companies, setCompanies] = useState([]);
 
   useEffect(() => {
     fetchUsers();
@@ -33,6 +34,30 @@ const AdminUsers = () => {
       setLoading(false);
     }
   };
+//Get All Companies
+const fetchCompanies = async () => {
+      try {
+        const response = await API.companies.getAll();
+        console.log("Companies data:", response.data);
+        
+        const data = response.data;
+
+        if (Array.isArray(data)) {
+          setCompanies(data);
+        }
+        else if (data && Array.isArray(data.companies)) {
+          setCompanies(data.companies);
+        }
+        else {
+          throw new Error("Format inattendu des données reçues");
+        }
+      } catch (err) {
+        console.error('Failed to load companies:', err.response?.data || err.message);
+        setError(`Erreur de chargement: ${err.response?.data?.msg || err.message}`);
+      }
+    };
+
+    
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
