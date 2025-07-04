@@ -231,19 +231,24 @@ def create_company():
 @jwt_required()
 def get_companies():
     try:
-        # Récupère les claims du JWT correctement
+        # Récupère les claims du JWT
         claims = get_jwt()
-        current_user_id = claims.get("id")  # Utilisez .get() pour éviter les KeyError
-        
+        current_user_id = claims.get("id")
+        user_role = claims.get("role", "user")  # 'admin' ou 'user'
+
         if not current_user_id:
             return jsonify({"error": "User ID not found in token"}), 400
 
-        # Appel à la base de données
-        companies = db.get_all_companies(current_user_id)
-        
-        # Retourne directement le résultat sans conversion supplémentaire
+        # Sélection de la méthode selon le rôle
+        if user_role == 'admin':
+            # Admin : toutes les companies
+            companies = db.get_all_companies(current_user_id)
+        else:
+            # Utilisateur normal : uniquement ses companies
+            companies = db.get_user_companies(current_user_id)
+
         return jsonify(companies), 200
-        
+
     except Exception as e:
         app.logger.error(f"Error in /companies: {str(e)}")
         return jsonify({"error": "Internal server error"}), 500
