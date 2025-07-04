@@ -1,464 +1,253 @@
+// src/components/AddUser.jsx
 import React, { useState, useEffect } from 'react';
 import API from '../../api';
 import './AdminUsers.css';
 
-const AdminUsers = ({user}) => {
-  const [users, setUsers] = useState([]);
-  const [activeTab, setActiveTab] = useState('list');
+const AddUser = () => {
+  const [activeTab, setActiveTab] = useState('profile');
   const [formData, setFormData] = useState({
     username: '',
     surname: '',
-    password: '',
     email: '',
+    password: '',
+    passwordConfirm: '',
     role: 'user',
     is_active: true,
     user_limit: 0,
-    companies: [] // Added companies array
+    companies: []
   });
-  
-  const [editingUser, setEditingUser] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [companies, setCompanies] = useState([]);
 
   useEffect(() => {
-    fetchUsers();
+    const fetchCompanies = async () => {
+      try {
+        const response = await API.companies.getAll();
+        const data = response.data;
+        if (Array.isArray(data)) setCompanies(data);
+        else if (data.companies) setCompanies(data.companies);
+      } catch (err) {
+        setError('Error loading companies');
+        console.error(err);
+      }
+    };
     fetchCompanies();
   }, []);
 
-  const fetchUsers = async () => {
-    try {
-      setLoading(true);
-      const response = await API.admin.getUsers();
-      setUsers(response.data);
-    } catch (err) {
-      setError('Erreur lors du chargement des utilisateurs');
-      console.error('Error fetching users:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  //Get All Companies
-  const fetchCompanies = async () => {
-    try {
-      const response = await API.companies.getAll();
-      const data = response.data;
-      
-      if (Array.isArray(data)) {
-        setCompanies(data);
-      }
-      else if (data && Array.isArray(data.companies)) {
-        setCompanies(data.companies);
-      }
-      else {
-        throw new Error("Format inattendu des données reçues");
-      }
-    } catch (err) {
-      console.error('Failed to load companies:', err.response?.data || err.message);
-      setError(`Erreur de chargement: ${err.response?.data?.msg || err.message}`);
-    }
-    
+  const validate = () => {
+    const errors = {};
+    if (!formData.username.trim()) errors.username = 'Username is required';
+    if (!formData.surname.trim()) errors.surname = 'First name is required';
+    if (!formData.email.trim()) errors.email = 'Email is required';
+    else if (!formData.email.includes('@')) errors.email = 'Email is invalid';
+    if (!formData.password) errors.password = 'Password is required';
+    if (!formData.passwordConfirm) errors.passwordConfirm = 'Please confirm password';
+    else if (formData.password !== formData.passwordConfirm) errors.passwordConfirm = 'Passwords do not match';
+    // no validation for optional fields
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleInputChange = (e) => {
-  const { name, value, type, checked } = e.target;
-
-  if (name === 'companies') {
-    // 1) parse en entier
-    const companyId = parseInt(value, 10);
-
-    setFormData(prev => {
-      // récupère l'array existant, ou [] si undefined
-      const current = Array.isArray(prev.companies) ? prev.companies : [];
-
-      let nextCompanies;
-      if (checked) {
-        // 2) ajout avec Set pour éviter doublons
-        nextCompanies = Array.from(new Set([...current, companyId]));
-      } else {
-        // suppression
-        nextCompanies = current.filter(id => id !== companyId);
-      }
-
-      return {
+    const { name, value, type, checked } = e.target;
+    if (name === 'companies') {
+      const companyId = parseInt(value, 10);
+      setFormData((prev) => {
+        const current = Array.isArray(prev.companies) ? prev.companies : [];
+        let next;
+        if (checked) next = Array.from(new Set([...current, companyId]));
+        else next = current.filter((id) => id !== companyId);
+        return { ...prev, companies: next };
+      });
+    } else {
+      setFormData((prev) => ({
         ...prev,
-        companies: nextCompanies
-      };
-    });
-  }
-  else {
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-  }
-};
-
+        [name]: type === 'checkbox' ? checked : value
+      }));
+    }
+    // clear error on change
+    setFieldErrors((prev) => ({ ...prev, [name]: '' }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
-    setLoading(true);
+    if (!validate()) return;
 
+    setLoading(true);
     try {
-      if (editingUser) {
-        // Update user
-        await API.admin.updateUser(editingUser.id, formData);
-        setSuccess('Utilisateur mis à jour avec succès');
-      } else {
-        // Create new user
-        await API.admin.createUser(formData);
-        //await API.admin.createUserComp(formdata2);
-        setSuccess('Utilisateur créé avec succès');
-      }
-      
+      await API.admin.createUser(formData);
+      setSuccess('User created successfully');
       setFormData({
-        username: '',
-        surname:'',
-        email:'',
-        password: '',
-        role: 'user',
-        is_active: true,
-        user_limit: 1,
-        companies: [] // Reset companies
+        username: '', surname: '', email: '', password: '', passwordConfirm: '',
+        role: 'user', is_active: true, user_limit: 0, companies: []
       });
-      
-      setEditingUser(null);
-      setActiveTab('list');
-      fetchUsers();
+      setFieldErrors({});
+      setActiveTab('profile');
     } catch (err) {
-      setError(editingUser ? 'Erreur lors de la mise à jour' : 'Erreur lors de la création');
-      console.error('Error saving user:', err);
+      setError('Error creating user');
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleEdit = (user) => {
-    setEditingUser(user);
-    setFormData({
-      username: user.username,
-      password: '',
-      role: user.role,
-      is_active: user.is_active,
-      user_limit: user.user_limit,
-      //companies: user.companies || [] // Include companies
-    });
-    setActiveTab('form1');
-  };
-
-  const handleDelete = async (userId) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) {
-      try {
-        await API.admin.deleteUser(userId);
-        setSuccess('Utilisateur supprimé avec succès');
-        fetchUsers();
-      } catch (err) {
-        setError('Erreur lors de la suppression');
-        console.error('Error deleting user:', err);
-      }
-    }
-  };
-
-  const toggleUserStatus = async (userId, currentStatus) => {
-    try {
-      await API.admin.updateUser(userId, { is_active: !currentStatus });
-      setSuccess('Statut utilisateur mis à jour');
-      fetchUsers();
-    } catch (err) {
-      setError('Erreur lors de la mise à jour du statut');
-      console.error('Error updating user status:', err);
-    }
-  };
-   
-  // Render company checkboxes
-  const renderCompanyCheckboxes = () => (
-  <div className="form-group ">
-    <label>Companies</label>
-    <div className="checkbox-list">
-      {companies.map(company => (
-        <label key={company.id} className="checkbox-item">
-          <input
-            type="checkbox"
-            name="companies"
-            value={company.id}
-            checked={formData.companies?.includes(company.id) || false}
-            onChange={handleInputChange}
-          />
-          <span class="span">{company.name}</span>
-        </label>
-      ))}
-    </div>
-  </div>
-);
-
   return (
     <div className="admin-users">
-      <div className="admin-header">
-        <h1>Add new user</h1>
-        <div className="admin-tabs">
-          <button 
-            className={`tab-btn ${activeTab === 'form1' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveTab('form1');
-              setEditingUser(null);
-              setFormData({
-                username: '',
-                surname:'',
-                email:'',
-                password: '',
-                role: 'user',
-                is_active: true,
-                user_limit: 0,
-                companies: [] // Reset companies
-              });
-            }}
-          >
-            {editingUser ? 'Modify User' : 'Add User'}
-          </button>
-          <button 
-            className={`tab-btn ${activeTab === 'form2' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveTab('form2');
-              setEditingUser(null);
-              setFormData({
-                username: '',
-                surname:'',
-                email:'',
-                password: '',
-                role: 'user',
-                is_active: true,
-                user_limit: 0,
-                companies: [] // Reset companies
-              });
-            }}
-          >
-            {editingUser ? 'Modify User' : 'Add User'}
-          </button>
-        </div>
+      <h1>Add New User</h1>
+
+      <div className="admin-tabs">
+        <button
+          type="button"
+          className={`tab-btn ${activeTab === 'profile' ? 'active' : ''}`}
+          onClick={() => setActiveTab('profile')}
+        >
+          Profile
+        </button>
+        <button
+          type="button"
+          className={`tab-btn ${activeTab === 'security' ? 'active' : ''}`}
+          onClick={() => setActiveTab('security')}
+        >
+          Security
+        </button>
+        <button
+          type="button"
+          className={`tab-btn ${activeTab === 'access' ? 'active' : ''}`}
+          onClick={() => setActiveTab('access')}
+        >
+          Access & Companies
+        </button>
       </div>
 
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
 
-      {activeTab === 'form1' && (
-        <div className="user-form">
-          <h2>{editingUser ? 'Modify User' : 'Add New User'}</h2>
-          <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label htmlFor="username">User name</label>
-              <input
-                type="text"
-                id="username"
-                name="username"
-                value={formData.username}
-                onChange={handleInputChange}
-                required
-                placeholder="Enter User Name"
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="username">User surname</label>
-              <input
-                type="text"
-                id="surname"
-                name="surname"
-                value={formData.surname}
-                onChange={handleInputChange}
-                required
-                placeholder="Enter user surname"
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="username">Email</label>
-              <input
-                type="text"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                required
-                placeholder="Enter email"
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="password">
-                {editingUser ? 'New password (leave blank to avoid changing)' : 'Password'}
-              </label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                required={!editingUser}
-                placeholder="Enter Password"
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="password"> Password validation</label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                required={!editingUser}
-                placeholder="Retype the password"
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="role">Role</label>
-              <select
-                id="role"
-                name="role"
-                value={formData.role}
-                onChange={handleInputChange}
-                required
-              >
-                <option value="user">User</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
-            
-            {/* Company selection */}
-            {renderCompanyCheckboxes()}
-
-            <div className="form-group">
-              <label htmlFor="user_limit">User limit</label>
-              <input
-                type="number"
-                id="user_limit"
-                name="user_limit"
-                value={formData.user_limit}
-                onChange={handleInputChange}
-                min="1"
-                placeholder="1 = illimité"
-              />
-            </div>
-
-            <div className="form-group checkbox-group">
-              <label>
-                <input
-                  type="checkbox"
-                  name="is_active"
-                  checked={formData.is_active}
-                  onChange={handleInputChange}
-                />
-                Active user
-              </label>
-            </div>
-
-            <div className="form-actions">
-              <button type="submit" disabled={loading} className="btn-primary">
-                {loading ? 'Loading...' : (editingUser ? 'Update' : 'Create')}
-              </button>
-              <button 
-                type="button" 
-                onClick={() => setActiveTab('list')}
-                className="btn-secondary"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
+      <form onSubmit={handleSubmit} className="user-form">
+        {/* Profile Tab */}
+        <div className="tab-panel" style={{ display: activeTab === 'profile' ? 'block' : 'none' }}>
+          <div className="form-group">
+            <label>Username</label>
+            <input
+              type="text"
+              name="username"
+              placeholder="Enter username"
+              value={formData.username}
+              onChange={handleInputChange}
+            />
+            {fieldErrors.username && <div className="field-error">{fieldErrors.username}</div>}
+          </div>
+          <div className="form-group">
+            <label>First Name</label>
+            <input
+              type="text"
+              name="surname"
+              placeholder="Enter first name"
+              value={formData.surname}
+              onChange={handleInputChange}
+            />
+            {fieldErrors.surname && <div className="field-error">{fieldErrors.surname}</div>}
+          </div>
+          <div className="form-group">
+            <label>Email</label>
+            <input
+              type="email"
+              name="email"
+              placeholder="Enter email"
+              value={formData.email}
+              onChange={handleInputChange}
+            />
+            {fieldErrors.email && <div className="field-error">{fieldErrors.email}</div>}
+          </div>
         </div>
-      )}
 
-      {activeTab === 'form2' && (
-        <div className="user-form">
-          <h2>{editingUser ? 'Modify User' : 'Add New User'}</h2>
-          <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label htmlFor="username">User Name</label>
-              <input
-                type="text"
-                id="username"
-                name="username"
-                value={formData.username}
-                onChange={handleInputChange}
-                required
-                placeholder="Enter User Name"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="password">
-                {editingUser ? 'New password (leave blank to avoid changing)' : 'Password'}
-              </label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                required={!editingUser}
-                placeholder="Enter Password"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="role">Role</label>
-              <select
-                id="role"
-                name="role"
-                value={formData.role}
-                onChange={handleInputChange}
-                required
-              >
-                <option value="user">User</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
-            
-            {/* Company selection */}
-            {renderCompanyCheckboxes()}
-
-            <div className="form-group">
-              <label htmlFor="user_limit">User limit</label>
-              <input
-                type="number"
-                id="user_limit"
-                name="user_limit"
-                value={formData.user_limit}
-                onChange={handleInputChange}
-                min="1"
-                placeholder="1 = illimité"
-              />
-            </div>
-
-            <div className="form-group checkbox-group">
-              <label>
-                <input
-                  type="checkbox"
-                  name="is_active"
-                  checked={formData.is_active}
-                  onChange={handleInputChange}
-                />
-                Active user
-              </label>
-            </div>
-
-            <div className="form-actions">
-              <button type="submit" disabled={loading} className="btn-primary">
-                {loading ? 'Loading...' : (editingUser ? 'Update' : 'Create')}
-              </button>
-              <button 
-                type="button" 
-                onClick={() => setActiveTab('list')}
-                className="btn-secondary"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
+        {/* Security Tab */}
+        <div className="tab-panel" style={{ display: activeTab === 'security' ? 'block' : 'none' }}>
+          <div className="form-group">
+            <label>Password</label>
+            <input
+              type="password"
+              name="password"
+              placeholder="Enter password"
+              value={formData.password}
+              onChange={handleInputChange}
+            />
+            {fieldErrors.password && <div className="field-error">{fieldErrors.password}</div>}
+          </div>
+          <div className="form-group">
+            <label>Confirm Password</label>
+            <input
+              type="password"
+              name="passwordConfirm"
+              placeholder="Confirm password"
+              value={formData.passwordConfirm}
+              onChange={handleInputChange}
+            />
+            {fieldErrors.passwordConfirm && <div className="field-error">{fieldErrors.passwordConfirm}</div>}
+          </div>
         </div>
-      )}
+
+        {/* Access & Companies Tab */}
+        <div className="tab-panel" style={{ display: activeTab === 'access' ? 'block' : 'none' }}>
+          <div className="form-group">
+            <label>Role</label>
+            <select name="role" value={formData.role} onChange={handleInputChange}>
+              <option value="user">User</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <div className="form-group">
+            <label>Companies</label>
+            <div className="checkbox-list">
+              {companies.map((c) => (
+                <label key={c.id} className="checkbox-item">
+                  <input
+                    type="checkbox"
+                    name="companies"
+                    value={c.id}
+                    checked={formData.companies.includes(c.id)}
+                    onChange={handleInputChange}
+                  />
+                  {c.name}
+                </label>
+              ))}
+            </div>
+          </div>
+          <div className="form-group">
+            <label>User Limit</label>
+            <input
+              type="number"
+              name="user_limit"
+              min="0"
+              placeholder="Enter user limit"
+              value={formData.user_limit}
+              onChange={handleInputChange}
+            />
+          </div>
+          <div className="form-group checkbox-group">
+            <label>
+              <input
+                type="checkbox"
+                name="is_active"
+                checked={formData.is_active}
+                onChange={handleInputChange}
+              /> Active User
+            </label>
+          </div>
+        </div>
+
+        <div className="form-actions">
+          <button type="submit" disabled={loading} className="btn-primary">
+            {loading ? 'Creating...' : 'Create User'}
+          </button>
+        </div>
+      </form>
     </div>
   );
 };
 
-export default AdminUsers;
+export default AddUser;
