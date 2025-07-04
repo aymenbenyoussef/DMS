@@ -212,7 +212,7 @@ const AddUser = () => {
                     checked={formData.companies.includes(c.id)}
                     onChange={handleInputChange}
                   />
-                  {c.name}
+                  <span className="company-name">{c.name}</span>
                 </label>
               ))}
             </div>

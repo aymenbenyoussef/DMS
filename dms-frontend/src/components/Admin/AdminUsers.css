@@ -311,6 +311,7 @@
   padding: 6px 10px;
   border-radius: 4px;
   transition: all 0.2s ease;
+  
 }
 
 .checkbox-item:hover {
@@ -358,7 +359,7 @@
 .checkbox-list::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
 }
-.span{
+.company-name{
   margin-left: 10px;
   
 }
