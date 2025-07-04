@@ -287,9 +287,7 @@ class DatabaseManager:
         if (user_id == 1):
             query = "SELECT * FROM companies "
             param=()
-        else:
-            query = "SELECT * FROM companies WHERE user_id = %s"
-            param=(user_id,)
+        
         try:
             result = self.execute_query(query, param, fetch=True)
             # Vérification du résultat

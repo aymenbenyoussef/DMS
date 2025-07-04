@@ -291,3 +291,74 @@
   }
 }
 
+/* Company checklist container */
+.checkbox-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 10px;
+  
+  margin-top: 8px;
+}
+
+/* Each checkbox item */
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.checkbox-item:hover {
+  background-color: #e9ecef;
+}
+
+/* Checkbox input */
+.checkbox-item input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #4e73df;
+  cursor: pointer;
+}
+
+/* Company name label */
+.checkbox-item label {
+  margin-bottom: 2px;
+  margin-left: 20px;
+  cursor: pointer;
+  flex-grow: 1;
+}
+
+/* Form group containing the checklist */
+.form-group.checklist-group {
+  margin: 20px auto;
+  max-width: 600px;
+  width: 100%;
+}
+
+/* Scrollbar styling for the checklist */
+.checkbox-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.checkbox-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.checkbox-list::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.checkbox-list::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+.span{
+  margin-left: 10px;
+  
+}

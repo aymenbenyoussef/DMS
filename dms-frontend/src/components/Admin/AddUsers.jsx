@@ -2,15 +2,22 @@ import React, { useState, useEffect } from 'react';
 import API from '../../api';
 import './AdminUsers.css';
 
-const AdminUsers = () => {
+const AdminUsers = ({user}) => {
   const [users, setUsers] = useState([]);
   const [activeTab, setActiveTab] = useState('list');
   const [formData, setFormData] = useState({
     username: '',
+    surname: '',
     password: '',
+    email: '',
     role: 'user',
     is_active: true,
-    user_limit: 0
+    user_limit: 0,
+    //companies: [] // Added companies array
+  });
+  const[formdata2,setFormData2 ]= useState({
+    user:'',
+    companies: [] // Added companies array
   });
   const [editingUser, setEditingUser] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -20,6 +27,7 @@ const AdminUsers = () => {
 
   useEffect(() => {
     fetchUsers();
+    fetchCompanies();
   }, []);
 
   const fetchUsers = async () => {
@@ -34,38 +42,63 @@ const AdminUsers = () => {
       setLoading(false);
     }
   };
-//Get All Companies
-const fetchCompanies = async () => {
-      try {
-        const response = await API.companies.getAll();
-        console.log("Companies data:", response.data);
-        
-        const data = response.data;
 
-        if (Array.isArray(data)) {
-          setCompanies(data);
-        }
-        else if (data && Array.isArray(data.companies)) {
-          setCompanies(data.companies);
-        }
-        else {
-          throw new Error("Format inattendu des données reçues");
-        }
-      } catch (err) {
-        console.error('Failed to load companies:', err.response?.data || err.message);
-        setError(`Erreur de chargement: ${err.response?.data?.msg || err.message}`);
+  //Get All Companies
+  const fetchCompanies = async () => {
+    try {
+      const response = await API.companies.getAll();
+      const data = response.data;
+      
+      if (Array.isArray(data)) {
+        setCompanies(data);
       }
-    };
-
+      else if (data && Array.isArray(data.companies)) {
+        setCompanies(data.companies);
+      }
+      else {
+        throw new Error("Format inattendu des données reçues");
+      }
+    } catch (err) {
+      console.error('Failed to load companies:', err.response?.data || err.message);
+      setError(`Erreur de chargement: ${err.response?.data?.msg || err.message}`);
+    }
     
+  };
 
   const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
+  const { name, value, type, checked } = e.target;
+
+  if (name === 'companies') {
+    // 1) parse en entier
+    const companyId = parseInt(value, 10);
+
+    setFormData(prev => {
+      // récupère l'array existant, ou [] si undefined
+      const current = Array.isArray(prev.companies) ? prev.companies : [];
+
+      let nextCompanies;
+      if (checked) {
+        // 2) ajout avec Set pour éviter doublons
+        nextCompanies = Array.from(new Set([...current, companyId]));
+      } else {
+        // suppression
+        nextCompanies = current.filter(id => id !== companyId);
+      }
+
+      return {
+        ...prev,
+        companies: nextCompanies
+      };
+    });
+  }
+  else {
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
-  };
+  }
+};
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -89,8 +122,13 @@ const fetchCompanies = async () => {
         password: '',
         role: 'user',
         is_active: true,
-        user_limit: 1
+        user_limit: 1,
+        companies: [] // Reset companies
       });
+      setFormData2({
+        user: user.id,
+        companies: []
+      })
       setEditingUser(null);
       setActiveTab('list');
       fetchUsers();
@@ -109,9 +147,10 @@ const fetchCompanies = async () => {
       password: '',
       role: user.role,
       is_active: user.is_active,
-      user_limit: user.user_limit
+      user_limit: user.user_limit,
+      companies: user.companies || [] // Include companies
     });
-    setActiveTab('form');
+    setActiveTab('form1');
   };
 
   const handleDelete = async (userId) => {
@@ -137,6 +176,27 @@ const fetchCompanies = async () => {
       console.error('Error updating user status:', err);
     }
   };
+   
+  // Render company checkboxes
+  const renderCompanyCheckboxes = () => (
+  <div className="form-group ">
+    <label>Companies</label>
+    <div className="checkbox-list">
+      {companies.map(company => (
+        <label key={company.id} className="checkbox-item">
+          <input
+            type="checkbox"
+            name="companies"
+            value={company.id}
+            checked={formData.companies?.includes(company.id) || false}
+            onChange={handleInputChange}
+          />
+          <span class="span">{company.name}</span>
+        </label>
+      ))}
+    </div>
+  </div>
+);
 
   return (
     <div className="admin-users">
@@ -153,7 +213,8 @@ const fetchCompanies = async () => {
                 password: '',
                 role: 'user',
                 is_active: true,
-                user_limit: 0
+                user_limit: 0,
+                companies: [] // Reset companies
               });
             }}
           >
@@ -169,7 +230,8 @@ const fetchCompanies = async () => {
                 password: '',
                 role: 'user',
                 is_active: true,
-                user_limit: 0
+                user_limit: 0,
+                companies: [] // Reset companies
               });
             }}
           >
@@ -260,6 +322,9 @@ const fetchCompanies = async () => {
                 <option value="admin">Admin</option>
               </select>
             </div>
+            
+            {/* Company selection */}
+            {renderCompanyCheckboxes()}
 
             <div className="form-group">
               <label htmlFor="user_limit">User limit</label>
@@ -347,6 +412,9 @@ const fetchCompanies = async () => {
                 <option value="admin">Admin</option>
               </select>
             </div>
+            
+            {/* Company selection */}
+            {renderCompanyCheckboxes()}
 
             <div className="form-group">
               <label htmlFor="user_limit">User limit</label>
@@ -393,4 +461,3 @@ const fetchCompanies = async () => {
 };
 
 export default AdminUsers;
-
