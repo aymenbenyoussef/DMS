@@ -20,7 +20,6 @@ const Profile = ({ user }) => {
             <h2 className="profile-username">{user?.username}</h2>
             <div className="profile-tags">
               <span className="profile-role">{user?.role}</span>
-              <span className="profile-member-since">📅 Jan 2023</span>
             </div>
           </div>
         </div>
