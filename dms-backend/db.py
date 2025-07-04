@@ -305,10 +305,10 @@ class DatabaseManager:
     
     #/////////
     
-    def get_all_companies(self, user_id):
-        if (user_id == 1):
-            query = "SELECT * FROM companies "
-            param=()
+    def get_all_companies(self):
+        
+        query = "SELECT * FROM companies "
+        param=()
         
         try:
             result = self.execute_query(query, param, fetch=True)

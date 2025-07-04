@@ -242,7 +242,7 @@ def get_companies():
         # Sélection de la méthode selon le rôle
         if user_role == 'admin':
             # Admin : toutes les companies
-            companies = db.get_all_companies(current_user_id)
+            companies = db.get_all_companies()
         else:
             # Utilisateur normal : uniquement ses companies
             companies = db.get_user_companies(current_user_id)
