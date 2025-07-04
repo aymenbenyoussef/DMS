@@ -289,15 +289,15 @@ class DatabaseManager:
     # Company management methods
     def create_company(self, company_data):
         query = """
-            INSERT INTO companies (name, address, email, phone,user_id)
-            VALUES (%s, %s, %s, %s,%s)
+            INSERT INTO companies (name, address, email, phone)
+            VALUES (%s, %s, %s, %s)
         """
         params = (
             company_data["name"],
             company_data.get("address", ""),
             company_data.get("email", ""),
             company_data.get("phone", ""),
-            company_data["user_id"]
+            
             
         )
         

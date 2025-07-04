@@ -206,8 +206,8 @@ def delete_user(user_id):
 @jwt_required()
 def create_company():
     # Récupérez les claims complets du JWT au lieu de juste l'identity
-    claims = get_jwt()
-    current_user_id = claims['id']  # Accédez directement à l'ID depuis les claims
+    
+      # Accédez directement à l'ID depuis les claims
     
     data = request.get_json()
 
@@ -216,7 +216,7 @@ def create_company():
 
     try:
         company_id = db.create_company(data)
-        db.add_user_to_company(current_user_id, company_id)  # Utilisez l'ID directement
+          
         return jsonify({
             "msg": "Company created successfully",
             "company_id": company_id
