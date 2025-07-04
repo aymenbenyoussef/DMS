@@ -68,3 +68,65 @@
   font-size: 16px;
   color: #333;
 }
+
+/* Add these styles at the bottom */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.refresh-btn {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-bottom: 20px;
+}
+
+.refresh-btn:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+.error {
+  color: #dc3545;
+  background-color: #f8d7da;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.logs-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+.logs-table th, 
+.logs-table td {
+  border: 1px solid #dee2e6;
+  padding: 12px;
+  text-align: left;
+}
+
+.logs-table th {
+  background-color: #f8f9fa;
+  font-weight: bold;
+}
+
+.logs-table tr:nth-child(even) {
+  background-color: #f8f9fa;
+}
+
+.logs-table tr:hover {
+  background-color: #e9ecef;
+}
+
+.invalid-log {
+  color: #dc3545;
+  text-align: center;
+  font-style: italic;
+}

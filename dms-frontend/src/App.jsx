@@ -12,8 +12,10 @@ import Profile from './components/Auth/Profile';
 import Settings from './components/Auth/Settings';
 import AddComp from './components/Admin/AddCompany';
 import AddUsers from  './components/Admin/AddUsers';
-import './App.css';
+import UserCreationLogs from './components/Admin/UserCreationLogs';
 import { AppContext } from './components/context';  
+import './App.css';
+
 //import DocumentArchive from './components/Dashboard/DocumentArchive';
 
 // API configuration remains the same as in your original file
@@ -169,8 +171,12 @@ function App() {
         <Layout user={user} onLogout={handleLogout}>
           <Routes>
             <Route path="/" element={<Dashboard user={user} />} />
+  
             {user.role === 'admin' && (
-              <Route path="/admin/users" element={<AdminUsers />} />
+              <>
+                <Route path="/admin/users" element={<AdminUsers />} />
+                <Route path="/user-creation-logs" element={<UserCreationLogs />} />
+              </>
             )}
 
             <Route path="*" element={<Navigate to="/" replace />} />
@@ -186,6 +192,8 @@ function App() {
               path="/AddComp" element={<AddComp user={user}/>} />
               <Route 
               path="/AddUsers" element={<AddUsers />} />
+            
+
           </Routes>
         </Layout>
       </Router>

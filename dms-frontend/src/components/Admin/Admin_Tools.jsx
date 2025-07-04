@@ -8,7 +8,7 @@ const AdminDashboard = () => {
     { icon: '👥', label: 'Users management' ,link: '/admin/users'},
     { icon: '👤', label: 'Add company' ,link: '/AddComp'},
     { icon: '💾', label: 'Backup tools' },
-    { icon: '📄', label: 'Log files management' },
+    { icon: '📄', label: 'Log files' , link: '/user-creation-logs'},
     { icon: '🗂️', label: 'Categories' },
     { icon: '🔖', label: 'Attributes' },
     { icon: '🗃️', label: 'Contents overview' },

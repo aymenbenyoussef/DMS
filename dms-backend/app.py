@@ -5,22 +5,47 @@ from flask_jwt_extended import (
     JWTManager, create_access_token, jwt_required, get_jwt_identity, get_jwt
 )
 from db import db
-from datetime import timedelta
+from datetime import timedelta, datetime
 from werkzeug.utils import secure_filename
 import os
-
-
-
+from flask_cors import cross_origin
 
 app = Flask(__name__)
 CORS(app)
 
+# ====== Logging Configuration ======
+LOG_DIR = "logs"
+USER_CREATION_LOG = os.path.join(LOG_DIR, "user_creation.log")
+
+def ensure_log_dir():
+    """Create logs directory if it doesn't exist"""
+    if not os.path.exists(LOG_DIR):
+        os.makedirs(LOG_DIR)
+
+def log_user_creation(admin_name, user):
+    """Log user creation events"""
+    ensure_log_dir()
+    timestamp = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    log_entry = f"{timestamp} - {admin_name} - Create new user: {user['user_id']}, {user['username']}, {user['email']}, {'enabled' if user['is_active'] else 'disabled'}\n"
+    
+    with open(USER_CREATION_LOG, "a") as f:
+        f.write(log_entry)
+
+def get_user_creation_logs():
+    """Read user creation logs from file"""
+    ensure_log_dir()
+    if not os.path.exists(USER_CREATION_LOG):
+        return []
+    
+    with open(USER_CREATION_LOG, "r") as f:
+        return [line.strip() for line in f.readlines() if line.strip()]
+
+# ====== Existing Configuration ======
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'docx', 'txt'}
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -64,7 +89,6 @@ def upload_file():
             return jsonify({"msg": f"Database error: {str(e)}"}), 500
     else:
         return jsonify({"msg": "File type not allowed"}), 400
-
 
 #CORS(app, supports_credentials=True)
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=4)
@@ -112,6 +136,23 @@ def login():
     })
     return jsonify(access_token=access_token), 200
 
+# ====== User Creation Log Endpoint ======
+@app.route('/admin/user_creation_logs', methods=['GET'])
+@jwt_required()
+def get_user_creation_logs():
+    current_user_claims = get_jwt()
+    if current_user_claims.get('role') != 'admin':
+        print("Unauthorized access attempt to logs")
+        return jsonify({"msg": "Admin access required"}), 403
+    
+    try:
+        logs = get_user_creation_logs()
+        print(f"Returning {len(logs)} log entries")
+        return jsonify({"logs": logs}), 200
+    except Exception as e:
+        print(f"Error fetching logs: {str(e)}")
+        return jsonify({"msg": f"Error fetching logs: {str(e)}"}), 500
+
 # Admin routes for user management
 @app.route('/admin/users', methods=['GET'])
 @jwt_required()
@@ -148,6 +189,18 @@ def create_user():
             user_limit=data.get('user_limit', 0),
             companies=data['companies'],
         )
+        
+        # Log the user creation event
+        log_user_creation(
+            admin_name=current_user_claims['username'],
+            user={
+                'user_id': user_id,
+                'username': data['username'],
+                'email': data.get('email', ''),
+                'is_active': data.get('is_active', True)
+            }
+        )
+
         return jsonify({
             "msg": "User created successfully",
             "user_id": user_id
@@ -199,9 +252,6 @@ def delete_user(user_id):
         return jsonify({"msg": str(e)}), 400
 
 # Company management routes
-
-
-
 @app.route('/companies', methods=['POST'])
 @jwt_required()
 def create_company():
@@ -225,8 +275,6 @@ def create_company():
         return jsonify({"msg": f"Error creating company: {str(e)}"}), 400
 
 #get all the companies
-
-
 @app.route('/companies', methods=['GET'])
 @jwt_required()
 def get_companies():
@@ -348,7 +396,6 @@ def get_folders():
     except Exception as e:
         return jsonify({"msg": str(e)}), 500
 
-
 @app.route('/folders', methods=['POST'])
 @jwt_required()
 def create_folder():
@@ -408,4 +455,6 @@ def delete_folder(folder_id):
         return jsonify({"msg": str(e)}), 400
 
 if __name__ == '__main__':
+    # Ensure log directory exists when app starts
+    ensure_log_dir()
     app.run(host='0.0.0.0', debug=True)

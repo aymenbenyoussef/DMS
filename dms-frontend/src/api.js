@@ -24,6 +24,27 @@ API.interceptors.request.use(
 
 // Add response interceptor to handle errors
 API.interceptors.response.use(
+  (response) => {
+    // Handle success responses
+    return response;
+  },
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    }
+    console.error('API Error:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+      headers: error.response?.headers
+    });
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor to handle errors
+API.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
@@ -48,6 +69,7 @@ const admin = {
   //createUserComp: (userData) => API.post('/admin/users', userData),
   updateUser: (userId, userData) => API.put(`/admin/users/${userId}`, userData),
   deleteUser: (userId) => API.delete(`/admin/users/${userId}`),
+  getUserCreationLogs: () => API.get('/admin/user_creation_logs'),
 };
 
 // Company management endpoints

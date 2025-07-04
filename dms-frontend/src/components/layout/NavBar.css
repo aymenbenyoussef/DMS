@@ -271,7 +271,7 @@
 
 @media (max-width: 768px) {
   .navbar {
-    height: 70px;
+    height: 70px;/*70px*/
   }
   
   .search-container {
