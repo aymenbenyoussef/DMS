@@ -136,7 +136,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedFolder }) => {
       // Update company in context to include new folder
       selectedCompany.folders = [...(selectedCompany.folders || []), data.folder];
       
-      setSuccessMessage('Dossier créé avec succès !');
+      setSuccessMessage('File created successfully!');
       // Dispatch custom event with folder data
       window.dispatchEvent(new CustomEvent('folderAdded', {
       detail: {
@@ -170,8 +170,10 @@ const DocumentArchive = ({ user, selectedCompany, selectedFolder }) => {
       {/* Header */}
       <div className="archive-header">
         <h1>Document Archive</h1>
+
+         
         <div className="header-buttons">
-          {selectedCompany && !selectedFolder && (
+          {user && user.role === 'admin' && selectedCompany && !selectedFolder && (
             <button className="new-folder-btn" onClick={openModal}>
               + New Folder
             </button>
@@ -186,7 +188,9 @@ const DocumentArchive = ({ user, selectedCompany, selectedFolder }) => {
 
       {/* Breadcrumb */}
       <div className="breadcrumb">{getBreadcrumb()}</div>
-
+          {successMessage && (
+        <div className="success-message">{successMessage}</div>
+          )}
       {/* Stats Cards */}
       <div className="stats-container">
         <div className="stat-card">
@@ -311,9 +315,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedFolder }) => {
         </div>
       )}
 
-      {successMessage && (
-        <div className="success-message">{successMessage}</div>
-      )}
+     
     </div>
   );
 };

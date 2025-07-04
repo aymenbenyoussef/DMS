@@ -119,7 +119,7 @@ const Sidebar = ({ user }) => {
 
       {error && <div className="error-message">{error}</div>}
 
-      {companies.length === 0 ? (
+      {/*companies.length === 0 ? (
         <section className="empty-folders">
           {user && user.role === 'user' && (
             <Link to="/AddComp" className="btn-primary">
@@ -128,7 +128,7 @@ const Sidebar = ({ user }) => {
             </Link>
           )}
         </section>
-      ) : (
+      ) : */(
         <ul className="folder-list" role="list">
           {companies.map(company => (
             <React.Fragment key={company.id}>
@@ -172,7 +172,7 @@ const Sidebar = ({ user }) => {
               )}
             </React.Fragment>
           ))}
-          {user && user.role === 'user' && ( 
+          {user && user.role === 'admin' && ( 
             <Link to="/AddComp" className="btn-primary">
               <span className="nav-icon"></span>
               <span>Add new company</span>
