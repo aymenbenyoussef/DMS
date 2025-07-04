@@ -136,21 +136,36 @@ def login():
     })
     return jsonify(access_token=access_token), 200
 
-# ====== User Creation Log Endpoint ======
+def read_user_creation_logs():
+    """Read log file content directly"""
+    ensure_log_dir()
+    if not os.path.exists(USER_CREATION_LOG):
+        return []
+    
+    try:
+        with open(USER_CREATION_LOG, "r") as f:
+            return [line.strip() for line in f.readlines() if line.strip()]
+    except Exception as e:
+        app.logger.error(f"Error reading log file: {str(e)}")
+        return []
+
+# Update the endpoint to use the new function
 @app.route('/admin/user_creation_logs', methods=['GET'])
 @jwt_required()
-def get_user_creation_logs():
+def get_user_creation_logs_endpoint():
     current_user_claims = get_jwt()
     if current_user_claims.get('role') != 'admin':
-        print("Unauthorized access attempt to logs")
+        app.logger.warning("Unauthorized access attempt to logs from user: %s", 
+                          current_user_claims.get('username'))
         return jsonify({"msg": "Admin access required"}), 403
     
     try:
-        logs = get_user_creation_logs()
-        print(f"Returning {len(logs)} log entries")
+        logs = read_user_creation_logs()  # Use the new helper function
+        app.logger.info("Returning %d log entries to user: %s", 
+                       len(logs), current_user_claims.get('username'))
         return jsonify({"logs": logs}), 200
     except Exception as e:
-        print(f"Error fetching logs: {str(e)}")
+        app.logger.error("Error fetching logs: %s", str(e), exc_info=True)
         return jsonify({"msg": f"Error fetching logs: {str(e)}"}), 500
 
 # Admin routes for user management

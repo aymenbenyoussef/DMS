@@ -1,22 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import api from '../../api'; 
+import api from '../../api';
 
 const UserCreationLogs = () => {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [responseData, setResponseData] = useState(null); // For debugging
 
   const fetchLogs = async () => {
     setLoading(true);
     setError('');
     try {
-      // Use the API method we just created
+      console.log('Fetching logs from API...');
       const response = await api.admin.getUserCreationLogs();
-      setLogs(response.data.logs);
+      
+      // Debug: log the entire response
+      console.log('API Response:', response);
+      setResponseData(response); // Save for display
+      
+      // Check if response has data and logs array
+      if (response.data && Array.isArray(response.data.logs)) {
+        console.log(`Received ${response.data.logs.length} log entries`);
+        setLogs(response.data.logs);
+      } else {
+        setError('Unexpected response format');
+        console.error('Unexpected response format:', response);
+      }
     } catch (err) {
       setError('Failed to fetch logs');
-      console.error(err);
+      console.error('Error details:', {
+        message: err.message,
+        response: err.response,
+        config: err.config
+      });
     } finally {
       setLoading(false);
     }
@@ -26,42 +42,27 @@ const UserCreationLogs = () => {
     fetchLogs();
   }, []);
 
-    const parseLogEntry = (log) => {
-        try {
-            // More flexible parsing
-            const parts = log.split(' - ');
-            if (parts.length < 3) return null;
-            
-            // Extract user data part
-            const userPart = parts.slice(2).join(' - ').replace('Create new user: ', '');
-            const userData = userPart.split(', ');
-            
-            // Handle different data lengths
-            if (userData.length < 4) {
-            console.warn('Incomplete log entry:', log);
-            return {
-                timestamp: parts[0],
-                admin: parts[1],
-                userId: userData[0] || 'N/A',
-                username: userData[1] || 'N/A',
-                email: userData[2] || 'N/A',
-                status: userData[3] || 'N/A'
-            };
-            }
-            
-            return {
-            timestamp: parts[0],
-            admin: parts[1],
-            userId: userData[0],
-            username: userData[1],
-            email: userData[2],
-            status: userData[3]
-            };
-        } catch (e) {
-            console.error('Error parsing log entry:', e);
-            return null;
-        }
-    };
+  const parseLogEntry = (log) => {
+    try {
+      const parts = log.split(' - ');
+      if (parts.length < 3) return null;
+      
+      const userPart = parts[2].replace('Create new user: ', '');
+      const userData = userPart.split(', ');
+      
+      return {
+        timestamp: parts[0],
+        admin: parts[1],
+        userId: userData[0] || 'N/A',
+        username: userData[1] || 'N/A',
+        email: userData[2] || 'N/A',
+        status: userData[3] || 'N/A'
+      };
+    } catch (e) {
+      console.error('Error parsing log entry:', e, log);
+      return null;
+    }
+  };
 
   return (
     <div className="container">
@@ -75,6 +76,15 @@ const UserCreationLogs = () => {
       </button>
       
       {error && <div className="error">{error}</div>}
+      
+      {responseData && (
+        <div className="debug-info">
+          <h3>Debug Information</h3>
+          <p><strong>Status:</strong> {responseData.status}</p>
+          <p><strong>Headers:</strong> {JSON.stringify(responseData.headers)}</p>
+          <p><strong>Data:</strong> {JSON.stringify(responseData.data, null, 2)}</p>
+        </div>
+      )}
       
       {logs.length === 0 ? (
         <p>{loading ? 'Loading logs...' : 'No logs available'}</p>
@@ -104,7 +114,9 @@ const UserCreationLogs = () => {
                 </tr>
               ) : (
                 <tr key={index}>
-                  <td colSpan="6" className="invalid-log">Invalid log format</td>
+                  <td colSpan="6" className="invalid-log">
+                    Invalid log format: {log}
+                  </td>
                 </tr>
               );
             })}
