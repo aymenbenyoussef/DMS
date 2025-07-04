@@ -5,22 +5,19 @@ const UserCreationLogs = () => {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [responseData, setResponseData] = useState(null); // For debugging
+  const [rawResponse, setRawResponse] = useState(null);
 
   const fetchLogs = async () => {
     setLoading(true);
     setError('');
     try {
-      console.log('Fetching logs from API...');
       const response = await api.admin.getUserCreationLogs();
       
-      // Debug: log the entire response
-      console.log('API Response:', response);
-      setResponseData(response); // Save for display
+      // Debug: Save raw response
+      setRawResponse(response);
+      console.log('Logs API Response:', response);
       
-      // Check if response has data and logs array
       if (response.data && Array.isArray(response.data.logs)) {
-        console.log(`Received ${response.data.logs.length} log entries`);
         setLogs(response.data.logs);
       } else {
         setError('Unexpected response format');
@@ -77,12 +74,12 @@ const UserCreationLogs = () => {
       
       {error && <div className="error">{error}</div>}
       
-      {responseData && (
-        <div className="debug-info">
+      {/* Debug information panel */}
+      {rawResponse && (
+        <div className="debug-panel">
           <h3>Debug Information</h3>
-          <p><strong>Status:</strong> {responseData.status}</p>
-          <p><strong>Headers:</strong> {JSON.stringify(responseData.headers)}</p>
-          <p><strong>Data:</strong> {JSON.stringify(responseData.data, null, 2)}</p>
+          <p><strong>Status:</strong> {rawResponse.status}</p>
+          <p><strong>Data Preview:</strong> {JSON.stringify(rawResponse.data.logs?.slice(0, 2))}...</p>
         </div>
       )}
       
@@ -115,7 +112,7 @@ const UserCreationLogs = () => {
               ) : (
                 <tr key={index}>
                   <td colSpan="6" className="invalid-log">
-                    Invalid log format: {log}
+                    {log || 'Empty log entry'}
                   </td>
                 </tr>
               );
