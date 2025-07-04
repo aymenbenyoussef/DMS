@@ -238,13 +238,14 @@ const AddUser = () => {
               /> Active User
             </label>
           </div>
-        </div>
-
-        <div className="form-actions">
+          <div className="form-actions">
           <button type="submit" disabled={loading} className="btn-primary">
             {loading ? 'Creating...' : 'Create User'}
           </button>
         </div>
+        </div>
+
+        
       </form>
     </div>
   );
