@@ -6,7 +6,7 @@ const AdminDashboard = () => {
   const tiles = [
     { icon: '👤', label: 'Add user' ,link:'/AddUsers'},
     { icon: '👥', label: 'Users management' ,link: '/admin/users'},
-    
+    { icon: '👤', label: 'Add company' ,link: '/AddComp'},
     { icon: '💾', label: 'Backup tools' },
     { icon: '📄', label: 'Log files management' },
     { icon: '🗂️', label: 'Categories' },
