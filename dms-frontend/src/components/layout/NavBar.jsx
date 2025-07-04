@@ -65,12 +65,7 @@ const NavBar = ({ user, onLogout }) => {
               <span>Admin Tools</span>
             </Link>
           )}
-          {user && user.role === 'user' && (
-            <Link to="/User/tools" className={`nav-link ${isActive('/User/users')}`}>
-              <span className="nav-icon">👥</span>
-              <span>User Tools</span>
-            </Link>
-          )}
+          
           <Link to="/settings" className={`nav-link ${isActive('/settings')}`}>
             <span className="nav-icon">⚙️</span>
             <span>Settings</span>
