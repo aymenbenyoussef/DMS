@@ -161,7 +161,7 @@ const AdminUsers = () => {
           <h2>{editingUser ? 'Modify User' : 'Add New User'}</h2>
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label htmlFor="username">User Name</label>
+              <label htmlFor="username">User name</label>
               <input
                 type="text"
                 id="username"
@@ -172,7 +172,30 @@ const AdminUsers = () => {
                 placeholder="Enter User Name"
               />
             </div>
-
+            <div className="form-group">
+              <label htmlFor="username">User surname</label>
+              <input
+                type="text"
+                id="username"
+                name="username"
+                value={formData.username}
+                onChange={handleInputChange}
+                required
+                placeholder="Enter user surname"
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="username">Email</label>
+              <input
+                type="text"
+                id=""
+                name=""
+                value={formData.username}
+                onChange={handleInputChange}
+                required
+                placeholder="Enter email"
+              />
+            </div>
             <div className="form-group">
               <label htmlFor="password">
                 {editingUser ? 'New password (leave blank to avoid changing)' : 'Password'}
@@ -187,7 +210,18 @@ const AdminUsers = () => {
                 placeholder="Enter Password"
               />
             </div>
-
+            <div className="form-group">
+              <label htmlFor="password"> Password validation</label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                value={formData.password}
+                onChange={handleInputChange}
+                required={!editingUser}
+                placeholder="Retype the password"
+              />
+            </div>
             <div className="form-group">
               <label htmlFor="role">Role</label>
               <select
