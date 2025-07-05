@@ -78,7 +78,8 @@ const companies = {
   getAll: () => API.get('/companies'),
   create: (companyData) => API.post('/companies', companyData),
   delete:(company_id) => API.delete(`/companies/${company_id}`),
-  getByUser:(user_id) => API.get(`/companies/${user_id}`)
+  getByUser:(user_id) => API.get(`/companies/${user_id}`),
+  update: (company_id, companyData) => API.put(`/companies/${company_id}`, companyData),
 };
 
 // Document management endpoints

@@ -318,6 +318,28 @@ def delete_company(company_id):
     except Exception as e:
         return jsonify({"msg": str(e)}), 400
     
+@app.route('/companies/<int:company_id>', methods=['PUT'])
+@jwt_required()
+def update_company(company_id):
+    current_user_claims = get_jwt()
+    if current_user_claims.get('role') != 'admin':
+        return jsonify({"msg": "Admin access required"}), 403
+
+    data = request.get_json()
+    if not data:
+        return jsonify({"msg": "Missing company data"}), 400
+
+    try:
+        db.update_company(
+            company_id,
+            name=data.get('name'),
+            address=data.get('address'),
+            email=data.get('email'),
+            phone=data.get('phone')
+        )
+        return jsonify({"msg": "Company updated successfully"}), 200
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
 
 #get all the companies
 @app.route('/companies', methods=['GET'])
