@@ -54,15 +54,17 @@ const Sidebar = ({ user }) => {
 
     // Event handler for companyAdded event
     const companyHandler = () => fetchCompanies();
-    
+    const companyHandlerDel = () => fetchCompanies();
     // Add event listeners
     window.addEventListener('companyAdded', companyHandler);
+    window.addEventListener('companyDeleted', companyHandlerDel);
     window.addEventListener('folderAdded', folderHandler);
 
     // Cleanup
     return () => {
       window.removeEventListener('companyAdded', companyHandler);
       window.removeEventListener('folderAdded', folderHandler);
+      window.removeEventListener('companyDeleted', companyHandlerDel);
     };
   }, [user]);
 

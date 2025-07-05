@@ -266,6 +266,7 @@ def delete_user(user_id):
     except Exception as e:
         return jsonify({"msg": str(e)}), 400
 
+
 # Company management routes
 @app.route('/companies', methods=['POST'])
 @jwt_required()
@@ -288,6 +289,25 @@ def create_company():
         }), 201
     except Exception as e:
         return jsonify({"msg": f"Error creating company: {str(e)}"}), 400
+    
+    
+#Delete company
+@app.route('/companies/<int:company_id>', methods=['DELETE'])
+@jwt_required()
+def delete_company(company_id):
+    current_user_claims = get_jwt()
+    if current_user_claims.get('role') != 'admin':
+        return jsonify({"msg": "Admin access required"}), 403
+    
+    try:
+        success = db.delete_company(company_id)
+        if success:
+            return jsonify({"msg": "Company deleted successfully"}), 200
+        else:
+            return jsonify({"msg": "Company not found"}), 404
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 400
+    
 
 #get all the companies
 @app.route('/companies', methods=['GET'])

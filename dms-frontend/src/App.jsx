@@ -6,6 +6,7 @@ import Layout from './components/layout/layout';
 import Login from './components/Auth/login';
 import Dashboard from './components/Dashboard/Dashboard';
 import AdminUsers from './components/Admin/AdminUsers';
+import AdminCompanies from './components/Admin/AdminCompanies';
 import AdminTools from './components/Admin/Admin_Tools';
 import UserTools from './components/Admin/User_Tools';
 import Profile from './components/Auth/Profile';
@@ -176,6 +177,7 @@ function App() {
               <>
                 <Route path="/admin/users" element={<AdminUsers />} />
                 <Route path="/user-creation-logs" element={<UserCreationLogs />} />
+                <Route path="/companies" element={<AdminCompanies />} />
               </>
             )}
 
@@ -192,7 +194,7 @@ function App() {
               path="/AddComp" element={<AddComp user={user}/>} />
               <Route 
               path="/AddUsers" element={<AddUsers />} />
-            
+              
 
           </Routes>
         </Layout>

@@ -304,7 +304,16 @@ class DatabaseManager:
         return self.execute_query(query, params)
     
     #/////////
-    
+    def delete_company(self, company_id):
+        query = "DELETE FROM companies WHERE id = %s"
+        try:
+            self.execute_query(query, (company_id,))
+            return True
+        except Exception as e:
+            print(f"Error deleting company: {e}")
+            return False
+
+
     def get_all_companies(self):
         
         query = "SELECT * FROM companies "
