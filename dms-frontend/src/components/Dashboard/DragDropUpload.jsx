@@ -157,8 +157,8 @@ const DragDropUpload = ({ onClose, onUpload }) => {
                 <p className="file-types">
                   Supports PDF, JPG, PNG, TIFF (max 10MB each)
                 </p>
-              </div>
-
+              </div>  
+              {/*
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -168,7 +168,7 @@ const DragDropUpload = ({ onClose, onUpload }) => {
                 className="choose-files-button"
               >
                 Choose Files
-              </button>
+              </button>*/}
 
               <input
                 ref={fileInputRef}

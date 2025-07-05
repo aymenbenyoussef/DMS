@@ -358,7 +358,7 @@ def create_company():
         # Log company creation
         log_activity(
             actor=current_user_claims['username'],
-            action="Create",
+            action="Update",
             resource_type="company",
             resource_data={
                 'id': company_id,
@@ -404,11 +404,11 @@ def update_company(company_id):
         # Log company update
         log_activity(
             actor=current_user_claims['username'],
-            action="Update",
+            action="Create",
             resource_type="company",
             resource_data={
                 'id': company_id,
-                'name': company['name']
+                'name': data['name']
             }
         )
         
@@ -432,14 +432,13 @@ def delete_company(company_id):
         
         success = db.delete_company(company_id)
         if success:
-            # Log company deletion (already exists)
             log_activity(
                 actor=current_user_claims['username'],
                 action="Delete",
                 resource_type="company",
                 resource_data={
                     'id': company_id,
-                    'name': company['name']
+                    'name': data['name']
                 }
             )
             return jsonify({"msg": "Company deleted successfully"}), 200
