@@ -13,7 +13,6 @@ const AddUser = () => {
     passwordConfirm: '',
     role: 'user',
     is_active: true,
-    user_limit: 0,
     companies: []
   });
   const [fieldErrors, setFieldErrors] = useState({});
@@ -21,7 +20,8 @@ const AddUser = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-
+  const [globalFormError, setGlobalFormError] = useState('');
+  const [globalErrors, setGlobalErrors] = useState([]);
   useEffect(() => {
     const fetchCompanies = async () => {
       try {
@@ -38,18 +38,41 @@ const AddUser = () => {
   }, []);
 
   const validate = () => {
-    const errors = {};
-    if (!formData.username.trim()) errors.username = 'Username is required';
-    if (!formData.surname.trim()) errors.surname = 'First name is required';
-    if (!formData.email.trim()) errors.email = 'Email is required';
-    else if (!formData.email.includes('@')) errors.email = 'Email is invalid';
-    if (!formData.password) errors.password = 'Password is required';
-    if (!formData.passwordConfirm) errors.passwordConfirm = 'Please confirm password';
-    else if (formData.password !== formData.passwordConfirm) errors.passwordConfirm = 'Passwords do not match';
-    // no validation for optional fields
-    setFieldErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
+  const errors = {};
+  const errorMessages = [];
+
+  if (!formData.username.trim()) {
+    errors.username = 'Username is required';
+    errorMessages.push('Username is required');
+  }
+  if (!formData.surname.trim()) {
+    errors.surname = 'First name is required';
+    errorMessages.push('First name is required');
+  }
+  if (!formData.email.trim()) {
+    errors.email = 'Email is required';
+    errorMessages.push('Email is required');
+  } else if (!formData.email.includes('@')) {
+    errors.email = 'Email is invalid';
+    errorMessages.push('Email is invalid');
+  }
+  if (!formData.password) {
+    errors.password = 'Password is required';
+    errorMessages.push('Password is required');
+  }
+  if (!formData.passwordConfirm) {
+    errors.passwordConfirm = 'Please confirm password';
+    errorMessages.push('Please confirm password');
+  } else if (formData.password !== formData.passwordConfirm) {
+    errors.passwordConfirm = 'Passwords do not match';
+    errorMessages.push('Passwords do not match');
+  }
+
+  setFieldErrors(errors);
+  setGlobalErrors(errorMessages);
+  return errorMessages.length === 0;
+};
+
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -68,33 +91,54 @@ const AddUser = () => {
         [name]: type === 'checkbox' ? checked : value
       }));
     }
-    // clear error on change
     setFieldErrors((prev) => ({ ...prev, [name]: '' }));
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-    if (!validate()) return;
+  e.preventDefault();
+  setError('');
+  setSuccess('');
+  setGlobalFormError('');
+  if (!validate()) return;
 
-    setLoading(true);
-    try {
-      await API.admin.createUser(formData);
-      setSuccess('User created successfully');
-      setFormData({
-        username: '', surname: '', email: '', password: '', passwordConfirm: '',
-        role: 'user', is_active: true, user_limit: 0, companies: []
-      });
-      setFieldErrors({});
-      setActiveTab('profile');
-    } catch (err) {
-      setError('Error creating user');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  setLoading(true);
+  try {
+    await API.admin.createUser(formData);
+    setSuccess('User created successfully');
+    setFormData({
+      username: '',
+      surname: '',
+      email: '',
+      password: '',
+      passwordConfirm: '',
+      role: 'user',
+      is_active: true,
+      companies: []
+    });
+    setFieldErrors({});
+    setGlobalFormError('');
+    setActiveTab('profile');
+  } catch (err) {
+  let errorMsg = 'Error creating user';
+  const errors = {};
+
+  // Check if it's an email duplicate error
+  if (err.response?.data?.msg?.toLowerCase().includes('email')) {
+    errorMsg = 'Email already exists';
+    errors.email = 'Email already exists';
+  }
+
+  setFieldErrors((prev) => ({
+    ...prev,
+    ...errors
+  }));
+
+  setGlobalErrors([errorMsg]);
+  console.error(err);
+} finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="admin-users">
@@ -120,11 +164,11 @@ const AddUser = () => {
           className={`tab-btn ${activeTab === 'access' ? 'active' : ''}`}
           onClick={() => setActiveTab('access')}
         >
-          Access & Companies
+          Companies & Status
         </button>
       </div>
 
-      {error && <div className="alert alert-error">{error}</div>}
+      
       {success && <div className="alert alert-success">{success}</div>}
 
       <form onSubmit={handleSubmit} className="user-form">
@@ -160,8 +204,18 @@ const AddUser = () => {
               placeholder="Enter email"
               value={formData.email}
               onChange={handleInputChange}
+               
             />
             {fieldErrors.email && <div className="field-error">{fieldErrors.email}</div>}
+          </div>
+          <div className="form-actions">
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => setActiveTab('security')}
+            >
+              Next
+            </button>
           </div>
         </div>
 
@@ -189,17 +243,26 @@ const AddUser = () => {
             />
             {fieldErrors.passwordConfirm && <div className="field-error">{fieldErrors.passwordConfirm}</div>}
           </div>
+          <div className="form-actions">
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => setActiveTab('profile')}
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => setActiveTab('access')}
+            >
+              Next
+            </button>
+          </div>
         </div>
 
         {/* Access & Companies Tab */}
         <div className="tab-panel" style={{ display: activeTab === 'access' ? 'block' : 'none' }}>
-          <div className="form-group">
-            <label>Role</label>
-            <select name="role" value={formData.role} onChange={handleInputChange}>
-              <option value="user">User</option>
-              <option value="admin">Admin</option>
-            </select>
-          </div>
           <div className="form-group">
             <label>Companies</label>
             <div className="checkbox-list">
@@ -217,17 +280,7 @@ const AddUser = () => {
               ))}
             </div>
           </div>
-          <div className="form-group">
-            <label>User Limit</label>
-            <input
-              type="number"
-              name="user_limit"
-              min="0"
-              placeholder="Enter user limit"
-              value={formData.user_limit}
-              onChange={handleInputChange}
-            />
-          </div>
+
           <div className="form-group checkbox-group">
             <label>
               <input
@@ -235,17 +288,35 @@ const AddUser = () => {
                 name="is_active"
                 checked={formData.is_active}
                 onChange={handleInputChange}
-              /> Active User
+              />{' '}
+              Active User
             </label>
           </div>
-          <div className="form-actions">
-          <button type="submit" disabled={loading} className="btn-primary">
-            {loading ? 'Creating...' : 'Create User'}
-          </button>
-        </div>
-        </div>
+          {globalErrors.length > 0 && (
+  <div className="form-error-message">
+    
+    <div>
+      {globalErrors.map((err, index) => (
+        <div key={index}><span className="error-icon">⚠</span>{err}</div>
+      ))}
+    </div>
+  </div>
+)}
 
-        
+          <div className="form-actions">
+          <button
+              type="button"
+              className="btn-primary"
+              onClick={() => setActiveTab('security')}
+            >
+              Previous
+            </button>
+          
+            <button type="submit" disabled={loading} className="btn-primary">
+              {loading ? 'Creating...' : 'Create User'}
+            </button>
+          </div>
+        </div>
       </form>
     </div>
   );

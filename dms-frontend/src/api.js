@@ -70,14 +70,15 @@ const admin = {
   updateUser: (userId, userData) => API.put(`/admin/users/${userId}`, userData),
   deleteUser: (userId) => API.delete(`/admin/users/${userId}`),
   getUserCreationLogs: () => API.get('/admin/user_creation_logs'),
-  
+
 };
 
 // Company management endpoints
 const companies = {
   getAll: () => API.get('/companies'),
   create: (companyData) => API.post('/companies', companyData),
-  delete:(company_id) => API.delete(`/companies/${company_id}`)
+  delete:(company_id) => API.delete(`/companies/${company_id}`),
+  getByUser:(user_id) => API.get(`/companies/${user_id}`)
 };
 
 // Document management endpoints

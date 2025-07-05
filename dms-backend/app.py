@@ -192,6 +192,9 @@ def create_user():
     data = request.get_json()
     if not data or 'username' not in data or 'password' not in data:
         return jsonify({"msg": "Missing username or password"}), 400
+    existing = db.get_user_by_email(data['email'])
+    if existing:
+        return jsonify({"msg": "A user with this email already exists"}), 400
 
     try:
         user_id = db.create_user(
@@ -201,7 +204,7 @@ def create_user():
             password=data['password'],
             role=data.get('role', 'user'),
             is_active=data.get('is_active', True),
-            user_limit=data.get('user_limit', 0),
+            
             companies=data['companies'],
         )
         
@@ -336,6 +339,17 @@ def get_companies():
         app.logger.error(f"Error in /companies: {str(e)}")
         return jsonify({"error": "Internal server error"}), 500
     
+#get companies by user
+@app.route('/companies/<int:user_id>', methods=['get'])
+def get_companies_by_user(user_id):
+    try:
+        companies = db.get_user_companies(user_id)
+        return jsonify(companies), 200
+    except Exception as e:
+        app.logger.error(f"Error in /companies: {str(e)}")
+        return jsonify({"error": "Internal server error"}), 500
+    
+
 # Document management routes
 @app.route('/documents', methods=['GET'])
 @jwt_required()

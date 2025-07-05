@@ -2,37 +2,77 @@ import React, { useState, useEffect } from 'react';
 import API from '../../api';
 import './AdminUsers.css';
 
-const AdminUsers = () => {
+const AdminUsers = ({user}) => {
   const [users, setUsers] = useState([]);
   const [activeTab, setActiveTab] = useState('list');
   const [formData, setFormData] = useState({
     username: '',
+    surname: '',
+    email: '',
     password: '',
+    passwordConfirm: '',
     role: 'user',
     is_active: true,
-    user_limit: 0
+    companies: []
   });
   const [editingUser, setEditingUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [companies, setCompanies] = useState([]);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [userCompanies, setUserCompanies] = useState({}); // Stores companies for each user
 
   useEffect(() => {
+    const fetchCompanies = async () => {
+      try {
+        const response = await API.companies.getAll();
+        console.log("Companies data:", response.data);
+        
+        const data = response.data;
+
+        if (Array.isArray(data)) {
+          setCompanies(data);
+        }
+        else if (data && Array.isArray(data.companies)) {
+          setCompanies(data.companies);
+        }
+        else {
+          throw new Error("Format inattendu des données reçues");
+        }
+      } catch (err) {
+        console.error('Failed to load companies:', err.response?.data || err.message);
+        setError(`Erreur de chargement: ${err.response?.data?.msg || err.message}`);
+      }
+    };
+
+    fetchCompanies();
     fetchUsers();
   }, []);
 
   const fetchUsers = async () => {
-    try {
-      setLoading(true);
-      const response = await API.admin.getUsers();
-      setUsers(response.data);
-    } catch (err) {
-      setError('Erreur lors du chargement des utilisateurs');
-      console.error('Error fetching users:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    setLoading(true);
+    const response = await API.admin.getUsers();
+    const usersWithCompanies = response.data.map(user => ({
+      ...user,
+      companies: user.companies || [] // Ensure companies is always an array
+    }));
+    setUsers(usersWithCompanies);
+    
+    // Also update the userCompanies state for editing
+    const companiesMap = {};
+    usersWithCompanies.forEach(user => {
+      companiesMap[user.id] = user.companies;
+    });
+    setUserCompanies(companiesMap);
+  } catch (err) {
+    setError('Erreur lors du chargement des utilisateurs');
+    console.error('Error fetching users:', err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -60,11 +100,15 @@ const AdminUsers = () => {
       }
       
       setFormData({
+        id:'',
         username: '',
+        surname:'',
+        email:'',
         password: '',
+        passwordConfirm: '',
         role: 'user',
         is_active: true,
-        user_limit: 1
+        companies:[]
       });
       setEditingUser(null);
       setActiveTab('list');
@@ -80,11 +124,15 @@ const AdminUsers = () => {
   const handleEdit = (user) => {
     setEditingUser(user);
     setFormData({
+      id: user.id,
       username: user.username,
+      surname: user.surname,
+      email: user.email,
       password: '',
+      passwordConfirm: '',
       role: user.role,
       is_active: user.is_active,
-      user_limit: user.user_limit
+      companies: userCompanies[user.id] ? userCompanies[user.id].map(c => c.id) : []
     });
     setActiveTab('form');
   };
@@ -130,15 +178,19 @@ const AdminUsers = () => {
               setActiveTab('form');
               setEditingUser(null);
               setFormData({
+                id:'',
                 username: '',
+                surname: '',
+                email: '',
                 password: '',
+                passwordConfirm: '',
                 role: 'user',
                 is_active: true,
-                user_limit: 0
+                companies: []
               });
             }}
           >
-            {editingUser ? 'Modify User' : 'Add User'}
+            Modify User 
           </button>
         </div>
       </div>
@@ -154,9 +206,10 @@ const AdminUsers = () => {
                 <tr>
                   <th>ID</th>
                   <th>User Name</th>
+                  <th>User Surname</th>
                   <th>Role</th>
                   <th>Status</th>
-                  <th>User limit</th>
+                  <th>Companies</th>
                   <th>Creation date</th>
                   <th>Actions</th>
                 </tr>
@@ -166,6 +219,7 @@ const AdminUsers = () => {
                   <tr key={user.id}>
                     <td>{user.id}</td>
                     <td>{user.username}</td>
+                    <td>{user.surname}</td>
                     <td>
                       <span className={`role-badge ${user.role}`}>
                         {user.role}
@@ -176,10 +230,20 @@ const AdminUsers = () => {
                         className={`status-btn ${user.is_active ? 'active' : 'inactive'}`}
                         onClick={() => toggleUserStatus(user.id, user.is_active)}
                       >
-                        {user.is_active ? 'Active' : 'inactive'}
+                        {user.is_active ? 'Active' : 'Inactive'}
                       </button>
                     </td>
-                    <td>{user.user_limit}</td>
+                    <td>
+  {user.companies && user.companies.length > 0 ? (
+    <ul className="company-list">
+      {user.companies.map(company => (
+        <li key={company.id}>{company.name}</li>
+      ))}
+    </ul>
+  ) : (
+    <span>No companies</span>
+  )}
+</td>
                     <td>{new Date(user.created_at).toLocaleDateString()}</td>
                     <td>
                       <div className="action-buttons">
@@ -207,7 +271,7 @@ const AdminUsers = () => {
 
       {activeTab === 'form' && (
         <div className="user-form">
-          <h2>{editingUser ? 'Modify User' : 'Add New User'}</h2>
+          <h2> Modify User </h2>
           <form onSubmit={handleSubmit}>
             <div className="form-group">
               <label htmlFor="username">User Name</label>
@@ -223,8 +287,33 @@ const AdminUsers = () => {
             </div>
 
             <div className="form-group">
+              <label htmlFor="surname">User Surname</label>
+              <input
+                type="text"
+                id="surname"
+                name="surname"
+                value={formData.surname}
+                onChange={handleInputChange}
+                placeholder="Enter User Surname"
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="email">Email</label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                required
+                placeholder="Enter Email"
+              />
+            </div>
+
+            <div className="form-group">
               <label htmlFor="password">
-                {editingUser ? 'New password (leave blank to avoid changing)' : 'Password'}
+                New password 
               </label>
               <input
                 type="password"
@@ -236,15 +325,25 @@ const AdminUsers = () => {
                 placeholder="Enter Password"
               />
             </div>
+            <div className="form-group">
+              <label>Confirm Password</label>
+              <input
+                type="password"
+                name="passwordConfirm"
+                placeholder="Confirm password"
+                value={formData.passwordConfirm}
+                onChange={handleInputChange}
+                required={!editingUser}
+              />
+              {fieldErrors.passwordConfirm && <div className="field-error">{fieldErrors.passwordConfirm}</div>}
+            </div>
 
             <div className="form-group">
-              <label htmlFor="role">Role</label>
+              <label>Role</label>
               <select
-                id="role"
                 name="role"
                 value={formData.role}
                 onChange={handleInputChange}
-                required
               >
                 <option value="user">User</option>
                 <option value="admin">Admin</option>
@@ -252,16 +351,29 @@ const AdminUsers = () => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="user_limit">User limit</label>
-              <input
-                type="number"
-                id="user_limit"
-                name="user_limit"
-                value={formData.user_limit}
-                onChange={handleInputChange}
-                min="1"
-                placeholder="1 = illimité"
-              />
+              <label>Companies</label>
+              <div className="checkbox-list">
+                {companies.map((c) => (
+                  <label key={c.id} className="checkbox-item">
+                    <input
+                      type="checkbox"
+                      name="companies"
+                      value={c.id}
+                      checked={formData.companies.includes(c.id)}
+                      onChange={(e) => {
+                        const { value, checked } = e.target;
+                        setFormData(prev => ({
+                          ...prev,
+                          companies: checked
+                            ? [...prev.companies, value]
+                            : prev.companies.filter(id => id !== value)
+                        }));
+                      }}
+                    />
+                    <span className="company-name">{c.name}</span>
+                  </label>
+                ))}
+              </div>
             </div>
 
             <div className="form-group checkbox-group">
@@ -296,4 +408,3 @@ const AdminUsers = () => {
 };
 
 export default AdminUsers;
-

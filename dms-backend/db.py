@@ -77,13 +77,13 @@ class DatabaseManager:
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS users (
                     id INT AUTO_INCREMENT PRIMARY KEY,
-                    username VARCHAR(50) NOT NULL UNIQUE,
-                    surname VARCHAR(50) NOT NULL UNIQUE,
+                    username VARCHAR(50) NOT NULL ,
+                    surname VARCHAR(50) NOT NULL ,
                     email VARCHAR(50) NOT NULL UNIQUE,
                     password_hash VARCHAR(255) NOT NULL,
                     role ENUM('admin', 'user') DEFAULT 'user',
                     is_active BOOLEAN DEFAULT TRUE,
-                    user_limit INT DEFAULT 1,
+                    
                     
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     
@@ -206,10 +206,10 @@ class DatabaseManager:
 
         # 2) Insertion dans users
         query = """
-        INSERT INTO users (username, surname, email, password_hash, role, is_active, user_limit)
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO users (username, surname, email, password_hash,  is_active, user_limit)
+        VALUES (%s, %s, %s, %s, %s, %s)
         """
-        params = (username, surname, email, hashed_password, role, is_active, user_limit)
+        params = (username, surname, email, hashed_password,  is_active, user_limit)
 
         # On exécute et on récupère l'ID du nouvel utilisateur
         new_user_id = self.execute_query(query, params)
@@ -231,6 +231,10 @@ class DatabaseManager:
 
         return new_user_id
 
+    def get_user_by_email(self, email):
+        query = "SELECT * FROM users WHERE email = %s"
+        result = self.execute_query(query, (email,),fetch=True)
+        return result[0] if result else None
 
     def get_user_by_username(self, username):
         query = "SELECT * FROM users WHERE username = %s"
@@ -243,10 +247,42 @@ class DatabaseManager:
         return result[0] if result else None
 
     def get_all_users(self):
-        query = "SELECT id, username, role, is_active, user_limit, created_at FROM users ORDER BY created_at DESC"
-        return self.execute_query(query, fetch=True)
+    # First get all users
+        users_query = "SELECT * FROM users ORDER BY created_at DESC"
+        users = self.execute_query(users_query, fetch=True)
+    
+        if not users:
+            return []
+    
+        # Then get all user-company associations
+        user_companies_query = """
+        SELECT uc.user_id, c.id, c.name 
+        FROM user_companies uc
+        JOIN companies c ON uc.company_id = c.id
+        """
+        user_companies = self.execute_query(user_companies_query, fetch=True)
+    
+        # Create a mapping of user_id to companies
+        companies_map = {}
+        for uc in user_companies:
+            if uc['user_id'] not in companies_map:
+                 companies_map[uc['user_id']] = []
+            companies_map[uc['user_id']].append({
+                'id': uc['id'],
+            'name': uc['name']
+            })
+    
+        # Combine the data
+        result = []
+        for user in users:
+            user_dict = dict(user)
+            user_dict['companies'] = companies_map.get(user['id'], [])
+            result.append(user_dict)
+    
+        return result
 
-    def update_user(self, user_id, username=None, password=None, role=None, is_active=None, user_limit=None):
+
+    def update_user(self, user_id, username=None, password=None, is_active=None, user_limit=None):
         updates = []
         params = []
         
@@ -256,9 +292,7 @@ class DatabaseManager:
         if password is not None:
             updates.append("password_hash = %s")
             params.append(self.hash_password(password))
-        if role is not None:
-            updates.append("role = %s")
-            params.append(role)
+        
         if is_active is not None:
             updates.append("is_active = %s")
             params.append(is_active)
