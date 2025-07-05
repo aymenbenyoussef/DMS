@@ -5,6 +5,8 @@ const DragDropUpload = ({ onClose, onUpload }) => {
   const [dragActive, setDragActive] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [fileValidation, setFileValidation] = useState(false);
   const fileInputRef = useRef(null);
 
   const acceptedTypes = [
@@ -50,17 +52,35 @@ const DragDropUpload = ({ onClose, onUpload }) => {
       return;
     }
 
-    setIsUploading(true);
-    setUploadProgress(0);
-    
     // Create document objects with minimal metadata
-    const documents = validFiles.map(file => ({
+    const newFiles = validFiles.map(file => ({
+      id: Math.random().toString(36).substr(2, 9),
       name: file.name,
       type: file.type,
       size: file.size,
       file: file
     }));
 
+    setSelectedFiles(prev => [...prev, ...newFiles]);
+    setFileValidation(true);
+  };
+
+  const removeFile = (id) => {
+    setSelectedFiles(prev => prev.filter(file => file.id !== id));
+    if (selectedFiles.length <= 1) {
+      setFileValidation(false);
+    }
+  };
+
+  const startUpload = () => {
+    if (selectedFiles.length === 0) {
+      alert('Please select at least one file to upload.');
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadProgress(0);
+    
     // Simulate upload progress
     const interval = setInterval(() => {
       setUploadProgress(prev => {
@@ -68,9 +88,11 @@ const DragDropUpload = ({ onClose, onUpload }) => {
           clearInterval(interval);
           // Pass to parent component after upload simulation
           setTimeout(() => {
-            onUpload(documents);
+            onUpload(selectedFiles);
             setIsUploading(false);
             setUploadProgress(0);
+            setSelectedFiles([]);
+            setFileValidation(false);
           }, 500);
           return 100;
         }
@@ -160,6 +182,27 @@ const DragDropUpload = ({ onClose, onUpload }) => {
             </div>
           </div>
           
+          {/* Selected Files Preview */}
+          {selectedFiles.length > 0 && (
+            <div className="selected-files-container">
+              <h4 className="selected-files-title">Selected Files</h4>
+              <ul className="file-list">
+                {selectedFiles.map(file => (
+                  <li key={file.id} className="file-item">
+                    <span className="file-name">{file.name}</span>
+                    <button 
+                      className="remove-file-btn"
+                      onClick={() => removeFile(file.id)}
+                      disabled={isUploading}
+                    >
+                      ×
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          
           {/* Upload progress */}
           {isUploading && (
             <div className="upload-progress-container">
@@ -198,11 +241,11 @@ const DragDropUpload = ({ onClose, onUpload }) => {
             Cancel
           </button>
           <button
-            onClick={() => fileInputRef.current?.click()}
-            className="select-files-button"
+            onClick={startUpload}
+            className={`select-files-button ${fileValidation ? 'validation-active' : ''}`}
             disabled={isUploading}
           >
-            Upload Files
+            {fileValidation ? 'Upload Documents' : 'Select Files'}
           </button>
         </div>
       </div>
@@ -210,4 +253,4 @@ const DragDropUpload = ({ onClose, onUpload }) => {
   );
 };
 
-export default DragDropUpload;
+export default DragDropUpload;  
