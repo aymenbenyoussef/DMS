@@ -12,6 +12,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedFolder }) => {
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [folders, setFolders] = useState([]);
+  const [uploadError, setUploadError] = useState('');
   const { setSelectedFolder } = useContext(AppContext);
   const navigate = useNavigate();
   
@@ -22,7 +23,10 @@ const DocumentArchive = ({ user, selectedCompany, selectedFolder }) => {
   };
 
   const openUploadModal = () => setIsUploadModalOpen(true);
-  const closeUploadModal = () => setIsUploadModalOpen(false);
+  const closeUploadModal = () => {
+    setIsUploadModalOpen(false);
+    setUploadError('');
+  };
 
   const fetchFolders = async () => {
     if (!selectedCompany) return;
@@ -31,7 +35,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedFolder }) => {
       const response = await API.folders.getByCompany(selectedCompany.id);
       setFolders(response.data);
     } catch (error) {
-      console.error('Erreur lors du chargement des dossiers', error);
+      console.error('Error loading folders', error);
     }
   };
 
@@ -43,12 +47,12 @@ const DocumentArchive = ({ user, selectedCompany, selectedFolder }) => {
 
   const createFolder = async () => {
     if (folderName.trim() === '') {
-      setError('Le nom du dossier est requis.');
+      setError('Folder name is required.');
       return;
     }
 
     if (!selectedCompany) {
-      setError('Aucune entreprise sélectionnée.');
+      setError('No company selected.');
       return;
     }
 
@@ -56,52 +60,50 @@ const DocumentArchive = ({ user, selectedCompany, selectedFolder }) => {
     setSuccessMessage('');
     
     try {
-      const response = await fetch('http://localhost:5000/folders', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify({
-          name: folderName.trim(),
-          company_id: selectedCompany.id
-        }),
+      const response = await API.folders.create({
+        name: folderName.trim(),
+        company_id: selectedCompany.id
       });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.msg || 'Erreur lors de la création du dossier');
-      }
-      const data = await response.json();
       
       // Update folders state
-      setFolders(prev => [...prev, data.folder]);
+      setFolders(prev => [...prev, response.data]);
       
       // Update company in context to include new folder
-      selectedCompany.folders = [...(selectedCompany.folders || []), data.folder];
+      selectedCompany.folders = [...(selectedCompany.folders || []), response.data];
       
-      setSuccessMessage('File created successfully!');
+      setSuccessMessage('Folder created successfully!');
       // Dispatch custom event with folder data
       window.dispatchEvent(new CustomEvent('folderAdded', {
         detail: {
           companyId: selectedCompany.id,
-          folder: data.folder
+          folder: response.data
         }
       }));
     
       closeModal();
       navigate('/');
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.msg || 'Error creating folder');
     }
   };
 
   // Handle document upload from DragDropUpload
-  const handleUploadDocuments = (documents) => {
-    // Here you would typically send documents to your backend
-    console.log("Uploaded documents:", documents);
-    alert(`${documents.length} file(s) uploaded successfully!`);
-    closeUploadModal();
+  const handleUploadDocuments = async (documents) => {
+    try {
+      // Prepare documents for API with folder ID
+      const uploadData = documents.map(doc => ({
+        ...doc,
+        folder_id: selectedFolder?.id || null,
+        company_id: selectedCompany.id
+      }));
+      
+      // Send to API
+      await API.documents.create(uploadData);
+      alert(`${documents.length} files uploaded successfully!`);
+      closeUploadModal();
+    } catch (error) {
+      setUploadError('Upload failed: ' + (error.response?.data?.msg || error.message));
+    }
   };
 
   // Get breadcrumb path
@@ -117,6 +119,22 @@ const DocumentArchive = ({ user, selectedCompany, selectedFolder }) => {
 
   return (
     <div className="document-archive">
+      {/* Upload Modal */}
+      {isUploadModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h2>Upload File</h2>
+            <div className="modal-content">
+              <DragDropUpload 
+                onClose={closeUploadModal}
+                onUpload={handleUploadDocuments}
+              />
+              {uploadError && <p className="error-message">{uploadError}</p>}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="archive-header">
         <h1>Document Archive</h1>
@@ -134,15 +152,9 @@ const DocumentArchive = ({ user, selectedCompany, selectedFolder }) => {
         </div>
       </div>
       
-      {/* Upload File Modal */}
-      <DragDropUpload 
-        isOpen={isUploadModalOpen}
-        onClose={closeUploadModal}
-        onUpload={handleUploadDocuments}
-      />
-
       {/* Breadcrumb */}
       <div className="breadcrumb">{getBreadcrumb()}</div>
+      
       {successMessage && (
         <div className="success-message">{successMessage}</div>
       )}
