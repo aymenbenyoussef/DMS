@@ -347,11 +347,18 @@ class DatabaseManager:
         return True
 
     def delete_user(self, user_id):
-        query = "DELETE FROM users WHERE id = %s"
         try:
-            self.execute_query(query, (user_id,))
+            # First delete any user-company associations
+            query_user_companies = "DELETE FROM user_companies WHERE user_id = %s"
+            self.execute_query(query_user_companies, (user_id,))
+        
+            # Then delete the user itself
+            query_user = "DELETE FROM users WHERE id = %s"
+            self.execute_query(query_user, (user_id,))
+        
             return True
-        except:
+        except Exception as e:
+            print(f"Error deleting user: {e}")
             return False
 
     # Company management methods
@@ -373,9 +380,16 @@ class DatabaseManager:
     
     #/////////
     def delete_company(self, company_id):
-        query = "DELETE FROM companies WHERE id = %s"
+        
         try:
-            self.execute_query(query, (company_id,))
+            # First delete any user-company associations
+            query_user_companies = "DELETE FROM user_companies WHERE company_id = %s"
+            self.execute_query(query_user_companies, (company_id,))
+        
+            # Then delete the company itself
+            query_company = "DELETE FROM companies WHERE id = %s"
+            self.execute_query(query_company, (company_id,))
+        
             return True
         except Exception as e:
             print(f"Error deleting company: {e}")
@@ -391,8 +405,19 @@ class DatabaseManager:
         WHERE id = %s
         """
         params = (name, address, email, phone, company_id)
-        return self.execute_query(query, params)
+        try:
+            affected_rows = self.execute_query(query, params)
+            # Return True if the query executed successfully, regardless of whether rows were changed
+            return True
+        except Exception as e:
+            print(f"Error updating company: {e}")
+            return False
 
+    def get_company_by_id(self, company_id):
+        query = "SELECT * FROM companies WHERE id = %s"
+        result = self.execute_query(query, (company_id,), fetch=True)
+        return result[0] if result else None
+    
     def get_all_companies(self):
         
         query = "SELECT * FROM companies "

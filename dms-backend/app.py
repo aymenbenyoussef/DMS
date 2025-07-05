@@ -362,7 +362,7 @@ def create_company():
             resource_type="company",
             resource_data={
                 'id': company_id,
-                'name': data['name']
+                'name': data.get('name')
             }
         )
           
@@ -387,8 +387,7 @@ def update_company(company_id):
         return jsonify({"msg": "Missing company data"}), 400
 
     try:
-        # Update the company
-        db.update_company(
+        success = db.update_company(
             company_id,
             name=data.get('name'),
             address=data.get('address'),
@@ -404,11 +403,11 @@ def update_company(company_id):
         # Log company update
         log_activity(
             actor=current_user_claims['username'],
-            action="Create",
+            action="Update",
             resource_type="company",
             resource_data={
                 'id': company_id,
-                'name': data['name']
+                'name': company['name']
             }
         )
         
@@ -438,9 +437,10 @@ def delete_company(company_id):
                 resource_type="company",
                 resource_data={
                     'id': company_id,
-                    'name': data['name']
+                    'name': company['name']
                 }
             )
+            
             return jsonify({"msg": "Company deleted successfully"}), 200
         else:
             return jsonify({"msg": "Company not found"}), 404
