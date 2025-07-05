@@ -130,7 +130,7 @@ const AdminUsers = ({user}) => {
       email: user.email,
       password: '',
       passwordConfirm: '',
-      role: user.role,
+      
       is_active: user.is_active,
       companies: userCompanies[user.id] ? userCompanies[user.id].map(c => c.id) : []
     });
@@ -338,17 +338,7 @@ const AdminUsers = ({user}) => {
               {fieldErrors.passwordConfirm && <div className="field-error">{fieldErrors.passwordConfirm}</div>}
             </div>
 
-            <div className="form-group">
-              <label>Role</label>
-              <select
-                name="role"
-                value={formData.role}
-                onChange={handleInputChange}
-              >
-                <option value="user">User</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
+            
 
             <div className="form-group">
               <label>Companies</label>
@@ -361,14 +351,15 @@ const AdminUsers = ({user}) => {
                       value={c.id}
                       checked={formData.companies.includes(c.id)}
                       onChange={(e) => {
-                        const { value, checked } = e.target;
-                        setFormData(prev => ({
-                          ...prev,
-                          companies: checked
-                            ? [...prev.companies, value]
-                            : prev.companies.filter(id => id !== value)
-                        }));
-                      }}
+  const { value, checked } = e.target;
+  const companyId = parseInt(value, 10);
+  setFormData(prev => ({
+    ...prev,
+    companies: checked
+      ? [...prev.companies, companyId]
+      : prev.companies.filter(id => id !== companyId)
+  }));
+}}
                     />
                     <span className="company-name">{c.name}</span>
                   </label>

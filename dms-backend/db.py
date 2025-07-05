@@ -282,35 +282,69 @@ class DatabaseManager:
         return result
 
 
-    def update_user(self, user_id, username=None, password=None, is_active=None, user_limit=None):
+    def update_user(self, user_id, username=None, surname=None, email=None, password=None, 
+               is_active=None, companies=None):
+   
         updates = []
         params = []
-        
+    
+        # Build the user update query
         if username is not None:
             updates.append("username = %s")
             params.append(username)
+        if surname is not None:
+            updates.append("surname = %s")
+            params.append(surname)
+        if email is not None:
+            updates.append("email = %s")
+            params.append(email)
         if password is not None:
             updates.append("password_hash = %s")
             params.append(self.hash_password(password))
-        
         if is_active is not None:
             updates.append("is_active = %s")
             params.append(is_active)
-        if user_limit is not None:
-            updates.append("user_limit = %s")
-            params.append(user_limit)
-        
-        if not updates:
-            return False
-        
-        params.append(user_id)
-        query = f"UPDATE users SET {', '.join(updates)} WHERE id = %s"
-        
-        try:
-            self.execute_query(query, params)
-            return True
-        except:
-            return False
+    
+        # Update user fields if there are changes
+        if updates:
+            params.append(user_id)
+            query = f"UPDATE users SET {', '.join(updates)} WHERE id = %s"
+            try:
+                self.execute_query(query, params)
+            except Exception as e:
+                print(f"Error updating user: {e}")
+                return False
+    
+    # Handle company associations if provided
+        if companies is not None:
+            try:
+                # Start transaction
+                self.connection.start_transaction()
+            
+                # First remove all existing company associations
+                delete_query = "DELETE FROM user_companies WHERE user_id = %s"
+                cursor = self.connection.cursor()
+                cursor.execute(delete_query, (user_id,))
+            
+                # Insert new company associations (each in a separate row)
+                if companies:  # Only if companies list is not empty
+                    insert_query = "INSERT INTO user_companies (user_id, company_id) VALUES (%s, %s)"
+                    # Prepare parameters for each company
+                    company_params = [(user_id, company_id) for company_id in companies]
+                    # Execute batch insert
+                    cursor.executemany(insert_query, company_params)
+            
+                # Commit transaction
+                self.connection.commit()
+                cursor.close()
+            
+            except Exception as e:
+                # Rollback on error
+                self.connection.rollback()
+                print(f"Error updating user companies: {e}")
+                return False
+    
+        return True
 
     def delete_user(self, user_id):
         query = "DELETE FROM users WHERE id = %s"

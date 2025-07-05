@@ -238,20 +238,27 @@ def update_user(user_id):
         return jsonify({"msg": "No data provided"}), 400
 
     try:
+        # Get companies list from request data
+        companies = data.get('companies', None)
+        if companies is not None and not isinstance(companies, list):
+            return jsonify({"msg": "Companies must be a list of IDs"}), 400
+
         success = db.update_user(
             user_id=user_id,
             username=data.get('username'),
+            surname=data.get('surname'),
+            email=data.get('email'),
             password=data.get('password') if data.get('password') else None,
-            role=data.get('role'),
             is_active=data.get('is_active'),
-            user_limit=data.get('user_limit')
+            companies=companies
         )
+        
         if success:
             return jsonify({"msg": "User updated successfully"}), 200
         else:
-            return jsonify({"msg": "User not found"}), 404
+            return jsonify({"msg": "User update failed"}), 400
     except Exception as e:
-        return jsonify({"msg": str(e)}), 400
+        return jsonify({"msg": f"Error updating user: {str(e)}"}), 500
 
 @app.route('/admin/users/<int:user_id>', methods=['DELETE'])
 @jwt_required()
