@@ -11,33 +11,53 @@ import os
 from flask_cors import cross_origin
 
 app = Flask(__name__)
-CORS(app)
+CORS(app) 
 
 # ====== Logging Configuration ======
 LOG_DIR = "logs"
-USER_CREATION_LOG = os.path.join(LOG_DIR, "user_creation.log")
+ACTIVITY_LOG = os.path.join(LOG_DIR, "activity.log")  # Changed to activity.log
 
 def ensure_log_dir():
     """Create logs directory if it doesn't exist"""
     if not os.path.exists(LOG_DIR):
         os.makedirs(LOG_DIR)
 
-def log_user_creation(admin_name, user):
-    """Log user creation events"""
+def log_activity(actor, action, resource_type, resource_data):
+    """Log all activities (user/company/document)"""
     ensure_log_dir()
     timestamp = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-    log_entry = f"{timestamp} - {admin_name} - Create new user: {user['user_id']}, {user['username']}, {user['email']}, {'enabled' if user['is_active'] else 'disabled'}\n"
     
-    with open(USER_CREATION_LOG, "a") as f:
-        f.write(log_entry)
+    # Format log entry based on resource type
+    if resource_type == "user":
+        log_entry = (
+            f"{timestamp} - {actor} - {action} user: "
+            f"{resource_data['id']}, {resource_data['username']}, "
+            f"{resource_data['email']}, {'enabled' if resource_data['is_active'] else 'disabled'}"
+        )
+    elif resource_type == "company":
+        log_entry = (
+            f"{timestamp} - {actor} - {action} company: "
+            f"{resource_data['id']}, {resource_data['name']}"
+        )
+    elif resource_type == "document":
+        log_entry = (
+            f"{timestamp} - {actor} - {action} document: "
+            f"{resource_data['id']}, {resource_data['filename']}, "
+            f"company_id={resource_data['company_id']}"
+        )
+    else:
+        return  # Unsupported resource type
+    
+    with open(ACTIVITY_LOG, "a") as f:
+        f.write(log_entry + "\n")
 
-def get_user_creation_logs():
-    """Read user creation logs from file"""
+def get_activity_logs():
+    """Read activity logs from file"""
     ensure_log_dir()
-    if not os.path.exists(USER_CREATION_LOG):
+    if not os.path.exists(ACTIVITY_LOG):
         return []
     
-    with open(USER_CREATION_LOG, "r") as f:
+    with open(ACTIVITY_LOG, "r") as f:
         return [line.strip() for line in f.readlines() if line.strip()]
 
 # ====== Existing Configuration ======
@@ -84,6 +104,20 @@ def upload_file():
                 document_type=request.form.get('document_type', 'non_invoice'),
                 file_path=file_path  # <-- save the path here!
             )
+            
+            # Log document creation
+            current_user_claims = get_jwt()
+            log_activity(
+                actor=current_user_claims['username'],
+                action="Create",
+                resource_type="document",
+                resource_data={
+                    'id': document_id,
+                    'filename': filename,
+                    'company_id': request.form.get('company_id')
+                }
+            )
+            
             return jsonify({"msg": "File uploaded successfully", "document_id": document_id}), 201
         except Exception as e:
             return jsonify({"msg": f"Database error: {str(e)}"}), 500
@@ -136,23 +170,23 @@ def login():
     })
     return jsonify(access_token=access_token), 200
 
-def read_user_creation_logs():
+def read_activity_logs():
     """Read log file content directly"""
     ensure_log_dir()
-    if not os.path.exists(USER_CREATION_LOG):
+    if not os.path.exists(ACTIVITY_LOG):
         return []
     
     try:
-        with open(USER_CREATION_LOG, "r") as f:
+        with open(ACTIVITY_LOG, "r") as f:
             return [line.strip() for line in f.readlines() if line.strip()]
     except Exception as e:
         app.logger.error(f"Error reading log file: {str(e)}")
         return []
 
-# Update the endpoint to use the new function
-@app.route('/admin/user_creation_logs', methods=['GET'])
+# Updated endpoint for activity logs
+@app.route('/admin/activity_logs', methods=['GET'])
 @jwt_required()
-def get_user_creation_logs_endpoint():
+def get_activity_logs_endpoint():
     current_user_claims = get_jwt()
     if current_user_claims.get('role') != 'admin':
         app.logger.warning("Unauthorized access attempt to logs from user: %s", 
@@ -160,7 +194,7 @@ def get_user_creation_logs_endpoint():
         return jsonify({"msg": "Admin access required"}), 403
     
     try:
-        logs = read_user_creation_logs()  # Use the new helper function
+        logs = read_activity_logs()
         app.logger.info("Returning %d log entries to user: %s", 
                        len(logs), current_user_claims.get('username'))
         return jsonify({"logs": logs}), 200
@@ -209,10 +243,12 @@ def create_user():
         )
         
         # Log the user creation event
-        log_user_creation(
-            admin_name=current_user_claims['username'],
-            user={
-                'user_id': user_id,
+        log_activity(
+            actor=current_user_claims['username'],
+            action="Create",
+            resource_type="user",
+            resource_data={
+                'id': user_id,
                 'username': data['username'],
                 'email': data.get('email', ''),
                 'is_active': data.get('is_active', True)
@@ -254,6 +290,18 @@ def update_user(user_id):
         )
         
         if success:
+            # Log user update
+            log_activity(
+                actor=current_user_claims['username'],
+                action="Update",
+                resource_type="user",
+                resource_data={
+                    'id': user_id,
+                    'username': data.get('username', '[unchanged]'),
+                    'email': data.get('email', '[unchanged]'),
+                    'is_active': data.get('is_active', '[unchanged]')
+                }
+            )
             return jsonify({"msg": "User updated successfully"}), 200
         else:
             return jsonify({"msg": "User update failed"}), 400
@@ -268,8 +316,25 @@ def delete_user(user_id):
         return jsonify({"msg": "Admin access required"}), 403
     
     try:
+        # Get user info before deletion for logging
+        user = db.get_user_by_id(user_id)
+        if not user:
+            return jsonify({"msg": "User not found"}), 404
+        
         success = db.delete_user(user_id)
         if success:
+            # Log user deletion
+            log_activity(
+                actor=current_user_claims['username'],
+                action="Delete",
+                resource_type="user",
+                resource_data={
+                    'id': user_id,
+                    'username': user['username'],
+                    'email': user['email'],
+                    'is_active': False
+                }
+            )
             return jsonify({"msg": "User deleted successfully"}), 200
         else:
             return jsonify({"msg": "User not found"}), 404
@@ -281,10 +346,7 @@ def delete_user(user_id):
 @app.route('/companies', methods=['POST'])
 @jwt_required()
 def create_company():
-    # Récupérez les claims complets du JWT au lieu de juste l'identity
-    
-      # Accédez directement à l'ID depuis les claims
-    
+    current_user_claims = get_jwt()
     data = request.get_json()
 
     if not data or 'name' not in data or not data['name'].strip():
@@ -292,6 +354,17 @@ def create_company():
 
     try:
         company_id = db.create_company(data)
+        
+        # Log company creation
+        log_activity(
+            actor=current_user_claims['username'],
+            action="Create",
+            resource_type="company",
+            resource_data={
+                'id': company_id,
+                'name': data['name']
+            }
+        )
           
         return jsonify({
             "msg": "Company created successfully",
@@ -310,8 +383,23 @@ def delete_company(company_id):
         return jsonify({"msg": "Admin access required"}), 403
     
     try:
+        # Get company info before deletion for logging
+        company = db.get_company_by_id(company_id)
+        if not company:
+            return jsonify({"msg": "Company not found"}), 404
+        
         success = db.delete_company(company_id)
         if success:
+            # Log company deletion
+            log_activity(
+                actor=current_user_claims['username'],
+                action="Delete",
+                resource_type="company",
+                resource_data={
+                    'id': company_id,
+                    'name': company['name']
+                }
+            )
             return jsonify({"msg": "Company deleted successfully"}), 200
         else:
             return jsonify({"msg": "Company not found"}), 404
@@ -416,6 +504,18 @@ def create_document():
             file_size=file_size
         )
         db.add_document_history(document_id, current_user_id, 'Document created')
+        
+        # Log document creation
+        log_activity(
+            actor=current_user_claims['username'],
+            action="Create",
+            resource_type="document",
+            resource_data={
+                'id': document_id,
+                'filename': filename,
+                'company_id': company_id
+            }
+        )
         
         return jsonify({
             "msg": "Document created successfully",

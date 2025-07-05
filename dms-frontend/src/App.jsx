@@ -13,11 +13,9 @@ import Profile from './components/Auth/Profile';
 import Settings from './components/Auth/Settings';
 import AddComp from './components/Admin/AddCompany';
 import AddUsers from  './components/Admin/AddUsers';
-import UserCreationLogs from './components/Admin/UserCreationLogs';
+import ActivityLogs from './components/Admin/ActivityLogs'; // Updated import
 import { AppContext } from './components/context';  
 import './App.css';
-
-//import DocumentArchive from './components/Dashboard/DocumentArchive';
 
 // API configuration remains the same as in your original file
 const API_BASE = 'http://localhost:5000';
@@ -78,6 +76,14 @@ const api = {
   deleteUser: async (token, userId) => {
     const response = await fetch(`${API_BASE}/admin/users/${userId}`, {
       method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return response.json();
+  },
+  
+  // Add this new method for activity logs
+  getActivityLogs: async (token) => {
+    const response = await fetch(`${API_BASE}/admin/activity_logs`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     return response.json();
@@ -176,7 +182,8 @@ function App() {
             {user.role === 'admin' && (
               <>
                 <Route path="/admin/users" element={<AdminUsers />} />
-                <Route path="/user-creation-logs" element={<UserCreationLogs />} />
+                {/* Updated to ActivityLogs component */}
+                <Route path="/admin/activity_logs" element={<ActivityLogs />} />
                 <Route path="/companies" element={<AdminCompanies />} />
               </>
             )}
@@ -192,10 +199,8 @@ function App() {
               path="/settings" element={<Settings user={user}/>} /> 
             <Route 
               path="/AddComp" element={<AddComp user={user}/>} />
-              <Route 
+            <Route 
               path="/AddUsers" element={<AddUsers />} />
-              
-
           </Routes>
         </Layout>
       </Router>

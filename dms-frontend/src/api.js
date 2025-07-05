@@ -69,7 +69,7 @@ const admin = {
   //createUserComp: (userData) => API.post('/admin/users', userData),
   updateUser: (userId, userData) => API.put(`/admin/users/${userId}`, userData),
   deleteUser: (userId) => API.delete(`/admin/users/${userId}`),
-  getUserCreationLogs: () => API.get('/admin/user_creation_logs'),
+  getActivityLogs: () => API.get('/admin/activity_logs'), 
 
 };
 

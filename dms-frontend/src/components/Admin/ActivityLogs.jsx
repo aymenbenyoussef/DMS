@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api';
 
-const UserCreationLogs = () => {
+const ActivityLogs = () => {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -11,25 +11,20 @@ const UserCreationLogs = () => {
     setLoading(true);
     setError('');
     try {
-      const response = await api.admin.getUserCreationLogs();
+      // Use the new activity logs endpoint
+      const response = await api.admin.getActivityLogs();
       
       // Debug: Save raw response
       setRawResponse(response);
-      console.log('Logs API Response:', response);
       
       if (response.data && Array.isArray(response.data.logs)) {
         setLogs(response.data.logs);
       } else {
         setError('Unexpected response format');
-        console.error('Unexpected response format:', response);
       }
     } catch (err) {
-      setError('Failed to fetch logs');
-      console.error('Error details:', {
-        message: err.message,
-        response: err.response,
-        config: err.config
-      });
+      setError('Failed to fetch activity logs');
+      console.error('Error fetching activity logs:', err);
     } finally {
       setLoading(false);
     }
@@ -39,31 +34,39 @@ const UserCreationLogs = () => {
     fetchLogs();
   }, []);
 
+  // Parse all types of log entries (user, company, document)
   const parseLogEntry = (log) => {
     try {
       const parts = log.split(' - ');
       if (parts.length < 3) return null;
       
-      const userPart = parts[2].replace('Create new user: ', '');
-      const userData = userPart.split(', ');
+      const actionPart = parts[2];
+      const colonIndex = actionPart.indexOf(':');
+      
+      if (colonIndex === -1) return null;
+      
+      const actionType = actionPart.substring(0, colonIndex).trim();
+      const data = actionPart.substring(colonIndex + 1).trim();
+      
+      // Extract action and resource type
+      const [action, resource] = actionType.split(' ');
       
       return {
         timestamp: parts[0],
         admin: parts[1],
-        userId: userData[0] || 'N/A',
-        username: userData[1] || 'N/A',
-        email: userData[2] || 'N/A',
-        status: userData[3] || 'N/A'
+        action,
+        resource,
+        data
       };
     } catch (e) {
-      console.error('Error parsing log entry:', e, log);
+      console.error('Error parsing log entry:', e);
       return null;
     }
   };
 
   return (
     <div className="container">
-      <h2>User Creation Logs</h2>
+      <h2>Activity Logs</h2>
       <button 
         className="refresh-btn"
         onClick={fetchLogs} 
@@ -84,17 +87,16 @@ const UserCreationLogs = () => {
       )}
       
       {logs.length === 0 ? (
-        <p>{loading ? 'Loading logs...' : 'No logs available'}</p>
+        <p>{loading ? 'Loading logs...' : 'No activity logs available'}</p>
       ) : (
         <table className="logs-table">
           <thead>
             <tr>
               <th>Date & Time</th>
               <th>Admin</th>
-              <th>User ID</th>
-              <th>Username</th>
-              <th>Email</th>
-              <th>Status</th>
+              <th>Action</th>
+              <th>Resource</th>
+              <th>Details</th>
             </tr>
           </thead>
           <tbody>
@@ -104,14 +106,13 @@ const UserCreationLogs = () => {
                 <tr key={index}>
                   <td>{entry.timestamp}</td>
                   <td>{entry.admin}</td>
-                  <td>{entry.userId}</td>
-                  <td>{entry.username}</td>
-                  <td>{entry.email}</td>
-                  <td>{entry.status}</td>
+                  <td>{entry.action}</td>
+                  <td>{entry.resource}</td>
+                  <td>{entry.data}</td>
                 </tr>
               ) : (
                 <tr key={index}>
-                  <td colSpan="6" className="invalid-log">
+                  <td colSpan="5" className="invalid-log">
                     {log || 'Empty log entry'}
                   </td>
                 </tr>
@@ -124,4 +125,4 @@ const UserCreationLogs = () => {
   );
 };
 
-export default UserCreationLogs;
+export default ActivityLogs;
