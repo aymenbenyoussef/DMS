@@ -150,3 +150,12 @@
 .debug-panel p {
   margin: 5px 0;
 }
+.tile-link {
+  text-decoration: none;
+  color: inherit; /* optional: keep the text color the same as surrounding */
+}
+
+/* Optional: also prevent underline on hover */
+.tile-link:hover {
+  text-decoration: none;
+}

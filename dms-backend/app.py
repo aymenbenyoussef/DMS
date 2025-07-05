@@ -362,7 +362,7 @@ def create_company():
             resource_type="company",
             resource_data={
                 'id': company_id,
-                'name': data['name']
+                'name': data.get('name')
             }
         )
           
@@ -387,32 +387,27 @@ def update_company(company_id):
         return jsonify({"msg": "Missing company data"}), 400
 
     try:
-        # Update the company
-        db.update_company(
+        success = db.update_company(
             company_id,
             name=data.get('name'),
             address=data.get('address'),
             email=data.get('email'),
             phone=data.get('phone')
         )
-        
-        # Get updated company for logging
-        company = db.get_company_by_id(company_id)
-        if not company:
-            return jsonify({"msg": "Company not found"}), 404
-            
-        # Log company update
-        log_activity(
-            actor=current_user_claims['username'],
-            action="Update",
-            resource_type="company",
-            resource_data={
-                'id': company_id,
-                'name': company['name']
-            }
-        )
-        
-        return jsonify({"msg": "Company updated successfully"}), 200
+        if success :
+            log_activity(
+                actor=current_user_claims['username'],
+                action="Update",
+                resource_type="company",
+                resource_data={
+                    'id': company_id,
+                    'name': data.get('name')
+                    
+                }
+            )
+            return jsonify({"msg": "Company updated successfully"}), 200
+        else:
+            return jsonify({"msg": "Company updated failed"}), 400
     except Exception as e:
         return jsonify({"msg": str(e)}), 500
 
@@ -439,9 +434,10 @@ def delete_company(company_id):
                 resource_type="company",
                 resource_data={
                     'id': company_id,
-                    'name': company['name']
+                    'name':company['name']
                 }
             )
+            
             return jsonify({"msg": "Company deleted successfully"}), 200
         else:
             return jsonify({"msg": "Company not found"}), 404
