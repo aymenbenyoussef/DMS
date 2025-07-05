@@ -22,7 +22,7 @@ const AdminUsers = ({user}) => {
   const [companies, setCompanies] = useState([]);
   const [fieldErrors, setFieldErrors] = useState({});
   const [userCompanies, setUserCompanies] = useState({}); // Stores companies for each user
-
+  const [showModifyTab, setShowModifyTab] = useState(false);
   useEffect(() => {
     const fetchCompanies = async () => {
       try {
@@ -98,7 +98,7 @@ const AdminUsers = ({user}) => {
         await API.admin.createUser(formData);
         setSuccess('Utilisateur créé avec succès');
       }
-      
+      setShowModifyTab(false);
       setFormData({
         id:'',
         username: '',
@@ -134,6 +134,7 @@ const AdminUsers = ({user}) => {
       is_active: user.is_active,
       companies: userCompanies[user.id] ? userCompanies[user.id].map(c => c.id) : []
     });
+    setShowModifyTab(true);
     setActiveTab('form');
   };
 
@@ -168,30 +169,33 @@ const AdminUsers = ({user}) => {
         <div className="admin-tabs">
           <button 
             className={`tab-btn ${activeTab === 'list' ? 'active' : ''}`}
-            onClick={() => setActiveTab('list')}
+            onClick={() => {
+              setActiveTab('list');
+            setShowModifyTab(false);}}
           >
             Users List
           </button>
+          {showModifyTab && (
           <button 
-            className={`tab-btn ${activeTab === 'form' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveTab('form');
-              setEditingUser(null);
-              setFormData({
-                id:'',
-                username: '',
-                surname: '',
-                email: '',
-                password: '',
-                passwordConfirm: '',
-                role: 'user',
-                is_active: true,
-                companies: []
-              });
-            }}
-          >
-            Modify User 
-          </button>
+    className={`tab-btn ${activeTab === 'form' ? 'active' : ''}`}
+  onClick={() => {
+    setActiveTab('form');
+    setEditingUser(null);
+    setFormData({
+      id:'',
+      username: '',
+      surname: '',
+      email: '',
+      password: '',
+      passwordConfirm: '',
+      role: 'user',
+      is_active: true,
+      companies: []
+    });
+  }}
+>
+  Modify User 
+</button>)}
         </div>
       </div>
 
@@ -385,8 +389,11 @@ const AdminUsers = ({user}) => {
               </button>
               <button 
                 type="button" 
-                onClick={() => setActiveTab('list')}
+                onClick={() => {
+                  setActiveTab('list');
+                  setShowModifyTab(false);}}
                 className="btn-secondary"
+                
               >
                 Cancel
               </button>
