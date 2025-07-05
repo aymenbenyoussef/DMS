@@ -381,6 +381,17 @@ class DatabaseManager:
             print(f"Error deleting company: {e}")
             return False
 
+    def update_company(self, company_id, name, address, email, phone):
+        query = """
+        UPDATE companies
+        SET name = %s,
+            address = %s,
+            email = %s,
+            phone = %s
+        WHERE id = %s
+        """
+        params = (name, address, email, phone, company_id)
+        return self.execute_query(query, params)
 
     def get_all_companies(self):
         

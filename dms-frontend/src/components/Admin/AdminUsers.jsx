@@ -392,7 +392,7 @@ const AdminUsers = ({user}) => {
                 onClick={() => {
                   setActiveTab('list');
                   setShowModifyTab(false);}}
-                className="btn-secondary"
+                className="btn-primary"
                 
               >
                 Cancel

@@ -3,78 +3,126 @@ import API from '../../api';
 import './AdminUsers.css';
 import { useNavigate } from 'react-router-dom';
 
-const AdminCompanies = ({user}) => {
+const AdminCompanies = ({ user }) => {
   const [companies, setCompanies] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [editingCompany, setEditingCompany] = useState(null);
-  const [formData, setFormData] = useState({
-      name: '',
-      address: '',
-      email: '',
-      phone: '',
-    });
+  const [activeTab, setActiveTab] = useState('list'); // "list" or "form"
+  const [showModifyTab, setShowModifyTab] = useState(false);
   const navigate = useNavigate();
- 
-  const fetchCompanies = async () => {
-        try {
-          const response = await API.companies.getAll();
-          const data = response.data;
-          if (Array.isArray(data)) setCompanies(data);
-          else if (data.companies) setCompanies(data.companies);
-        } catch (err) {
-          setError('Error loading companies');
-          console.error(err);
-        }
-      };
-  useEffect(() => {
-      fetchCompanies();
-    }, []);
 
-    const handleEdit = (company) => {
-  setEditingCompany(company); // You'll need to add this state: const [editingCompany, setEditingCompany] = useState(null);
-  setFormData({
-    name: company.name,
-    address: company.address,
-    email: company.email,
-    phone: company.phone,
-    // Add any other company fields you need to edit
+  const [formData, setFormData] = useState({
+    name: '',
+    address: '',
+    email: '',
+    phone: '',
   });
-  
-};
-  const handleDelete = async (company_id) => {
-  if (window.confirm('Êtes-vous sûr de vouloir supprimer cette entreprise ?')) {
+
+  const fetchCompanies = async () => {
     try {
-      await API.companies.delete(company_id); // Make sure your API has this endpoint
-      setSuccess('Entreprise supprimée avec succès');
-      fetchCompanies(); // You'll need to call this to refresh the list
+      setLoading(true);
+      const response = await API.companies.getAll();
+      const data = response.data;
+      if (Array.isArray(data)) setCompanies(data);
+      else if (data.companies) setCompanies(data.companies);
     } catch (err) {
-      setError('Erreur lors de la suppression de l\'entreprise');
-      console.error('Error deleting company:', err);
+      setError('Error loading companies');
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
-    window.dispatchEvent(new Event('companyDeleted'));
-    navigate('/companies');
-  }
-};
-  
+  };
+
+  useEffect(() => {
+    fetchCompanies();
+  }, []);
+
+  const handleEdit = (company) => {
+    setEditingCompany(company);
+    setFormData({
+      name: company.name || '',
+      address: company.address || '',
+      email: company.email || '',
+      phone: company.phone || '',
+    });
+    setShowModifyTab(true);
+    setActiveTab('form');
+  };
+
+  const handleDelete = async (companyId) => {
+    if (window.confirm('Are you sure you want to delete this company?')) {
+      try {
+        await API.companies.delete(companyId);
+        setSuccess('Company deleted successfully');
+        fetchCompanies();
+      } catch (err) {
+        setError('Error deleting company');
+        console.error('Error deleting company:', err);
+      }
+      window.dispatchEvent(new Event('companyDeleted'));
+      navigate('/companies');
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    if (!editingCompany) return;
+    try {
+      await API.companies.update(editingCompany.id, formData);
+      setSuccess('Company updated successfully');
+      setEditingCompany(null);
+      setShowModifyTab(false);
+      setActiveTab('list');
+      fetchCompanies();
+    } catch (err) {
+      setError('Error updating company');
+      console.error('Error updating company:', err);
+    }
+  };
 
   return (
     <div className="admin-users">
       <div className="admin-header">
-
-      <h1>Companies management</h1></div>
-      {/* Show loading */}
-      {loading && <p>Loading companies...</p>}
-
-      {/* Show error */}
-      {error && (
-        <div className="error-message">
-          {error}
+        <h1>Companies Management</h1>
+        <div className="admin-tabs">
+          <button
+            className={`tab-btn ${activeTab === 'list' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveTab('list');
+              setShowModifyTab(false);
+              setEditingCompany(null);
+            }}
+          >
+            Companies List
+          </button>
+          {showModifyTab && (
+            <button
+              className={`tab-btn ${activeTab === 'form' ? 'active' : ''}`}
+              onClick={() => setActiveTab('form')}
+            >
+              Modify Company
+            </button>
+          )}
         </div>
-      )}
+      </div>
 
-      
+      {loading && <p>Loading companies...</p>}
+      {error && <div className="alert alert-error">{error}</div>}
+      {success && <div className="alert alert-success">{success}</div>}
+
+      {activeTab === 'list' && (
         <div className="users-list">
           <div className="users-table">
             <table>
@@ -86,12 +134,11 @@ const AdminCompanies = ({user}) => {
                   <th>Email</th>
                   <th>Phone</th>
                   <th>Creation date</th>
-                 
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {companies.map(company => (
-                  <React.Fragment key={company.id}>
                   <tr key={company.id}>
                     <td>{company.id}</td>
                     <td>{company.name}</td>
@@ -116,22 +163,79 @@ const AdminCompanies = ({user}) => {
                       </div>
                     </td>
                   </tr>
-                  </React.Fragment>
                 ))}
               </tbody>
             </table>
           </div>
         </div>
-      
+      )}
 
-      
+      {activeTab === 'form' && (
+        <div className="user-form">
+          <h2>Modify Company</h2>
+          <form onSubmit={handleUpdate}>
+            <div className="form-group">
+              <label>Company Name</label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                placeholder="Company Name"
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Address</label>
+              <input
+                type="text"
+                name="address"
+                value={formData.address}
+                onChange={handleInputChange}
+                placeholder="Address"
+              />
+            </div>
+            <div className="form-group">
+              <label>Email</label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                placeholder="Email"
+              />
+            </div>
+            <div className="form-group">
+              <label>Phone</label>
+              <input
+                type="text"
+                name="phone"
+                value={formData.phone}
+                onChange={handleInputChange}
+                placeholder="Phone"
+              />
+            </div>
+            <div className="form-actions">
+              <button type="submit" className="btn-primary">
+                Update
+              </button>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => {
+                  setActiveTab('list');
+                  setShowModifyTab(false);
+                  setEditingCompany(null);
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
- 
 };
- 
-
-
 
 export default AdminCompanies;
-
