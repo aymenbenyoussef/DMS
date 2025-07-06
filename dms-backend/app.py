@@ -283,7 +283,9 @@ def update_user(user_id):
     data = request.get_json()
     if not data:
         return jsonify({"msg": "No data provided"}), 400
-
+    existing = db.get_user_by_email(data['email'])
+    if existing:
+        return jsonify({"msg": "A user with this email already exists"}), 400
     try:
         # Get companies list from request data
         companies = data.get('companies', None)

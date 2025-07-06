@@ -20,9 +20,10 @@ const AdminUsers = ({user}) => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [companies, setCompanies] = useState([]);
-  const [fieldErrors, setFieldErrors] = useState({});
   const [userCompanies, setUserCompanies] = useState({}); // Stores companies for each user
   const [showModifyTab, setShowModifyTab] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [globalErrors, setGlobalErrors] = useState([]);
   useEffect(() => {
     const fetchCompanies = async () => {
       try {
@@ -80,26 +81,64 @@ const AdminUsers = ({user}) => {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
+    if (fieldErrors[name]) {
+    setFieldErrors(prev => ({ ...prev, [name]: '' }));
+  }
   };
+
+  const validate = () => {
+  const errors = {};
+  const errorMessages = [];
+
+  if (!formData.username.trim()) {
+    errors.username = 'Username is required';
+    errorMessages.push('Username is required');
+  }
+  if (!formData.surname.trim()) {
+    errors.surname = 'Surname is required';
+    errorMessages.push('Surname is required');
+  }
+  if (!formData.email.trim()) {
+    errors.email = 'Email is required';
+    errorMessages.push('Email is required');
+  } else if (!formData.email.includes('@')) {
+    errors.email = 'Email is invalid';
+    errorMessages.push('Email is invalid');
+  }
+  if (!editingUser && !formData.password) {
+    errors.password = 'Password is required';
+    errorMessages.push('Password is required');
+  }
+  if (!editingUser && !formData.passwordConfirm) {
+    errors.passwordConfirm = 'Please confirm password';
+    errorMessages.push('Please confirm password');
+  } else if (formData.password !== formData.passwordConfirm) {
+    errors.passwordConfirm = 'Passwords do not match';
+    errorMessages.push('Passwords do not match');
+  }
+
+  setFieldErrors(errors);
+  setGlobalErrors(errorMessages);
+  return errorMessages.length === 0;
+};
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
+    setGlobalErrors([]); // Clear previous global errors
+    setFieldErrors({});
+    if (!validate()) return;
     setLoading(true);
 
     try {
-      if (editingUser) {
-        // Update user
-        await API.admin.updateUser(editingUser.id, formData);
-        setSuccess('Utilisateur mis à jour avec succès');
-      } else {
-        // Create new user
-        await API.admin.createUser(formData);
-        setSuccess('Utilisateur créé avec succès');
-      }
-      setShowModifyTab(false);
-      setFormData({
+        if (editingUser) {
+    await API.admin.updateUser(editingUser.id, formData);
+    setSuccess('Utilisateur mis à jour avec succès');
+
+    // ✅ Only reset on success
+    setShowModifyTab(false);
+    setFormData({
         id:'',
         username: '',
         surname:'',
@@ -110,12 +149,26 @@ const AdminUsers = ({user}) => {
         is_active: true,
         companies:[]
       });
-      setEditingUser(null);
-      setActiveTab('list');
-      fetchUsers();
+    setEditingUser(null);
+    setActiveTab('list');
+    fetchUsers();
+  }
+       
     } catch (err) {
-      setError(editingUser ? 'Erreur lors de la mise à jour' : 'Erreur lors de la création');
-      console.error('Error saving user:', err);
+       console.log('Full error response:', err.response);
+  const apiError = err.response?.data;
+  let errorMsg = 'Error updating user';
+  const errors = {};
+  
+  // Check all possible error message locations
+  const errorMessage = apiError?.msg || apiError?.error || apiError?.message || '';
+  if (errorMessage.toLowerCase().includes('email')) {
+    errorMsg = 'Email already exists';
+    errors.email = 'Email already exists';
+  }
+
+  setFieldErrors(errors);
+  setGlobalErrors([errorMsg]);
     } finally {
       setLoading(false);
     }
@@ -211,6 +264,7 @@ const AdminUsers = ({user}) => {
                   <th>ID</th>
                   <th>User Name</th>
                   <th>User Surname</th>
+                  <th>Email</th>
                   <th>Role</th>
                   <th>Status</th>
                   <th>Companies</th>
@@ -224,6 +278,7 @@ const AdminUsers = ({user}) => {
                     <td>{user.id}</td>
                     <td>{user.username}</td>
                     <td>{user.surname}</td>
+                    <td>{user.email}</td>
                     <td>
                       <span className={`role-badge ${user.role}`}>
                         {user.role}
@@ -274,6 +329,7 @@ const AdminUsers = ({user}) => {
       )}
 
       {activeTab === 'form' && (
+        
         <div className="user-form">
           <h2> Modify User </h2>
           <form onSubmit={handleSubmit}>
@@ -285,9 +341,10 @@ const AdminUsers = ({user}) => {
                 name="username"
                 value={formData.username}
                 onChange={handleInputChange}
-                required
+                //required
                 placeholder="Enter User Name"
               />
+              {fieldErrors.username && <div className="field-error">{fieldErrors.username}</div>}
             </div>
 
             <div className="form-group">
@@ -298,8 +355,10 @@ const AdminUsers = ({user}) => {
                 name="surname"
                 value={formData.surname}
                 onChange={handleInputChange}
+                //required
                 placeholder="Enter User Surname"
               />
+              {fieldErrors.surname && <div className="field-error">{fieldErrors.surname}</div>}
             </div>
 
             <div className="form-group">
@@ -310,9 +369,16 @@ const AdminUsers = ({user}) => {
                 name="email"
                 value={formData.email}
                 onChange={handleInputChange}
-                required
+                className={fieldErrors.email ? 'error-input' : ''}
+                //required
                 placeholder="Enter Email"
               />
+              {fieldErrors.email && (
+    <div className="field-error">
+      
+      {fieldErrors.email}
+    </div>
+  )}
             </div>
 
             <div className="form-group">
@@ -328,6 +394,7 @@ const AdminUsers = ({user}) => {
                 required={!editingUser}
                 placeholder="Enter Password"
               />
+              {fieldErrors.password && <div className="field-error">{fieldErrors.password}</div>}
             </div>
             <div className="form-group">
               <label>Confirm Password</label>
@@ -353,6 +420,7 @@ const AdminUsers = ({user}) => {
                       type="checkbox"
                       name="companies"
                       value={c.id}
+                      
                       checked={formData.companies.includes(c.id)}
                       onChange={(e) => {
   const { value, checked } = e.target;
