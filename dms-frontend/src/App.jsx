@@ -16,7 +16,7 @@ import AddUsers from  './components/Admin/AddUsers';
 import ActivityLogs from './components/Admin/ActivityLogs'; 
 import AddDoctype from './components/Admin/AddDocType';
 import AdminDoctypes from './components/Admin/AdminDoctypes';
-import { AppContext } from './components/context';  
+import { AppProvider } from './components/context';  // Updated import
 import './App.css';
 
 // API configuration remains the same as in your original file
@@ -92,23 +92,6 @@ const api = {
   }
 };
 
-// Create context provider component
-const AppProvider = ({ children }) => {
-  const [selectedCompany, setSelectedCompany] = useState(null);
-  const [selectedFolder, setSelectedFolder] = useState(null);
-
-  return (
-    <AppContext.Provider value={{
-      selectedCompany,
-      selectedFolder,
-      setSelectedCompany,
-      setSelectedFolder
-    }}>
-      {children}
-    </AppContext.Provider>
-  );
-};
-
 function App() {
   const [user, setUser] = useState(null);
   const [authError, setAuthError] = useState('');
@@ -175,7 +158,7 @@ function App() {
   }
 
   return (
-    <AppProvider>
+    <AppProvider>  {/* Using the correct AppProvider from context */}
       <Router>
         <Layout user={user} onLogout={handleLogout}>
           <Routes>
@@ -190,7 +173,7 @@ function App() {
                 <Route path="/doctypes" element={<AdminDoctypes />} />
               </>
             )}
-
+            <Route path="/" element={<Dashboard user={user} />} />
             <Route path="*" element={<Navigate to="/" replace />} />
             <Route 
               path="/admin/tools" element={<AdminTools /> }/>

@@ -288,3 +288,35 @@
     display: none;
   }
 }
+
+.navbar-brand {
+  cursor: pointer;
+}
+
+.logo-link {
+  display: flex;
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Ensure logo is properly aligned */
+.logo {
+  display: flex;
+  align-items: center;
+}
+
+/* Add hover effect for nav links */
+.nav-link:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Add transition for smoother interactions */
+.nav-link, .profile-button {
+  transition: background-color 0.2s ease;
+}
+
+/* Add focus styles for accessibility */
+.nav-link:focus, .profile-button:focus {
+  outline: 2px solid #1890ff;
+  outline-offset: -2px;
+}

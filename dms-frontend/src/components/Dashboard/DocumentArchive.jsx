@@ -51,12 +51,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedFolder }) => {
       setError('Folder name is required.');
       return;
     }
-
-      if (!selectedCompany && !selectedFolder) {
-    return <WelcomePanel user={user} />;
-  }
-
-    
+ 
     if (!selectedCompany) {
       setError('No company selected.');
       return;
@@ -122,6 +117,10 @@ const DocumentArchive = ({ user, selectedCompany, selectedFolder }) => {
     }
     return 'DMS >';
   };
+
+  if (!selectedCompany && !selectedFolder) {
+    return <WelcomePanel user={user} />;
+  }
 
   return (
     <div className="document-archive">

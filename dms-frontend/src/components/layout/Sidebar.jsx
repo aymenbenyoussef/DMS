@@ -8,7 +8,13 @@ const Sidebar = ({ user }) => {
   const [companies, setCompanies] = useState([]);
   const [folders, setFolders] = useState({});
   const [error, setError] = useState('');
-  const { setSelectedCompany, setSelectedFolder } = useContext(AppContext);
+  const { 
+    selectedCompany, 
+    setSelectedCompany, 
+    selectedFolder, 
+    setSelectedFolder,
+    resetSelection 
+  } = useContext(AppContext);
   const [expandedCompany, setExpandedCompany] = useState(null);
 
   useEffect(() => {
@@ -68,6 +74,13 @@ const Sidebar = ({ user }) => {
     };
   }, [user]);
 
+  // Reset expanded company when selection changes
+  useEffect(() => {
+    if (!selectedCompany) {
+      setExpandedCompany(null);
+    }
+  }, [selectedCompany]);
+
   const fetchFoldersForCompany = async (companyId) => {
     try {
       const response = await API.folders.getByCompany(companyId);
@@ -110,78 +123,69 @@ const Sidebar = ({ user }) => {
     }
   };
 
+  const handleHeaderClick = () => {
+    resetSelection();
+    setExpandedCompany(null);
+  };
+
   return (
     <aside className="sidebar">
-      <header className="sidebar-header">
+      <header 
+        className="sidebar-header"
+        onClick={handleHeaderClick}
+      >
         <svg xmlns="http://www.w3.org/2000/svg" className="company-icon" viewBox="0 0 24 24" fill="currentColor">
           <path d="M3 21v-2h18v2H3zm2-3V3h6v15H5zm8 0V7h6v11h-6z" />
         </svg>
-        <h2>Entities</h2>
+        <h2>Entity</h2>
       </header>
 
       {error && <div className="error-message">{error}</div>}
 
-      {/*companies.length === 0 ? (
-        <section className="empty-folders">
-          {user && user.role === 'user' && (
-            <Link to="/AddComp" className="btn-primary">
-              <span className="nav-icon"></span>
-              <span>Add new company</span>
-            </Link>
-          )}
-        </section>
-      ) : */(
-        <ul className="folder-list" role="list">
-          {companies.map(company => (
-            <React.Fragment key={company.id}>
-              <li
-                className="folder-item"
-                tabIndex={0}
-                role="button"
-                onClick={() => handleCompanyClick(company)}
+      <ul className="folder-list" role="list">
+        {companies.map(company => (
+          <React.Fragment key={company.id}>
+            <li
+              className={`folder-item ${selectedCompany?.id === company.id ? 'selected' : ''}`}
+              tabIndex={0}
+              role="button"
+              onClick={() => handleCompanyClick(company)}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="company-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M3 21v-2h18v2H3zm2-3V3h6v15H5zm8 0V7h6v11h-6z" />
+              </svg>
+              <span className="company-name">{company.name}</span>
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                className={`expand-icon ${expandedCompany === company.id ? 'expanded' : ''}`} 
+                viewBox="0 0 24 24" 
+                fill="currentColor"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="company-icon" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M3 21v-2h18v2H3zm2-3V3h6v15H5zm8 0V7h6v11h-6z" />
-                </svg>
-                <span className="company-name">{company.name}</span>
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  className={`expand-icon ${expandedCompany === company.id ? 'expanded' : ''}`} 
-                  viewBox="0 0 24 24" 
-                  fill="currentColor"
-                >
-                  <path d="M7 10l5 5 5-5z" />
-                </svg>
-              </li>
-              
-              {expandedCompany === company.id && folders[company.id] && (
-                <div className="folder-subitems">
-                  {folders[company.id].map(folder => (
-                    <li
-                      key={folder.id}
-                      className="folder-item folder-subitem"
-                      tabIndex={0}
-                      role="button"
-                      onClick={() => setSelectedFolder(folder)}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="folder-icon" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M10 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-8l-2-2z" />
-                      </svg>
-                      <span className="folder-name">{folder.name}</span>
-                    </li>
-                  ))}
-                </div>
-              )}
-            </React.Fragment>
-          ))}
-          {/*user && user.role === 'admin'} && ( 
-            <Link to="/AddComp" className="btn-primary">
-              <span className="nav-icon"></span>
-              <span>Add new company</span>
-            </Link>
-          )*/}
-        </ul>
-      )}
+                <path d="M7 10l5 5 5-5z" />
+              </svg>
+            </li>
+            
+            {expandedCompany === company.id && folders[company.id] && (
+              <div className="folder-subitems">
+                {folders[company.id].map(folder => (
+                  <li
+                    key={folder.id}
+                    className={`folder-item folder-subitem ${selectedFolder?.id === folder.id ? 'selected' : ''}`}
+                    tabIndex={0}
+                    role="button"
+                    onClick={() => setSelectedFolder(folder)}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="folder-icon" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M10 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-8l-2-2z" />
+                    </svg>
+                    <span className="folder-name">{folder.name}</span>
+                  </li>
+                ))}
+              </div>
+            )}
+          </React.Fragment>
+        ))}
+      </ul>
     </aside>
   );
 };
