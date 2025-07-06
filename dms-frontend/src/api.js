@@ -87,6 +87,7 @@ const doctype = {
     getAll: () => API.get('/doctypes'),
     update: (id, doctypeData) => API.put(`/doctypes/${id}`, doctypeData),
     delete: (id) => API.delete(`/doctypes/${id}`)
+    
 }
 // Document management endpoints
 const documents = {
