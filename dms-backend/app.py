@@ -496,7 +496,34 @@ def get_companies_by_user(user_id):
         app.logger.error(f"Error in /companies: {str(e)}")
         return jsonify({"error": "Internal server error"}), 500
     
+@app.route('/doctype', methods=['POST'])
+@jwt_required()
+def create_doctype():
+    current_user_claims = get_jwt()
+    data = request.get_json()
 
+    if not data or 'name' not in data or not data['name'].strip():
+        return jsonify({"msg": "Name is required"}), 400
+
+    try:
+        # Check if this doctype name already exists
+        existing = db.get_doctype_by_name(data['name'].strip())
+        if existing:
+            return jsonify({"msg": "A document type with this name already exists."}), 400
+
+        # Create the doctype
+        doctype_id = db.create_doctype(data)
+
+        # Log creation
+        
+
+        return jsonify({
+            "msg": "Document type created successfully",
+            "doctype_id": doctype_id
+        }), 201
+
+    except Exception as e:
+        return jsonify({"msg": f"Error creating document type: {str(e)}"}), 400
 # Document management routes
 @app.route('/documents', methods=['GET'])
 @jwt_required()

@@ -81,7 +81,10 @@ const companies = {
   getByUser:(user_id) => API.get(`/companies/${user_id}`),
   update: (company_id, companyData) => API.put(`/companies/${company_id}`, companyData),
 };
-
+//Docment type management
+const doctype = {
+    create :(doctypeData) => API.post('/doctype',doctypeData)
+}
 // Document management endpoints
 const documents = {
   getByCompany: (companyId, documentType = null) => {
@@ -111,6 +114,7 @@ export default {
   ...API,
   users,
   admin,
+  doctype,
   companies,
   documents,
   folders,

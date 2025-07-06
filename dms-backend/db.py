@@ -149,7 +149,13 @@ class DatabaseManager:
                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                 )
             """)
-
+            cursor.execute("""
+                Create table if not exists Doctype( 
+                           id INT AUTO_INCREMENT PRIMARY KEY,
+                           name VARCHAR(50) NOT NULL UNIQUE,
+                           status BOOLEAN DEFAULT TRUE
+                                    )
+                """)
             self.connection.commit()
 
             # Create default users if they don't exist
@@ -464,6 +470,25 @@ class DatabaseManager:
             return True
         except:
             return False"""
+
+    #DocType management
+
+    def create_doctype(self,doctype_data):
+        query = """
+            INSERT INTO doctype (name, status)
+            VALUES (%s, %s)
+        """
+        params = (
+            doctype_data["name"],
+            doctype_data.get("status") 
+        )
+        return self.execute_query(query, params)
+
+    def get_doctype_by_name(self, name):
+        query= """ select * from doctype where name =%s"""
+        result = self.execute_query(query, (name,), fetch=True)
+        return result[0] if result else None
+    
 
     # Document management methods
     def create_document(self, owner_id, company_id, filename, document_type, file_path, folder_id=None, file_size=0):

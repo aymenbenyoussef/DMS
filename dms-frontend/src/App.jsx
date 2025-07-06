@@ -13,7 +13,8 @@ import Profile from './components/Auth/Profile';
 import Settings from './components/Auth/Settings';
 import AddComp from './components/Admin/AddCompany';
 import AddUsers from  './components/Admin/AddUsers';
-import ActivityLogs from './components/Admin/ActivityLogs'; // Updated import
+import ActivityLogs from './components/Admin/ActivityLogs'; 
+import AddDoctype from './components/Admin/AddDocType';
 import { AppContext } from './components/context';  
 import './App.css';
 
@@ -199,6 +200,8 @@ function App() {
               path="/settings" element={<Settings user={user}/>} /> 
             <Route 
               path="/AddComp" element={<AddComp user={user}/>} />
+              <Route 
+              path="/AddDoctype" element={<AddDoctype user={user}/>} />
             <Route 
               path="/AddUsers" element={<AddUsers />} />
           </Routes>
