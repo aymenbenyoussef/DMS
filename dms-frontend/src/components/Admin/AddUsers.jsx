@@ -148,21 +148,21 @@ const AddUser = () => {
         <button
           type="button"
           className={`tab-btn ${activeTab === 'profile' ? 'active' : ''}`}
-          onClick={() => setActiveTab('profile')}
+          //onClick={() => setActiveTab('profile')}
         >
           Profile
         </button>
         <button
           type="button"
           className={`tab-btn ${activeTab === 'security' ? 'active' : ''}`}
-          onClick={() => setActiveTab('security')}
+          //onClick={() => setActiveTab('security')}
         >
           Security
         </button>
         <button
           type="button"
           className={`tab-btn ${activeTab === 'access' ? 'active' : ''}`}
-          onClick={() => setActiveTab('access')}
+          //onClick={() => setActiveTab('access')}
         >
           Companies & Status
         </button>

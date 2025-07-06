@@ -61,11 +61,17 @@ def get_activity_logs():
         return [line.strip() for line in f.readlines() if line.strip()]
 
 # ====== Existing Configuration ======
-UPLOAD_FOLDER = 'uploads'
+UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), '../uploads'))
 ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'docx', 'txt'}
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+def create_company_upload_folder(company_name):
+    """Create a folder for a company in the uploads directory"""
+    company_folder = os.path.join(app.config['UPLOAD_FOLDER'], company_name)
+    os.makedirs(company_folder, exist_ok=True)
+    return company_folder
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -366,7 +372,9 @@ def create_company():
         return jsonify({"msg": " ".join(messages)}), 400
     try:
         company_id = db.create_company(data)
-        
+        company = db.get_company_by_id(company_id)
+        if company:
+            create_company_upload_folder(company['name'])
         # Log company creation
         log_activity(
             actor=current_user_claims['username'],
