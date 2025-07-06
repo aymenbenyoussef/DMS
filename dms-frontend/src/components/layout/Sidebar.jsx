@@ -137,7 +137,7 @@ const Sidebar = ({ user }) => {
         <svg xmlns="http://www.w3.org/2000/svg" className="company-icon" viewBox="0 0 24 24" fill="currentColor">
           <path d="M3 21v-2h18v2H3zm2-3V3h6v15H5zm8 0V7h6v11h-6z" />
         </svg>
-        <h2>Entity</h2>
+        <h2>Entities</h2>
       </header>
 
       {error && <div className="error-message">{error}</div>}

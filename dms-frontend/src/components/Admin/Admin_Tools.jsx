@@ -1,43 +1,74 @@
 import React from 'react';
 import './AdminDashboard.css';
 import { Link } from 'react-router-dom';
+import {
+  BiUserPlus,
+  BiGroup,
+  BiBuilding,
+  BiBuildings,
+  BiFile,
+  BiFileBlank,
+  BiFolder,
+  BiBarChart,
+  BiCheckSquare,
+  BiTrendingUp,
+  BiCog,
+  BiPlug,
+  BiAlarm,
+  BiCollection
+} from 'react-icons/bi';
 
 const AdminDashboard = () => {
   const tiles = [
-    { icon: '👤', label: 'Add user' ,link:'/AddUsers'},
-    { icon: '👥', label: 'Users management' ,link: '/admin/users'},
-    { icon: '🏢', label: 'Add company' ,link: '/AddComp'},
-    { icon: '💾', label: 'Companies management' ,link:'/companies'},
-    { icon: '📄', label: 'Log files' , link: '/admin/activity_logs'},
-    { icon: '🗂️', label: 'Add Doctype' ,link:'/AddDoctype'},
-    { icon: '🔖', label: 'Doctypes management' ,link:'/doctypes'},
-    { icon: '🗃️', label: 'Contents overview' },
-    { icon: '📊', label: 'Charts' },
-    { icon: '✅', label: 'Folder/Document check' },
-    { icon: '📈', label: 'Timeline' },
-    { icon: '⚙️', label: 'Settings' },
-    { icon: '🔌', label: 'Manage extensions' },
-    { icon: '⏰', label: 'Scheduler' },
-    
+    { icon: <BiUserPlus size={20} />, label: 'Add user', link: '/AddUsers' },
+    { icon: <BiGroup size={20} />, label: 'Users management', link: '/admin/users' },
+    { icon: <BiBuilding size={20} />, label: 'Add company', link: '/AddComp' },
+    { icon: <BiBuildings size={20} />, label: 'Companies management', link: '/companies' },
+    { icon: <BiFile size={20} />, label: 'Log files', link: '/admin/activity_logs' },
+    { icon: <BiFileBlank size={20} />, label: 'Add Doctype', link: '/AddDoctype' },
+    { icon: <BiCollection size={20} />, label: 'Doctypes management', link: '/doctypes' },
+    { icon: <BiFolder size={20} />, label: 'Contents overview' },
+    { icon: <BiBarChart size={20} />, label: 'Charts' },
+    { icon: <BiCheckSquare size={20} />, label: 'Folder/Document check' },
+    { icon: <BiTrendingUp size={20} />, label: 'Timeline' },
+    { icon: <BiCog size={20} />, label: 'Settings' },
+    { icon: <BiPlug size={20} />, label: 'Manage extensions' },
+    { icon: <BiAlarm size={20} />, label: 'Scheduler' },
   ];
 
+  // Group tiles into 3 rows
+  const rows = [];
+  for (let i = 0; i < tiles.length; i += 5) {
+    rows.push(tiles.slice(i, i + 5));
+  }
+
+
   return (
-    <div className="admin-dashboard">
-      <div className="dashboard-header">
-        <h1 className="dashboard-title">Admin Dashboard</h1>
-        
+    <div className="container-fluid py-4 admin-dashboard">
+      <div className="dashboard-header mb-4">
+        <div className="d-flex justify-content-between align-items-center">
+          <h1 className="dashboard-title mb-0">Admin Dashboard</h1>
+        </div>
       </div>
-      <link to="/admin/users" className='Users management'></link>
-      <div className="tiles-container">
-        {tiles.map((tile, index) =>  tile.link ? (
-            <Link to={tile.link} key={index} className="tile tile-link">
-              <div className="tile-icon">{tile.icon}</div>
-              <div className="tile-label">{tile.label}</div>
-            </Link>
-          ) :(
-          <div key={index} className="tile">
-            <div className="tile-icon">{tile.icon}</div>
-            <div className="tile-label">{tile.label}</div>
+
+      <div className="admin-grid">
+        {tiles.map((tile, index) => (
+          <div key={index} className="admin-card">
+            {tile.link ? (
+              <Link to={tile.link} className="card h-100 tile-link">
+                <div className="card-body text-center d-flex flex-column justify-content-center align-items-center">
+                  <div className="tile-icon mb-2">{tile.icon}</div>
+                  <div className="tile-label">{tile.label}</div>
+                </div>
+              </Link>
+            ) : (
+              <div className="card h-100 tile">
+                <div className="card-body text-center d-flex flex-column justify-content-center align-items-center">
+                  <div className="tile-icon mb-2">{tile.icon}</div>
+                  <div className="tile-label">{tile.label}</div>
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>

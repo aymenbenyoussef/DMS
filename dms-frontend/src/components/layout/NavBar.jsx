@@ -2,6 +2,16 @@ import React, { useState, useRef, useEffect, useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { AppContext } from '../context';
 import './NavBar.css';
+import { 
+  BiFolder, 
+  BiSearch, 
+  BiBarChart, 
+  BiGroup, 
+  BiCog, 
+  BiUser, 
+  BiLogOut,
+  BiChevronDown
+} from 'react-icons/bi';
 
 const NavBar = ({ user, onLogout }) => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -36,7 +46,7 @@ const NavBar = ({ user, onLogout }) => {
         <div className="navbar-brand" onClick={resetSelection}>
           <Link to="/" className="logo-link">
             <div className="logo">
-              <span className="logo-icon">📂</span>
+              <span className="logo-icon"><BiFolder size={32} /></span>
               <div className="logo-text">
                 <span className="logo-main">DocuManager</span>
                 <span className="logo-sub">AI-powered document processing</span>
@@ -48,7 +58,7 @@ const NavBar = ({ user, onLogout }) => {
         {/* Search Bar */}
         <div className="search-container">
           <div className="search-bar">
-            <span className="search-icon">🔍</span>
+            <span className="search-icon"><BiSearch size={18} /></span>
             <input 
               type="text" 
               placeholder="Search documents..." 
@@ -65,19 +75,19 @@ const NavBar = ({ user, onLogout }) => {
             className={`nav-link ${isActive('/')}`}
             onClick={resetSelection}
           >
-            <span className="nav-icon">📊</span>
+            <span className="nav-icon"><BiBarChart size={20} /></span>
             <span>Dashboard</span>
           </Link>
           
           {user && user.role === 'admin' && (
             <Link to="/admin/tools" className={`nav-link ${isActive('/admin/tools')}`}>
-              <span className="nav-icon">👥</span>
+              <span className="nav-icon"><BiGroup size={20} /></span>
               <span>Admin Tools</span>
             </Link>
           )}
           
           <Link to="/settings" className={`nav-link ${isActive('/settings')}`}>
-            <span className="nav-icon">⚙️</span>
+            <span className="nav-icon"><BiCog size={20} /></span>
             <span>Settings</span>
           </Link>
           
@@ -96,7 +106,9 @@ const NavBar = ({ user, onLogout }) => {
                     <span className="username">{user.username}</span>
                     <span className="user-role">{user.role}</span>
                   </div>
-                  <span className={`dropdown-icon ${showProfileMenu ? 'open' : ''}`}>▼</span>
+                  <span className={`dropdown-icon ${showProfileMenu ? 'open' : ''}`}>
+                    <BiChevronDown size={14} />
+                  </span>
                 </div>
               </button>
               
@@ -107,14 +119,14 @@ const NavBar = ({ user, onLogout }) => {
                     className="profile-menu-item"
                     onClick={() => setShowProfileMenu(false)}
                   >
-                    <span className="menu-icon">👤</span>
+                    <span className="menu-icon"><BiUser size={18} /></span>
                     <span>Profile</span>
                   </Link>
                   <button
                     onClick={onLogout}
                     className="profile-menu-item logout-item"
                   >
-                    <span className="menu-icon">🚪</span>
+                    <span className="menu-icon"><BiLogOut size={18} /></span>
                     <span>Logout</span>
                   </button>
                 </div>

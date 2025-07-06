@@ -17,10 +17,25 @@ const DocumentArchive = ({ user, selectedCompany, selectedFolder }) => {
   const { setSelectedFolder } = useContext(AppContext);
   const navigate = useNavigate();
   
+  // Document type states
+  const [documentTypes, setDocumentTypes] = useState([]);
+  const [showNewDocTypeForm, setShowNewDocTypeForm] = useState(false);
+  const [newDocTypeError, setNewDocTypeError] = useState('');
+  const [newDocTypeSuccess, setNewDocTypeSuccess] = useState('');
+  const [selectedDocTypes, setSelectedDocTypes] = useState([]);
+  const [newDocTypeName, setNewDocTypeName] = useState('');
+  const [newDocTypeStatus, setNewDocTypeStatus] = useState(true);
+  
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => {
     setIsModalOpen(false);
     setFolderName('');
+    setShowNewDocTypeForm(false);
+    setSelectedDocTypes([]);
+    setNewDocTypeError('');
+    setNewDocTypeSuccess('');
+    setNewDocTypeName('');
+    setNewDocTypeStatus(true);
   };
 
   const openUploadModal = () => setIsUploadModalOpen(true);
@@ -39,6 +54,22 @@ const DocumentArchive = ({ user, selectedCompany, selectedFolder }) => {
       console.error('Error loading folders', error);
     }
   };
+
+  // Fetch document types when modal opens
+  useEffect(() => {
+    const fetchDocumentTypes = async () => {
+      try {
+        const response = await API.doctype.getAll();
+        setDocumentTypes(response.data);
+      } catch (error) {
+        console.error('Error loading document types', error);
+      }
+    };
+    
+    if (isModalOpen) {
+      fetchDocumentTypes();
+    }
+  }, [isModalOpen]);
 
   useEffect(() => { 
     if (selectedCompany) {
@@ -63,7 +94,9 @@ const DocumentArchive = ({ user, selectedCompany, selectedFolder }) => {
     try {
       const response = await API.folders.create({
         name: folderName.trim(),
-        company_id: selectedCompany.id
+        company_id: selectedCompany.id,
+        // Include selected document types if any
+        document_types: selectedDocTypes
       });
       
       // Update folders state
@@ -118,6 +151,56 @@ const DocumentArchive = ({ user, selectedCompany, selectedFolder }) => {
     return 'DMS >';
   };
 
+  // Handle document type checkbox changes
+  const handleDocTypeChange = (typeId) => {
+    setSelectedDocTypes(prev => {
+      if (prev.includes(typeId)) {
+        return prev.filter(id => id !== typeId);
+      } else {
+        return [...prev, typeId];
+      }
+    });
+  };
+
+  // Handle new document type submission
+  const handleCreateDocType = async (e) => {
+    e.preventDefault();
+    setNewDocTypeError('');
+    setNewDocTypeSuccess('');
+    
+    if (!newDocTypeName.trim()) {
+      setNewDocTypeError('Name is required');
+      return;
+    }
+    
+    try {
+      const response = await API.doctype.create({
+        name: newDocTypeName.trim(),
+        status: newDocTypeStatus
+      });
+      
+      // Add the new document type to our list
+      setDocumentTypes(prev => [...prev, response.data]);
+      
+      // Select the newly created type
+      setSelectedDocTypes(prev => [...prev, response.data.id]);
+      
+      setNewDocTypeSuccess('Document type created successfully!');
+      
+      // Reset form
+      setNewDocTypeName('');
+      setNewDocTypeStatus(true);
+      
+      // Hide form after success
+      setTimeout(() => {
+        setShowNewDocTypeForm(false);
+        setNewDocTypeSuccess('');
+      }, 2000);
+    } catch (error) {
+      setNewDocTypeError(error.response?.data?.msg || 'Failed to create document type');
+    }
+  };
+
   if (!selectedCompany && !selectedFolder) {
     return <WelcomePanel user={user} />;
   }
@@ -146,7 +229,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedFolder }) => {
         <div className="header-buttons">
           {user && user.role === 'admin' && selectedCompany && !selectedFolder && (
             <button className="new-folder-btn" onClick={openModal}>
-              + New Folder
+              + Add Data Type
             </button>
           )}
           {selectedFolder && (
@@ -237,24 +320,105 @@ const DocumentArchive = ({ user, selectedCompany, selectedFolder }) => {
         </div>
       </div>
 
-      {/* Create Folder Modal */}
+      {/* Create Folder/Add Data Type Modal */}
       {isModalOpen && (
         <div className="modal-overlay">
-          <div className="modal">
-            <h2>Create New Folder</h2>
-            <div className="modal-content">
-              <input
-                type="text"
-                placeholder="Folder name"
-                value={folderName}
-                onChange={(e) => setFolderName(e.target.value)}
-              />
-              {error && <p className="error-message">{error}</p>}
-            </div>
-            <div className="modal-actions">
-              <button onClick={createFolder}>Create</button>
-              <button onClick={closeModal}>Cancel</button>
-            </div>
+          <div className="modal" style={{ width: '500px' }}>
+            <h2>{showNewDocTypeForm ? 'Add New Document Type' : 'Create New Folder'}</h2>
+            
+            {!showNewDocTypeForm ? (
+              <>
+                <div className="modal-content">
+                  <input
+                    type="text"
+                    placeholder="Folder name"
+                    value={folderName}
+                    onChange={(e) => setFolderName(e.target.value)}
+                  />
+                  
+                  <div className="document-types-section">
+                    <h3>Document Types</h3>
+                    <div className="document-types-list">
+                      {documentTypes.length > 0 ? (
+                        documentTypes.map((type) => (
+                          <label key={type.id} className="document-type-item">
+                            <input 
+                              type="checkbox" 
+                              checked={selectedDocTypes.includes(type.id)}
+                              onChange={() => handleDocTypeChange(type.id)}
+                            />
+                            <span>{type.name}</span>
+                            <span className={`status-badge ${type.status ? 'active' : 'inactive'}`}>
+                              {type.status ? 'Active' : 'Inactive'}
+                            </span>
+                          </label>
+                        ))
+                      ) : (
+                        <p>No document types available</p>
+                      )}
+                    </div>
+                    
+                    <button 
+                      className="add-new-doctype-btn"
+                      onClick={() => setShowNewDocTypeForm(true)}
+                    >
+                      + Add new document type
+                    </button>
+                  </div>
+                  
+                  {error && <p className="error-message">{error}</p>}
+                </div>
+                <div className="modal-actions">
+                  <button onClick={createFolder}>Create</button>
+                  <button onClick={closeModal}>Cancel</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="modal-content">
+                  <form onSubmit={handleCreateDocType}>
+                    <div className="form-group">
+                      <label>Name of the document type</label>
+                      <input
+                        type="text"
+                        placeholder="Enter the name"
+                        value={newDocTypeName}
+                        onChange={(e) => setNewDocTypeName(e.target.value)}
+                        className={newDocTypeError ? 'input-error' : ''}
+                      />
+                    </div>
+                    
+                    <div className="form-group checkbox-group">
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={newDocTypeStatus}
+                          onChange={(e) => setNewDocTypeStatus(e.target.checked)}
+                        />{' '}
+                        Active
+                      </label>
+                    </div>
+                    
+                    {newDocTypeError && (
+                      <p className="error-message">{newDocTypeError}</p>
+                    )}
+                    {newDocTypeSuccess && (
+                      <p className="success-message">{newDocTypeSuccess}</p>
+                    )}
+                    
+                    <div className="form-actions">
+                      <button type="submit">Create Document Type</button>
+                      <button 
+                        type="button" 
+                        onClick={() => setShowNewDocTypeForm(false)}
+                      >
+                        Back
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

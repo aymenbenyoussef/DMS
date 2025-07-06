@@ -10,7 +10,7 @@
   z-index: 100;
   display: flex;
   align-items: center;
-  position: fixed; /* Changed to fixed */
+  position: fixed;
   width: 100%;
 }
 
@@ -35,7 +35,8 @@
 }
 
 .logo-icon {
-  font-size: 32px;
+  display: flex;
+  align-items: center;
 }
 
 .logo-text {
@@ -78,6 +79,8 @@
 .search-icon {
   margin-right: 10px;
   opacity: 0.7;
+  display: flex;
+  align-items: center;
 }
 
 .search-input {
@@ -118,7 +121,8 @@
 }
 
 .nav-icon {
-  font-size: 18px;
+  display: flex;
+  align-items: center;
 }
 
 .profile-container {
@@ -174,9 +178,9 @@
 }
 
 .user-info .dropdown-icon {
-  font-size: 10px;
-  margin-left: 4px;
   transition: transform 0.3s ease;
+  display: flex;
+  align-items: center;
 }
 
 .user-info .dropdown-icon.open {
@@ -223,10 +227,10 @@
 }
 
 .menu-icon {
-  font-size: 18px;
   width: 24px;
   display: flex;
   justify-content: center;
+  align-items: center;
 }
 
 @keyframes slideDown {
@@ -273,7 +277,7 @@
 
 @media (max-width: 768px) {
   .navbar {
-    height: 70px;/*70px*/
+    height: 70px;
   }
   
   .search-container {
@@ -299,23 +303,19 @@
   color: inherit;
 }
 
-/* Ensure logo is properly aligned */
 .logo {
   display: flex;
   align-items: center;
 }
 
-/* Add hover effect for nav links */
 .nav-link:hover {
   background-color: rgba(0, 0, 0, 0.05);
 }
 
-/* Add transition for smoother interactions */
 .nav-link, .profile-button {
   transition: background-color 0.2s ease;
 }
 
-/* Add focus styles for accessibility */
 .nav-link:focus, .profile-button:focus {
   outline: 2px solid #1890ff;
   outline-offset: -2px;
