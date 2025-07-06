@@ -489,7 +489,47 @@ class DatabaseManager:
         result = self.execute_query(query, (name,), fetch=True)
         return result[0] if result else None
     
+    def get_all_doctypes(self):
+        query = "SELECT * FROM doctype ORDER BY id"
+        return self.execute_query(query, fetch=True)
 
+    def get_doctype_by_id(self, doctype_id):
+        query = "SELECT * FROM doctype WHERE id = %s"
+        result = self.execute_query(query, (doctype_id,), fetch=True)
+        return result[0] if result else None
+
+    def update_doctype(self, doctype_id, name=None, status=None):
+        updates = []
+        params = []
+        
+        if name is not None:
+            updates.append("name = %s")
+            params.append(name)
+        if status is not None:
+            updates.append("status = %s")
+            params.append(status)
+        
+        if not updates:
+            return False
+        
+        params.append(doctype_id)
+        query = f"UPDATE doctype SET {', '.join(updates)} WHERE id = %s"
+        
+        try:
+            self.execute_query(query, params)
+            return True
+        except Exception as e:
+            print(f"Error updating doctype: {e}")
+            return False
+
+    def delete_doctype(self, doctype_id):
+        query = "DELETE FROM doctype WHERE id = %s"
+        try:
+            self.execute_query(query, (doctype_id,))
+            return True
+        except Exception as e:
+            print(f"Error deleting doctype: {e}")
+            return False
     # Document management methods
     def create_document(self, owner_id, company_id, filename, document_type, file_path, folder_id=None, file_size=0):
         query = """

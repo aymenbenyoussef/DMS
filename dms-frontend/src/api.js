@@ -83,7 +83,10 @@ const companies = {
 };
 //Docment type management
 const doctype = {
-    create :(doctypeData) => API.post('/doctype',doctypeData)
+    create :(doctypeData) => API.post('/doctype',doctypeData),
+    getAll: () => API.get('/doctypes'),
+    update: (id, doctypeData) => API.put(`/doctypes/${id}`, doctypeData),
+    delete: (id) => API.delete(`/doctypes/${id}`)
 }
 // Document management endpoints
 const documents = {

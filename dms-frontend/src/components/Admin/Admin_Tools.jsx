@@ -10,7 +10,7 @@ const AdminDashboard = () => {
     { icon: '💾', label: 'Companies management' ,link:'/companies'},
     { icon: '📄', label: 'Log files' , link: '/admin/activity_logs'},
     { icon: '🗂️', label: 'Add Doctype' ,link:'/AddDoctype'},
-    { icon: '🔖', label: 'Attributes' },
+    { icon: '🔖', label: 'Doctypes management' ,link:'/doctypes'},
     { icon: '🗃️', label: 'Contents overview' },
     { icon: '📊', label: 'Charts' },
     { icon: '✅', label: 'Folder/Document check' },

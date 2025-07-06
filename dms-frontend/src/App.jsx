@@ -15,6 +15,7 @@ import AddComp from './components/Admin/AddCompany';
 import AddUsers from  './components/Admin/AddUsers';
 import ActivityLogs from './components/Admin/ActivityLogs'; 
 import AddDoctype from './components/Admin/AddDocType';
+import AdminDoctypes from './components/Admin/AdminDoctypes';
 import { AppContext } from './components/context';  
 import './App.css';
 
@@ -186,6 +187,7 @@ function App() {
                 {/* Updated to ActivityLogs component */}
                 <Route path="/admin/activity_logs" element={<ActivityLogs />} />
                 <Route path="/companies" element={<AdminCompanies />} />
+                <Route path="/doctypes" element={<AdminDoctypes />} />
               </>
             )}
 

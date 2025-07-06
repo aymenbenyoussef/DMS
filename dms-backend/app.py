@@ -524,6 +524,83 @@ def create_doctype():
 
     except Exception as e:
         return jsonify({"msg": f"Error creating document type: {str(e)}"}), 400
+
+
+@app.route('/doctypes', methods=['GET'])
+@jwt_required()
+def get_doctypes():
+    try:
+        doctypes = db.get_all_doctypes()
+        return jsonify(doctypes), 200
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+
+@app.route('/doctypes/<int:doctype_id>', methods=['PUT'])
+@jwt_required()
+def update_doctype(doctype_id):
+    current_user_claims = get_jwt()
+    if current_user_claims.get('role') != 'admin':
+        return jsonify({"msg": "Admin access required"}), 403
+
+    data = request.get_json()
+    if not data:
+        return jsonify({"msg": "No data provided"}), 400
+
+    try:
+        success = db.update_doctype(
+            doctype_id=doctype_id,
+            name=data.get('name'),
+            status=data.get('status')
+        )
+        
+        if success:
+            # Log doctype update
+            log_activity(
+                actor=current_user_claims['username'],
+                action="Update",
+                resource_type="doctype",
+                resource_data={
+                    'id': doctype_id,
+                    'name': data.get('name', '[unchanged]')
+                }
+            )
+            return jsonify({"msg": "Document type updated successfully"}), 200
+        else:
+            return jsonify({"msg": "Document type not found"}), 404
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+
+@app.route('/doctypes/<int:doctype_id>', methods=['DELETE'])
+@jwt_required()
+def delete_doctype(doctype_id):
+    current_user_claims = get_jwt()
+    if current_user_claims.get('role') != 'admin':
+        return jsonify({"msg": "Admin access required"}), 403
+
+    try:
+        # Get doctype info before deletion for logging
+        doctype = db.get_doctype_by_id(doctype_id)
+        if not doctype:
+            return jsonify({"msg": "Document type not found"}), 404
+        
+        success = db.delete_doctype(doctype_id)
+        if success:
+            # Log doctype deletion
+            log_activity(
+                actor=current_user_claims['username'],
+                action="Delete",
+                resource_type="doctype",
+                resource_data={
+                    'id': doctype_id,
+                    'name': doctype['name']
+                }
+            )
+            return jsonify({"msg": "Document type deleted successfully"}), 200
+        else:
+            return jsonify({"msg": "Document type not found"}), 404
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+           
 # Document management routes
 @app.route('/documents', methods=['GET'])
 @jwt_required()
