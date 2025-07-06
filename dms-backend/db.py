@@ -217,7 +217,7 @@ class DatabaseManager:
         return bcrypt.checkpw(password.encode('utf-8'), hashed_password.encode('utf-8'))
 
     # User management methods
-    def create_user(self,username,surname,email,password,role='user',is_active=True,user_limit=0,companies=None):
+    def create_user(self,username,surname,email,password,is_active=True,user_limit=0,companies=None):
         # 1) Hash du mot de passe
         hashed_password = self.hash_password(password)
 
@@ -484,16 +484,39 @@ class DatabaseManager:
 
     #DocType management
 
-    def create_doctype(self,doctype_data):
-        query = """
+    def create_doctype(self, doctype_data):
+        # Step 1: Insert into doctype
+        insert_doctype_query = """
             INSERT INTO doctype (name, status)
             VALUES (%s, %s)
         """
         params = (
             doctype_data["name"],
-            doctype_data.get("status") 
+            doctype_data.get("status", True)
         )
-        return self.execute_query(query, params)
+
+        # Execute insert without fetch
+        doctype_id = self.execute_query(insert_doctype_query, params)
+
+        # Get the newly inserted ID (MariaDB way)
+       
+
+        # Step 2: Insert associations into doctype_companies
+        company_ids = doctype_data.get("companies", [])
+        if company_ids:
+            for comp_id in company_ids:
+                insert_companies_query = """
+                    INSERT INTO datatype_companies (datatype_id, company_id)
+                    VALUES (%s, %s)
+                """
+                try:
+                    link_params = (doctype_id, comp_id)
+                    self.execute_query(insert_companies_query, link_params)
+                except Exception as e:
+                    print(f"Warning: could not link doctype {doctype_id} to company {comp_id}: {e}")
+
+        return doctype_id
+
 
     def get_doctype_by_name(self, name):
         query= """ select * from doctype where name =%s"""
@@ -658,7 +681,7 @@ class DatabaseManager:
         return self.execute_query(query, params, fetch=True)
         
 
-    def get_folders_by_company(self, company_id, parent_id=None):
+    def get_datatypes_by_company(self, company_id):
         """
         Returns datatypes used by a specific company.
         Pulls from datatype_companies and joins with doctype.

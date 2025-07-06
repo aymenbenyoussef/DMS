@@ -549,7 +549,7 @@ def create_doctype():
         return jsonify({"msg": f"Error creating document type: {str(e)}"}), 400
 
 
-@app.route('/doctypes', methods=['GET'])
+@app.route('/doctype', methods=['GET'])
 @jwt_required()
 def get_doctypes():
     try:
@@ -558,7 +558,7 @@ def get_doctypes():
     except Exception as e:
         return jsonify({"msg": str(e)}), 500
 
-@app.route('/doctypes/<int:doctype_id>', methods=['PUT'])
+@app.route('/doctype/<int:doctype_id>', methods=['PUT'])
 @jwt_required()
 def update_doctype(doctype_id):
     current_user_claims = get_jwt()
@@ -593,7 +593,7 @@ def update_doctype(doctype_id):
     except Exception as e:
         return jsonify({"msg": str(e)}), 500
 
-@app.route('/doctypes/<int:doctype_id>', methods=['DELETE'])
+@app.route('/doctype/<int:doctype_id>', methods=['DELETE'])
 @jwt_required()
 def delete_doctype(doctype_id):
     current_user_claims = get_jwt()
@@ -624,6 +624,21 @@ def delete_doctype(doctype_id):
     except Exception as e:
         return jsonify({"msg": str(e)}), 500
            
+@app.route('/folders', methods=['GET'])
+@jwt_required()
+def get_datatypes():
+    company_id = request.args.get('company_id')    
+    try:
+        if company_id:
+            folders = db.get_datatypes_by_company(
+                company_id 
+                
+            )
+        
+        return jsonify(folders), 200
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+    
 # Document management routes
 @app.route('/documents', methods=['GET'])
 @jwt_required()
@@ -713,23 +728,7 @@ def get_document_history(document_id):
         return jsonify({"msg": str(e)}), 500
 
 # Folder management routes
-@app.route('/folders', methods=['GET'])
-@jwt_required()
-def get_folders():
-    company_id = request.args.get('company_id')
-    parent_id = request.args.get('parent_id')
-    
-    try:
-        if company_id:
-            folders = db.get_folders_by_company(
-                company_id, 
-                parent_id=int(parent_id) if parent_id else None
-            )
-        else:
-            folders = db.get_all_folders(parent_id=int(parent_id) if parent_id else None)  # nouvelle méthode à créer dans db.py
-        return jsonify(folders), 200
-    except Exception as e:
-        return jsonify({"msg": str(e)}), 500
+
 
 @app.route('/folders', methods=['POST'])
 @jwt_required()

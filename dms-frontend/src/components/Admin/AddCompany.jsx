@@ -15,7 +15,7 @@ const AdminCompanies = ({ user }) => {
   const [fieldErrors, setFieldErrors] = useState({});
   const [success, setSuccess] = useState('');
   const navigate = useNavigate();
-
+  
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({

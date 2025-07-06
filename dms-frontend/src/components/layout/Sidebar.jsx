@@ -58,19 +58,40 @@ const Sidebar = ({ user }) => {
       }));
     };
 
+     const doctypeAddedHandler = (e) => {
+    const companyIds = e.detail.affectedCompanyIds || [];
+    // Refresh folders for each affected company
+    companyIds.forEach(companyId => {
+       // Only refresh if we have folders for this company
+        fetchFoldersForCompany(companyId);
+      
+    });
+  };
+
+  const doctypeDeletedHandler = (e) => {
+    const companyIds = e.detail.affectedCompanyIds || [];
+    // Refresh folders for each affected company
+    companyIds.forEach(companyId => {
+       // Only refresh if we have folders for this company
+        fetchFoldersForCompany(companyId);
+      
+    });
+  };
     // Event handler for companyAdded event
     const companyHandler = () => fetchCompanies();
     const companyHandlerDel = () => fetchCompanies();
     // Add event listeners
     window.addEventListener('companyAdded', companyHandler);
     window.addEventListener('companyDeleted', companyHandlerDel);
-    window.addEventListener('folderAdded', folderHandler);
-
+    window.addEventListener('doctypeAdded', doctypeAddedHandler);
+    window.addEventListener('doctypeDeleted', doctypeDeletedHandler);
     // Cleanup
     return () => {
       window.removeEventListener('companyAdded', companyHandler);
-      window.removeEventListener('folderAdded', folderHandler);
+      window.removeEventListener('doctypeAdded', folderHandler);
       window.removeEventListener('companyDeleted', companyHandlerDel);
+      window.removeEventListener('doctypeDeleted', folderHandler);
+
     };
   }, [user]);
 

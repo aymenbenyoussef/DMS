@@ -48,13 +48,20 @@ const AdminDoctypes = ({ user }) => {
   const handleDelete = async (doctypeId) => {
     if (window.confirm('Are you sure you want to delete this document type?')) {
       try {
-        await API.doctype.delete(doctypeId);
+        const response = await API.doctype.delete(doctypeId);
         setSuccess('Document type deleted successfully');
         fetchDoctypes();
+        window.dispatchEvent(new CustomEvent('doctypeDeleted', {
+        detail: {
+          affectedCompanyIds: response.data.affectedCompanyIds || []
+        }
+      }));
+      navigate('/doctypes')
       } catch (err) {
         setError('Error deleting document type');
         console.error('Error deleting document type:', err);
       }
+      
     }
   };
 

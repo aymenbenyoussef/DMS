@@ -107,12 +107,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedFolder }) => {
       
       setSuccessMessage('Folder created successfully!');
       // Dispatch custom event with folder data
-      window.dispatchEvent(new CustomEvent('folderAdded', {
-        detail: {
-          companyId: selectedCompany.id,
-          folder: response.data
-        }
-      }));
+      
     
       closeModal();
       navigate('/');
