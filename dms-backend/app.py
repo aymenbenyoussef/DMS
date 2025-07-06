@@ -45,6 +45,11 @@ def log_activity(actor, action, resource_type, resource_data):
             f"{resource_data['id']}, {resource_data['filename']}, "
             f"company_id={resource_data['company_id']}"
         )
+    elif resource_type == "doctype":
+        log_entry = (
+            f"{timestamp} - {actor} - {action} document type: "
+            f"{resource_data['id']}, {resource_data['name']}"
+        )
     else:
         return  # Unsupported resource type
     
@@ -523,7 +528,15 @@ def create_doctype():
         doctype_id = db.create_doctype(data)
 
         # Log creation
-        
+        log_activity(
+            actor=current_user_claims['username'],
+            action="Create",
+            resource_type="doctype",
+            resource_data={
+                'id': doctype_id,
+                'name': data['name'].strip()
+            }
+        )
 
         return jsonify({
             "msg": "Document type created successfully",
