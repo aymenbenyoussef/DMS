@@ -66,7 +66,7 @@ class DatabaseManager:
                     
                     name VARCHAR(255) NOT NULL UNIQUE,
                     address VARCHAR(100) NOT NULL ,
-                    email VARCHAR(100) NOT NULL,
+                    email VARCHAR(100) NOT NULL UNIQUE,
                     phone int(20) NOT NULL,            
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     
@@ -417,6 +417,17 @@ class DatabaseManager:
         query = "SELECT * FROM companies WHERE id = %s"
         result = self.execute_query(query, (company_id,), fetch=True)
         return result[0] if result else None
+    def check_company_exist(self, name, email):
+        name_query = "SELECT id FROM companies WHERE name = %s LIMIT 1"
+        email_query = "SELECT id FROM companies WHERE email = %s LIMIT 1"
+
+        name_result = self.execute_query(name_query, (name,), fetch=True)
+        email_result = self.execute_query(email_query, (email,), fetch=True)
+
+        return {
+            "name_exists": bool(name_result),
+            "email_exists": bool(email_result)
+        }
     
     def get_all_companies(self):
         

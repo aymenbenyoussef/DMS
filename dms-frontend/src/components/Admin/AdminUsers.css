@@ -385,3 +385,19 @@
   margin-left:3px;
 
 }
+.error-text {
+  color: red;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+  font-weight: 700;
+}
+
+.input-error {
+  border: 1px solid red;
+}
+.field-error {
+  color: red;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+  font-weight: 700; /* This makes it bold */
+}

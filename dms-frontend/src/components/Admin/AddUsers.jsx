@@ -46,8 +46,8 @@ const AddUser = () => {
     errorMessages.push('Username is required');
   }
   if (!formData.surname.trim()) {
-    errors.surname = 'First name is required';
-    errorMessages.push('First name is required');
+    errors.surname = 'Surname is required';
+    errorMessages.push('Surname is required');
   }
   if (!formData.email.trim()) {
     errors.email = 'Email is required';
@@ -190,7 +190,7 @@ const AddUser = () => {
             <input
               type="text"
               name="surname"
-              placeholder="Enter first name"
+              placeholder="Enter surname"
               value={formData.surname}
               onChange={handleInputChange}
             />
@@ -297,7 +297,7 @@ const AddUser = () => {
     
     <div>
       {globalErrors.map((err, index) => (
-        <div key={index}><span className="error-icon">⚠</span>{err}</div>
+        <div key={index}>{err}</div>
       ))}
     </div>
   </div>

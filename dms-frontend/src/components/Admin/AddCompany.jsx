@@ -1,80 +1,99 @@
 import React, { useState } from 'react';
 import API from '../../api';
-import './AdminUsers.css'; // Tu peux la renommer en AdminCompanies.css si besoin
+import './AdminUsers.css'; // or AdminCompanies.css
 import { useNavigate } from 'react-router-dom';
 
-const AdminCompanies = ({user}) => {
+const AdminCompanies = ({ user }) => {
   const [formData, setFormData] = useState({
     name: '',
     address: '',
     email: '',
     phone: '',
-    
   });
 
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
   const [success, setSuccess] = useState('');
   const navigate = useNavigate();
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === 'checkbox' ? checked : value,
+    }));
+    // Clear error when typing
+    setFieldErrors((prev) => ({
+      ...prev,
+      [name]: '',
     }));
   };
 
   const handleSubmit = async (e) => {
   e.preventDefault();
-  setError('');
   setSuccess('');
   setLoading(true);
 
-  try {
-    // Validation minimale
-    if (!formData.name || !formData.name.trim()) {
-      setError('Le nom de l\'entreprise est obligatoire');
-      setLoading(false);
-      return;
-    }
+  const errors = {};
+  if (!formData.name.trim()) errors.name = 'Name is required.';
+  if (!formData.address.trim()) errors.address = 'Address is required.';
+  if (!formData.email.trim()) errors.email = 'Email is required.';
+  if (!formData.phone.trim()) errors.phone = 'Phone is required.';
 
-    if (formData.email && !formData.email.includes('@')) {
-      setError('Adresse email invalide');
-      setLoading(false);
-      return;
-    }
-     const dataToSend = {
+  if (Object.keys(errors).length > 0) {
+    setFieldErrors(errors);
+    setLoading(false);
+    return;
+  }
+
+  try {
+    const dataToSend = {
       ...formData,
-      user_id: user.id
+      user_id: user.id,
     };
     await API.companies.create(dataToSend);
-    setSuccess('Entreprise créée avec succès');
 
-    // Réinitialiser le formulaire
+    setSuccess('Company created successfully!');
     setFormData({
       name: '',
       address: '',
       email: '',
       phone: '',
-      
     });
+    setFieldErrors({});
+    window.dispatchEvent(new Event('companyAdded'));
   } catch (err) {
-    const errorMsg = err.response?.data?.msg || "Erreur lors de la création de l'entreprise";
-    setError(errorMsg);
+    const errorMsg =
+      err.response?.data?.msg ||
+      "Error occurred while creating the company.";
+
+    // If duplicate error, set field-level messages
+    if (errorMsg.toLowerCase().includes("name") || errorMsg.toLowerCase().includes("email")) {
+      const duplicateErrors = {};
+      if (errorMsg.toLowerCase().includes("name")) {
+        duplicateErrors.name = "This company name already exists.";
+      }
+      if (errorMsg.toLowerCase().includes("email")) {
+        duplicateErrors.email = "This email is already in use.";
+      }
+      setFieldErrors(duplicateErrors);
+    } else {
+      setFieldErrors({ global: errorMsg });
+    }
+
     console.error('Error creating company:', err);
   } finally {
     setLoading(false);
   }
-  window.dispatchEvent(new Event('companyAdded'));
-    navigate('/');
 };
 
   return (
     <div className="admin-users">
       <h1>Add new company</h1>
 
-      {error && <div className="alert alert-error">{error}</div>}
+      {fieldErrors.global && (
+        <div className="alert alert-error">{fieldErrors.global}</div>
+      )}
       {success && <div className="alert alert-success">{success}</div>}
 
       <div className="user-form">
@@ -87,9 +106,12 @@ const AdminCompanies = ({user}) => {
               name="name"
               value={formData.name}
               onChange={handleInputChange}
-              required
               placeholder="Entrez le nom"
+              className={fieldErrors.name ? 'input-error' : ''}
             />
+            {fieldErrors.name && (
+              <p className="error-text">{fieldErrors.name}</p>
+            )}
           </div>
 
           <div className="form-group">
@@ -101,11 +123,15 @@ const AdminCompanies = ({user}) => {
               value={formData.address}
               onChange={handleInputChange}
               placeholder="Entrez l'adresse"
+              className={fieldErrors.address ? 'input-error' : ''}
             />
+            {fieldErrors.address && (
+              <p className="error-text">{fieldErrors.address}</p>
+            )}
           </div>
 
           <div className="form-group">
-            <label htmlFor="email">Address email</label>
+            <label htmlFor="email">Email address</label>
             <input
               type="email"
               id="email"
@@ -113,7 +139,11 @@ const AdminCompanies = ({user}) => {
               value={formData.email}
               onChange={handleInputChange}
               placeholder="Entrez l'adresse email"
+              className={fieldErrors.email ? 'input-error' : ''}
             />
+            {fieldErrors.email && (
+              <p className="error-text">{fieldErrors.email}</p>
+            )}
           </div>
 
           <div className="form-group">
@@ -125,13 +155,19 @@ const AdminCompanies = ({user}) => {
               value={formData.phone}
               onChange={handleInputChange}
               placeholder="Entrez le numéro de téléphone"
+              className={fieldErrors.phone ? 'input-error' : ''}
             />
+            {fieldErrors.phone && (
+              <p className="error-text">{fieldErrors.phone}</p>
+            )}
           </div>
 
-          
-
           <div className="form-actions">
-            <button type="submit" disabled={loading} className="btn-primary">
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn-primary"
+            >
               {loading ? 'En cours...' : 'Create company'}
             </button>
           </div>
