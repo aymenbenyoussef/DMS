@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import API from '../../api';
-import './AdminUsers.css';
+import './AdminUsersBootstrap.css';
 
 const AdminUsers = ({user}) => {
   const [users, setUsers] = useState([]);
