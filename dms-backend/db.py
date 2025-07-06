@@ -103,6 +103,17 @@ class DatabaseManager:
                 )
             """)
 
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS datatype_companies (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    datatype_id INT,
+                    company_id INT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (datatype_id) REFERENCES doctype(id) ON DELETE CASCADE,
+                    FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
+                    UNIQUE KEY unique_user_company (datatype_id, company_id)
+                )
+            """) 
             # Create folders table
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS folders (
@@ -648,24 +659,18 @@ class DatabaseManager:
         
 
     def get_folders_by_company(self, company_id, parent_id=None):
-        if parent_id is None:
-            query = """
-                SELECT f.*, u.username as created_by_name
-                FROM folders f
-                LEFT JOIN users u ON f.created_by = u.id
-                WHERE f.company_id = %s AND f.parent_id IS NULL
-                ORDER BY f.name
-            """
-            return self.execute_query(query, (company_id,), fetch=True)
-        else:
-            query = """
-                SELECT f.*, u.username as created_by_name
-                FROM folders f
-                LEFT JOIN users u ON f.created_by = u.id
-                WHERE f.company_id = %s AND f.parent_id = %s
-                ORDER BY f.name
-            """
-            return self.execute_query(query, (company_id, parent_id), fetch=True)
+        """
+        Returns datatypes used by a specific company.
+        Pulls from datatype_companies and joins with doctype.
+        """
+        query = """
+            SELECT d.*
+            FROM datatype_companies dc
+            JOIN doctype d ON dc.datatype_id = d.id
+            WHERE dc.company_id = %s
+            ORDER BY d.name
+        """
+        return self.execute_query(query, (company_id,), fetch=True)
 
     def get_folder_by_id(self, folder_id):
         query = "SELECT * FROM folders WHERE id = %s"
