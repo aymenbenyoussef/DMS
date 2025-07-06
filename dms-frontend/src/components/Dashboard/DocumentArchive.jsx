@@ -3,6 +3,7 @@ import './DocumentArchive.css';
 import DragDropUpload from './DragDropUpload';
 import API from '../../api';
 import { AppContext } from '../context';
+import WelcomePanel from './WelcomePanel';
 import { useNavigate } from 'react-router-dom';
 
 const DocumentArchive = ({ user, selectedCompany, selectedFolder }) => {
@@ -51,6 +52,11 @@ const DocumentArchive = ({ user, selectedCompany, selectedFolder }) => {
       return;
     }
 
+      if (!selectedCompany && !selectedFolder) {
+    return <WelcomePanel user={user} />;
+  }
+
+    
     if (!selectedCompany) {
       setError('No company selected.');
       return;
