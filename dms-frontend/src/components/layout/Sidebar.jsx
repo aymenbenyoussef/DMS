@@ -85,13 +85,14 @@ const Sidebar = ({ user }) => {
     window.addEventListener('companyDeleted', companyHandlerDel);
     window.addEventListener('doctypeAdded', doctypeAddedHandler);
     window.addEventListener('doctypeDeleted', doctypeDeletedHandler);
+    window.addEventListener('doctypeUpdated', doctypeAddedHandler);
     // Cleanup
     return () => {
       window.removeEventListener('companyAdded', companyHandler);
-      window.removeEventListener('doctypeAdded', folderHandler);
+      window.removeEventListener('doctypeAdded', doctypeAddedHandler);
       window.removeEventListener('companyDeleted', companyHandlerDel);
-      window.removeEventListener('doctypeDeleted', folderHandler);
-
+      window.removeEventListener('doctypeDeleted', doctypeDeletedHandler);
+      window.removeEventListener('doctypeUpdated', doctypeAddedHandler);
     };
   }, [user]);
 

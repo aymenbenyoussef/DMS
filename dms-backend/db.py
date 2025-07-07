@@ -430,6 +430,8 @@ class DatabaseManager:
             print(f"Error updating company: {e}")
             return False
 
+    
+
     def get_company_by_id(self, company_id):
         query = "SELECT * FROM companies WHERE id = %s"
         result = self.execute_query(query, (company_id,), fetch=True)
@@ -518,21 +520,46 @@ class DatabaseManager:
         return doctype_id
 
 
-    def get_doctype_by_name(self, name):
-        query= """ select * from doctype where name =%s"""
-        result = self.execute_query(query, (name,), fetch=True)
+    def get_doctype_by_name(self, name,id):
+        query= """ select * from doctype where name =%s and id!=%s"""
+        result = self.execute_query(query, (name,id,), fetch=True)
         return result[0] if result else None
     
     def get_all_doctypes(self):
         query = "SELECT * FROM doctype ORDER BY id"
         return self.execute_query(query, fetch=True)
 
+    def get_datatypes_by_company(self, company_id):
+        query = """
+            SELECT d.*
+            FROM datatype_companies dc
+            JOIN doctype d ON dc.datatype_id = d.id
+            WHERE dc.company_id = %s
+            ORDER BY d.name
+        """
+        return self.execute_query(query, (company_id,), fetch=True)
+    
+    def get_companies_by_datatype(self, datatype_id):
+        """
+        Returns companies associated with a specific document type.
+        Pulls from datatype_companies and joins with companies.
+        """
+        query = """
+            SELECT c.*
+            FROM datatype_companies dc
+            JOIN companies c ON dc.company_id = c.id
+            WHERE dc.datatype_id = %s
+            ORDER BY c.name
+        """
+        return self.execute_query(query, (datatype_id,), fetch=True)
+    
     def get_doctype_by_id(self, doctype_id):
         query = "SELECT * FROM doctype WHERE id = %s"
         result = self.execute_query(query, (doctype_id,), fetch=True)
         return result[0] if result else None
-
-    def update_doctype(self, doctype_id, name=None, status=None):
+    
+    
+    def update_doctype(self, doctype_id, name=None, status=None, companies=None):
         updates = []
         params = []
         
@@ -543,18 +570,44 @@ class DatabaseManager:
             updates.append("status = %s")
             params.append(status)
         
-        if not updates:
-            return False
+        # Update doctype fields if there are changes
+        if updates:
+            params.append(doctype_id)
+            query = f"UPDATE doctype SET {', '.join(updates)} WHERE id = %s"
+            try:
+                self.execute_query(query, params)
+            except Exception as e:
+                print(f"Error updating doctype: {e}")
+                return False
         
-        params.append(doctype_id)
-        query = f"UPDATE doctype SET {', '.join(updates)} WHERE id = %s"
+        # Handle company associations if provided
+        if companies is not None:
+            try:
+                # Start transaction
+                self.connection.start_transaction()
+                
+                # First remove all existing company associations
+                delete_query = "DELETE FROM datatype_companies WHERE datatype_id = %s"
+                cursor = self.connection.cursor()
+                cursor.execute(delete_query, (doctype_id,))
+                
+                # Insert new company associations
+                if companies:  # Only if companies list is not empty
+                    insert_query = "INSERT INTO datatype_companies (datatype_id, company_id) VALUES (%s, %s)"
+                    company_params = [(doctype_id, company_id) for company_id in companies]
+                    cursor.executemany(insert_query, company_params)
+                
+                # Commit transaction
+                self.connection.commit()
+                cursor.close()
+                
+            except Exception as e:
+                # Rollback on error
+                self.connection.rollback()
+                print(f"Error updating doctype companies: {e}")
+                return False
         
-        try:
-            self.execute_query(query, params)
-            return True
-        except Exception as e:
-            print(f"Error updating doctype: {e}")
-            return False
+        return True
 
     def delete_doctype(self, doctype_id):
         query = "DELETE FROM doctype WHERE id = %s"

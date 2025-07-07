@@ -548,13 +548,27 @@ def create_doctype():
     except Exception as e:
         return jsonify({"msg": f"Error creating document type: {str(e)}"}), 400
 
+@app.route('/doctype/<int:doctype_id>/companies', methods=['GET'])
+@jwt_required()
+def get_doctype_companies(doctype_id):
+    try:
+        companies = db.get_companies_by_datatype(doctype_id)
+        return jsonify(companies), 200
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
 
 @app.route('/doctype', methods=['GET'])
 @jwt_required()
 def get_doctypes():
     try:
         doctypes = db.get_all_doctypes()
-        return jsonify(doctypes), 200
+        # For each doctype, get associated companies
+        result = []
+        for doctype in doctypes:
+            companies = db.get_companies_by_datatype(doctype['id'])
+            doctype['companies'] = companies
+            result.append(doctype)
+        return jsonify(result), 200
     except Exception as e:
         return jsonify({"msg": str(e)}), 500
 
@@ -568,12 +582,18 @@ def update_doctype(doctype_id):
     data = request.get_json()
     if not data:
         return jsonify({"msg": "No data provided"}), 400
-
+    existing = db.get_doctype_by_name(data['name'],doctype_id)
+    if existing:
+        return jsonify({"msg": "Datatype name already exists"}), 400
     try:
+        companies = data.get('companies', None)
+        if companies is not None and not isinstance(companies, list):
+            return jsonify({"msg": "Companies must be a list of IDs"}), 400
         success = db.update_doctype(
             doctype_id=doctype_id,
             name=data.get('name'),
-            status=data.get('status')
+            status=data.get('status'),
+            companies = companies
         )
         
         if success:

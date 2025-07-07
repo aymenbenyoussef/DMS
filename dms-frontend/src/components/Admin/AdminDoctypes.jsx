@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import API from '../../api';
-import './AdminUsers.css'; // Keep same styling
+import './AdminUsers.css';
 import { useNavigate } from 'react-router-dom';
 
 const AdminDoctypes = ({ user }) => {
@@ -9,13 +9,17 @@ const AdminDoctypes = ({ user }) => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [editingDoctype, setEditingDoctype] = useState(null);
-  const [activeTab, setActiveTab] = useState('list'); // "list" or "form"
+  const [activeTab, setActiveTab] = useState('list');
   const [showModifyTab, setShowModifyTab] = useState(false);
+  const [companies, setCompanies] = useState([]);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [globalErrors, setGlobalErrors] = useState([]);
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     name: '',
     status: true,
+    companies: []
   });
 
   const fetchDoctypes = async () => {
@@ -25,43 +29,84 @@ const AdminDoctypes = ({ user }) => {
       setDoctypes(response.data);
     } catch (err) {
       setError('Error loading document types');
+      console.error('Error details:', err.response?.data || err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCompanies = async () => {
+    try {
+      const response = await API.companies.getAll();
+      setCompanies(response.data);
+    } catch (err) {
+      console.error('Failed to load companies:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchDoctypes();
+    fetchCompanies();
+  }, []);
+
+  const validate = () => {
+    const errors = {};
+    const errorMessages = [];
+
+    if (!formData.name.trim()) {
+      errors.name = 'Name is required';
+      errorMessages.push('Name is required');
+    }
+
+    setFieldErrors(errors);
+    setGlobalErrors(errorMessages);
+    return errorMessages.length === 0;
+  };
+
+  const handleEdit = async (doctype) => {
+    try {
+      setLoading(true);
+      const companiesResponse = await API.doctype.getCompanies(doctype.id);
+      setEditingDoctype(doctype);
+      setFormData({
+        name: doctype.name || '',
+        status: doctype.status || true,
+        companies: companiesResponse.data.map(c => c.id) || []
+      });
+      setShowModifyTab(true);
+      setActiveTab('form');
+      // Clear errors when starting to edit
+      setFieldErrors({});
+      setGlobalErrors([]);
+    } catch (err) {
+      setError('Error loading document type companies');
       console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchDoctypes();
-  }, []);
-
-  const handleEdit = (doctype) => {
-    setEditingDoctype(doctype);
-    setFormData({
-      name: doctype.name || '',
-      status: doctype.status || true,
-    });
-    setShowModifyTab(true);
-    setActiveTab('form');
-  };
-
   const handleDelete = async (doctypeId) => {
     if (window.confirm('Are you sure you want to delete this document type?')) {
       try {
-        const response = await API.doctype.delete(doctypeId);
+        const companiesResponse = await API.doctype.getCompanies(doctypeId);
+        const affectedCompanyIds = companiesResponse.data.map(c => c.id);
+
+        await API.doctype.delete(doctypeId);
+        
         setSuccess('Document type deleted successfully');
         fetchDoctypes();
         window.dispatchEvent(new CustomEvent('doctypeDeleted', {
         detail: {
-          affectedCompanyIds: response.data.affectedCompanyIds || []
+            affectedCompanyIds: affectedCompanyIds
         }
-      }));
-      navigate('/doctypes')
+        }));
+        navigate('/doctypes')
       } catch (err) {
         setError('Error deleting document type');
         console.error('Error deleting document type:', err);
       }
-      
+
     }
   };
 
@@ -71,12 +116,29 @@ const AdminDoctypes = ({ user }) => {
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
     }));
+    // Clear error for this field if it exists
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const handleCompanyChange = (e, companyId) => {
+    const { checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      companies: checked
+        ? [...prev.companies, companyId]
+        : prev.companies.filter(id => id !== companyId)
+    }));
   };
 
   const handleUpdate = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
+    setGlobalErrors([]);
+    
+    if (!validate()) return;
     if (!editingDoctype) return;
     
     try {
@@ -86,10 +148,24 @@ const AdminDoctypes = ({ user }) => {
       setShowModifyTab(false);
       setActiveTab('list');
       fetchDoctypes();
-    } catch (err) {
-      setError('Error updating document type');
-      console.error('Error updating document type:', err);
+      window.dispatchEvent(new CustomEvent('doctypeUpdated', {
+    detail: {
+        affectedCompanyIds: formData.companies
     }
+    }));
+    } catch (err) {
+      const apiError = err.response?.data;
+      const errorMessage = apiError?.msg || apiError?.error || apiError?.message || '';
+      
+      if (errorMessage.toLowerCase().includes('name')) {
+        setFieldErrors({ name: 'Datatype name already exists' });
+        setGlobalErrors(['Datatype name already exists']);
+      } else {
+        setError('Error updating document type');
+        console.error('Error updating document type:', err);
+      }
+    }
+    
   };
 
   return (
@@ -121,6 +197,7 @@ const AdminDoctypes = ({ user }) => {
       {loading && <p>Loading document types...</p>}
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
+      
 
       {activeTab === 'list' && (
         <div className="users-list">
@@ -131,6 +208,7 @@ const AdminDoctypes = ({ user }) => {
                   <th>ID</th>
                   <th>Name</th>
                   <th>Status</th>
+                  <th>Companies</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -140,6 +218,17 @@ const AdminDoctypes = ({ user }) => {
                     <td>{doctype.id}</td>
                     <td>{doctype.name}</td>
                     <td>{doctype.status ? 'Active' : 'Inactive'}</td>
+                    <td>
+                      {doctype.companies && doctype.companies.length > 0 ? (
+                        <ul className="company-list">
+                          {doctype.companies.map(company => (
+                            <li key={company.id}>{company.name}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <span>No companies</span>
+                      )}
+                    </td>
                     <td>
                       <div className="action-buttons">
                         <button
@@ -176,9 +265,29 @@ const AdminDoctypes = ({ user }) => {
                 value={formData.name}
                 onChange={handleInputChange}
                 placeholder="Document type name"
-                required
+                className={fieldErrors.name ? 'error-input' : ''}
               />
+              {fieldErrors.name && <div className="field-error">{fieldErrors.name}</div>}
             </div>
+            
+            <div className="form-group">
+              <label>Companies</label>
+              <div className="checkbox-list">
+                {companies.map(company => (
+                  <label key={company.id} className="checkbox-item">
+                    <input
+                      type="checkbox"
+                      name="companies"
+                      value={company.id}
+                      checked={formData.companies.includes(company.id)}
+                      onChange={(e) => handleCompanyChange(e, company.id)}
+                    />
+                    <span className="company-name">{company.name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
             <div className="form-group checkbox-group">
               <label>
                 <input

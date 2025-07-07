@@ -3,7 +3,7 @@
   background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%);
   color: white;
   padding: 0 1.5rem;
-  height: 80px;
+  height: 80px; /*80px*/
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   position: sticky;
   top: 0;
@@ -12,6 +12,7 @@
   align-items: center;
   position: fixed;
   width: 100%;
+  justify-content: center;
 }
 
 .navbar-container {
@@ -22,26 +23,36 @@
   max-width: 1400px;
   margin: 0 auto;
   gap: 2rem;
+  max-width: 1400px; /* Adjust this value as needed */
+  margin: 0 auto; /* This centers the container */
+  padding: 0 2rem; /* Add padding to prevent content from touching edges */
+  gap: 1rem; /* Reduce the gap between items */
+  height: 100%;/* Make container fill navbar height */
 }
 
 .navbar-brand {
   flex-shrink: 0;
+  margin-right: auto;
 }
 
 .logo {
+  height: 100%; /* Fill navbar height */
   display: flex;
   align-items: center;
   gap: 12px;
+  color: #cbd5e1;
 }
 
 .logo-icon {
   display: flex;
   align-items: center;
+  color: #cbd5e1;
 }
 
 .logo-text {
   display: flex;
   flex-direction: column;
+  color: #cbd5e1;
 }
 
 .logo-main {
@@ -61,6 +72,7 @@
 .search-container {
   flex-grow: 1;
   max-width: 600px;
+  margin: 0 2rem;
 }
 
 .search-bar {
@@ -100,6 +112,7 @@
   display: flex;
   align-items: center;
   gap: 1.2rem;
+  margin-left: auto;
 }
 
 .nav-link {
@@ -169,6 +182,7 @@
 .username {
   font-weight: 500;
   text-align: left;
+  color: #a5b4fc;
 }
 
 .user-role {

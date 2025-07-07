@@ -93,33 +93,29 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: auto; /* CHANGED: From hidden to auto */
+  /*overflow: hidden;*/
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   background-color: #fff;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
 }
 
 .admin-users-table {
   flex: 1;
-  min-height: 400px;
-  display: flex; /* NEW: Flex layout for scrolling */
-  flex-direction: column;
-  overflow: auto; /* NEW: Enable scrolling */
-}
-
-.admin-users-table > div { /* NEW: Target table wrapper */
-  flex: 1;
   display: flex;
   flex-direction: column;
   overflow: auto;
+  min-height: 0; /* Crucial for flex scrolling */
+}
+
+.admin-users-table > .table-responsive {
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
 }
 
 .admin-users-table .table {
   margin-bottom: 0;
-  border-collapse: separate;
-  border-spacing: 0;
-  min-width: 100%; /* NEW: Ensure table fills container */
+  min-width: 100%;
 }
 
 .admin-users-table th {
@@ -142,7 +138,13 @@
   color: #475569;
   font-size: 0.95rem;
 }
+.admin-users-table thead tr {
+  height: 50px; /* Fixed header height */
+}
 
+.admin-users-table tbody tr {
+  height: 50px; /* Fixed row height */
+}
 .admin-users-table tbody tr {
   transition: background-color 0.2s ease;
 }

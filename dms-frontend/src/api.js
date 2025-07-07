@@ -85,6 +85,7 @@ const companies = {
 const doctype = {
     create :(doctypeData) => API.post('/doctype',doctypeData),
     getAll: () => API.get('/doctype'),
+    getCompanies: (doctypeId) => API.get(`/doctype/${doctypeId}/companies`),
     update: (id, doctypeData) => API.put(`/doctype/${id}`, doctypeData),
     delete: (id) => API.delete(`/doctype/${id}`),
     getByCompany: (companyId, parentId = null) => {
