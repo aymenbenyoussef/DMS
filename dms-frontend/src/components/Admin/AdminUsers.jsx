@@ -435,7 +435,7 @@ const AdminUsers = ({ user }) => {
                     filter={filterFactory()}
                     classes="admin-users-table"
                     headerClasses="bg-light"
-                    //wrapperClasses="table-responsive"
+                    wrapperClasses="table-responsive"
                   />
                 </div>
               </Tab.Pane>
