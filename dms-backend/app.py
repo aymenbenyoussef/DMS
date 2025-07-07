@@ -9,9 +9,13 @@ from datetime import timedelta, datetime
 from werkzeug.utils import secure_filename
 import os
 from flask_cors import cross_origin
+from pdf2image import convert_from_bytes
+from ocr_utils import process_uploaded_files
 
 app = Flask(__name__)
 CORS(app) 
+
+CORS(app, resources={r"/upload": {"origins": "http://localhost:3000"}}, supports_credentials=True)
 
 # ====== Logging Configuration ======
 LOG_DIR = "logs"
@@ -738,16 +742,118 @@ def create_document():
     except Exception as e:
         return jsonify({"msg": str(e)}), 400
 
-@app.route('/documents/<int:document_id>/history', methods=['GET'])
-@jwt_required()
-def get_document_history(document_id):
-    try:
-        history = db.get_document_history(document_id)
-        return jsonify(history), 200
-    except Exception as e:
-        return jsonify({"msg": str(e)}), 500
 
-# Folder management routes
+# Updated upload route
+@app.route('/upload', methods=['POST'])
+@jwt_required()
+def upload_files():
+    current_user_claims = get_jwt()
+    current_user_id = current_user_claims.get('id')
+    
+    # Get form data
+    company_id = request.form.get('company_id')
+    doctype_id = request.form.get('doctype_id')
+    
+    if not company_id or not doctype_id:
+        return jsonify({"msg": "Company and document type required"}), 400
+    
+    # Get company and doctype info
+    company = db.get_company_by_id(company_id)
+    doctype = db.get_doctype_by_id(doctype_id)
+    
+    if not company or not doctype:
+        return jsonify({"msg": "Invalid company or document type"}), 400
+    
+    files = request.files.getlist('files')
+    if not files:
+        return jsonify({"msg": "No files provided"}), 400
+    
+    try:
+        # Process files with OCR
+        results = process_uploaded_files(
+            files, 
+            app.config['UPLOAD_FOLDER'],
+            company['name'], 
+            doctype['name']
+        )
+        
+        # Create document records
+        for result in results:
+            if 'error' in result:
+                continue
+                
+            # Create document record
+            document_id = db.create_document(
+                owner_id=current_user_id,
+                company_id=company_id,
+                doctype_id=doctype_id,
+                filename=result['filename'],
+                file_path=result['file_path'],
+                ocr_text=result['ocr_text'],
+                invoice_data=json.dumps(result['extracted_data']),
+                file_size=os.path.getsize(result['file_path'])
+            )
+            result['document_id'] = document_id
+            
+            # Log document creation
+            log_activity(
+                actor=current_user_claims['username'],
+                action="Upload",
+                resource_type="document",
+                resource_data={
+                    'id': document_id,
+                    'filename': result['filename'],
+                    'company_id': company_id
+                }
+            )
+        
+        return jsonify(results), 201
+    except Exception as e:
+        return jsonify({"msg": f"Processing error: {str(e)}"}), 500
+
+# Confirm document route
+@app.route('/documents/<int:document_id>/confirm', methods=['POST'])
+@jwt_required()
+def confirm_document(document_id):
+    current_user_claims = get_jwt()
+    data = request.get_json()
+    
+    # Get document
+    document = db.get_document_by_id(document_id)
+    if not document:
+        return jsonify({"msg": "Document not found"}), 404
+    
+    try:
+        # Create report path
+        base_path = os.path.dirname(document['file_path'])
+        base_name = os.path.splitext(document['filename'])[0]
+        report_path = os.path.join(base_path, f"{base_name}_report.json")
+        
+        # Save confirmed data
+        with open(report_path, 'w') as f:
+            json.dump(data, f, indent=2)
+        
+        # Update document with confirmed data
+        db.update_document(
+            document_id,
+            invoice_data=json.dumps(data)
+        )
+        
+        # Log confirmation
+        log_activity(
+            actor=current_user_claims['username'],
+            action="Confirm",
+            resource_type="document",
+            resource_data={
+                'id': document_id,
+                'filename': document['filename'],
+                'company_id': document['company_id']
+            }
+        )
+        
+        return jsonify({"msg": "Document confirmed", "report_path": report_path}), 200
+    except Exception as e:
+        return jsonify({"msg": f"Confirmation error: {str(e)}"}), 500
 
 
 @app.route('/folders', methods=['POST'])

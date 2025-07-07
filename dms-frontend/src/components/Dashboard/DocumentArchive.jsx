@@ -203,7 +203,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedFolder }) => {
     <div className="container-fluid py-4">
       {/* Upload Modal */}
       {isUploadModalOpen && (
-        
+        <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
           <div className="modal-dialog modal-lg">
 
                 <button 
@@ -211,7 +211,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedFolder }) => {
                   className="btn-close" 
                   onClick={closeUploadModal}
                 ></button>
-            
+              </div>
               <div className="modal-body">
                 <DragDropUpload 
                   onClose={closeUploadModal}
@@ -220,7 +220,6 @@ const DocumentArchive = ({ user, selectedCompany, selectedFolder }) => {
                 {uploadError && <p className="text-danger mt-3">{uploadError}</p>}
               </div>
           </div>
-        
 
       )}
 

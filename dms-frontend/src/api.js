@@ -103,6 +103,11 @@ const documents = {
   getHistory: (documentId) => API.get(`/documents/${documentId}/history`),
   update: (documentId, documentData) => API.put(`/documents/${documentId}`, documentData),
   delete: (documentId) => API.delete(`/documents/${documentId}`),
+  uploadFiles: (formData) => API.post('/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  confirmDocument: (documentId, confirmedData) => 
+    API.post(`/documents/${documentId}/confirm`, confirmedData)
 };
 
 // Folder management endpoints

@@ -115,36 +115,24 @@ class DatabaseManager:
                 )
             """) 
             # Create folders table
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS folders (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    name VARCHAR(255) NOT NULL,
-                    parent_id INT NULL,
-                    company_id INT NOT NULL,
-                    created_by INT NOT NULL,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (parent_id) REFERENCES folders(id) ON DELETE CASCADE,
-                    FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
-                    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
-                )
-            """)
 
             # Create documents table
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS documents (
                     id INT AUTO_INCREMENT PRIMARY KEY,
                     filename VARCHAR(255) NOT NULL,
-                    document_type ENUM('invoice', 'non_invoice') NOT NULL,
                     owner_id INT NOT NULL,
                     company_id INT NOT NULL,
-                    folder_id INT NULL,
+                    doctype_id INT NOT NULL,
                     file_path VARCHAR(500),
+                    ocr_text TEXT,
+                    invoice_data JSON,
                     file_size INT DEFAULT 0,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                     FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
                     FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
-                    FOREIGN KEY (folder_id) REFERENCES folders(id) ON DELETE SET NULL
+                    FOREIGN KEY (doctype_id) REFERENCES doctype(id) ON DELETE CASCADE
                 )
             """)
 
@@ -617,18 +605,24 @@ class DatabaseManager:
         except Exception as e:
             print(f"Error deleting doctype: {e}")
             return False
+        
     # Document management methods
-    def create_document(self, owner_id, company_id, filename, document_type, file_path, folder_id=None, file_size=0):
+
+
+
+    def create_document(self, owner_id, company_id, doctype_id, filename, file_path, 
+                    ocr_text=None, invoice_data=None, file_size=0):
         query = """
-        INSERT INTO documents (filename, document_type, owner_id, company_id, folder_id, file_path, file_size)
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO documents (
+            filename, owner_id, company_id, doctype_id, 
+            file_path, ocr_text, invoice_data, file_size
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
         """
-        cursor = self.connection.cursor()
-        cursor.execute(query, (filename, document_type, owner_id, company_id, folder_id, file_path, file_size))
-        self.connection.commit()
-        doc_id = cursor.lastrowid
-        cursor.close()
-        return doc_id
+        params = (
+            filename, owner_id, company_id, doctype_id, 
+            file_path, ocr_text, invoice_data, file_size
+        )
+        return self.execute_query(query, params)
 
     def get_documents_by_company(self, company_id, document_type=None):
         if document_type:
@@ -651,46 +645,26 @@ class DatabaseManager:
                 ORDER BY d.created_at DESC
             """
             return self.execute_query(query, (company_id,), fetch=True)
-
-    def get_document_by_id(self, document_id):
-        query = """
-            SELECT d.*, u.username as owner_name, f.name as folder_name
-            FROM documents d
-            LEFT JOIN users u ON d.owner_id = u.id
-            LEFT JOIN folders f ON d.folder_id = f.id
-            WHERE d.id = %s
-        """
-        result = self.execute_query(query, (document_id,), fetch=True)
-        return result[0] if result else None
-
-    def update_document(self, document_id, filename=None, folder_id=None, file_path=None, file_size=None):
+    def update_document(self, document_id, invoice_data=None):
         updates = []
         params = []
         
-        if filename is not None:
-            updates.append("filename = %s")
-            params.append(filename)
-        if folder_id is not None:
-            updates.append("folder_id = %s")
-            params.append(folder_id)
-        if file_path is not None:
-            updates.append("file_path = %s")
-            params.append(file_path)
-        if file_size is not None:
-            updates.append("file_size = %s")
-            params.append(file_size)
+        if invoice_data is not None:
+            updates.append("invoice_data = %s")
+            params.append(invoice_data)
         
         if not updates:
             return False
         
         updates.append("updated_at = CURRENT_TIMESTAMP")
         params.append(document_id)
-        query = f"UPDATE documents SET {', '.join(updates)} WHERE id = %s"
         
+        query = f"UPDATE documents SET {', '.join(updates)} WHERE id = %s"
         try:
             self.execute_query(query, params)
             return True
-        except:
+        except Exception as e:
+            print(f"Error updating document: {e}")
             return False
 
     def delete_document(self, document_id):
@@ -716,23 +690,6 @@ class DatabaseManager:
         """
         return self.execute_query(query, (document_id,), fetch=True)
 
-    # Folder management methods
-    def create_folder(self, name, created_by, company_id, parent_id=None):
-        query = """
-            INSERT INTO folders (name, parent_id, company_id, created_by)
-            VALUES (%s, %s, %s, %s)
-        """
-        return self.execute_query(query, (name, parent_id, company_id, created_by))
-
-    def get_all_folders(self, parent_id=None):
-        if parent_id is None:
-            query = "SELECT * FROM folders"
-            params = ()
-        else:
-            query = "SELECT * FROM folders WHERE parent_id = %s"
-            params = (parent_id,)
-        return self.execute_query(query, params, fetch=True)
-        
 
     def get_datatypes_by_company(self, company_id):
         """
@@ -748,55 +705,6 @@ class DatabaseManager:
         """
         return self.execute_query(query, (company_id,), fetch=True)
 
-    def get_folder_by_id(self, folder_id):
-        query = "SELECT * FROM folders WHERE id = %s"
-        result = self.execute_query(query, (folder_id,), fetch=True)
-        return result[0] if result else None
-
-    def update_folder(self, folder_id, name=None, parent_id=None):
-        updates = []
-        params = []
-        
-        if name is not None:
-            updates.append("name = %s")
-            params.append(name)
-        if parent_id is not None:
-            updates.append("parent_id = %s")
-            params.append(parent_id)
-        
-        if not updates:
-            return False
-        
-        params.append(folder_id)
-        query = f"UPDATE folders SET {', '.join(updates)} WHERE id = %s"
-        
-        try:
-            self.execute_query(query, params)
-            return True
-        except:
-            return False
-
-    def delete_folder(self, folder_id):
-        query = "DELETE FROM folders WHERE id = %s"
-        try:
-            self.execute_query(query, (folder_id,))
-            return True
-        except:
-            return False
-
-    def get_folder_path(self, folder_id):
-        """Get the full path of a folder"""
-        path = []
-        current_id = folder_id
-        
-        while current_id:
-            folder = self.get_folder_by_id(current_id)
-            if not folder:
-                break
-            path.insert(0, folder['name'])
-            current_id = folder['parent_id']
-        
-        return ' / '.join(path) if path else ''
 
 # Create global database instance
 db = DatabaseManager()
