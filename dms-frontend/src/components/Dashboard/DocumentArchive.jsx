@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useContext } from 'react';
-import './DocumentArchive.css';
 import DragDropUpload from './DragDropUpload';
 import API from '../../api';
 import { AppContext } from '../context';
@@ -201,219 +200,291 @@ const DocumentArchive = ({ user, selectedCompany, selectedFolder }) => {
   }
 
   return (
-    <div className="document-archive">
+    <div className="container-fluid py-4">
       {/* Upload Modal */}
       {isUploadModalOpen && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <h2>Upload File</h2>
-            <div className="modal-content">
-              <DragDropUpload 
-                onClose={closeUploadModal}
-                onUpload={handleUploadDocuments}
-              />
-              {uploadError && <p className="error-message">{uploadError}</p>}
-            </div>
+        
+          <div className="modal-dialog modal-lg">
+
+                <button 
+                  type="button" 
+                  className="btn-close" 
+                  onClick={closeUploadModal}
+                ></button>
+            
+              <div className="modal-body">
+                <DragDropUpload 
+                  onClose={closeUploadModal}
+                  onUpload={handleUploadDocuments}
+                />
+                {uploadError && <p className="text-danger mt-3">{uploadError}</p>}
+              </div>
           </div>
-        </div>
+        
+
       )}
 
       {/* Header */}
-      <div className="archive-header">
-        <h1>Document Archive</h1>
-        <div className="header-buttons">
-          {user && user.role === 'admin' && selectedCompany && !selectedFolder && (
-            <button className="new-folder-btn" onClick={openModal}>
-              + Add Data Type
-            </button>
-          )}
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h1 className="h2 mb-0">Document Archive</h1>
+        <div className="d-flex gap-2">
           {selectedFolder && (
-            <button className="upload-file" onClick={openUploadModal}>
-              + Upload File
+            <button 
+              className="btn btn-primary d-flex align-items-center"
+              onClick={openUploadModal}
+            >
+              <i className="bi bi-plus me-1"></i> Upload File
             </button>
           )}
         </div>
       </div>
       
       {/* Breadcrumb */}
-      <div className="breadcrumb">{getBreadcrumb()}</div>
+      <nav className="mb-4">
+        <ol className="breadcrumb">
+          {getBreadcrumb().split(' > ').map((item, index, arr) => (
+            <li 
+              key={index} 
+              className={`breadcrumb-item ${index === arr.length - 1 ? 'active' : ''}`}
+            >
+              {item}
+            </li>
+          ))}
+        </ol>
+      </nav>
       
       {successMessage && (
-        <div className="success-message">{successMessage}</div>
+        <div className="alert alert-success">{successMessage}</div>
       )}
       
       {/* Stats Cards */}
-      <div className="stats-container">
-        <div className="stat-card">
-          <h3>Total Documents</h3>
-          <p>0 Active</p>
-        </div>
-        <div className="stat-card">
-          <h3>Invoices</h3>
-          <p>0 Active</p>
-        </div>
-        <div className="stat-card">
-          <h3>Processed</h3>
-          <p>0 Active</p>
-        </div>
+      <div className="row g-3 mb-4">
+        {['Total Documents', 'Invoices', 'Processed'].map((title, index) => (
+          <div key={index} className="col-md-4">
+            <div className="card h-100">
+              <div className="card-body">
+                <h3 className="card-title fs-6 text-muted">{title}</h3>
+                <p className="card-text fs-4 fw-bold">0 Active</p>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Search Section */}
-      <div className="search-section">
-        <h2>Search & Filter</h2>
-        <div className="search-controls">
-          <input 
-            type="text" 
-            placeholder="Search documents..." 
-            className="search-input"
-          />
-          <button className="search-btn">Search</button>
-        </div>
-        <div className="filter-options">
-          {['Invoice', 'Receive', 'Record', 'Pending', 'Active'].map((item) => (
-            <label key={item} className="filter-option">
-              <input type="checkbox" />
-              <span>{item}</span>
-            </label>
-          ))}
-        </div>
-      </div>
-
-      {/* Documents Container */}
-      <div className="documents-container">
-        {/* Main Documents */}
-        <div className="main-documents">
-          <div className="section-header">
-            <h2>Documents</h2>
-            <span>0 items</span>
+      <div className="card mb-4">
+        <div className="card-body">
+          <h2 className="h5 mb-3">Search & Filter</h2>
+          <div className="input-group mb-3">
+            <input 
+              type="text" 
+              placeholder="Search documents..." 
+              className="form-control"
+            />
+            <button className="btn btn-primary">Search</button>
           </div>
-          <div className="empty-state">
-            <p>No documents found</p>
-            <button onClick={openUploadModal}>Upload documents to get started</button>
-          </div>
-        </div>
-
-        {/* Recent Documents */} 
-        <div className="recent-documents">
-          <h2>Recent Documents</h2>
-          <div className="recent-files">
-            {[
-              { name: 'MyCV (1).pdf', date: '24/06/2025', status: 'GETED' },
-              { name: 'Invoice_001.pdf', date: '24/06/2025', status: 'GETED' },
-              { name: 'Invoice_001.pdf', date: '24/06/2025', status: 'GETED' },
-              { name: 'MyCV.pdf', date: '27/06/2025', status: 'GETED' },
-            ].map((doc, index) => (
-              <div key={index} className="recent-file">
-                <div className="file-info">
-                  <div className="file-name">{doc.name}</div>
-                  <div className="file-date">{doc.date}</div>
-                </div>
-                <span className="file-status">{doc.status}</span>
+          <div className="d-flex flex-wrap gap-3">
+            {['Invoice', 'Receive', 'Record', 'Pending', 'Active'].map((item) => (
+              <div key={item} className="form-check">
+                <input 
+                  type="checkbox" 
+                  className="form-check-input" 
+                  id={`filter-${item}`}
+                />
+                <label 
+                  className="form-check-label text-muted" 
+                  htmlFor={`filter-${item}`}
+                >
+                  {item}
+                </label>
               </div>
             ))}
           </div>
         </div>
       </div>
 
+      {/* Documents Container */}
+      <div className="row g-4">
+        {/* Main Documents */}
+        <div className="col-lg-8">
+          <div className="card h-100">
+            <div className="card-body">
+              <div className="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                <h2 className="h5 mb-0">Documents</h2>
+                <span className="text-muted">0 items</span>
+              </div>
+              <div className="text-center py-5 border rounded">
+                <p className="text-muted mb-3">No documents found</p>
+                <button 
+                  className="btn btn-link text-primary p-0"
+                  onClick={openUploadModal}
+                >
+                  Upload documents to get started
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Recent Documents */} 
+        <div className="col-lg-4">
+          <div className="card h-100">
+            <div className="card-body">
+              <h2 className="h5 mb-3">Recent Documents</h2>
+              <div className="d-flex flex-column gap-2">
+                {[
+                  { name: 'MyCV (1).pdf', date: '24/06/2025', status: 'GETED' },
+                  { name: 'Invoice_001.pdf', date: '24/06/2025', status: 'GETED' },
+                  { name: 'Invoice_001.pdf', date: '24/06/2025', status: 'GETED' },
+                  { name: 'MyCV.pdf', date: '27/06/2025', status: 'GETED' },
+                ].map((doc, index) => (
+                  <div 
+                    key={index} 
+                    className="d-flex justify-content-between align-items-center p-2 rounded hover-bg"
+                    style={{ transition: 'background-color 0.2s' }}
+                  >
+                    <div>
+                      <div className="fw-medium">{doc.name}</div>
+                      <div className="small text-muted">{doc.date}</div>
+                    </div>
+                    <span className="badge bg-success">{doc.status}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Create Folder/Add Data Type Modal */}
       {isModalOpen && (
-        <div className="modal-overlay">
-          <div className="modal" style={{ width: '500px' }}>
-            <h2>{showNewDocTypeForm ? 'Add New Document Type' : 'Create New Folder'}</h2>
-            
-            {!showNewDocTypeForm ? (
-              <>
-                <div className="modal-content">
-                  <input
-                    type="text"
-                    placeholder="Folder name"
-                    value={folderName}
-                    onChange={(e) => setFolderName(e.target.value)}
-                  />
-                  
-                  <div className="document-types-section">
-                    <h3>Document Types</h3>
-                    <div className="document-types-list">
-                      {documentTypes.length > 0 ? (
-                        documentTypes.map((type) => (
-                          <label key={type.id} className="document-type-item">
-                            <input 
-                              type="checkbox" 
-                              checked={selectedDocTypes.includes(type.id)}
-                              onChange={() => handleDocTypeChange(type.id)}
-                            />
-                            <span>{type.name}</span>
-                            <span className={`status-badge ${type.status ? 'active' : 'inactive'}`}>
-                              {type.status ? 'Active' : 'Inactive'}
-                            </span>
-                          </label>
-                        ))
-                      ) : (
-                        <p>No document types available</p>
-                      )}
-                    </div>
-                    
-                    <button 
-                      className="add-new-doctype-btn"
-                      onClick={() => setShowNewDocTypeForm(true)}
-                    >
-                      + Add new document type
-                    </button>
-                  </div>
-                  
-                  {error && <p className="error-message">{error}</p>}
-                </div>
-                <div className="modal-actions">
-                  <button onClick={createFolder}>Create</button>
-                  <button onClick={closeModal}>Cancel</button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="modal-content">
-                  <form onSubmit={handleCreateDocType}>
-                    <div className="form-group">
-                      <label>Name of the document type</label>
+        <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">
+                  {showNewDocTypeForm ? 'Add New Document Type' : 'Create New Folder'}
+                </h5>
+                <button 
+                  type="button" 
+                  className="btn-close" 
+                  onClick={closeModal}
+                ></button>
+              </div>
+              
+              <div className="modal-body">
+                {!showNewDocTypeForm ? (
+                  <>
+                    <div className="mb-3">
                       <input
                         type="text"
-                        placeholder="Enter the name"
-                        value={newDocTypeName}
-                        onChange={(e) => setNewDocTypeName(e.target.value)}
-                        className={newDocTypeError ? 'input-error' : ''}
+                        className="form-control"
+                        placeholder="Folder name"
+                        value={folderName}
+                        onChange={(e) => setFolderName(e.target.value)}
                       />
                     </div>
                     
-                    <div className="form-group checkbox-group">
-                      <label>
-                        <input
-                          type="checkbox"
-                          checked={newDocTypeStatus}
-                          onChange={(e) => setNewDocTypeStatus(e.target.checked)}
-                        />{' '}
+                    <div className="mb-3">
+                      <h6>Document Types</h6>
+                      <div className="border rounded p-2 mb-2" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                        {documentTypes.length > 0 ? (
+                          documentTypes.map((type) => (
+                            <div key={type.id} className="form-check">
+                              <input 
+                                className="form-check-input" 
+                                type="checkbox" 
+                                checked={selectedDocTypes.includes(type.id)}
+                                onChange={() => handleDocTypeChange(type.id)}
+                                id={`type-${type.id}`}
+                              />
+                              <label className="form-check-label d-flex justify-content-between w-100" htmlFor={`type-${type.id}`}>
+                                <span>{type.name}</span>
+                                <span className={`badge ${type.status ? 'bg-success' : 'bg-danger'}`}>
+                                  {type.status ? 'Active' : 'Inactive'}
+                                </span>
+                              </label>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-muted">No document types available</p>
+                        )}
+                      </div>
+                      
+                      <button 
+                        className="btn btn-link p-0 text-decoration-none"
+                        onClick={() => setShowNewDocTypeForm(true)}
+                      >
+                        + Add new document type
+                      </button>
+                    </div>
+                    
+                    {error && <p className="text-danger">{error}</p>}
+                  </>
+                ) : (
+                  <form onSubmit={handleCreateDocType}>
+                    <div className="mb-3">
+                      <label className="form-label">Name of the document type</label>
+                      <input
+                        type="text"
+                        className={`form-control ${newDocTypeError ? 'is-invalid' : ''}`}
+                        placeholder="Enter the name"
+                        value={newDocTypeName}
+                        onChange={(e) => setNewDocTypeName(e.target.value)}
+                      />
+                      {newDocTypeError && <div className="invalid-feedback">{newDocTypeError}</div>}
+                    </div>
+                    
+                    <div className="form-check mb-3">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        checked={newDocTypeStatus}
+                        onChange={(e) => setNewDocTypeStatus(e.target.checked)}
+                        id="docTypeStatus"
+                      />
+                      <label className="form-check-label" htmlFor="docTypeStatus">
                         Active
                       </label>
                     </div>
                     
-                    {newDocTypeError && (
-                      <p className="error-message">{newDocTypeError}</p>
-                    )}
                     {newDocTypeSuccess && (
-                      <p className="success-message">{newDocTypeSuccess}</p>
+                      <div className="alert alert-success">{newDocTypeSuccess}</div>
                     )}
                     
-                    <div className="form-actions">
-                      <button type="submit">Create Document Type</button>
+                    <div className="d-flex gap-2">
+                      <button type="submit" className="btn btn-primary flex-grow-1">
+                        Create Document Type
+                      </button>
                       <button 
                         type="button" 
+                        className="btn btn-outline-secondary"
                         onClick={() => setShowNewDocTypeForm(false)}
                       >
                         Back
                       </button>
                     </div>
                   </form>
+                )}
+              </div>
+              
+              {!showNewDocTypeForm && (
+                <div className="modal-footer">
+                  <button 
+                    className="btn btn-primary"
+                    onClick={createFolder}
+                  >
+                    Create
+                  </button>
+                  <button 
+                    className="btn btn-outline-secondary"
+                    onClick={closeModal}
+                  >
+                    Cancel
+                  </button>
                 </div>
-              </>
-            )}
+              )}
+            </div>
           </div>
         </div>
       )}

@@ -673,3 +673,21 @@
   margin-top: 16px;
   font-size: 14px;
 }
+/* Add this to your global CSS */
+.hover-bg:hover {
+  background-color: #f9fafb;
+}
+
+.breadcrumb {
+  background-color: transparent;
+  padding: 0;
+  margin-bottom: 1rem;
+}
+
+.breadcrumb-item.active {
+  color: #6c757d;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+  content: ">";
+}
