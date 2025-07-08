@@ -165,7 +165,7 @@ const AddUser = () => {
           className={`tab-btn ${activeTab === 'access' ? 'active' : ''}`}
           //onClick={() => setActiveTab('access')}
         >
-          Companies & Status
+          Entities & Status
         </button>
       </div>
 

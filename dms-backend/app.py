@@ -251,9 +251,8 @@ def create_user():
             surname=data['surname'],
             email=data['email'],
             password=data['password'],
-            role=data.get('role', 'user'),
             is_active=data.get('is_active', True),
-            
+            role=data.get('role', 'user'),
             companies=data['companies'],
         )
         
@@ -586,7 +585,7 @@ def update_doctype(doctype_id):
     data = request.get_json()
     if not data:
         return jsonify({"msg": "No data provided"}), 400
-    existing = db.get_doctype_by_name(data['name'],doctype_id)
+    existing = db.get_doctype_by_name_id(data['name'],doctype_id)
     if existing:
         return jsonify({"msg": "Datatype name already exists"}), 400
     try:

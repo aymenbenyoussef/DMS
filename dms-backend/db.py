@@ -205,16 +205,16 @@ class DatabaseManager:
         return bcrypt.checkpw(password.encode('utf-8'), hashed_password.encode('utf-8'))
 
     # User management methods
-    def create_user(self,username,surname,email,password,is_active=True,user_limit=0,companies=None):
+    def create_user(self,username,surname,email,password,is_active=True,role='user',companies=None):
         # 1) Hash du mot de passe
         hashed_password = self.hash_password(password)
 
         # 2) Insertion dans users
         query = """
-        INSERT INTO users (username, surname, email, password_hash,  is_active, user_limit)
+        INSERT INTO users (username, surname, email, password_hash, role,  is_active)
         VALUES (%s, %s, %s, %s, %s, %s)
         """
-        params = (username, surname, email, hashed_password,  is_active, user_limit)
+        params = (username, surname, email, hashed_password,role,  is_active)
 
         # On exécute et on récupère l'ID du nouvel utilisateur
         new_user_id = self.execute_query(query, params)
@@ -233,7 +233,7 @@ class DatabaseManager:
                 except Exception as e:
                     # par exemple ignore si (user, company) existe déjà
                     print(f"Warning: cannot link user {new_user_id} to company {comp_id}: {e}")
-
+        
         return new_user_id
 
     def get_user_by_email(self, email):
@@ -508,11 +508,16 @@ class DatabaseManager:
         return doctype_id
 
 
-    def get_doctype_by_name(self, name,id):
+    def get_doctype_by_name(self, name):
+        query= """ select * from doctype where name =%s """
+        result = self.execute_query(query, (name,), fetch=True)
+        return result[0] if result else None
+    
+    def get_doctype_by_name_id(self, name,id):
         query= """ select * from doctype where name =%s and id!=%s"""
         result = self.execute_query(query, (name,id,), fetch=True)
         return result[0] if result else None
-    
+
     def get_all_doctypes(self):
         query = "SELECT * FROM doctype ORDER BY id"
         return self.execute_query(query, fetch=True)
