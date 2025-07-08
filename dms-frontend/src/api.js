@@ -91,6 +91,26 @@ const documents = {
   update: (documentId, documentData) => API.put(`/documents/${documentId}`, documentData),
   delete: (documentId) => API.delete(`/documents/${documentId}`),
   
+  // NEW: Single file upload function with OCR processing
+  uploadSingleFile: (file, company, doctype) => {
+    const formData = new FormData();
+    
+    // Add the single file to FormData
+    formData.append("file", file);
+    
+    // Add company and doctype information
+    formData.append('company', company);
+    formData.append('doctype', doctype);
+    
+    return API.post('/upload_single', formData, {
+      headers: { 
+        'Content-Type': 'multipart/form-data',
+        // Remove Content-Type to let browser set boundary
+      },
+      timeout: 60000, // 60 seconds timeout for large files
+    });
+  },
+  
   // Enhanced upload function for multiple files with OCR processing
   uploadMultipleFiles: (files, company, doctype) => {
     const formData = new FormData();
@@ -187,4 +207,4 @@ export default {
 };
 
 // Export individual modules for easier imports
-export { users, admin, doctype, companies, documents, folders, ocr }; 
+export { users, admin, doctype, companies, documents, folders, ocr };

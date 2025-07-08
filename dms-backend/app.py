@@ -10,15 +10,17 @@ from werkzeug.utils import secure_filename
 import os
 from flask_cors import cross_origin
 from pdf2image import convert_from_bytes
-from ocr_utils import process_uploaded_files, generate_report_pdf
+from ocr_utils import process_uploaded_files, generate_report_pdf, extract_invoice_data
 import json
+import pytesseract
+from PIL import Image
 
 app = Flask(__name__)
-CORS(app) 
-CORS(app, resources={r"/upload": {"origins": "http://localhost:3000"}}, supports_credentials=True)
+CORS(app, origins="*", supports_credentials=True)
+
 # ====== Logging Configuration ======
 LOG_DIR = "../logs"
-ACTIVITY_LOG = os.path.join(LOG_DIR, "activity.log")  # Changed to activity.log
+ACTIVITY_LOG = os.path.join(LOG_DIR, "activity.log")
 
 def ensure_log_dir():
     """Create logs directory if it doesn't exist"""
@@ -68,79 +70,88 @@ def get_activity_logs():
     with open(ACTIVITY_LOG, "r") as f:
         return [line.strip() for line in f.readlines() if line.strip()]
 
-# ====== Existing Configuration ======
-UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), '../uploads'))
-ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'docx', 'txt'}
+# ====== Upload Configuration ======
+DMS_UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), '../dms/upload'))
+TEMP_UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), '../uploads'))
+ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'docx', 'txt', 'doc', 'tiff'}
 
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config['DMS_UPLOAD_FOLDER'] = DMS_UPLOAD_FOLDER
+app.config['TEMP_UPLOAD_FOLDER'] = TEMP_UPLOAD_FOLDER
+os.makedirs(DMS_UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(TEMP_UPLOAD_FOLDER, exist_ok=True)
 
-def create_company_upload_folder(company_name):
-    """Create a folder for a company in the uploads directory"""
-    # Sanitize company name to prevent path traversal
-    safe_name = secure_filename(company_name)
-    company_folder = os.path.join(app.config['UPLOAD_FOLDER'], safe_name)
+def create_company_doctype_folders(company_name, doctype_name):
+    """Create folder structure for company and document type automatically"""
+    # Sanitize names to prevent path traversal
+    safe_company_name = secure_filename(company_name)
+    safe_doctype_name = secure_filename(doctype_name)
     
-    # Create the folder if it doesn't exist
+    # Create the main folder structure: /dms/upload/<company>/<doctype>/
+    company_folder = os.path.join(app.config['DMS_UPLOAD_FOLDER'], safe_company_name)
+    doctype_folder = os.path.join(company_folder, safe_doctype_name)
+    summary_folder = os.path.join(doctype_folder, 'summary')
+    
+    # Create all folders
     os.makedirs(company_folder, exist_ok=True)
-    return company_folder
+    os.makedirs(doctype_folder, exist_ok=True)
+    os.makedirs(summary_folder, exist_ok=True)
+    
+    return company_folder, doctype_folder, summary_folder
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-@app.route('/upload', methods=['POST'])
-@jwt_required()
-def upload_file():
-    current_user = get_jwt_identity()
-    
-    if 'file' not in request.files:
-        return jsonify({"msg": "No file part in the request"}), 400
-    
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({"msg": "No selected file"}), 400
-    
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+def process_single_file_ocr(file, company_name, doctype_name):
+    """Process a single file with OCR and return extracted data"""
+    try:
+        # Create folder structure
+        company_folder, doctype_folder, summary_folder = create_company_doctype_folders(company_name, doctype_name)
         
-        # To avoid overwriting files, you might want to make the filename unique
-        # For example, prefix with user id + timestamp
-        import time
-        filename = f"{current_user}_{int(time.time())}_{filename}"
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-
+        # Save the original file
+        filename = secure_filename(file.filename)
+        timestamp = int(datetime.now().timestamp())
+        unique_filename = f"{timestamp}_{filename}"
+        file_path = os.path.join(doctype_folder, unique_filename)
+        
         file.save(file_path)
         
-        # Save file info and path to DB
-        # Adjust according to your db.py and schema
-        try:
-            document_id = db.create_document(
-                owner_id=current_user['id'],
-                company_id=request.form.get('company_id'),  # sent from client
-                filename=filename,
-                document_type=request.form.get('document_type', 'non_invoice'),
-                file_path=file_path  # <-- save the path here!
-            )
-            
-            # Log document creation
-            current_user_claims = get_jwt()
-            log_activity(
-                actor=current_user_claims['username'],
-                action="Create",
-                resource_type="document",
-                resource_data={
-                    'id': document_id,
-                    'filename': filename,
-                    'company_id': request.form.get('company_id')
-                }
-            )
-            
-            return jsonify({"msg": "File uploaded successfully", "document_id": document_id}), 201
-        except Exception as e:
-            return jsonify({"msg": f"Database error: {str(e)}"}), 500
-    else:
-        return jsonify({"msg": "File type not allowed"}), 400
+        # Perform OCR based on file type
+        text = ""
+        if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff')):
+            image = Image.open(file_path).convert("RGB")
+            text = pytesseract.image_to_string(image, lang='fra+eng')
+        elif filename.lower().endswith('.pdf'):
+            with open(file_path, 'rb') as pdf_file:
+                images = convert_from_bytes(pdf_file.read())
+                for img in images:
+                    text += pytesseract.image_to_string(img, lang='fra+eng') + "\n"
+        
+        # Save OCR text
+        text_filename = f"{os.path.splitext(unique_filename)[0]}.txt"
+        text_path = os.path.join(doctype_folder, text_filename)
+        with open(text_path, 'w', encoding='utf-8') as f:
+            f.write(text)
+        
+        # Extract structured data
+        extracted_data = extract_invoice_data(text)
+        
+        return {
+            "filename": unique_filename,
+            "original_filename": filename,
+            "file_path": file_path,
+            "text_path": text_path,
+            "ocr_text": text,
+            "extracted_data": extracted_data,
+            "company_folder": company_folder,
+            "doctype_folder": doctype_folder,
+            "summary_folder": summary_folder
+        }
+        
+    except Exception as e:
+        return {
+            "filename": file.filename,
+            "error": str(e)
+        }
 
 #CORS(app, supports_credentials=True)
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=4)
@@ -387,12 +398,17 @@ def create_company():
     try:
         company_id = db.create_company(data)
         company = db.get_company_by_id(company_id)
+        
+        # Create company folder in DMS structure when company is created
         if company:
-            create_company_upload_folder(company['name'])
+            safe_company_name = secure_filename(company['name'])
+            company_folder = os.path.join(app.config['DMS_UPLOAD_FOLDER'], safe_company_name)
+            os.makedirs(company_folder, exist_ok=True)
+        
         # Log company creation
         log_activity(
             actor=current_user_claims['username'],
-            action="Update",
+            action="Create",
             resource_type="company",
             resource_data={
                 'id': company_id,
@@ -548,6 +564,15 @@ def create_doctype():
 
         # Create the doctype
         doctype_id = db.create_doctype(data)
+        
+        # Create doctype folders for all associated companies
+        doctype = db.get_doctype_by_id(doctype_id)
+        companies = data.get('companies', [])
+        
+        for company_id in companies:
+            company = db.get_company_by_id(company_id)
+            if company:
+                create_company_doctype_folders(company['name'], doctype['name'])
 
         # Log creation
         log_activity(
@@ -722,7 +747,7 @@ def create_document():
         return jsonify({"msg": "No selected file"}), 400
 
     filename = secure_filename(file.filename)
-    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    file_path = os.path.join(app.config['TEMP_UPLOAD_FOLDER'], filename)
     file.save(file_path)
 
     file_size = os.path.getsize(file_path)
@@ -758,24 +783,64 @@ def create_document():
     except Exception as e:
         return jsonify({"msg": str(e)}), 400
 
-# ====== Upload Configuration ======
-UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), 'uploads'))
-ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'docx', 'txt'}
+# ====== NEW SINGLE FILE UPLOAD ENDPOINT ======
+@app.route('/upload_single', methods=['POST'])
+@jwt_required()
+def upload_single_file():
+    """Upload and process a single file with OCR"""
+    current_user = get_jwt_identity()
+    
+    # Get form data
+    company_name = request.form.get('company')
+    doctype_name = request.form.get('doctype')
+    
+    if not company_name or not doctype_name:
+        return jsonify({"msg": "Company and document type are required"}), 400
+    
+    # Get uploaded file
+    if 'file' not in request.files:
+        return jsonify({"msg": "No file uploaded"}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"msg": "No file selected"}), 400
+    
+    # Validate file type
+    if not allowed_file(file.filename):
+        return jsonify({"msg": f"Invalid file type: {file.filename}"}), 400
+    
+    try:
+        # Process the single file with OCR
+        processed_file = process_single_file_ocr(file, company_name, doctype_name)
+        
+        if 'error' in processed_file:
+            return jsonify({"msg": f"Processing error: {processed_file['error']}"}), 500
+        
+        # Save processing results to temporary storage for confirmation
+        session_id = f"{current_user['id']}_{int(datetime.now().timestamp())}"
+        temp_data = {
+            'session_id': session_id,
+            'company': company_name,
+            'doctype': doctype_name,
+            'processed_file': processed_file,
+            'user_id': current_user['id']
+        }
+        
+        # Store in temporary file
+        temp_file_path = os.path.join(app.config['TEMP_UPLOAD_FOLDER'], f"temp_{session_id}.json")
+        with open(temp_file_path, 'w', encoding='utf-8') as f:
+            json.dump(temp_data, f, ensure_ascii=False, indent=2)
+        
+        return jsonify({
+            "msg": "File processed successfully",
+            "session_id": session_id,
+            "extracted_data": processed_file['extracted_data']
+        }), 200
+        
+    except Exception as e:
+        return jsonify({"msg": f"Processing error: {str(e)}"}), 500
 
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-def create_company_upload_folder(company_name, doctype_name):
-    """Create a folder structure for a company and document type in the uploads directory"""
-    company_folder = os.path.join(app.config['UPLOAD_FOLDER'], company_name, doctype_name)
-    reports_folder = os.path.join(company_folder, 'Reports')
-    os.makedirs(company_folder, exist_ok=True)
-    os.makedirs(reports_folder, exist_ok=True)
-    return company_folder, reports_folder
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
+# ====== ENHANCED MULTIPLE FILES UPLOAD ENDPOINT ======
 @app.route('/upload', methods=['POST'])
 @jwt_required()
 def upload_files():
@@ -801,10 +866,10 @@ def upload_files():
     
     try:
         # Create folder structure
-        company_folder, reports_folder = create_company_upload_folder(company_name, doctype_name)
+        company_folder, doctype_folder, summary_folder = create_company_doctype_folders(company_name, doctype_name)
         
         # Process files with OCR
-        processed_files = process_uploaded_files(files, app.config['UPLOAD_FOLDER'], company_name, doctype_name)
+        processed_files = process_uploaded_files(files, app.config['TEMP_UPLOAD_FOLDER'], company_name, doctype_name)
         
         # Save processing results to temporary storage for confirmation
         session_id = f"{current_user['id']}_{int(datetime.now().timestamp())}"
@@ -817,7 +882,7 @@ def upload_files():
         }
         
         # Store in temporary file (in production, use Redis or database)
-        temp_file_path = os.path.join(app.config['UPLOAD_FOLDER'], f"temp_{session_id}.json")
+        temp_file_path = os.path.join(app.config['TEMP_UPLOAD_FOLDER'], f"temp_{session_id}.json")
         with open(temp_file_path, 'w', encoding='utf-8') as f:
             json.dump(temp_data, f, ensure_ascii=False, indent=2)
         
@@ -857,7 +922,7 @@ def confirm_document():
     
     try:
         # Load temporary data
-        temp_file_path = os.path.join(app.config['UPLOAD_FOLDER'], f"temp_{session_id}.json")
+        temp_file_path = os.path.join(app.config['TEMP_UPLOAD_FOLDER'], f"temp_{session_id}.json")
         if not os.path.exists(temp_file_path):
             return jsonify({"msg": "Session expired or invalid"}), 400
         
@@ -868,7 +933,7 @@ def confirm_document():
         doctype_name = temp_data['doctype']
         
         # Create folder structure
-        company_folder, reports_folder = create_company_upload_folder(company_name, doctype_name)
+        company_folder, doctype_folder, summary_folder = create_company_doctype_folders(company_name, doctype_name)
         
         saved_documents = []
         
@@ -888,10 +953,10 @@ def confirm_document():
                     extracted_data=confirmed_info
                 )
                 
-                # Generate report PDF if it's an invoice
+                # Generate report PDF if it's an invoice and save to summary folder
                 if is_invoice and confirmed_info:
                     report_filename = f"{os.path.splitext(filename)[0]}_report.pdf"
-                    report_path = os.path.join(reports_folder, report_filename)
+                    report_path = os.path.join(summary_folder, report_filename)
                     generate_report_pdf(confirmed_info, report_path, filename)
                 
                 # Log document creation

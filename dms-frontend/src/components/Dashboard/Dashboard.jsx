@@ -4,9 +4,9 @@ import WelcomePanel from './WelcomePanel';
 import { AppContext } from '../context';
 
 const Dashboard = ({ user }) => {
-  const { selectedCompany, selectedFolder } = useContext(AppContext);
+  const { selectedCompany, selectedDoctype } = useContext(AppContext);
 
-  if (!selectedCompany && !selectedFolder) {
+  if (!selectedCompany && !selectedDoctype) {
     return <WelcomePanel user={user} />;
   }
 
@@ -14,7 +14,7 @@ const Dashboard = ({ user }) => {
     <DocumentArchive 
       user={user} 
       selectedCompany={selectedCompany} 
-      selectedFolder={selectedFolder} 
+      selectedDoctype={selectedDoctype} 
     />
   );
 };

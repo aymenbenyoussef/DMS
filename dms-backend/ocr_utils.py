@@ -13,6 +13,8 @@ from reportlab.lib.units import inch
 from reportlab.lib import colors
 from datetime import datetime
 
+pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'  # Adjust path as needed
+
 def extract_invoice_data(text):
     """Extract structured data from OCR text - Enhanced for French invoices"""
     data = {

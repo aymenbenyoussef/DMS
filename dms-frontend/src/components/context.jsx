@@ -4,20 +4,20 @@ export const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
   const [selectedCompany, setSelectedCompany] = useState(null);
-  const [selectedFolder, setSelectedFolder] = useState(null);
+  const [selectedDoctype, setSelectedDoctype] = useState(null);
   
   // Add reset function
   const resetSelection = () => {
     setSelectedCompany(null);
-    setSelectedFolder(null);
+    setSelectedDoctype(null);
   };
 
   return (
     <AppContext.Provider value={{
       selectedCompany,
-      selectedFolder,
+      selectedDoctype,
       setSelectedCompany,
-      setSelectedFolder,
+      setSelectedDoctype,
       resetSelection
     }}>
       {children}

@@ -5,7 +5,7 @@ import { AppContext } from '../context';
 import WelcomePanel from './WelcomePanel';
 import { useNavigate } from 'react-router-dom';
 
-const DocumentArchive = ({ user, selectedCompany, selectedFolder }) => {
+const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [folderName, setFolderName] = useState('');
@@ -13,7 +13,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedFolder }) => {
   const [successMessage, setSuccessMessage] = useState('');
   const [folders, setFolders] = useState([]);
   const [uploadError, setUploadError] = useState('');
-  const { setSelectedFolder } = useContext(AppContext);
+   const { setSelectedDoctype } = useContext(AppContext);
   const navigate = useNavigate();
   
   // Document type states
@@ -121,7 +121,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedFolder }) => {
       // Prepare documents for API with folder ID
       const uploadData = documents.map(doc => ({
         ...doc,
-        folder_id: selectedFolder?.id || null,
+        folder_id: selectedDoctype?.id || null,
         company_id: selectedCompany.id
       }));
       
@@ -136,8 +136,8 @@ const DocumentArchive = ({ user, selectedCompany, selectedFolder }) => {
 
   // Get breadcrumb path
   const getBreadcrumb = () => {
-    if (selectedFolder && selectedCompany) {
-      return `${selectedCompany.name} > ${selectedFolder.name}`;
+    if (selectedDoctype && selectedCompany) {
+      return `${selectedCompany.name} > ${selectedDoctype.name}`;
     }
     if (selectedCompany) {
       return `${selectedCompany.name} >`;
@@ -195,7 +195,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedFolder }) => {
     }
   };
 
-  if (!selectedCompany && !selectedFolder) {
+  if (!selectedCompany && !selectedDoctype) {
     return <WelcomePanel user={user} />;
   }
 
@@ -227,7 +227,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedFolder }) => {
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h1 className="h2 mb-0">Document Archive</h1>
         <div className="d-flex gap-2">
-          {selectedFolder && (
+          {selectedDoctype && (
             <button 
               className="btn btn-primary d-flex align-items-center"
               onClick={openUploadModal}
