@@ -18,7 +18,7 @@ export const AppProvider = ({ children }) => {
       selectedFolder,
       setSelectedCompany,
       setSelectedFolder,
-      resetSelection // Export reset function
+      resetSelection
     }}>
       {children}
     </AppContext.Provider>

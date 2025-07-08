@@ -10,13 +10,12 @@ from werkzeug.utils import secure_filename
 import os
 from flask_cors import cross_origin
 from pdf2image import convert_from_bytes
-from ocr_utils import process_uploaded_files
+from ocr_utils import process_uploaded_files, generate_report_pdf
+import json
 
 app = Flask(__name__)
 CORS(app) 
-
 CORS(app, resources={r"/upload": {"origins": "http://localhost:3000"}}, supports_credentials=True)
-
 # ====== Logging Configuration ======
 LOG_DIR = "logs"
 ACTIVITY_LOG = os.path.join(LOG_DIR, "activity.log")  # Changed to activity.log
@@ -741,116 +740,175 @@ def create_document():
     except Exception as e:
         return jsonify({"msg": str(e)}), 400
 
+# ====== Upload Configuration ======
+UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), 'uploads'))
+ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'docx', 'txt'}
 
-# Updated upload route
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+def create_company_upload_folder(company_name, doctype_name):
+    """Create a folder structure for a company and document type in the uploads directory"""
+    company_folder = os.path.join(app.config['UPLOAD_FOLDER'], company_name, doctype_name)
+    reports_folder = os.path.join(company_folder, 'Reports')
+    os.makedirs(company_folder, exist_ok=True)
+    os.makedirs(reports_folder, exist_ok=True)
+    return company_folder, reports_folder
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 @app.route('/upload', methods=['POST'])
 @jwt_required()
 def upload_files():
-    current_user_claims = get_jwt()
-    current_user_id = current_user_claims.get('id')
+    """Upload multiple files and process them with OCR"""
+    current_user = get_jwt_identity()
     
     # Get form data
-    company_id = request.form.get('company_id')
-    doctype_id = request.form.get('doctype_id')
+    company_name = request.form.get('company')
+    doctype_name = request.form.get('doctype')
     
-    if not company_id or not doctype_id:
-        return jsonify({"msg": "Company and document type required"}), 400
+    if not company_name or not doctype_name:
+        return jsonify({"msg": "Company and document type are required"}), 400
     
-    # Get company and doctype info
-    company = db.get_company_by_id(company_id)
-    doctype = db.get_doctype_by_id(doctype_id)
-    
-    if not company or not doctype:
-        return jsonify({"msg": "Invalid company or document type"}), 400
-    
+    # Get uploaded files
     files = request.files.getlist('files')
-    if not files:
-        return jsonify({"msg": "No files provided"}), 400
+    if not files or all(file.filename == '' for file in files):
+        return jsonify({"msg": "No files selected"}), 400
+    
+    # Validate file types
+    invalid_files = [file.filename for file in files if file.filename != '' and not allowed_file(file.filename)]
+    if invalid_files:
+        return jsonify({"msg": f"Invalid file types: {', '.join(invalid_files)}"}), 400
     
     try:
+        # Create folder structure
+        company_folder, reports_folder = create_company_upload_folder(company_name, doctype_name)
+        
         # Process files with OCR
-        results = process_uploaded_files(
-            files, 
-            app.config['UPLOAD_FOLDER'],
-            company['name'], 
-            doctype['name']
-        )
+        processed_files = process_uploaded_files(files, app.config['UPLOAD_FOLDER'], company_name, doctype_name)
         
-        # Create document records
-        for result in results:
-            if 'error' in result:
-                continue
-                
-            # Create document record
-            document_id = db.create_document(
-                owner_id=current_user_id,
-                company_id=company_id,
-                doctype_id=doctype_id,
-                filename=result['filename'],
-                file_path=result['file_path'],
-                ocr_text=result['ocr_text'],
-                invoice_data=json.dumps(result['extracted_data']),
-                file_size=os.path.getsize(result['file_path'])
-            )
-            result['document_id'] = document_id
-            
-            # Log document creation
-            log_activity(
-                actor=current_user_claims['username'],
-                action="Upload",
-                resource_type="document",
-                resource_data={
-                    'id': document_id,
-                    'filename': result['filename'],
-                    'company_id': company_id
+        # Save processing results to temporary storage for confirmation
+        session_id = f"{current_user['id']}_{int(datetime.now().timestamp())}"
+        temp_data = {
+            'session_id': session_id,
+            'company': company_name,
+            'doctype': doctype_name,
+            'processed_files': processed_files,
+            'user_id': current_user['id']
+        }
+        
+        # Store in temporary file (in production, use Redis or database)
+        temp_file_path = os.path.join(app.config['UPLOAD_FOLDER'], f"temp_{session_id}.json")
+        with open(temp_file_path, 'w', encoding='utf-8') as f:
+            json.dump(temp_data, f, ensure_ascii=False, indent=2)
+        
+        # Prepare response data for frontend forms
+        forms_data = []
+        for processed_file in processed_files:
+            if 'error' not in processed_file:
+                form_data = {
+                    'filename': processed_file['filename'],
+                    'company': company_name,
+                    'doctype': doctype_name,
+                    'extracted_data': processed_file['extracted_data']
                 }
-            )
+                forms_data.append(form_data)
         
-        return jsonify(results), 201
+        return jsonify({
+            "msg": "Files processed successfully",
+            "session_id": session_id,
+            "forms_data": forms_data
+        }), 200
+        
     except Exception as e:
         return jsonify({"msg": f"Processing error: {str(e)}"}), 500
 
-# Confirm document route
-@app.route('/documents/<int:document_id>/confirm', methods=['POST'])
+@app.route('/confirm_document', methods=['POST'])
 @jwt_required()
-def confirm_document(document_id):
-    current_user_claims = get_jwt()
+def confirm_document():
+    """Confirm and save document information after user validation"""
+    current_user = get_jwt_identity()
     data = request.get_json()
     
-    # Get document
-    document = db.get_document_by_id(document_id)
-    if not document:
-        return jsonify({"msg": "Document not found"}), 404
+    session_id = data.get('session_id')
+    confirmed_documents = data.get('documents', [])
+    
+    if not session_id or not confirmed_documents:
+        return jsonify({"msg": "Session ID and documents data are required"}), 400
     
     try:
-        # Create report path
-        base_path = os.path.dirname(document['file_path'])
-        base_name = os.path.splitext(document['filename'])[0]
-        report_path = os.path.join(base_path, f"{base_name}_report.json")
+        # Load temporary data
+        temp_file_path = os.path.join(app.config['UPLOAD_FOLDER'], f"temp_{session_id}.json")
+        if not os.path.exists(temp_file_path):
+            return jsonify({"msg": "Session expired or invalid"}), 400
         
-        # Save confirmed data
-        with open(report_path, 'w') as f:
-            json.dump(data, f, indent=2)
+        with open(temp_file_path, 'r', encoding='utf-8') as f:
+            temp_data = json.load(f)
         
-        # Update document with confirmed data
-        db.update_document(
-            document_id,
-            invoice_data=json.dumps(data)
-        )
+        company_name = temp_data['company']
+        doctype_name = temp_data['doctype']
         
-        # Log confirmation
-        log_activity(
-            actor=current_user_claims['username'],
-            action="Confirm",
-            resource_type="document",
-            resource_data={
-                'id': document_id,
-                'filename': document['filename'],
-                'company_id': document['company_id']
-            }
-        )
+        # Create folder structure
+        company_folder, reports_folder = create_company_upload_folder(company_name, doctype_name)
         
-        return jsonify({"msg": "Document confirmed", "report_path": report_path}), 200
+        saved_documents = []
+        
+        for doc_data in confirmed_documents:
+            filename = doc_data['filename']
+            is_invoice = doc_data.get('is_invoice', False)
+            confirmed_info = doc_data.get('confirmed_data', {})
+            
+            try:
+                # Save document to database
+                document_id = db.create_document_with_ocr_data(
+                    owner_id=current_user['id'],
+                    company_name=company_name,
+                    doctype_name=doctype_name,
+                    filename=filename,
+                    is_invoice=is_invoice,
+                    extracted_data=confirmed_info
+                )
+                
+                # Generate report PDF if it's an invoice
+                if is_invoice and confirmed_info:
+                    report_filename = f"{os.path.splitext(filename)[0]}_report.pdf"
+                    report_path = os.path.join(reports_folder, report_filename)
+                    generate_report_pdf(confirmed_info, report_path, filename)
+                
+                # Log document creation
+                current_user_claims = get_jwt()
+                log_activity(
+                    actor=current_user_claims.get('username', 'Unknown'),
+                    action="Create",
+                    resource_type="document",
+                    resource_data={
+                        'id': document_id,
+                        'filename': filename,
+                        'company_id': company_name
+                    }
+                )
+                
+                saved_documents.append({
+                    'document_id': document_id,
+                    'filename': filename,
+                    'is_invoice': is_invoice
+                })
+                
+            except Exception as e:
+                saved_documents.append({
+                    'filename': filename,
+                    'error': str(e)
+                })
+        
+        # Clean up temporary file
+        os.remove(temp_file_path)
+        
+        return jsonify({
+            "msg": "Documents confirmed and saved successfully",
+            "saved_documents": saved_documents
+        }), 200
+        
     except Exception as e:
         return jsonify({"msg": f"Confirmation error: {str(e)}"}), 500
 
