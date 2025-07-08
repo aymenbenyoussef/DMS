@@ -20,13 +20,14 @@ import {
 
 const AdminDashboard = () => {
   const tiles = [
-    { icon: <BiUserPlus size={20} />, label: 'Add user', link: '/AddUsers' },
-    { icon: <BiGroup size={20} />, label: 'Users management', link: '/admin/users' },
-    { icon: <BiBuilding size={20} />, label: 'Add company', link: '/AddComp' },
-    { icon: <BiBuildings size={20} />, label: 'Companies management', link: '/companies' },
+    
+    { icon: <BiGroup size={20} />, label: 'Users ', link: '/admin/users' },
+    
+    { icon: <BiBuildings size={20} />, label: 'Entities ', link: '/companies' },
+    { icon: <BiCollection size={20} />, label: 'Data types ', link: '/doctypes' },
     { icon: <BiFile size={20} />, label: 'Log files', link: '/admin/activity_logs' },
-    { icon: <BiFileBlank size={20} />, label: 'Add Doctype', link: '/AddDoctype' },
-    { icon: <BiCollection size={20} />, label: 'Doctypes management', link: '/doctypes' },
+    
+    
     { icon: <BiFolder size={20} />, label: 'Contents overview' },
     { icon: <BiBarChart size={20} />, label: 'Charts' },
     { icon: <BiCheckSquare size={20} />, label: 'Folder/Document check' },

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import API from '../../api';
 import './AdminDashboard.css';
+import { Link } from 'react-router-dom';
 
 const AdminUsers = ({user}) => {
   const [users, setUsers] = useState([]);
@@ -24,6 +25,16 @@ const AdminUsers = ({user}) => {
   const [showModifyTab, setShowModifyTab] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
   const [globalErrors, setGlobalErrors] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
+   const [filters, setFilters] = useState({
+    id: '',
+    username: '',
+    surname: '',
+    email: '',
+    role: '',
+    status: '',
+    companies:''
+  });
   useEffect(() => {
     const fetchCompanies = async () => {
       try {
@@ -60,7 +71,7 @@ const AdminUsers = ({user}) => {
       companies: user.companies || [] // Ensure companies is always an array
     }));
     setUsers(usersWithCompanies);
-    
+    setFilteredUsers(usersWithCompanies);
     // Also update the userCompanies state for editing
     const companiesMap = {};
     usersWithCompanies.forEach(user => {
@@ -74,6 +85,50 @@ const AdminUsers = ({user}) => {
     setLoading(false);
   }
 };
+
+useEffect(() => {
+    applyFilters();
+  }, [filters, users]);
+
+  const applyFilters = () => {
+    let result = [...users];
+    
+    Object.keys(filters).forEach(key => {
+      if (filters[key]) {
+        if (key === 'status') {
+          const filterValue = filters[key].toLowerCase();
+          result = result.filter(user => 
+            (filterValue === 'active' && user.is_active) ||
+            (filterValue === 'inactive' && !user.is_active)||
+          (user.is_active ? 'active' : 'inactive').includes(filterValue)
+          );
+        } 
+        else if (key === 'companies') {
+          const filterValue = filters[key].toLowerCase();
+          result = result.filter(user => {
+            if (!user.companies || user.companies.length === 0) return false;
+            return user.companies.some(company => 
+              company.name.toLowerCase().includes(filterValue)
+            );
+          });
+        }
+        else {
+          result = result.filter(user => 
+            String(user[key]).toLowerCase().includes(filters[key].toLowerCase())
+          );
+        }
+      }
+    });
+    
+    setFilteredUsers(result);
+  };
+
+  const handleFilterChange = (e, field) => {
+    setFilters({
+      ...filters,
+      [field]: e.target.value
+    });
+  };
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -230,26 +285,30 @@ const AdminUsers = ({user}) => {
           </button>
           {showModifyTab && (
           <button 
-    className={`tab-btn ${activeTab === 'form' ? 'active' : ''}`}
-  onClick={() => {
-    setActiveTab('form');
-    setEditingUser(null);
-    setFormData({
-      id:'',
-      username: '',
-      surname: '',
-      email: '',
-      password: '',
-      passwordConfirm: '',
-      role: 'user',
-      is_active: true,
-      companies: []
-    });
-  }}
->
-  Modify User 
-</button>)}
-        </div>
+          className={`tab-btn ${activeTab === 'form' ? 'active' : ''}`}
+          onClick={() => {
+            setActiveTab('form');
+            setEditingUser(null);
+            setFormData({
+              id:'',
+              username: '',
+              surname: '',
+              email: '',
+              password: '',
+              passwordConfirm: '',
+              role: 'user',
+              is_active: true,
+              companies: []
+            });
+          }}
+        >
+          Modify User 
+        </button>)}
+        
+        <Link to="/AddUsers" className="btn-primary-2">
+                    Add User
+            </Link>
+            </div>
       </div>
 
       {error && <div className="alert alert-error">{error}</div>}
@@ -261,67 +320,150 @@ const AdminUsers = ({user}) => {
             <table>
               <thead>
                 <tr>
-                  <th>ID</th>
-                  <th>User Name</th>
-                  <th>User Surname</th>
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th>Status</th>
-                  <th>Companies</th>
+                  <th>ID
+                    <div className="filter-container">
+                      <input
+                        type="text"
+                        value={filters.id}
+                        onChange={(e) => handleFilterChange(e, 'id')}
+                        placeholder="Filter ID"
+                        className="filter-input"
+                      />
+                    </div>
+                  </th>
+                  <th>User Name
+                    <div className="filter-container">
+                      <input
+                        type="text"
+                        value={filters.username}
+                        onChange={(e) => handleFilterChange(e, 'username')}
+                        placeholder="Filter Name"
+                        className="filter-input"
+                      />
+                    </div>
+                  </th>
+                  <th>User Surname
+                    <div className="filter-container">
+                      <input
+                        type="text"
+                        value={filters.surname}
+                        onChange={(e) => handleFilterChange(e, 'surname')}
+                        placeholder="Filter Surname"
+                        className="filter-input"
+                      />
+                    </div>
+                  </th>
+                  <th>Email
+                    <div className="filter-container">
+                      <input
+                        type="text"
+                        value={filters.email}
+                        onChange={(e) => handleFilterChange(e, 'email')}
+                        placeholder="Filter Email"
+                        className="filter-input"
+                      />
+                    </div>
+                  </th>
+                  <th>Role
+                    <div className="filter-container">
+                      <input
+                        type="text"
+                        value={filters.role}
+                        onChange={(e) => handleFilterChange(e, 'role')}
+                        placeholder="Filter Role"
+                        className="filter-input"
+                      />
+                    </div>
+                  </th>
+                  <th>Status
+                    <div className="filter-container">
+                      <input
+                        type="text"
+                        value={filters.status}
+                        onChange={(e) => handleFilterChange(e, 'status')}
+                        placeholder="Filter Status (active/inactive)"
+                        className="filter-input"
+                      />
+                    </div></th>
+                  <th>Companies
+                    <div className="filter-container">
+                      <input
+                        type="text"
+                        value={filters.companies}
+                        onChange={(e) => handleFilterChange(e, 'companies')}
+                        placeholder="Filter entities "
+                        className="filter-input"
+                      />
+                    </div>
+                  </th>
                   <th>Creation date</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {users.map(user => (
-                  <tr key={user.id}>
-                    <td>{user.id}</td>
-                    <td>{user.username}</td>
-                    <td>{user.surname}</td>
-                    <td>{user.email}</td>
-                    <td>
-                      <span className={`role-badge ${user.role}`}>
-                        {user.role}
-                      </span>
-                    </td>
-                    <td>
-                      <button
-                        className={`status-btn ${user.is_active ? 'active' : 'inactive'}`}
-                        onClick={() => toggleUserStatus(user.id, user.is_active)}
-                      >
-                        {user.is_active ? 'Active' : 'Inactive'}
-                      </button>
-                    </td>
-                    <td>
-  {user.companies && user.companies.length > 0 ? (
-    <ul className="company-list">
-      {user.companies.map(company => (
-        <li key={company.id}>{company.name}</li>
-      ))}
-    </ul>
-  ) : (
-    <span>No companies</span>
-  )}
-</td>
-                    <td>{new Date(user.created_at).toLocaleDateString()}</td>
-                    <td>
-                      <div className="action-buttons">
-                        <button
-                          className="btn-edit"
-                          onClick={() => handleEdit(user)}
-                        >
-                          Modify
-                        </button>
-                        <button
-                          className="btn-delete"
-                          onClick={() => handleDelete(user.id)}
-                        >
-                          Delete
-                        </button>
-                      </div>
+                {loading ? (
+                  <tr>
+                    <td colSpan="9" className="loading-message">
+                      Loading users...
                     </td>
                   </tr>
-                ))}
+                ) : filteredUsers.length > 0 ? (
+                  filteredUsers.map(user => (
+                    <tr key={user.id}>
+                      <td>{user.id}</td>
+                      <td>{user.username}</td>
+                      <td>{user.surname}</td>
+                      <td>{user.email}</td>
+                      <td>
+                        <span className={`role-badge ${user.role}`}>
+                          {user.role}
+                        </span>
+                      </td>
+                      <td>
+                        <button
+                          className={`status-btn ${user.is_active ? 'active' : 'inactive'}`}
+                          onClick={() => toggleUserStatus(user.id, user.is_active)}
+                        >
+                          {user.is_active ? 'Active' : 'Inactive'}
+                        </button>
+                      </td>
+                      <td>
+                        {user.companies && user.companies.length > 0 ? (
+                          <ul className="company-tokens">
+                            {user.companies.map(company => (
+                              <li key={company.id} className="company-token">{company.name}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <span></span>
+                        )}
+                      </td>
+                      <td>{new Date(user.created_at).toLocaleDateString()}</td>
+                      <td>
+                        <div className="action-buttons">
+                          <button
+                            className="btn-edit"
+                            onClick={() => handleEdit(user)}
+                          >
+                            Modify
+                          </button>
+                          <button
+                            className="btn-delete"
+                            onClick={() => handleDelete(user.id)}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="9" className="no-results">
+                      {users.length === 0 ? 'No users available' : 'No users found matching your filters'}
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -374,11 +516,11 @@ const AdminUsers = ({user}) => {
                 placeholder="Enter Email"
               />
               {fieldErrors.email && (
-    <div className="field-error">
-      
-      {fieldErrors.email}
-    </div>
-  )}
+                <div className="field-error">
+                  
+                  {fieldErrors.email}
+                </div>
+              )}
             </div>
 
             <div className="form-group">
@@ -423,15 +565,15 @@ const AdminUsers = ({user}) => {
                       
                       checked={formData.companies.includes(c.id)}
                       onChange={(e) => {
-  const { value, checked } = e.target;
-  const companyId = parseInt(value, 10);
-  setFormData(prev => ({
-    ...prev,
-    companies: checked
-      ? [...prev.companies, companyId]
-      : prev.companies.filter(id => id !== companyId)
-  }));
-}}
+                      const { value, checked } = e.target;
+                      const companyId = parseInt(value, 10);
+                      setFormData(prev => ({
+                        ...prev,
+                        companies: checked
+                          ? [...prev.companies, companyId]
+                          : prev.companies.filter(id => id !== companyId)
+                      }));
+                    }}
                     />
                     <span className="company-name">{c.name}</span>
                   </label>

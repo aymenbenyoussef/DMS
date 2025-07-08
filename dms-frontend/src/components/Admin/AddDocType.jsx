@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import API from '../../api';
 import './AdminUsers.css'; // Keep same styling
+import { Link } from 'react-router-dom';
 
 const AddDocType = () => {
   // ⭐ NEW: include companies array
@@ -160,6 +161,9 @@ const AddDocType = () => {
 
           {/* submit */}
           <div className="form-actions">
+            <Link to="/doctypes" className="btn-primary">
+                Cancel
+            </Link>
             <button type="submit" className="btn-primary" disabled={loading}>
               {loading ? 'En cours...' : 'Create Document Type'}
             </button>

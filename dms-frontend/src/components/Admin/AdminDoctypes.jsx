@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import API from '../../api';
 import './AdminUsers.css';
 import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 const AdminDoctypes = ({ user }) => {
   const [doctypes, setDoctypes] = useState([]);
+  const [filteredDoctypes, setFilteredDoctypes] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
@@ -14,6 +16,12 @@ const AdminDoctypes = ({ user }) => {
   const [companies, setCompanies] = useState([]);
   const [fieldErrors, setFieldErrors] = useState({});
   const [globalErrors, setGlobalErrors] = useState([]);
+  const [filters, setFilters] = useState({
+    id: '',
+    name: '',
+    status: '',
+    companies:''
+  });
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -27,6 +35,7 @@ const AdminDoctypes = ({ user }) => {
       setLoading(true);
       const response = await API.doctype.getAll();
       setDoctypes(response.data);
+      setFilteredDoctypes(response.data);
     } catch (err) {
       setError('Error loading document types');
       console.error('Error details:', err.response?.data || err.message);
@@ -48,6 +57,49 @@ const AdminDoctypes = ({ user }) => {
     fetchDoctypes();
     fetchCompanies();
   }, []);
+
+  useEffect(() => {
+    applyFilters();
+  }, [filters, doctypes]);
+
+  const applyFilters = () => {
+    let result = [...doctypes];
+    
+    Object.keys(filters).forEach(key => {
+      if (filters[key]) {
+        if (key === 'status') {
+            const filterValue = filters[key].toLowerCase();
+            result = result.filter(doctype => {
+                const statusStr = doctype.status ? 'active' : 'inactive';
+                return statusStr.includes(filterValue);
+            });
+            }
+        else if (key === 'companies') {
+          const filterValue = filters[key].toLowerCase();
+          result = result.filter(doctype => {
+            if (!doctype.companies || doctype.companies.length === 0) return false;
+            return doctype.companies.some(company => 
+              company.name.toLowerCase().includes(filterValue)
+            );
+          });
+        }
+        else {
+          result = result.filter(doctype => 
+            String(doctype[key]).toLowerCase().includes(filters[key].toLowerCase())
+          );
+        }
+      }
+    });
+    
+    setFilteredDoctypes(result);
+  };
+
+  const handleFilterChange = (e, field) => {
+    setFilters({
+      ...filters,
+      [field]: e.target.value
+    });
+  };
 
   const validate = () => {
     const errors = {};
@@ -75,7 +127,6 @@ const AdminDoctypes = ({ user }) => {
       });
       setShowModifyTab(true);
       setActiveTab('form');
-      // Clear errors when starting to edit
       setFieldErrors({});
       setGlobalErrors([]);
     } catch (err) {
@@ -93,20 +144,19 @@ const AdminDoctypes = ({ user }) => {
         const affectedCompanyIds = companiesResponse.data.map(c => c.id);
 
         await API.doctype.delete(doctypeId);
-        
+
         setSuccess('Document type deleted successfully');
         fetchDoctypes();
         window.dispatchEvent(new CustomEvent('doctypeDeleted', {
-        detail: {
+          detail: {
             affectedCompanyIds: affectedCompanyIds
-        }
+          }
         }));
-        navigate('/doctypes')
+        navigate('/doctypes');
       } catch (err) {
         setError('Error deleting document type');
         console.error('Error deleting document type:', err);
       }
-
     }
   };
 
@@ -116,7 +166,6 @@ const AdminDoctypes = ({ user }) => {
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
     }));
-    // Clear error for this field if it exists
     if (fieldErrors[name]) {
       setFieldErrors(prev => ({ ...prev, [name]: '' }));
     }
@@ -149,10 +198,10 @@ const AdminDoctypes = ({ user }) => {
       setActiveTab('list');
       fetchDoctypes();
       window.dispatchEvent(new CustomEvent('doctypeUpdated', {
-    detail: {
-        affectedCompanyIds: formData.companies
-    }
-    }));
+        detail: {
+          affectedCompanyIds: formData.companies
+        }
+      }));
     } catch (err) {
       const apiError = err.response?.data;
       const errorMessage = apiError?.msg || apiError?.error || apiError?.message || '';
@@ -165,7 +214,6 @@ const AdminDoctypes = ({ user }) => {
         console.error('Error updating document type:', err);
       }
     }
-    
   };
 
   return (
@@ -191,13 +239,15 @@ const AdminDoctypes = ({ user }) => {
               Modify Document Type
             </button>
           )}
+          <Link to="/AddDoctype" className="btn-primary-2">
+            Add Document Type
+          </Link>
         </div>
       </div>
 
-      {loading && <p>Loading document types...</p>}
+      
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
-      
 
       {activeTab === 'list' && (
         <div className="users-list">
@@ -205,48 +255,105 @@ const AdminDoctypes = ({ user }) => {
             <table>
               <thead>
                 <tr>
-                  <th>ID</th>
-                  <th>Name</th>
-                  <th>Status</th>
-                  <th>Companies</th>
+                  <th>
+                    ID
+                    <div className="filter-container">
+                      <input
+                        type="text"
+                        value={filters.id}
+                        onChange={(e) => handleFilterChange(e, 'id')}
+                        placeholder="Filter ID"
+                        className="filter-input"
+                      />
+                    </div>
+                  </th>
+                  <th>
+                    Name
+                    <div className="filter-container">
+                      <input
+                        type="text"
+                        value={filters.name}
+                        onChange={(e) => handleFilterChange(e, 'name')}
+                        placeholder="Filter Name"
+                        className="filter-input"
+                      />
+                    </div>
+                  </th>
+                  <th>
+                    Status
+                    <div className="filter-container">
+                      <input
+                        type="text"
+                        value={filters.status}
+                        onChange={(e) => handleFilterChange(e, 'status')}
+                        placeholder="Filter Status (active/inactive)"
+                        className="filter-input"
+                      />
+                    </div>
+                  </th>
+                  <th>Companies
+                    <div className="filter-container">
+                      <input
+                        type="text"
+                        value={filters.company}
+                        onChange={(e) => handleFilterChange(e, 'companies')}
+                        placeholder="Filter by entity"
+                        className="filter-input"
+                      />
+                    </div>
+                  </th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {doctypes.map(doctype => (
-                  <tr key={doctype.id}>
-                    <td>{doctype.id}</td>
-                    <td>{doctype.name}</td>
-                    <td>{doctype.status ? 'Active' : 'Inactive'}</td>
-                    <td>
-                      {doctype.companies && doctype.companies.length > 0 ? (
-                        <ul className="company-list">
-                          {doctype.companies.map(company => (
-                            <li key={company.id}>{company.name}</li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <span>No companies</span>
-                      )}
-                    </td>
-                    <td>
-                      <div className="action-buttons">
-                        <button
-                          className="btn-edit"
-                          onClick={() => handleEdit(doctype)}
-                        >
-                          Modify
-                        </button>
-                        <button
-                          className="btn-delete"
-                          onClick={() => handleDelete(doctype.id)}
-                        >
-                          Delete
-                        </button>
-                      </div>
+                {loading ? (
+                  <tr>
+                    <td colSpan="5" className="loading-message">
+                      Loading document types...
                     </td>
                   </tr>
-                ))}
+                ) : filteredDoctypes.length > 0 ? (
+                  filteredDoctypes.map(doctype => (
+                    <tr key={doctype.id}>
+                      <td>{doctype.id}</td>
+                      <td>{doctype.name}</td>
+                      <td>{doctype.status ? 'Active' : 'Inactive'}</td>
+                      <td>
+                        {doctype.companies && doctype.companies.length > 0 ? (
+                          <ul className="company-tokens">
+                            {doctype.companies.map(company => (
+                              <li key={company.id} className="company-token">{company.name}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <span></span>
+                        )}
+                      </td>
+                      <td>
+                        <div className="action-buttons">
+                          <button
+                            className="btn-edit"
+                            onClick={() => handleEdit(doctype)}
+                          >
+                            Modify
+                          </button>
+                          <button
+                            className="btn-delete"
+                            onClick={() => handleDelete(doctype.id)}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="5" className="no-results">
+                      {doctypes.length === 0 ? 'No document types available' : 'No document types found matching your filters'}
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

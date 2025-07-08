@@ -4,7 +4,7 @@ import './AdminUsers.css';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 
-const AdminCompanies = ({ user }) => {
+const AdminCompanies = () => {
   const [companies, setCompanies] = useState([]);
   const [filteredCompanies, setFilteredCompanies] = useState([]);
   const [error, setError] = useState('');
@@ -43,7 +43,7 @@ const AdminCompanies = ({ user }) => {
         setFilteredCompanies(data.companies);
       }
     } catch (err) {
-      setError('Error loading companies');
+      setError('Error loading entities');
       console.error(err);
     } finally {
       setLoading(false);
@@ -79,6 +79,22 @@ const AdminCompanies = ({ user }) => {
     });
   };
 
+  useEffect(() => {
+    
+    const handleCompanyAdded = () => {
+      setSuccess('Entity created successfully!');
+      fetchCompanies(); // Refresh the list
+    }
+      // Clear the message after 5 seconds
+     
+
+    window.addEventListener('companyAdded', handleCompanyAdded);
+
+    return () => {
+      window.removeEventListener('companyAdded', handleCompanyAdded);
+    };
+  }, []);
+
   const handleEdit = (company) => {
     setEditingCompany(company);
     setFormData({
@@ -91,15 +107,17 @@ const AdminCompanies = ({ user }) => {
     setActiveTab('form');
   };
 
+
+
   const handleDelete = async (companyId) => {
-    if (window.confirm('Are you sure you want to delete this company?')) {
+    if (window.confirm('Are you sure you want to delete this Entity?')) {
       try {
         await API.companies.delete(companyId);
-        setSuccess('Company deleted successfully');
+        setSuccess('Entity deleted successfully');
         fetchCompanies();
       } catch (err) {
-        setError('Error deleting company');
-        console.error('Error deleting company:', err);
+        setError('Error deleting entity');
+        console.error('Error deleting entity:', err);
       }
       window.dispatchEvent(new Event('companyDeleted'));
       navigate('/companies');
@@ -121,31 +139,20 @@ const AdminCompanies = ({ user }) => {
     if (!editingCompany) return;
     try {
       await API.companies.update(editingCompany.id, formData);
-      setSuccess('Company updated successfully');
+      setSuccess('Entity updated successfully');
       setEditingCompany(null);
       setShowModifyTab(false);
       setActiveTab('list');
       fetchCompanies();
     } catch (err) {
-      setError('Error updating company');
-      console.error('Error updating company:', err);
+      setError('Error updating entity');
+      console.error('Error updating entity:', err);
     }
   };
-
-  const clearFilters = () => {
-    setFilters({
-      id: '',
-      name: '',
-      address: '',
-      email: '',
-      phone: ''
-    });
-  };
-
   return (
     <div className="admin-users">
       <div className="admin-header">
-        <h1>Companies Management</h1>
+        <h1>Entities Management</h1>
         <div className="admin-tabs">
           <button
             className={`tab-btn ${activeTab === 'list' ? 'active' : ''}`}
@@ -155,14 +162,14 @@ const AdminCompanies = ({ user }) => {
               setEditingCompany(null);
             }}
           >
-            Companies List
+            Entities List
           </button>
           {showModifyTab && (
             <button
               className={`tab-btn ${activeTab === 'form' ? 'active' : ''}`}
               onClick={() => setActiveTab('form')}
             >
-              Modify Company
+              Modify Entity
             </button>
           )}
         </div>
@@ -175,12 +182,10 @@ const AdminCompanies = ({ user }) => {
       {activeTab === 'list' && (
         <div className="users-list">
           <div className="filter-controls">
-            <button onClick={clearFilters} className="clear-filters-btn">
-              Clear Filters
-            </button>
+            
           
-          <Link to="/AddComp" className="btn-primary">
-            Add Company
+          <Link to="/AddComp" className="btn-primary-2">
+            Add Entity
           </Link>
           </div>
           <div className="users-table">
@@ -200,7 +205,7 @@ const AdminCompanies = ({ user }) => {
                     </div>
                   </th>
                   <th>
-                    Company Name
+                    Entity Name
                     <div className="filter-container">
                       <input
                         type="text"
@@ -255,7 +260,7 @@ const AdminCompanies = ({ user }) => {
                 {loading ? (
                   <tr>
                     <td colSpan="7" className="loading-message">
-                      Loading companies...
+                      Loading entities...
                     </td>
                   </tr>
                 ) :
@@ -289,7 +294,7 @@ const AdminCompanies = ({ user }) => {
                 ) : (
                   <tr>
                     <td colSpan="7" className="no-results">
-                      {companies.length === 0 ? 'No companies available' : 'No companies found matching your filters'}
+                      {companies.length === 0 ? 'No entities available' : 'No entities found matching your filters'}
                     </td>
                   </tr>
                 )}
@@ -301,16 +306,16 @@ const AdminCompanies = ({ user }) => {
 
       {activeTab === 'form' && (
         <div className="user-form">
-          <h2>Modify Company</h2>
+          <h2>Modify entity</h2>
           <form onSubmit={handleUpdate}>
             <div className="form-group">
-              <label>Company Name</label>
+              <label>Entity Name</label>
               <input
                 type="text"
                 name="name"
                 value={formData.name}
                 onChange={handleInputChange}
-                placeholder="Company Name"
+                placeholder="Entity Name"
                 required
               />
             </div>

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import API from '../../api';
 import './AdminUsers.css'; // or AdminCompanies.css
 import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 const AdminCompanies = ({ user }) => {
   const [formData, setFormData] = useState({
@@ -53,7 +54,7 @@ const AdminCompanies = ({ user }) => {
     };
     await API.companies.create(dataToSend);
 
-    setSuccess('Company created successfully!');
+    setSuccess('Entity created successfully!');
     setFormData({
       name: '',
       address: '',
@@ -62,16 +63,17 @@ const AdminCompanies = ({ user }) => {
     });
     setFieldErrors({});
     window.dispatchEvent(new Event('companyAdded'));
+    navigate('/companies');
   } catch (err) {
     const errorMsg =
       err.response?.data?.msg ||
-      "Error occurred while creating the company.";
+      "Error occurred while creating the entity.";
 
     // If duplicate error, set field-level messages
     if (errorMsg.toLowerCase().includes("name") || errorMsg.toLowerCase().includes("email")) {
       const duplicateErrors = {};
       if (errorMsg.toLowerCase().includes("name")) {
-        duplicateErrors.name = "This company name already exists.";
+        duplicateErrors.name = "This entity name already exists.";
       }
       if (errorMsg.toLowerCase().includes("email")) {
         duplicateErrors.email = "This email is already in use.";
@@ -89,7 +91,7 @@ const AdminCompanies = ({ user }) => {
 
   return (
     <div className="admin-users">
-      <h1>Add new company</h1>
+      <h1>Add new entity</h1>
 
       {fieldErrors.global && (
         <div className="alert alert-error">{fieldErrors.global}</div>
@@ -99,14 +101,14 @@ const AdminCompanies = ({ user }) => {
       <div className="user-form">
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="name">Name of the company</label>
+            <label htmlFor="name">Name of the entity</label>
             <input
               type="text"
               id="name"
               name="name"
               value={formData.name}
               onChange={handleInputChange}
-              placeholder="Entrez le nom"
+              placeholder="Enter the name"
               className={fieldErrors.name ? 'input-error' : ''}
             />
             {fieldErrors.name && (
@@ -122,7 +124,7 @@ const AdminCompanies = ({ user }) => {
               name="address"
               value={formData.address}
               onChange={handleInputChange}
-              placeholder="Entrez l'adresse"
+              placeholder="Enter the address"
               className={fieldErrors.address ? 'input-error' : ''}
             />
             {fieldErrors.address && (
@@ -138,7 +140,7 @@ const AdminCompanies = ({ user }) => {
               name="email"
               value={formData.email}
               onChange={handleInputChange}
-              placeholder="Entrez l'adresse email"
+              placeholder="Enter the email address"
               className={fieldErrors.email ? 'input-error' : ''}
             />
             {fieldErrors.email && (
@@ -154,7 +156,7 @@ const AdminCompanies = ({ user }) => {
               name="phone"
               value={formData.phone}
               onChange={handleInputChange}
-              placeholder="Entrez le numéro de téléphone"
+              placeholder="Enter the phone number"
               className={fieldErrors.phone ? 'input-error' : ''}
             />
             {fieldErrors.phone && (
@@ -163,12 +165,15 @@ const AdminCompanies = ({ user }) => {
           </div>
 
           <div className="form-actions">
+            <Link to="/companies" className="btn-primary">
+            Cancel
+          </Link>
             <button
               type="submit"
               disabled={loading}
               className="btn-primary"
             >
-              {loading ? 'En cours...' : 'Create company'}
+              {loading ? 'loading...' : 'Create entity'}
             </button>
           </div>
         </form>

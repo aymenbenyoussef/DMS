@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import API from '../../api';
 import './AdminUsers.css';
+import { Link } from 'react-router-dom';
 
 const AddUser = () => {
   const [activeTab, setActiveTab] = useState('profile');
@@ -293,15 +294,15 @@ const AddUser = () => {
             </label>
           </div>
           {globalErrors.length > 0 && (
-  <div className="form-error-message">
-    
-    <div>
-      {globalErrors.map((err, index) => (
-        <div key={index}>{err}</div>
-      ))}
-    </div>
-  </div>
-)}
+          <div className="form-error-message">
+            
+            <div>
+              {globalErrors.map((err, index) => (
+                <div key={index}>{err}</div>
+              ))}
+            </div>
+          </div>
+        )}
 
           <div className="form-actions">
           <button
@@ -311,7 +312,9 @@ const AddUser = () => {
             >
               Previous
             </button>
-          
+            <Link to="/admin/users" className="btn-primary">
+              Cancel
+            </Link>
             <button type="submit" disabled={loading} className="btn-primary">
               {loading ? 'Creating...' : 'Create User'}
             </button>

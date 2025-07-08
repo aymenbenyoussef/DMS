@@ -16,11 +16,6 @@
   text-align: center;
   width: 100%;
 }
-
-.admin-card {
-  width: 180px;
-}
-
 .card {
   border: none;
   border-radius: 8px;
@@ -191,4 +186,144 @@
 /* Remove the fixed width from admin-card */
 .admin-card {
   width: 100%;
+}
+.admin-header {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 20px;
+}
+
+.header-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.admin-tabs {
+  display: flex;
+  gap: 10px;
+  width: 1000px;
+}
+
+.btn-primary-2{
+  padding: 12px 24px;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background-color: #007bff;
+  color: white;
+  position: absolute;
+  top : 175px;
+  right: 44px;
+  text-decoration: none;
+}
+.btn-primary{
+  padding: 12px 24px;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background-color: #007bff;
+  color: white;
+  
+  
+}
+
+
+.btn-primary:hover:not(:disabled) {
+  background-color: #0056b3;
+}
+
+.btn-primary:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+.tab-btn {
+  padding: 8px 16px;
+  background: #f8f9fa;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.tab-btn.active {
+  background: #3498db;
+  color: white;
+  border-color: #2980b9;
+}
+.company-tokens {
+  display: flex;
+  align-items: left;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 4px 0;
+}
+
+.company-token {
+  display: inline-block;
+  background-color: #e9ecef;
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-size: 1rem;
+  color: #495057;
+  white-space: nowrap;
+}
+.filter-container {
+  margin-top: 8px;
+}
+
+.filter-input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #e9ecef;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  transition: border-color 0.3s ease;
+}
+
+.filter-input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+}
+
+.users-table th {
+  position: relative;
+}
+
+.users-table th > div {
+  position: relative;
+}
+
+.filter-controls {
+  margin-bottom: 15px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+
+.no-results {
+  text-align: center;
+  padding: 20px;
+  color: #6c757d;
+  font-style: italic;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .filter-input {
+    padding: 4px 6px;
+    font-size: 0.7rem;
+  }
+  
+  .users-table th {
+    padding: 8px 10px;
+  }
 }
