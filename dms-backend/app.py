@@ -246,6 +246,7 @@ def create_user():
         return jsonify({"msg": "A user with this email already exists"}), 400
 
     try:
+        print(data)
         user_id = db.create_user(
             username=data['username'],
             surname=data['surname'],
@@ -415,7 +416,20 @@ def update_company(company_id):
     data = request.get_json()
     if not data:
         return jsonify({"msg": "Missing company data"}), 400
+    
+    conflicts = db.check_company_exist_id(
+    data.get('name').strip(),
+    data.get('email', '').strip(),
+    company_id
+    )
 
+    if conflicts["name_exists"] or conflicts["email_exists"]:
+        messages = []
+        if conflicts["name_exists"]:
+            messages.append("Company name already exists.")
+        if conflicts["email_exists"]:
+            messages.append("Company email already exists.")
+        return jsonify({"msg": " ".join(messages)}), 400
     try:
         success = db.update_company(
             company_id,

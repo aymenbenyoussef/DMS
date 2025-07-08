@@ -8,6 +8,7 @@ const AdminCompanies = () => {
   const [companies, setCompanies] = useState([]);
   const [filteredCompanies, setFilteredCompanies] = useState([]);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [editingCompany, setEditingCompany] = useState(null);
@@ -47,6 +48,49 @@ const AdminCompanies = () => {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (success || error || Object.keys(fieldErrors).length > 0) {
+        setError('');
+        setSuccess('');
+        
+      }
+    }, 3000); // 5 seconds
+
+    return () => clearTimeout(timer);
+  }, [success, error, fieldErrors]);
+  
+  useEffect(() => {
+  const timer2 = setTimeout(() => {
+      if (error || Object.keys(fieldErrors).length > 0) {
+        
+        setFieldErrors({});
+      }
+    }, 9999999999); 
+
+    return () => clearTimeout(timer2);
+  }, [ error, fieldErrors]);
+
+  // Add this useEffect to clear on tab change
+ const handleTabChange = (tab) => {
+    if (tab !== 'list') {
+      // Clear all messages when switching away from list
+      setError('');
+      setSuccess('');
+      setFieldErrors({});
+    } else {
+      // When switching to list, only clear errors (keep success)
+      setError('');
+      setSuccess('');
+      setFieldErrors({});
+    }
+    setActiveTab(tab);
+    if (tab !== 'form') {
+      setShowModifyTab(false);
+      setEditingCompany(null);
     }
   };
 
@@ -118,12 +162,12 @@ const AdminCompanies = () => {
       } catch (err) {
         setError('Error deleting entity');
         console.error('Error deleting entity:', err);
+        
+        window.dispatchEvent(new Event('companyDeleted'));
+        navigate('/companies');
       }
-      window.dispatchEvent(new Event('companyDeleted'));
-      navigate('/companies');
-    }
   };
-
+  };
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -137,6 +181,18 @@ const AdminCompanies = () => {
     setError('');
     setSuccess('');
     if (!editingCompany) return;
+    const errors = {};
+    if (!formData.name.trim()) errors.name = 'Name is required.';
+    if (!formData.address.trim()) errors.address = 'Address is required.';
+    if (!formData.email.trim()) errors.email = 'Email is required.';
+    if (!formData.phone) errors.phone = 'Phone is required.';
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setLoading(false);
+      return;
+    }
+
     try {
       await API.companies.update(editingCompany.id, formData);
       setSuccess('Entity updated successfully');
@@ -145,8 +201,24 @@ const AdminCompanies = () => {
       setActiveTab('list');
       fetchCompanies();
     } catch (err) {
-      setError('Error updating entity');
-      console.error('Error updating entity:', err);
+      
+      const errorMsg =
+      err.response?.data?.msg ||
+      "Error occurred while updating the entity.";
+
+      // If duplicate error, set field-level messages
+      if (errorMsg.toLowerCase().includes("name") || errorMsg.toLowerCase().includes("email")) {
+        const duplicateErrors = {};
+        if (errorMsg.toLowerCase().includes("name")) {
+          duplicateErrors.name = "This entity name already exists.";
+        }
+        if (errorMsg.toLowerCase().includes("email")) {
+          duplicateErrors.email = "This email is already in use.";
+        }
+        setFieldErrors(duplicateErrors);
+        }else {
+      setFieldErrors({ global: errorMsg });
+    }
     }
   };
   return (
@@ -156,18 +228,14 @@ const AdminCompanies = () => {
         <div className="admin-tabs">
           <button
             className={`tab-btn ${activeTab === 'list' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveTab('list');
-              setShowModifyTab(false);
-              setEditingCompany(null);
-            }}
+            onClick={() => handleTabChange('list')}
           >
             Entities List
           </button>
           {showModifyTab && (
             <button
               className={`tab-btn ${activeTab === 'form' ? 'active' : ''}`}
-              onClick={() => setActiveTab('form')}
+              onClick={() => handleTabChange('form')}
             >
               Modify Entity
             </button>
@@ -175,7 +243,9 @@ const AdminCompanies = () => {
         </div>
       </div>
 
-      
+      {fieldErrors.global && (
+        <div className="alert alert-error">{fieldErrors.global}</div>
+      )}
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
 
@@ -316,8 +386,11 @@ const AdminCompanies = () => {
                 value={formData.name}
                 onChange={handleInputChange}
                 placeholder="Entity Name"
-                required
+                
               />
+              {fieldErrors.name && (
+              <p className="error-text">{fieldErrors.name}</p>
+            )}
             </div>
             <div className="form-group">
               <label>Address</label>
@@ -328,6 +401,9 @@ const AdminCompanies = () => {
                 onChange={handleInputChange}
                 placeholder="Address"
               />
+              {fieldErrors.address && (
+              <p className="error-text">{fieldErrors.address}</p>
+            )}
             </div>
             <div className="form-group">
               <label>Email</label>
@@ -338,6 +414,9 @@ const AdminCompanies = () => {
                 onChange={handleInputChange}
                 placeholder="Email"
               />
+              {fieldErrors.email && (
+              <p className="error-text">{fieldErrors.email}</p>
+            )}
             </div>
             <div className="form-group">
               <label>Phone</label>
@@ -348,22 +427,22 @@ const AdminCompanies = () => {
                 onChange={handleInputChange}
                 placeholder="Phone"
               />
+              {fieldErrors.phone && (
+              <p className="error-text">{fieldErrors.phone}</p>
+            )}
             </div>
             <div className="form-actions">
-              <button type="submit" className="btn-primary">
-                Update
-              </button>
               <button
                 type="button"
                 className="btn-primary"
-                onClick={() => {
-                  setActiveTab('list');
-                  setShowModifyTab(false);
-                  setEditingCompany(null);
-                }}
+                onClick={() => handleTabChange('list')}
               >
                 Cancel
               </button>
+              <button type="submit" className="btn-primary"  >
+                Update
+              </button>
+              
             </div>
           </form>
         </div>

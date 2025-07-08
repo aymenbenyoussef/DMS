@@ -87,6 +87,49 @@ const AdminUsers = ({user}) => {
 };
 
 useEffect(() => {
+    const timer = setTimeout(() => {
+      if (success || error || Object.keys(fieldErrors).length > 0) {
+        setError('');
+        setSuccess('');
+        
+      }
+    }, 3000); // 5 seconds
+
+    return () => clearTimeout(timer);
+  }, [success, error, fieldErrors]);
+  
+  useEffect(() => {
+  const timer2 = setTimeout(() => {
+      if (error || Object.keys(fieldErrors).length > 0) {
+        
+        setFieldErrors({});
+      }
+    }, 9999999999); 
+
+    return () => clearTimeout(timer2);
+  }, [ error, fieldErrors]);
+
+  // Add this useEffect to clear on tab change
+ const handleTabChange = (tab) => {
+    if (tab !== 'list') {
+      // Clear all messages when switching away from list
+      setError('');
+      setSuccess('');
+      setFieldErrors({});
+    } else {
+      // When switching to list, only clear errors (keep success)
+      setError('');
+      setSuccess('');
+      setFieldErrors({});
+    }
+    setActiveTab(tab);
+    if (tab !== 'form') {
+      setShowModifyTab(false);
+      setEditingUser(null);
+    }
+  };
+
+useEffect(() => {
     applyFilters();
   }, [filters, users]);
 
@@ -277,9 +320,7 @@ useEffect(() => {
         <div className="admin-tabs">
           <button 
             className={`tab-btn ${activeTab === 'list' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveTab('list');
-            setShowModifyTab(false);}}
+            onClick={() => handleTabChange('list')}
           >
             Users List
           </button>
@@ -287,8 +328,7 @@ useEffect(() => {
           <button 
           className={`tab-btn ${activeTab === 'form' ? 'active' : ''}`}
           onClick={() => {
-            setActiveTab('form');
-            setEditingUser(null);
+            handleTabChange('form');
             setFormData({
               id:'',
               username: '',
@@ -594,19 +634,18 @@ useEffect(() => {
             </div>
 
             <div className="form-actions">
-              <button type="submit" disabled={loading} className="btn-primary">
-                {loading ? 'Loading...' : (editingUser ? 'Update' : 'Create')}
-              </button>
               <button 
                 type="button" 
-                onClick={() => {
-                  setActiveTab('list');
-                  setShowModifyTab(false);}}
+                onClick={() => handleTabChange('list')}
                 className="btn-primary"
                 
               >
                 Cancel
               </button>
+              <button type="submit" disabled={loading} className="btn-primary">
+                {loading ? 'Loading...' : (editingUser ? 'Update' : 'Create')}
+              </button>
+              
             </div>
           </form>
         </div>

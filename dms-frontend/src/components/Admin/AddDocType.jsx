@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import API from '../../api';
-import './AdminUsers.css'; // Keep same styling
-import { Link } from 'react-router-dom';
+import './AdminUsers.css'; 
+import { Link} from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const AddDocType = () => {
-  // ⭐ NEW: include companies array
+  
   const [formData, setFormData] = useState({
     name: '',
     status: true,
@@ -16,19 +17,18 @@ const AddDocType = () => {
   const [success, setSuccess]   = useState('');
   const [companies, setCompanies] = useState([]);
   const [error, setError]       = useState('');
-
+  const navigate = useNavigate();
   /* ---------- field change ---------- */
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
 
-    // ⭐ NEW: special handling for the companies checkboxes
     if (name === 'companies') {
-      const id = Number(value);          // store as number
+      const id = Number(value);         
       setFormData((prev) => ({
         ...prev,
         companies: checked
-          ? [...prev.companies, id]      // add when checked
-          : prev.companies.filter((v) => v !== id), // remove when unchecked
+          ? [...prev.companies, id]      
+          : prev.companies.filter((v) => v !== id), 
       }));
     } else {
       setFormData((prev) => ({
@@ -83,10 +83,12 @@ const AddDocType = () => {
       setFormData({ name: '', status: true, companies: [] });
       setFieldErrors({});
     window.dispatchEvent(new CustomEvent('doctypeAdded', {
-  detail: {
-    affectedCompanyIds: formData.companies // Send the array of company IDs
-  }
-}));
+      detail: {
+        affectedCompanyIds: formData.companies // Send the array of company IDs
+      }
+      
+    }));
+      navigate('/doctypes');
     } catch (err) {
       const msg = err.response?.data?.msg ||
                   'Error occurred while creating the document type.';
