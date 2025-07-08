@@ -62,7 +62,7 @@ const AdminCompanies = ({ user }) => {
       phone: '',
     });
     setFieldErrors({});
-    window.dispatchEvent(new Event('companyAdded'));
+    /*window.dispatchEvent(new Event('companyAdded'));*/
     navigate('/companies');
   } catch (err) {
     const errorMsg =
@@ -71,7 +71,7 @@ const AdminCompanies = ({ user }) => {
 
     // If duplicate error, set field-level messages
     if (errorMsg.toLowerCase().includes("name") || errorMsg.toLowerCase().includes("email")) {
-      const duplicateErrors = {};
+        const duplicateErrors = {};
       if (errorMsg.toLowerCase().includes("name")) {
         duplicateErrors.name = "This entity name already exists.";
       }
@@ -83,7 +83,7 @@ const AdminCompanies = ({ user }) => {
       setFieldErrors({ global: errorMsg });
     }
 
-    console.error('Error creating company:', err);
+    
   } finally {
     setLoading(false);
   }

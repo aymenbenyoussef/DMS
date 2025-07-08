@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import API from '../../api';
 import './AdminDashboard.css';
 import { Link } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 
 const AdminUsers = ({user}) => {
   const [users, setUsers] = useState([]);
@@ -119,7 +120,7 @@ useEffect(() => {
     } else {
       // When switching to list, only clear errors (keep success)
       setError('');
-      setSuccess('');
+      
       setFieldErrors({});
     }
     setActiveTab(tab);
@@ -128,7 +129,15 @@ useEffect(() => {
       setEditingUser(null);
     }
   };
-
+/*const location = useLocation();
+  
+  useEffect(() => {
+    if (location.state?.successMessage) {
+      setSuccess(location.state.successMessage);
+      // Clear the state to prevent showing the message again on refresh
+      window.history.replaceState({}, '');
+    }
+  }, [location.state]);*/
 useEffect(() => {
     applyFilters();
   }, [filters, users]);
@@ -253,21 +262,20 @@ useEffect(() => {
   }
        
     } catch (err) {
-       console.log('Full error response:', err.response);
-  const apiError = err.response?.data;
-  let errorMsg = 'Error updating user';
-  const errors = {};
-  
-  // Check all possible error message locations
-  const errorMessage = apiError?.msg || apiError?.error || apiError?.message || '';
-  if (errorMessage.toLowerCase().includes('email')) {
-    errorMsg = 'Email already exists';
-    errors.email = 'Email already exists';
-  }
-
-  setFieldErrors(errors);
-  setGlobalErrors([errorMsg]);
-    } finally {
+       const errorMsg = err.response?.data?.msg || "Error occurred while creating the entity.";
+    
+    if (errorMsg.includes("already exists")) {
+      const duplicateErrors = {};
+      if (errorMsg.includes("name")) {
+        duplicateErrors.name = "This entity name already exists.";
+      }
+      if (errorMsg.includes("email")) {
+        duplicateErrors.email = "This email is already in use.";
+      }
+      setFieldErrors(duplicateErrors);
+    } else {
+      setFieldErrors({ global: errorMsg });
+    } }finally {
       setLoading(false);
     }
   };

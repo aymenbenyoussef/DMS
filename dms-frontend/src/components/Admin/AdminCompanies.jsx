@@ -92,6 +92,7 @@ const AdminCompanies = () => {
       setShowModifyTab(false);
       setEditingCompany(null);
     }
+    setFieldErrors({});
   };
 
   useEffect(() => {
@@ -123,21 +124,7 @@ const AdminCompanies = () => {
     });
   };
 
-  useEffect(() => {
-    
-    const handleCompanyAdded = () => {
-      setSuccess('Entity created successfully!');
-      fetchCompanies(); // Refresh the list
-    }
-      // Clear the message after 5 seconds
-     
-
-    window.addEventListener('companyAdded', handleCompanyAdded);
-
-    return () => {
-      window.removeEventListener('companyAdded', handleCompanyAdded);
-    };
-  }, []);
+  
 
   const handleEdit = (company) => {
     setEditingCompany(company);
@@ -347,7 +334,9 @@ const AdminCompanies = () => {
                         <div className="action-buttons">
                           <button
                             className="btn-edit"
-                            onClick={() => handleEdit(company)}
+                            onClick={() => {handleEdit(company)
+                              setFieldErrors({});
+                            }}
                           >
                             Modify
                           </button>

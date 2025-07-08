@@ -373,21 +373,29 @@ class DatabaseManager:
 
     # Company management methods
     def create_company(self, company_data):
-        query = """
-            INSERT INTO companies (name, address, email, phone)
-            VALUES (%s, %s, %s, %s)
-        """
-        params = (
-            company_data["name"],
-            company_data.get("address", ""),
-            company_data.get("email", ""),
-            company_data.get("phone", ""),
+        try:   
+            query = """
+                INSERT INTO companies (name, address, email, phone)
+                VALUES (%s, %s, %s, %s)
+            """
+            params = (
+                company_data["name"],
+                company_data.get("address", ""),
+                company_data.get("email", ""),
+                company_data.get("phone", ""),
+                
+                
+            )
             
-            
-        )
-        
-        return self.execute_query(query, params)
-    
+            return self.execute_query(query, params)
+        except Exception as e:
+        # Re-raise the exception with a more specific message
+            if "Duplicate entry" in str(e):
+                if "name" in str(e).lower():
+                    raise Exception("Company name already exists")
+                elif "email" in str(e).lower():
+                    raise Exception("Company email already exists")
+        raise e
     #/////////
     def delete_company(self, company_id):
         
@@ -435,7 +443,9 @@ class DatabaseManager:
 
         name_result = self.execute_query(name_query, (name,), fetch=True)
         email_result = self.execute_query(email_query, (email,), fetch=True)
-
+        print(f"Checking company exist - Name: {name}, Email: {email}")
+        print(f"Name results: {name_result}")
+        print(f"Email results: {email_result}")
         return {
             "name_exists": bool(name_result),
             "email_exists": bool(email_result)
