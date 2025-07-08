@@ -108,6 +108,14 @@ class DatabaseManager:
             """)
 
             cursor.execute("""
+                Create table if not exists doctype( 
+                           id INT AUTO_INCREMENT PRIMARY KEY,
+                           name VARCHAR(50) NOT NULL UNIQUE,
+                           status BOOLEAN DEFAULT TRUE
+                                    )
+                """)
+            
+            cursor.execute("""
                 CREATE TABLE IF NOT EXISTS datatype_companies (
                     id INT AUTO_INCREMENT PRIMARY KEY,
                     datatype_id INT,
@@ -157,7 +165,13 @@ class DatabaseManager:
                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                 )
             """)
-
+            cursor.execute("""
+                Create table if not exists Doctype( 
+                           id INT AUTO_INCREMENT PRIMARY KEY,
+                           name VARCHAR(50) NOT NULL UNIQUE,
+                           status BOOLEAN DEFAULT TRUE
+                                    )
+                """)
             self.connection.commit()
 
 
@@ -179,25 +193,12 @@ class DatabaseManager:
                 'Administrator',     # surname
                 'admin@dms.local',   # email
                 'admin123',          # mot de passe
-                'admin',             # rôle
                 True,                # is_active
-                0                    # user_limit
+                'admin',             # rôle
                 )
                 print("Default admin user created: admin/admin123")
 
         # User normal
-            if not self.get_user_by_username('user'):
-                self.create_user(
-                'user',
-                'Standard',
-                'user@dms.local',
-                'user123',
-                'user',
-                True,
-                0
-                )
-                print("Default user created: user/user123")
-
         except Exception as e:
             print(f"Error creating default users: {e}")
 
@@ -439,7 +440,17 @@ class DatabaseManager:
             "name_exists": bool(name_result),
             "email_exists": bool(email_result)
         }
-    
+    def check_company_exist_id(self, name, email, company_id):
+        name_query = "SELECT id FROM companies WHERE name = %s and id!=%s LIMIT 1"
+        email_query = "SELECT id FROM companies WHERE email = %s and id!=%s LIMIT 1"
+
+        name_result = self.execute_query(name_query, (name,company_id,), fetch=True)
+        email_result = self.execute_query(email_query, (email,company_id,), fetch=True)
+
+        return {
+            "name_exists": bool(name_result),
+            "email_exists": bool(email_result)
+        }
     def get_all_companies(self):
         
         query = "SELECT * FROM companies "

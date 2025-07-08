@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import API from '../../api';
 import './AdminUsers.css';
 import { Link } from 'react-router-dom';
-
+import { useNavigate } from 'react-router-dom';
 const AddUser = () => {
   const [activeTab, setActiveTab] = useState('profile');
   const [formData, setFormData] = useState({
@@ -23,6 +23,7 @@ const AddUser = () => {
   const [success, setSuccess] = useState('');
   const [globalFormError, setGlobalFormError] = useState('');
   const [globalErrors, setGlobalErrors] = useState([]);
+  const navigate = useNavigate();
   useEffect(() => {
     const fetchCompanies = async () => {
       try {
@@ -119,6 +120,7 @@ const AddUser = () => {
     setFieldErrors({});
     setGlobalFormError('');
     setActiveTab('profile');
+    navigate('/admin/users');
   } catch (err) {
   let errorMsg = 'Error creating user';
   const errors = {};
@@ -139,6 +141,7 @@ const AddUser = () => {
 } finally {
     setLoading(false);
   }
+ 
 };
 
   return (
