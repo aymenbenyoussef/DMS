@@ -84,11 +84,11 @@ const DragDropUpload = ({ onUpload, onClose }) => {
       setUploadProgress(100);
       
       // Store session data for confirmation
-      setSessionId(response.data.session_id);
-      setFormsData(response.data.forms_data);
+      setSessionId(response.data?.session_id);
+      setFormsData(response.data?.forms_data);
       
       // Initialize confirmed documents with extracted data
-      const initialConfirmedDocs = response.data.forms_data.map(formData => ({
+      const initialConfirmedDocs = response.data?.forms_data?.map(formData => ({
         filename: formData.filename,
         company: formData.company,
         doctype: formData.doctype,
@@ -195,7 +195,7 @@ const DragDropUpload = ({ onUpload, onClose }) => {
       <div className="upload-modal-overlay">
         <div className="upload-modal confirmation-modal">
           <div className="upload-header">
-            <h3>Confirmation des documents</h3>
+            <h3>documents Confirmation</h3>
             <button className="close-btn" onClick={onClose}>×</button>
           </div>
           
@@ -210,7 +210,7 @@ const DragDropUpload = ({ onUpload, onClose }) => {
                 
                 <div className="form-row">
                   <div className="form-group">
-                    <label>Entreprise:</label>
+                    <label>Entity:</label>
                     <input 
                       type="text" 
                       value={formData.company} 
@@ -219,7 +219,7 @@ const DragDropUpload = ({ onUpload, onClose }) => {
                     />
                   </div>
                   <div className="form-group">
-                    <label>Type de document:</label>
+                    <label>Document Type:</label>
                     <input 
                       type="text" 
                       value={formData.doctype} 
@@ -353,8 +353,8 @@ const DragDropUpload = ({ onUpload, onClose }) => {
         <div className="upload-content">
           {selectedCompany && selectedFolder && (
             <div className="selection-info">
-              <p><strong>Entreprise:</strong> {selectedCompany.name}</p>
-              <p><strong>Type de document:</strong> {selectedFolder.name}</p>
+              <p><strong>Entity:</strong> {selectedCompany.name}</p>
+              <p><strong>Document Type:</strong> {selectedFolder.name}</p>
             </div>
           )}
           

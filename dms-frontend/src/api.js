@@ -96,9 +96,7 @@ const documents = {
     const formData = new FormData();
     
     // Add each file to FormData
-    files.forEach((file) => {
-      formData.append('files', file);
-    });
+    files.forEach((file) => {formData.append("files", file);});
     
     // Add company and doctype information
     formData.append('company', company);
@@ -189,4 +187,4 @@ export default {
 };
 
 // Export individual modules for easier imports
-export { users, admin, doctype, companies, documents, folders, ocr };
+export { users, admin, doctype, companies, documents, folders, ocr }; 
