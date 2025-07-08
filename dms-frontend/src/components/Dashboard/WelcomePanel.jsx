@@ -26,7 +26,7 @@ const WelcomePanel = ({ user }) => {
               <Card as={Link} to="/AddComp" className="action-card h-100 text-decoration-none">
                 <Card.Body className="text-center py-4">
                   <div className="card-icon fs-1 mb-3">🏢</div>
-                  <Card.Title className="fs-5 fw-bold">Add Company</Card.Title>
+                  <Card.Title className="fs-5 fw-bold">Add Entity</Card.Title>
                   <Card.Text className="text-muted">
                     Create a new company profile
                   </Card.Text>

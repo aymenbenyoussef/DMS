@@ -17,7 +17,7 @@ app = Flask(__name__)
 CORS(app) 
 CORS(app, resources={r"/upload": {"origins": "http://localhost:3000"}}, supports_credentials=True)
 # ====== Logging Configuration ======
-LOG_DIR = "logs"
+LOG_DIR = "../logs"
 ACTIVITY_LOG = os.path.join(LOG_DIR, "activity.log")  # Changed to activity.log
 
 def ensure_log_dir():
@@ -77,7 +77,11 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 def create_company_upload_folder(company_name):
     """Create a folder for a company in the uploads directory"""
-    company_folder = os.path.join(app.config['UPLOAD_FOLDER'], company_name)
+    # Sanitize company name to prevent path traversal
+    safe_name = secure_filename(company_name)
+    company_folder = os.path.join(app.config['UPLOAD_FOLDER'], safe_name)
+    
+    # Create the folder if it doesn't exist
     os.makedirs(company_folder, exist_ok=True)
     return company_folder
 
@@ -367,15 +371,11 @@ def create_company():
 
     if not data or 'name' not in data or not data['name'].strip():
         return jsonify({"msg": "Company name is required"}), 400
-    name = data.get('name', '').strip()
-    email = data.get('email', '').strip()
-    print(f"Attempting to create company - Name: {name}, Email: {email}")
-
+    
     conflicts = db.check_company_exist(
     data.get('name').strip(),
     data.get('email', '').strip()
     )
-    print(f"Conflict check results: {conflicts}")
 
     if conflicts["name_exists"] or conflicts["email_exists"]:
         messages = []
@@ -405,9 +405,7 @@ def create_company():
             "company_id": company_id
         }), 201
     except Exception as e:
-        if "Duplicate entry" in str(e):
-            return jsonify({"msg": "Company name or email already exists"}), 400
-        return jsonify({"msg": f"Error creating company: {str(e)}"}), 500
+        return jsonify({"msg": f"Error creating company: {str(e)}"}), 400
     
     
 # Update company

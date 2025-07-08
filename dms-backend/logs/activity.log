@@ -1,0 +1,111 @@
+05/07/2025 22:18:17 - admin - Create user: 16, samir, samir@gmail.com, enabled
+05/07/2025 22:18:41 - admin - Update user: 16, samir, samir@gmail.com, enabled
+05/07/2025 22:19:59 - admin - Create company: 5, sonede
+05/07/2025 22:26:57 - admin - Update user: 14, ali, ali@gmail.com, enabled
+05/07/2025 22:27:17 - admin - Delete user: 14, ali, ali@gmail.com, disabled
+05/07/2025 22:38:34 - admin - Create company: 6, test
+05/07/2025 23:44:56 - admin - Delete user: 5, salem, salem@gmail.com, disabled
+06/07/2025 00:20:25 - admin - Create company: 8, facebook
+06/07/2025 00:25:01 - admin - Update company: 4, azizaaa
+06/07/2025 00:38:09 - admin - Update company: 4, azizaaa
+06/07/2025 00:38:29 - admin - Update company: 4, aziza
+06/07/2025 00:56:40 - admin - Delete company: 3, yout
+06/07/2025 12:49:42 - admin - Update company: 10, geant
+06/07/2025 12:57:32 - admin - Update company: 11, facebook
+06/07/2025 12:59:00 - admin - Update company: 12, youtube
+06/07/2025 13:11:39 - admin - Update company: 14, azizaaa
+06/07/2025 15:52:05 - admin - Update company: 15, amazon
+06/07/2025 15:54:13 - admin - Create document type: 2, comercial
+06/07/2025 15:54:36 - admin - Update document type: 2, com
+06/07/2025 15:54:54 - admin - Delete document type: 2, com
+06/07/2025 22:41:58 - admin - Create document type: {'LAST_INSERT_ID()': 5}, fiche de paie
+06/07/2025 22:43:35 - admin - Create document type: {'LAST_INSERT_ID()': 6}, contrat
+06/07/2025 22:44:57 - admin - Create document type: {'LAST_INSERT_ID()': 7}, facture
+06/07/2025 22:50:41 - admin - Create document type: 8, administrative
+06/07/2025 22:53:35 - admin - Create document type: {'LAST_INSERT_ID()': 9}, administrative
+06/07/2025 22:56:51 - admin - Create document type: 10, admin
+06/07/2025 23:00:21 - admin - Create document type: 11, attestation
+06/07/2025 23:02:51 - admin - Create document type: 12, demande de stage
+06/07/2025 23:03:10 - admin - Create document type: 13, demande
+06/07/2025 23:04:50 - admin - Delete document type: 2, invoices
+06/07/2025 23:05:33 - admin - Update company: 2, mg
+06/07/2025 23:11:19 - admin - Delete document type: 10, admin
+07/07/2025 00:23:41 - admin - Create document type: 14, contrats
+07/07/2025 00:26:22 - admin - Create document type: 15, admin
+07/07/2025 00:28:49 - admin - Create document type: 16, stage
+07/07/2025 00:39:56 - admin - Delete document type: 6, contrat
+07/07/2025 00:40:17 - admin - Delete document type: 14, contrats
+07/07/2025 00:45:42 - admin - Delete document type: 15, admin
+07/07/2025 00:45:57 - admin - Create document type: 17, contracts
+07/07/2025 00:48:49 - admin - Delete document type: 17, contracts
+07/07/2025 00:50:18 - admin - Delete document type: 16, stage
+07/07/2025 00:50:54 - admin - Delete company: 14, azizaaa
+07/07/2025 00:52:11 - admin - Delete document type: 13, demande
+07/07/2025 01:00:54 - admin - Delete document type: 11, attestation
+07/07/2025 01:01:23 - admin - Create document type: 18, demande
+07/07/2025 01:01:35 - admin - Create document type: 19, stage
+07/07/2025 01:02:14 - admin - Delete document type: 19, stage
+07/07/2025 01:04:55 - admin - Create document type: 20, stage
+07/07/2025 01:05:09 - admin - Delete document type: 20, stage
+07/07/2025 13:41:46 - admin - Update company: 7, ranesmerald
+07/07/2025 13:42:45 - admin - Create document type: 7, contrat
+07/07/2025 21:05:42 - admin - Delete user: 16, samir, samir@gmail.com, disabled
+07/07/2025 22:55:13 - admin - Update company: 16, space
+07/07/2025 22:56:23 - admin - Update company: 17, spacex
+07/07/2025 23:45:37 - admin - Update company: 18, whats
+07/07/2025 23:50:40 - admin - Update document type: 21, non facturable
+07/07/2025 23:50:57 - admin - Delete document type: 22, contrat
+07/07/2025 23:52:07 - admin - Update user: 16, aymen, aymen5@gmail.com, enabled
+08/07/2025 00:28:39 - admin - Update company: 19, uber
+08/07/2025 00:34:34 - admin - Update company: 20, jumia
+08/07/2025 00:51:14 - admin - Delete company: 20, jumia
+08/07/2025 00:51:33 - admin - Update company: 21, jumia
+08/07/2025 11:22:29 - admin - Create document type: 27, contrat
+08/07/2025 11:24:05 - admin - Update document type: 27, contrat
+08/07/2025 11:24:23 - admin - Update document type: 27, demande
+08/07/2025 12:13:58 - admin - Create user: 24, marwen, marwen@gmail.com, enabled
+08/07/2025 12:31:03 - admin - Create user: 2, aymen, aymen@gmail.com, enabled
+08/07/2025 12:31:37 - admin - Update company: 1, ranesmerald
+08/07/2025 12:33:08 - admin - Create user: 3, aymen, aymen12@gmail.com, enabled
+08/07/2025 12:34:25 - admin - Create user: 4, ahmed, ahmed@gmail.com, enabled
+08/07/2025 12:35:58 - admin - Create user: 5, user, user@gmail.com, enabled
+08/07/2025 12:36:54 - admin - Create document type: 1, contrat
+08/07/2025 12:37:10 - admin - Update company: 2, sopal
+08/07/2025 12:42:16 - admin - Create document type: 2, fiche de paie
+08/07/2025 12:43:19 - admin - Create user: 6, ali, ali@gmail.com, enabled
+08/07/2025 12:45:00 - admin - Update company: 2, sopal
+08/07/2025 12:45:40 - admin - Update company: 2, sopal
+08/07/2025 13:06:10 - admin - Update company: 2, mg
+08/07/2025 13:18:05 - admin - Update company: 2, mg2
+08/07/2025 13:21:39 - admin - Update company: 2, mg2
+08/07/2025 13:21:56 - admin - Update company: 1, ranesmerald
+08/07/2025 13:22:10 - admin - Update company: 2, mg
+08/07/2025 13:28:15 - admin - Update company: 2, mg
+08/07/2025 13:29:03 - admin - Update company: 1, ranesmerald
+08/07/2025 13:29:41 - admin - Update company: 2, mg
+08/07/2025 13:34:16 - admin - Update company: 2, mg
+08/07/2025 13:35:26 - admin - Update company: 2, mg
+08/07/2025 13:36:27 - admin - Update company: 1, ranesmerald
+08/07/2025 13:36:58 - admin - Update company: 1, ranesmerald
+08/07/2025 13:38:14 - admin - Update company: 1, ranesmerald
+08/07/2025 13:39:46 - admin - Update company: 2, mg
+08/07/2025 13:40:48 - admin - Update company: 2, mg
+08/07/2025 13:44:42 - admin - Update company: 1, ranesmerald
+08/07/2025 13:45:50 - admin - Update company: 1, ranesmerald
+08/07/2025 13:46:06 - admin - Update company: 1, ranesmerald
+08/07/2025 13:46:10 - admin - Update company: 1, ranesmerald
+08/07/2025 13:47:52 - admin - Update company: 1, ranesmerald
+08/07/2025 13:48:09 - admin - Update company: 1, ranesmerald
+08/07/2025 13:50:08 - admin - Update company: 2, mg2
+08/07/2025 13:53:58 - admin - Update company: 1, ranesmerald
+08/07/2025 13:56:02 - admin - Update company: 1, ranesmerald
+08/07/2025 13:57:46 - admin - Update company: 1, ranesmerald
+08/07/2025 14:01:12 - admin - Update company: 1, ranesmerald
+08/07/2025 14:01:35 - admin - Update company: 1, ranesmerald
+08/07/2025 14:12:14 - admin - Update company: 3, facebook
+08/07/2025 14:12:33 - admin - Create document type: 3, demande de stage
+08/07/2025 14:18:02 - admin - Update company: 1, aziza
+08/07/2025 14:18:20 - admin - Update company: 1, aziza
+08/07/2025 14:19:09 - admin - Update company: 1, aziza
+08/07/2025 14:17:13 - admin - Create document type: 1, facture
+08/07/2025 14:19:19 - admin - Update document type: 1, facture
