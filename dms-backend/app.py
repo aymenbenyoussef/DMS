@@ -788,8 +788,9 @@ def create_document():
 @jwt_required()
 def upload_single_file():
     """Upload and process a single file with OCR"""
+    current_user_claims = get_jwt()
     current_user = get_jwt_identity()
-    
+    current_user_id = current_user_claims.get('id')
     # Get form data
     company_name = request.form.get('company')
     doctype_name = request.form.get('doctype')
@@ -817,13 +818,13 @@ def upload_single_file():
             return jsonify({"msg": f"Processing error: {processed_file['error']}"}), 500
         
         # Save processing results to temporary storage for confirmation
-        session_id = f"{current_user['id']}_{int(datetime.now().timestamp())}"
+        session_id = f"{current_user_id}_{int(datetime.now().timestamp())}"
         temp_data = {
             'session_id': session_id,
             'company': company_name,
             'doctype': doctype_name,
             'processed_file': processed_file,
-            'user_id': current_user['id']
+            'user_id': current_user_id
         }
         
         # Store in temporary file
