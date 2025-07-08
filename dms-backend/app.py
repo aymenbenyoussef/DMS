@@ -367,11 +367,15 @@ def create_company():
 
     if not data or 'name' not in data or not data['name'].strip():
         return jsonify({"msg": "Company name is required"}), 400
-    
+    name = data.get('name', '').strip()
+    email = data.get('email', '').strip()
+    print(f"Attempting to create company - Name: {name}, Email: {email}")
+
     conflicts = db.check_company_exist(
     data.get('name').strip(),
     data.get('email', '').strip()
     )
+    print(f"Conflict check results: {conflicts}")
 
     if conflicts["name_exists"] or conflicts["email_exists"]:
         messages = []
@@ -401,7 +405,9 @@ def create_company():
             "company_id": company_id
         }), 201
     except Exception as e:
-        return jsonify({"msg": f"Error creating company: {str(e)}"}), 400
+        if "Duplicate entry" in str(e):
+            return jsonify({"msg": "Company name or email already exists"}), 400
+        return jsonify({"msg": f"Error creating company: {str(e)}"}), 500
     
     
 # Update company

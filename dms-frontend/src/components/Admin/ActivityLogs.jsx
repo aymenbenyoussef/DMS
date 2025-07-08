@@ -1,24 +1,50 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api';
+import './ActivityLogs.css';
 
 const ActivityLogs = () => {
   const [logs, setLogs] = useState([]);
+  const [filteredLogs, setFilteredLogs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [rawResponse, setRawResponse] = useState(null);
+  const [filters, setFilters] = useState({
+    role: '',
+    action: '',
+    resource: ''
+  });
+  const [uniqueValues, setUniqueValues] = useState({
+    roles: new Set(),
+    actions: new Set(),
+    resources: new Set()
+  });
 
   const fetchLogs = async () => {
     setLoading(true);
     setError('');
     try {
-      // Use the new activity logs endpoint
       const response = await api.admin.getActivityLogs();
       
-      // Debug: Save raw response
-      setRawResponse(response);
-      
       if (response.data && Array.isArray(response.data.logs)) {
-        setLogs(response.data.logs);
+        const parsedLogs = response.data.logs.map(log => parseLogEntry(log)).filter(Boolean);
+        setLogs(parsedLogs);
+        setFilteredLogs(parsedLogs);
+        
+        // Extract unique values for filters
+        const roles = new Set();
+        const actions = new Set();
+        const resources = new Set();
+        
+        parsedLogs.forEach(log => {
+          roles.add(log.admin);
+          actions.add(log.action);
+          resources.add(log.resource);
+        });
+        
+        setUniqueValues({
+          roles,
+          actions,
+          resources
+        });
       } else {
         setError('Unexpected response format');
       }
@@ -34,7 +60,10 @@ const ActivityLogs = () => {
     fetchLogs();
   }, []);
 
-  // Parse all types of log entries (user, company, document)
+  useEffect(() => {
+    applyFilters();
+  }, [filters, logs]);
+
   const parseLogEntry = (log) => {
     try {
       const parts = log.split(' - ');
@@ -48,7 +77,6 @@ const ActivityLogs = () => {
       const actionType = actionPart.substring(0, colonIndex).trim();
       const data = actionPart.substring(colonIndex + 1).trim();
       
-      // Extract action and resource type
       const [action, resource] = actionType.split(' ');
       
       return {
@@ -64,23 +92,51 @@ const ActivityLogs = () => {
     }
   };
 
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const applyFilters = () => {
+    const filtered = logs.filter(log => {
+      return (
+        (filters.role === '' || log.admin === filters.role) &&
+        (filters.action === '' || log.action === filters.action) &&
+        (filters.resource === '' || log.resource === filters.resource)
+      );
+    });
+    setFilteredLogs(filtered);
+  };
+
+  const resetFilters = () => {
+    setFilters({
+      role: '',
+      action: '',
+      resource: ''
+    });
+    setFilteredLogs(logs);
+  };
+
   return (
-    <div className="container py-4">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="mb-0">Activity Logs</h2>
+    <div className="activity-logs">
+      <div className="header">
+        <h2>Activity Logs</h2>
         <button 
-          className="btn btn-primary d-flex align-items-center"
+          className="refresh-button"
           onClick={fetchLogs} 
           disabled={loading}
         >
           {loading ? (
             <>
-              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+              <span className="spinner"></span>
               Refreshing...
             </>
           ) : (
             <>
-              <i className="bi bi-arrow-repeat me-2"></i>
+              <span className="refresh-icon">↻</span>
               Refresh Logs
             </>
           )}
@@ -88,64 +144,98 @@ const ActivityLogs = () => {
       </div>
       
       {error && (
-        <div className="alert alert-danger alert-dismissible fade show" role="alert">
+        <div className="error-message">
           {error}
-          <button type="button" className="btn-close" onClick={() => setError('')}></button>
+          <button className="close-button" onClick={() => setError('')}>×</button>
         </div>
       )}
       
-      {/* Debug information panel */}
-      {rawResponse && (
-        <div className="card border-info mb-4">
-          <div className="card-header bg-info text-white">
-            <h3 className="h5 mb-0">Debug Information</h3>
-          </div>
-          <div className="card-body">
-            <p className="mb-1"><strong>Status:</strong> {rawResponse.status}</p>
-            <p className="mb-0"><strong>Data Preview:</strong> {JSON.stringify(rawResponse.data.logs?.slice(0, 2))}...</p>
-          </div>
+      <div className="filters-container">
+        <div className="filter-group">
+          <label htmlFor="role-filter">Role</label>
+          <select 
+            id="role-filter" 
+            name="role" 
+            value={filters.role}
+            onChange={handleFilterChange}
+          >
+            <option value="">All Roles</option>
+            {Array.from(uniqueValues.roles).map(role => (
+              <option key={role} value={role}>{role}</option>
+            ))}
+          </select>
         </div>
-      )}
+        
+        <div className="filter-group">
+          <label htmlFor="action-filter">Action</label>
+          <select 
+            id="action-filter" 
+            name="action" 
+            value={filters.action}
+            onChange={handleFilterChange}
+          >
+            <option value="">All Actions</option>
+            {Array.from(uniqueValues.actions).map(action => (
+              <option key={action} value={action}>{action}</option>
+            ))}
+          </select>
+        </div>
+        
+        <div className="filter-group">
+          <label htmlFor="resource-filter">Resource</label>
+          <select 
+            id="resource-filter" 
+            name="resource" 
+            value={filters.resource}
+            onChange={handleFilterChange}
+          >
+            <option value="">All Resources</option>
+            {Array.from(uniqueValues.resources).map(resource => (
+              <option key={resource} value={resource}>{resource}</option>
+            ))}
+          </select>
+        </div>
+        
+        <button 
+          className="reset-button"
+          onClick={resetFilters}
+          disabled={filters.role === '' && filters.action === '' && filters.resource === ''}
+        >
+          Reset Filters
+        </button>
+      </div>
       
-      {logs.length === 0 ? (
-        <div className="card">
-          <div className="card-body text-center py-5">
-            <i className="bi bi-journal-x fs-1 text-muted mb-3"></i>
-            <p className="fs-5 mb-0">{loading ? 'Loading activity logs...' : 'No activity logs available'}</p>
-          </div>
+      {loading && filteredLogs.length === 0 ? (
+        <div className="loading">
+          <div className="spinner"></div>
+          <p>Loading activity logs...</p>
+        </div>
+      ) : filteredLogs.length === 0 ? (
+        <div className="no-results">
+          <p>No activity logs match your filters</p>
         </div>
       ) : (
-        <div className="table-responsive">
-          <table className="table table-striped table-hover align-middle">
-            <thead className="table-light">
+        <div className="logs-table">
+          <table>
+            <thead>
               <tr>
-                <th scope="col">Date & Time</th>
-                <th scope="col">Admin</th>
-                <th scope="col">Action</th>
-                <th scope="col">Resource</th>
-                <th scope="col">Details</th>
+                <th>Date & Time</th>
+                <th>Role</th>
+                <th>Action</th>
+                <th>Resource</th>
+                <th>Details</th>
               </tr>
             </thead>
             <tbody>
-              {logs.map((log, index) => {
-                const entry = parseLogEntry(log);
-                return entry ? (
-                  <tr key={index}>
-                    <td className="font-monospace">{entry.timestamp}</td>
-                    <td><span className="badge bg-secondary">{entry.admin}</span></td>
-                    <td><span className="badge bg-primary">{entry.action}</span></td>
-                    <td><span className="badge bg-success">{entry.resource}</span></td>
-                    <td className="text-break">{entry.data}</td>
-                  </tr>
-                ) : (
-                  <tr key={index} className="table-warning">
-                    <td colSpan="5" className="text-center">
-                      <i className="bi bi-exclamation-triangle me-2"></i>
-                      {log || 'Empty log entry'}
-                    </td>
-                  </tr>
-                );
-              })}
+              {filteredLogs.map((log, index) => (
+                <tr key={index}>
+                  <td className="timestamp">{log.timestamp}</td>
+                  <td><span className="badge role">{log.admin}</span></td>
+                  <td><span className="badge action">{log.action}</span></td>
+                  <td><span className="badge resource">{log.resource}</span></td>
+                  <td className="details">{log.data}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>

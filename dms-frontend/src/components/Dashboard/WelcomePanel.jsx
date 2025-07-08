@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import './WelcomePanel.css';
+import { Link } from 'react-router-dom';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import { Card, Button, Container, Row, Col } from 'react-bootstrap';
 
 const WelcomePanel = ({ user }) => {
   const [showCompanyModal, setShowCompanyModal] = useState(false);
@@ -8,46 +11,57 @@ const WelcomePanel = ({ user }) => {
   
   return (
     <div className="welcome-panel">
-      <div className="welcome-header">
-        <h1 className="welcome-title">Welcome to the DMS</h1>
-        <p className="welcome-subtitle">Get started by managing your documents and settings</p>
+      <div className="welcome-header text-center mb-5">
+        <h1 className="welcome-title display-4 fw-bold">Welcome to the DMS</h1>
+        <p className="welcome-subtitle lead text-muted">
+          Get started by managing your documents and settings
+        </p>
       </div>
 
       {user?.role === 'admin' && (
-        <div className="admin-actions">
-          <h2 className="actions-title">Quick Setup</h2>
-          <div className="action-cards">
-            <div 
-              className="action-card" 
-              onClick={() => setShowCompanyModal(true)}
-            >
-              <div className="card-icon">🏢</div>
-              <h3>Add Company</h3>
-              <p>Create a new company profile</p>
-            </div>
-            
-            <div 
-              className="action-card"
-              onClick={() => setShowUserModal(true)}
-            >
-              <div className="card-icon">👤</div>
-              <h3>Add User</h3>
-              <p>Invite new users to the system</p>
-            </div>
-            
-            <div 
-              className="action-card"
-              onClick={() => setShowDocTypeModal(true)}
-            >
-              <div className="card-icon">📄</div>
-              <h3>Add Document Type</h3>
-              <p>Create new document categories</p>
-            </div>
-          </div>
-        </div>
+        <Container className="admin-actions">
+          <h2 className="actions-title text-center mb-4 fs-3 fw-semibold">Quick Setup</h2>
+          <Row className="justify-content-center g-4">
+            <Col md={4} sm={6} xs={12}>
+              <Card as={Link} to="/AddComp" className="action-card h-100 text-decoration-none">
+                <Card.Body className="text-center py-4">
+                  <div className="card-icon fs-1 mb-3">🏢</div>
+                  <Card.Title className="fs-5 fw-bold">Add Company</Card.Title>
+                  <Card.Text className="text-muted">
+                    Create a new company profile
+                  </Card.Text>
+                </Card.Body>
+              </Card>
+            </Col>
+
+            <Col md={4} sm={6} xs={12}>
+              <Card as={Link} to="/AddUsers" className="action-card h-100 text-decoration-none">
+                <Card.Body className="text-center py-4">
+                  <div className="card-icon fs-1 mb-3">👤</div>
+                  <Card.Title className="fs-5 fw-bold">Add User</Card.Title>
+                  <Card.Text className="text-muted">
+                    Invite new users to the system
+                  </Card.Text>
+                </Card.Body>
+              </Card>
+            </Col>
+
+            <Col md={4} sm={6} xs={12}>
+              <Card as={Link} to="/AddDoctype" className="action-card h-100 text-decoration-none">
+                <Card.Body className="text-center py-4">
+                  <div className="card-icon fs-1 mb-3">📄</div>
+                  <Card.Title className="fs-5 fw-bold">Add Document Type</Card.Title>
+                  <Card.Text className="text-muted">
+                    Create new document categories
+                  </Card.Text>
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+        </Container>
       )}
 
-      {/* Add Company Modal */}
+      {/* Modals (unchanged) */}
       {showCompanyModal && (
         <div className="modal-overlay">
           <div className="welcome-modal">
@@ -62,15 +76,18 @@ const WelcomePanel = ({ user }) => {
                 <input type="text" placeholder="Enter address" />
               </div>
               <div className="modal-actions">
-                <button onClick={() => setShowCompanyModal(false)}>Cancel</button>
-                <button className="primary">Create Company</button>
+                <Button variant="secondary" onClick={() => setShowCompanyModal(false)}>
+                  Cancel
+                </Button>
+                <Button variant="primary" className="ms-2">
+                  Create Company
+                </Button>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Add User Modal */}
       {showUserModal && (
         <div className="modal-overlay">
           <div className="welcome-modal">
@@ -86,21 +103,24 @@ const WelcomePanel = ({ user }) => {
               </div>
               <div className="form-group">
                 <label>Role</label>
-                <select>
+                <select className="form-select">
                   <option value="user">User</option>
                   <option value="admin">Admin</option>
                 </select>
               </div>
               <div className="modal-actions">
-                <button onClick={() => setShowUserModal(false)}>Cancel</button>
-                <button className="primary">Create User</button>
+                <Button variant="secondary" onClick={() => setShowUserModal(false)}>
+                  Cancel
+                </Button>
+                <Button variant="primary" className="ms-2">
+                  Create User
+                </Button>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Add Document Type Modal */}
       {showDocTypeModal && (
         <div className="modal-overlay">
           <div className="welcome-modal">
@@ -112,11 +132,15 @@ const WelcomePanel = ({ user }) => {
               </div>
               <div className="form-group">
                 <label>Description</label>
-                <textarea placeholder="Enter description"></textarea>
+                <textarea className="form-control" placeholder="Enter description"></textarea>
               </div>
               <div className="modal-actions">
-                <button onClick={() => setShowDocTypeModal(false)}>Cancel</button>
-                <button className="primary">Create Document Type</button>
+                <Button variant="secondary" onClick={() => setShowDocTypeModal(false)}>
+                  Cancel
+                </Button>
+                <Button variant="primary" className="ms-2">
+                  Create Document Type
+                </Button>
               </div>
             </div>
           </div>
