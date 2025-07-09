@@ -198,6 +198,7 @@ const partners = {
   getAll: () => API.get('/partners'),
   create: (partnerData) => API.post('/partners', partnerData),
   update: (partnerId, partnerData) => API.put(`/partners/${partnerId}`, partnerData),
+  updateStatus: (partnerId, status) => API.put(`/partners/${partnerId}/status`, { status }),
   delete: (partnerId) => API.delete(`/partners/${partnerId}`),
 };
 

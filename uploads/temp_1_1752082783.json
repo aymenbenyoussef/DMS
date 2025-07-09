@@ -1,0 +1,27 @@
+{
+  "session_id": "1_1752082783",
+  "company": "primatec",
+  "doctype": "fiche de paie",
+  "processed_file": {
+    "filename": "1752082775_facture.jpg",
+    "original_filename": "facture.jpg",
+    "file_path": "C:\\Users\\user\\Desktop\\Nouveau dossier\\DMS-main\\DMS-main\\dms\\upload\\primatec\\fiche_de_paie\\1752082775_facture.jpg",
+    "text_path": "C:\\Users\\user\\Desktop\\Nouveau dossier\\DMS-main\\DMS-main\\dms\\upload\\primatec\\fiche_de_paie\\1752082775_facture.txt",
+    "ocr_text": "Gh INV2A.FR\n\nlogiciel de Facturation\n\nDestinataire:\n\n[Nom de I'entreprise du client]\n[Adresse de I'entreprise du client]\nSIRET: [SIRET du client]\n\nNo de TVA: [Numéro de TVA du client]\n\nDate de facturation: 12/07/2021\nEchéance: 26/07/2021\n\nFacture No 552\n\nDésignation Quantité Prix Total\nmon produit 2 50,00 100,00\nmon service 3 100,00 300,00\n\nTotal: 400,00 €\nTVA(20%): 80,00 €\nTotal TTC: 480,00 €\n\n[Nom de I'entreprise] [Adresse] [Nom de la banque]\nSIRET: [SIRET] Tél: [Téléphone] [Compte bancaire (IBAN)]\nNo de TVA: [Numéro de TVA] SWIFT/BIC: [SWIFT/BIC]\n",
+    "extracted_data": {
+      "invoice_number": "552",
+      "date": "2021-07-12",
+      "total": 480.0,
+      "vendor": "Gh INV2A.FR",
+      "client": "[Nom de I'entreprise du client]",
+      "tva": null,
+      "total_ht": null,
+      "total_ttc": 480.0,
+      "is_invoice": true
+    },
+    "company_folder": "C:\\Users\\user\\Desktop\\Nouveau dossier\\DMS-main\\DMS-main\\dms\\upload\\primatec",
+    "doctype_folder": "C:\\Users\\user\\Desktop\\Nouveau dossier\\DMS-main\\DMS-main\\dms\\upload\\primatec\\fiche_de_paie",
+    "summary_folder": "C:\\Users\\user\\Desktop\\Nouveau dossier\\DMS-main\\DMS-main\\dms\\upload\\primatec\\fiche_de_paie\\summary"
+  },
+  "user_id": 1
+}

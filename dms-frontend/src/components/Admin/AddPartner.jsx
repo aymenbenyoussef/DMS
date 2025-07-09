@@ -44,29 +44,31 @@ const AddPartner = () => {
         status: formData.status,
       };
     try {
-      
-
       await API.partners.create(dataToSend);
 
       setSuccess('Partner created successfully!');
       setFormData({ name: '', status: true });
       setFieldErrors({});
+      setError('');
       
       // Navigate after a short delay to show success message
-      //navigate('/partners');
+      setTimeout(() => {
+        navigate('/partners');
+      }, 1500);
     } catch (err) {
       console.log('Sending data:', dataToSend);
       console.error('API error:', err.response?.data || err.message);
-      const msg = err.response?.data?.msg ||
-                  'Error occurred while creating the partner.';
-      if (msg.toLowerCase().includes('name')) {
+      
+      const msg = err.response?.data?.msg || 'Error occurred while creating the partner.';
+      
+      // Check for specific name conflict error
+      if (msg.toLowerCase().includes('name already exists') || msg.toLowerCase().includes('name') && msg.toLowerCase().includes('exists')) {
         setFieldErrors({ name: 'A partner with this name already exists.' });
+        setError('');
       } else {
         setError(msg);
+        setFieldErrors({});
       }
-    
-    // Default message if no specific message found
-    console.error('Error creating partner:', err);
     } finally {
       setLoading(false);
     }

@@ -305,7 +305,7 @@ const DragDropUpload = ({ onUpload, onClose }) => {
                       />
                     </div>
                     <div className="form-group">
-                      <label>Client:</label>
+                      <label>Partner Id:</label>
                       <input
                         type="text"
                         value={confirmedDocument?.confirmed_data?.client || ''}

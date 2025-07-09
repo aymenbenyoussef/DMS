@@ -4,6 +4,37 @@ import './AdminUsers.css';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 
+// Styles pour les boutons de statut
+const statusButtonStyles = `
+  .status-btn {
+    padding: 4px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+    transition: all 0.2s ease;
+  }
+  
+  .status-active {
+    background-color: #4CAF50;
+    color: white;
+  }
+  
+  .status-active:hover {
+    background-color: #45a049;
+  }
+  
+  .status-inactive {
+    background-color: #f44336;
+    color: white;
+  }
+  
+  .status-inactive:hover {
+    background-color: #da190b;
+  }
+`;
+
 const AdminPartners = ({ user }) => {
   const [partners, setPartners] = useState([]);
   const [filteredPartners, setFilteredPartners] = useState([]);
@@ -42,7 +73,17 @@ const AdminPartners = ({ user }) => {
   };
 
   useEffect(() => {
+    // Inject status button styles
+    const styleElement = document.createElement('style');
+    styleElement.textContent = statusButtonStyles;
+    document.head.appendChild(styleElement);
+    
     fetchPartners();
+    
+    // Cleanup function to remove styles when component unmounts
+    return () => {
+      document.head.removeChild(styleElement);
+    };
   }, []);
 
   useEffect(() => {
@@ -90,6 +131,17 @@ const AdminPartners = ({ user }) => {
     setFieldErrors(errors);
     setGlobalErrors(errorMessages);
     return errorMessages.length === 0;
+  };
+
+  const handleStatusToggle = async (partnerId, currentStatus) => {
+    try {
+      await API.partners.updateStatus(partnerId, !currentStatus);
+      setSuccess('Partner status updated successfully');
+      fetchPartners();
+    } catch (err) {
+      setError('Error updating partner status');
+      console.error('Error updating partner status:', err);
+    }
   };
 
   const handleEdit = (partner) => {
@@ -182,7 +234,7 @@ const AdminPartners = ({ user }) => {
             </button>
           )}
           <Link to="/AddPartner" className="btn-primary-2">
-            Add Partner
+            Add Partner Type
           </Link>
         </div>
       </div>
@@ -247,7 +299,15 @@ const AdminPartners = ({ user }) => {
                     <tr key={partner.id}>
                       <td>{partner.id}</td>
                       <td>{partner.name}</td>
-                      <td>{partner.status ? 'Active' : 'Inactive'}</td>
+                      <td>
+                        <button
+                          className={`status-btn ${partner.status ? 'status-active' : 'status-inactive'}`}
+                          onClick={() => handleStatusToggle(partner.id, partner.status)}
+                          title="Click to toggle status"
+                        >
+                          {partner.status ? 'Active' : 'Inactive'}
+                        </button>
+                      </td>
                       <td>
                         <div className="action-buttons">
                           <button

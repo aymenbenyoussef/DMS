@@ -847,6 +847,18 @@ class DatabaseManager:
 
 
     # Partner management methods
+    def check_partner_name_exists(self, name):
+        """Check if a partner name already exists"""
+        query = "SELECT id FROM partners WHERE name = %s LIMIT 1"
+        result = self.execute_query(query, (name,), fetch=True)
+        return bool(result)
+    
+    def check_partner_name_exists_except_id(self, name, partner_id):
+        """Check if a partner name exists excluding a specific partner ID"""
+        query = "SELECT id FROM partners WHERE name = %s AND id != %s LIMIT 1"
+        result = self.execute_query(query, (name, partner_id), fetch=True)
+        return bool(result)
+
     def create_partner(self, name, status=True):
         query = "INSERT INTO partners (name, status) VALUES (%s, %s)"
         return self.execute_query(query, (name, status,))
@@ -881,6 +893,16 @@ class DatabaseManager:
             return True
         except Exception as e:
             print(f"Error updating partner: {e}")
+            return False
+
+    def update_partner_status(self, partner_id, status):
+        """Update only the status of a partner"""
+        query = "UPDATE partners SET status = %s WHERE id = %s"
+        try:
+            self.execute_query(query, (status, partner_id))
+            return True
+        except Exception as e:
+            print(f"Error updating partner status: {e}")
             return False
 
     def delete_partner(self, partner_id):

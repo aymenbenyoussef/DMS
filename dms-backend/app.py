@@ -1077,31 +1077,22 @@ def create_partner():
     
     if not data or 'name' not in data:
         return jsonify({"msg": "Partner name is required"}), 400
-    print(data)
+    
+    # Vérifier si le nom existe déjà
+    if db.check_partner_name_exists(data['name'].strip()):
+        return jsonify({"msg": "A partner with this name already exists"}), 400
+    
     try:
         partner_id = db.create_partner(
-            name=data['name'],
+            name=data['name'].strip(),
             status=data.get('status', True)
         )
-        
-        # Log partner creation
-        """log_activity(
-            actor=current_user_claims['username'],
-            action="Create",
-            resource_type="partner",
-            resource_data={
-                'id': partner_id,
-                'name': data['name']
-            }
-        )"""
         
         return jsonify({
             "msg": "Partner created successfully",
             "partner_id": partner_id
         }), 201
     except Exception as e:
-        if "Duplicate entry" in str(e):
-            return jsonify({"msg": "A partner with this name already exists"}), 400
         return jsonify({"msg": str(e)}), 500
 
 @app.route('/partners/<int:partner_id>', methods=['PUT'])
@@ -1113,30 +1104,42 @@ def update_partner(partner_id):
     if not data:
         return jsonify({"msg": "No data provided"}), 400
     
+    # Si le nom est fourni, vérifier qu'il n'existe pas déjà (sauf pour ce partenaire)
+    if 'name' in data and data['name']:
+        if db.check_partner_name_exists_except_id(data['name'].strip(), partner_id):
+            return jsonify({"msg": "A partner with this name already exists"}), 400
+    
     try:
         success = db.update_partner(
             partner_id=partner_id,
-            name=data.get('name'),
+            name=data.get('name').strip() if data.get('name') else None,
             status=data.get('status')
         )
         
         if success:
-            # Log partner update
-            """log_activity(
-                actor=current_user_claims['username'],
-                action="Update",
-                resource_type="partner",
-                resource_data={
-                    'id': partner_id,
-                    'name': data.get('name', '[unchanged]')
-                }
-            )"""
             return jsonify({"msg": "Partner updated successfully"}), 200
         else:
             return jsonify({"msg": "Partner not found"}), 404
     except Exception as e:
-        if "Duplicate entry" in str(e):
-            return jsonify({"msg": "A partner with this name already exists"}), 400
+        return jsonify({"msg": str(e)}), 500
+
+@app.route('/partners/<int:partner_id>/status', methods=['PUT'])
+@jwt_required()
+def update_partner_status(partner_id):
+    current_user_claims = get_jwt()
+    data = request.get_json()
+    
+    if not data or 'status' not in data:
+        return jsonify({"msg": "Status is required"}), 400
+    
+    try:
+        success = db.update_partner_status(partner_id, data['status'])
+        
+        if success:
+            return jsonify({"msg": "Partner status updated successfully"}), 200
+        else:
+            return jsonify({"msg": "Partner not found"}), 404
+    except Exception as e:
         return jsonify({"msg": str(e)}), 500
 
 @app.route('/partners/<int:partner_id>', methods=['DELETE'])
