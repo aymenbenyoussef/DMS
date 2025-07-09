@@ -176,7 +176,6 @@ function App() {
                 <Route path="/partners" element={<AdminPartners />} />
               </>
             )}
-            <Route path="/" element={<Dashboard user={user} />} />
             <Route path="*" element={<Navigate to="/" replace />} />
             <Route 
               path="/admin/tools" element={<AdminTools /> }/>

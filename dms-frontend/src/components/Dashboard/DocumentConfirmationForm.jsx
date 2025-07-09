@@ -104,7 +104,7 @@ const DocumentConfirmationForm = ({
             <strong>Entity:</strong> {document?.company}
           </span>
           <span className="meta-item">
-            <strong>Type:</strong> {document?.doctype}
+            <strong>Document Type:</strong> {document?.doctype}
           </span>
         </div>
       </div>
@@ -122,7 +122,7 @@ const DocumentConfirmationForm = ({
               />
               <span className="checkbox-text">
                 <span className="checkbox-icon">📋</span>
-                Ce document est une facture
+                This Document Is invoice
               </span>
             </label>
           </div>
@@ -133,14 +133,14 @@ const DocumentConfirmationForm = ({
           <div className="form-section invoice-section">
             <h5 className="section-title">
               <span className="section-icon">💰</span>
-              Informations de facturation
+              Billing information
             </h5>
             
             {/* Basic Invoice Info */}
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="invoice_number">
-                  Numéro de facture <span className="required">*</span>
+                  Invoice number <span className="required">*</span>
                 </label>
                 <input
                   id="invoice_number"
@@ -158,7 +158,7 @@ const DocumentConfirmationForm = ({
               
               <div className="form-group">
                 <label htmlFor="date">
-                  Date de facture <span className="required">*</span>
+                  Invoice date  <span className="required">*</span>
                 </label>
                 <input
                   id="date"
@@ -178,7 +178,7 @@ const DocumentConfirmationForm = ({
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="vendor">
-                  Fournisseur <span className="required">*</span>
+                  Partner <span className="required">*</span>
                 </label>
                 <input
                   id="vendor"
@@ -195,7 +195,7 @@ const DocumentConfirmationForm = ({
               </div>
               
               <div className="form-group">
-                <label htmlFor="client">Client</label>
+                <label htmlFor="client">Partner ID</label>
                 <input
                   id="client"
                   type="text"
@@ -262,7 +262,7 @@ const DocumentConfirmationForm = ({
             {(formData.total_ht || formData.tva) && (
               <div className="calculation-helper">
                 <span className="calculation-text">
-                  Calcul automatique: {formData.total_ht || 0} + {formData.tva || 0} = {calculateTotalTTC()} €
+                  Automatic calculation : {formData.total_ht || 0} + {formData.tva || 0} = {calculateTotalTTC()} €
                 </span>
               </div>
             )}
@@ -278,7 +278,7 @@ const DocumentConfirmationForm = ({
             disabled={isLoading}
           >
             <span className="btn-icon">❌</span>
-            Annuler
+            Cancel
           </button>
           
           <button 
@@ -294,7 +294,7 @@ const DocumentConfirmationForm = ({
             ) : (
               <>
                 <span className="btn-icon">✅</span>
-                Confirmer
+                Confirm
               </>
             )}
           </button>

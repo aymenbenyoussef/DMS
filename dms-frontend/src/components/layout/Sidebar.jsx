@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useContext } from 'react';
 import API from '../../api';
 import './Sidebar.css';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom'; 
 import { AppContext } from '../context';
 
 const Sidebar = ({ user }) => {
   const [companies, setCompanies] = useState([]);
   const [folders, setFolders] = useState({});
   const [error, setError] = useState('');
+  const navigate = useNavigate(); 
   const { 
     selectedCompany, 
     setSelectedCompany, 
@@ -134,7 +135,7 @@ const Sidebar = ({ user }) => {
   const handleCompanyClick = (company) => {
     setSelectedCompany(company);
     setSelectedDoctype(null);
-    
+    navigate('/');
     if (expandedCompany === company.id) {
       setExpandedCompany(null);
     } else {

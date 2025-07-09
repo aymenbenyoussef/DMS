@@ -1,12 +1,12 @@
 {
-  "session_id": "1_1752009474",
+  "session_id": "1_1752077663",
   "company": "facebook",
-  "doctype": "demande ",
+  "doctype": "contrat",
   "processed_file": {
-    "filename": "1752009471_facture1.jpg",
+    "filename": "1752077637_facture1.jpg",
     "original_filename": "facture1.jpg",
-    "file_path": "C:\\Users\\user\\Desktop\\Nouveau dossier\\DMS-main\\DMS-main\\dms\\upload\\facebook\\demande\\1752009471_facture1.jpg",
-    "text_path": "C:\\Users\\user\\Desktop\\Nouveau dossier\\DMS-main\\DMS-main\\dms\\upload\\facebook\\demande\\1752009471_facture1.txt",
+    "file_path": "C:\\Users\\LENOVO\\Desktop\\DMS\\DMS\\dms\\upload\\facebook\\contrat\\1752077637_facture1.jpg",
+    "text_path": "C:\\Users\\LENOVO\\Desktop\\DMS\\DMS\\dms\\upload\\facebook\\contrat\\1752077637_facture1.txt",
     "ocr_text": "Facture n° 123\n\nMon Entreprise\n\n22, Avenue Voltaire\n13000 Marseille, France\nTéléphone : +33 4.92.99 99 99\n\nDate de la facture\nRéférence de la facture\nNuméro de client:\nPalement da\n\nModalité de paiement\nEmis par\n\nContact dient\n\nDate de la vente/prestation\n\nInformations additionnelles.\n\n138.2020\n123\n\n456\n\n139.2020\n\n30 jours\n\nPierre Fournisseur\nMichael Acheteur\n13.10.2020\n\nFacture dlavoir, en remboursement de la facture n’ 5487899,\n\nDestinataire\nAcheteur SA,\n\nMichel Achetour\n\n31, re de fa Foret\n13100 Aix-en-Provence\nFrance\n\nDescription Quantits Unite PrixunitaireHT — %TVA ‘Total TVA_—_‘Total TTC\nMain-tceuvre 5 h 60,00€ 20%  — -80,00€ -960,00 €\nProduit “10 pes 105,00€ 20%  —-210.00€ 1. 260,00€\nTotal HT 4 350,00€\nTotal TVA ——-270,00€\nTotal TTC —-1.620,00€\n‘Sidge social Coordonnées Détaits bancairos\n22, Avenue Vatice Pere Fourisseur Banque NP Paribas\n\"2000 Marseie, Phone +43 20 12245678 Code banque 10000000\n\nFrance\n1 Sen ov Stet 00\nN° TVA ata, FRX 998008800\n\nE-mail Prre@macompagnie\nwm macompagne fr\n\nIN\" de compte. 12345078\nBAN FReasa11240982364\nSWIFTIBIC  FRHHCXK1001\n",
     "extracted_data": {
       "invoice_number": "123",
@@ -19,9 +19,9 @@
       "total_ttc": null,
       "is_invoice": true
     },
-    "company_folder": "C:\\Users\\user\\Desktop\\Nouveau dossier\\DMS-main\\DMS-main\\dms\\upload\\facebook",
-    "doctype_folder": "C:\\Users\\user\\Desktop\\Nouveau dossier\\DMS-main\\DMS-main\\dms\\upload\\facebook\\demande",
-    "summary_folder": "C:\\Users\\user\\Desktop\\Nouveau dossier\\DMS-main\\DMS-main\\dms\\upload\\facebook\\demande\\summary"
+    "company_folder": "C:\\Users\\LENOVO\\Desktop\\DMS\\DMS\\dms\\upload\\facebook",
+    "doctype_folder": "C:\\Users\\LENOVO\\Desktop\\DMS\\DMS\\dms\\upload\\facebook\\contrat",
+    "summary_folder": "C:\\Users\\LENOVO\\Desktop\\DMS\\DMS\\dms\\upload\\facebook\\contrat\\summary"
   },
   "user_id": 1
 }
