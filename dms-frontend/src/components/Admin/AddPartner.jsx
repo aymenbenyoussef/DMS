@@ -39,12 +39,12 @@ const AddPartner = () => {
       setLoading(false);
       return;
     }
-
-    try {
-      const dataToSend = {
+    const dataToSend = {
         name: formData.name.trim(),
         status: formData.status,
       };
+    try {
+      
 
       await API.partners.create(dataToSend);
 
@@ -53,32 +53,20 @@ const AddPartner = () => {
       setFieldErrors({});
       
       // Navigate after a short delay to show success message
-      //setTimeout(() => navigate('/partners'), 1000);
+      //navigate('/partners');
     } catch (err) {
-      const errorData = err.response?.data;
-    let errorMsg = '';
-    
-    if (errorData) {
-      // If error has a msg property
-      if (errorData.msg) {
-        errorMsg = errorData.msg;
-      } 
-      // If error is a string
-      else if (typeof errorData === 'string') {
-        errorMsg = errorData;
+      console.log('Sending data:', dataToSend);
+      console.error('API error:', err.response?.data || err.message);
+      const msg = err.response?.data?.msg ||
+                  'Error occurred while creating the partner.';
+      if (msg.toLowerCase().includes('name')) {
+        setFieldErrors({ name: 'A partner with this name already exists.' });
+      } else {
+        setError(msg);
       }
-    }
     
     // Default message if no specific message found
-    errorMsg = errorMsg || 'Error occurred while creating the partner.';
-    
-    // Special handling for duplicate name errors
-    if (errorMsg.toLowerCase().includes('name already exists')) {
-      setFieldErrors({ name: errorMsg });
-    } else {
-      setError(errorMsg);
-    }
-      console.error('Error creating partner:', err);
+    console.error('Error creating partner:', err);
     } finally {
       setLoading(false);
     }
@@ -129,8 +117,7 @@ const AddPartner = () => {
             <button 
               type="submit" 
               className="btn btn-primary" 
-              disabled={loading}
-            >
+              disabled={loading}>
               {loading ? 'Creating...' : 'Create Partner'}
             </button>
           </div>
