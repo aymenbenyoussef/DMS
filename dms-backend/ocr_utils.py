@@ -39,12 +39,15 @@ def extract_invoice_data(text):
         r'(?:num[eé]ro\s*de\s*facture)\s*[:#]?\s*(\w+[-\d]+)',
         r'(?:n°\s*facture)\s*[:#]?\s*(\w+[-\d]+)',
         r'(?:facture)\s*[:#]?\s*(\d+)'
+        """r'FACTURE\s*N°\s*(\d+)\b',  
+        r'(?<!\d\/)\b\d{3,}\b(?!\/\d)'"""
     ]
     
     for pattern in inv_patterns:
         inv_match = re.search(pattern, text, re.IGNORECASE)
         if inv_match:
             data["invoice_number"] = inv_match.group(1)
+            print(pattern)
             break
     
     # Extract date (French formats)

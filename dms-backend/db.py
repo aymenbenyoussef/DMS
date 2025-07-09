@@ -172,6 +172,15 @@ class DatabaseManager:
                            status BOOLEAN DEFAULT TRUE
                                     )
                 """)
+            
+            cursor.execute("""
+            CREATE TABLE IF NOT EXISTS partners (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(255) NOT NULL UNIQUE,
+                status BOOLEAN DEFAULT TRUE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+""")
             self.connection.commit()
 
 
@@ -837,6 +846,51 @@ class DatabaseManager:
         return self.execute_query(query, (company_id,), fetch=True)
 
 
+    # Partner management methods
+    def create_partner(self, name, status=True):
+        query = "INSERT INTO partners (name, status) VALUES (%s, %s)"
+        return self.execute_query(query, (name, status))
+
+    def get_all_partners(self):
+        query = "SELECT * FROM partners ORDER BY name"
+        return self.execute_query(query, fetch=True)
+
+    def get_partner_by_id(self, partner_id):
+        query = "SELECT * FROM partners WHERE id = %s"
+        result = self.execute_query(query, (partner_id,), fetch=True)
+        return result[0] if result else None
+
+    def update_partner(self, partner_id, name=None, status=None):
+        updates = []
+        params = []
+        
+        if name is not None:
+            updates.append("name = %s")
+            params.append(name)
+        if status is not None:
+            updates.append("status = %s")
+            params.append(status)
+        
+        if not updates:
+            return False
+        
+        params.append(partner_id)
+        query = f"UPDATE partners SET {', '.join(updates)} WHERE id = %s"
+        try:
+            self.execute_query(query, params)
+            return True
+        except Exception as e:
+            print(f"Error updating partner: {e}")
+            return False
+
+    def delete_partner(self, partner_id):
+        query = "DELETE FROM partners WHERE id = %s"
+        try:
+            self.execute_query(query, (partner_id,))
+            return True
+        except Exception as e:
+            print(f"Error deleting partner: {e}")
+            return False
 # Create global database instance
 db = DatabaseManager()
 db.init_database()

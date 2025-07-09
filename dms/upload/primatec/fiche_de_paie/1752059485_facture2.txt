@@ -1,0 +1,21 @@
+FINA. FR
+logiciel de facturation
+
+Date de facture: 23/07/2021
+
+Echéance: 06/08/2021 FACTURE Ne 576
+
+DESTINATAIRE:
+[Nom de I'entreprise] [Nom de la banque] [Nom de I'entreprise du client]
+[Adresse] SWIFT/BIC: [SWIFT/BIC] [Adresse de l'entreprise du client]
+SIRET: [SIRET] Numéro de compte bancaire: [Compte SIRET: [SIRET du client]
+No de TVA: [Numéro de TVA] bancaire (IBAN)] No de TVA: [Numéro de TVA du client]
+
+Tél: [Téléphone]
+
+DESIGNATION QUANTITE PRIX
+mon service | 10 heures | 70,00 | 700,00 | 140,00 (20%)
+TOTAL 700,00 €
+TVA 140,00 €
+
+Total TTC 840,00 €

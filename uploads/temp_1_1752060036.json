@@ -1,0 +1,27 @@
+{
+  "session_id": "1_1752060036",
+  "company": "primatec",
+  "doctype": "fiche de paie",
+  "processed_file": {
+    "filename": "1752060032_facture2.jpg",
+    "original_filename": "facture2.jpg",
+    "file_path": "C:\\Users\\user\\Desktop\\Nouveau dossier\\DMS-main\\DMS-main\\dms\\upload\\primatec\\fiche_de_paie\\1752060032_facture2.jpg",
+    "text_path": "C:\\Users\\user\\Desktop\\Nouveau dossier\\DMS-main\\DMS-main\\dms\\upload\\primatec\\fiche_de_paie\\1752060032_facture2.txt",
+    "ocr_text": "FINA. FR\nlogiciel de facturation\n\nDate de facture: 23/07/2021\n\nEchéance: 06/08/2021 FACTURE Ne 576\n\nDESTINATAIRE:\n[Nom de I'entreprise] [Nom de la banque] [Nom de I'entreprise du client]\n[Adresse] SWIFT/BIC: [SWIFT/BIC] [Adresse de l'entreprise du client]\nSIRET: [SIRET] Numéro de compte bancaire: [Compte SIRET: [SIRET du client]\nNo de TVA: [Numéro de TVA] bancaire (IBAN)] No de TVA: [Numéro de TVA du client]\n\nTél: [Téléphone]\n\nDESIGNATION QUANTITE PRIX\nmon service | 10 heures | 70,00 | 700,00 | 140,00 (20%)\nTOTAL 700,00 €\nTVA 140,00 €\n\nTotal TTC 840,00 €\n",
+    "extracted_data": {
+      "invoice_number": "23",
+      "date": "2021-07-23",
+      "total": 840.0,
+      "vendor": "FINA. FR",
+      "client": "[Nom de I'entreprise] [Nom de la banque] [Nom de I'entreprise du client]",
+      "tva": 140.0,
+      "total_ht": null,
+      "total_ttc": 840.0,
+      "is_invoice": true
+    },
+    "company_folder": "C:\\Users\\user\\Desktop\\Nouveau dossier\\DMS-main\\DMS-main\\dms\\upload\\primatec",
+    "doctype_folder": "C:\\Users\\user\\Desktop\\Nouveau dossier\\DMS-main\\DMS-main\\dms\\upload\\primatec\\fiche_de_paie",
+    "summary_folder": "C:\\Users\\user\\Desktop\\Nouveau dossier\\DMS-main\\DMS-main\\dms\\upload\\primatec\\fiche_de_paie\\summary"
+  },
+  "user_id": 1
+}

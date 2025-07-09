@@ -25,10 +25,8 @@ const AdminDashboard = () => {
     
     { icon: <BiBuildings size={20} />, label: 'Entities ', link: '/companies' },
     { icon: <BiCollection size={20} />, label: 'Data types ', link: '/doctypes' },
+    { icon: <BiFolder size={20} />, label: 'Partners' , link: '/partners'},
     { icon: <BiFile size={20} />, label: 'Log files', link: '/admin/activity_logs' },
-    
-    
-    { icon: <BiFolder size={20} />, label: 'Contents overview' },
     { icon: <BiBarChart size={20} />, label: 'Charts' },
     { icon: <BiCheckSquare size={20} />, label: 'Folder/Document check' },
     { icon: <BiTrendingUp size={20} />, label: 'Timeline' },

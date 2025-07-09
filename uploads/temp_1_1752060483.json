@@ -1,0 +1,27 @@
+{
+  "session_id": "1_1752060483",
+  "company": "primatec",
+  "doctype": "fiche de paie",
+  "processed_file": {
+    "filename": "1752060465_1131w-_bNIDByiaAU.jpg",
+    "original_filename": "1131w-_bNIDByiaAU.jpg",
+    "file_path": "C:\\Users\\user\\Desktop\\Nouveau dossier\\DMS-main\\DMS-main\\dms\\upload\\primatec\\fiche_de_paie\\1752060465_1131w-_bNIDByiaAU.jpg",
+    "text_path": "C:\\Users\\user\\Desktop\\Nouveau dossier\\DMS-main\\DMS-main\\dms\\upload\\primatec\\fiche_de_paie\\1752060465_1131w-_bNIDByiaAU.txt",
+    "ocr_text": "Ta\nnomade\n\nSTUDIO CREATIF\n\nDATE: 30/10/2035\nECHEANCE : 30 /11/ 2035\n\nEMETTEUR :\n\n123-456-7890\nhello@reallygreatsite.com\n\nFACTURE\n\nFACTURE N° : 123-456-7890\n\nDESTINATAIRE :\nM.NOA ANDRIEUX\n\nhello@reallygreatsite.com\n\n123 Anywhere St, 123 Anywhere St,\n\nAny City ST 12345 Any City ST 12345\nDescription: Prix Unitaire : Quantité : Total:\nIdentité visuelle 2500,00€ 1 2500,00€\nRapport détaillé 1500,00€ 1 1500,00€\nFormation des équipes 1200,00€ 1 1200,00€\n\nTOTAL HT: 5200,00€\n\n. TVA 20% : 1040,00€\n\nREGLEMENT : PREMISE: .\n\nPar virement bancaire : TOTALTTC: 6240,00€\n\nBanque : Rimberio\nCompte : 123-456-7890\n\nEn cas de retard de paiement, une indemnité de 10% par\njour de retard ainsi que des frais de recouvrement de 40\n\neuros seront exigibles.\n\nConditions générales de vente consultables sur le site :\n\nwww.reallygreatsite.com\n",
+    "extracted_data": {
+      "invoice_number": "123-456-7890",
+      "date": "2035-10-30",
+      "total": 6240.0,
+      "vendor": "nomade",
+      "client": "M.NOA ANDRIEUX",
+      "tva": 1040.0,
+      "total_ht": 5200.0,
+      "total_ttc": 6240.0,
+      "is_invoice": true
+    },
+    "company_folder": "C:\\Users\\user\\Desktop\\Nouveau dossier\\DMS-main\\DMS-main\\dms\\upload\\primatec",
+    "doctype_folder": "C:\\Users\\user\\Desktop\\Nouveau dossier\\DMS-main\\DMS-main\\dms\\upload\\primatec\\fiche_de_paie",
+    "summary_folder": "C:\\Users\\user\\Desktop\\Nouveau dossier\\DMS-main\\DMS-main\\dms\\upload\\primatec\\fiche_de_paie\\summary"
+  },
+  "user_id": 1
+}

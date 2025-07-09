@@ -207,36 +207,36 @@ const DragDropUpload = ({ onUpload, onClose }) => {
   const getStatusMessage = () => {
     switch (uploadStatus) {
       case 'pending':
-        return 'Traitement du fichier en cours...';
+        return 'Processing file...';
       case 'processed':
-        return 'Fichier traité avec succès. Vérifiez les informations ci-dessous.';
+        return 'File processed successfully. Please verify the information below.';
       case 'confirming':
-        return 'Confirmation en cours...';
+        return 'Confirming...';
       case 'completed':
-        return 'Document confirmé et sauvegardé avec succès!';
+        return 'Document confirmed and saved successfully!';
       case 'error':
-        return 'Erreur lors du traitement.';
+        return 'Error during processing.';
       case 'invalid':
-        return 'Type de fichier non valide.';
+        return 'Invalid file type.';
       case 'multiple_files_error':
-        return 'Veuillez sélectionner un seul fichier à la fois.';
+        return 'Please select only one file at a time.';
       default:
         return '';
     }
-  };
+};
 
   if (showConfirmation) {
     return (
       <div className="upload-modal-overlay">
         <div className="upload-modal confirmation-modal">
           <div className="upload-header">
-            <h3>Confirmation du document</h3>
+            <h3>Document confirmation</h3>
             <button className="close-btn" onClick={onClose}>×</button>
           </div>
           
           <div className="confirmation-content">
             <p className="confirmation-info">
-              Vérifiez et modifiez les informations extraites si nécessaire :
+              Check and modify the extracted information if necessary:
             </p>
             
             <div className="document-form">
@@ -244,7 +244,7 @@ const DragDropUpload = ({ onUpload, onClose }) => {
               
               <div className="form-row">
                 <div className="form-group">
-                  <label>Entreprise:</label>
+                  <label>Entity:</label>
                   <input 
                     type="text" 
                     value={confirmedDocument?.company || ''} 
@@ -253,7 +253,7 @@ const DragDropUpload = ({ onUpload, onClose }) => {
                   />
                 </div>
                 <div className="form-group">
-                  <label>Type de document:</label>
+                  <label>Data Type:</label>
                   <input 
                     type="text" 
                     value={confirmedDocument?.doctype || ''} 
@@ -270,7 +270,7 @@ const DragDropUpload = ({ onUpload, onClose }) => {
                     checked={confirmedDocument?.is_invoice || false}
                     onChange={(e) => updateConfirmedDocument('is_invoice', e.target.checked)}
                   />
-                  Ce document est une facture
+                  this file is an invoice
                 </label>
               </div>
               
@@ -278,7 +278,7 @@ const DragDropUpload = ({ onUpload, onClose }) => {
                 <div className="invoice-fields">
                   <div className="form-row">
                     <div className="form-group">
-                      <label>Numéro de facture:</label>
+                      <label>Invoice number:</label>
                       <input
                         type="text"
                         value={confirmedDocument?.confirmed_data?.invoice_number || ''}

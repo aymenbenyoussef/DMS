@@ -16,6 +16,8 @@ import AddUsers from  './components/Admin/AddUsers';
 import ActivityLogs from './components/Admin/ActivityLogs'; 
 import AddDoctype from './components/Admin/AddDocType';
 import AdminDoctypes from './components/Admin/AdminDoctypes';
+import AdminPartners from './components/Admin/AdminPartners';
+import AddPartner from './components/Admin/AddPartner'
 import { AppProvider } from './components/context';  // Updated import
 import './App.css';
 
@@ -171,6 +173,7 @@ function App() {
                 <Route path="/admin/activity_logs" element={<ActivityLogs />} />
                 <Route path="/companies" element={<AdminCompanies />} />
                 <Route path="/doctypes" element={<AdminDoctypes />} />
+                <Route path="/partners" element={<AdminPartners />} />
               </>
             )}
             <Route path="/" element={<Dashboard user={user} />} />
@@ -189,6 +192,8 @@ function App() {
               path="/AddDoctype" element={<AddDoctype user={user}/>} />
             <Route 
               path="/AddUsers" element={<AddUsers />} />
+              <Route 
+              path="/AddPartner" element={<AddPartner />} />
           </Routes>
         </Layout>
       </Router>

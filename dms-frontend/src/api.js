@@ -194,6 +194,13 @@ const ocr = {
   }
 };
 
+const partners = {
+  getAll: () => API.get('/partners'),
+  create: (partnerData) => API.post('/partners', partnerData),
+  update: (partnerId, partnerData) => API.put(`/partners/${partnerId}`, partnerData),
+  delete: (partnerId) => API.delete(`/partners/${partnerId}`),
+};
+
 // Export the API instance and endpoint groups
 export default {
   ...API,
@@ -204,6 +211,7 @@ export default {
   documents,
   folders,
   ocr,
+  partners
 };
 
 // Export individual modules for easier imports

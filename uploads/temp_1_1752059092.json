@@ -1,0 +1,27 @@
+{
+  "session_id": "1_1752059092",
+  "company": "primatec",
+  "doctype": "fiche de paie",
+  "processed_file": {
+    "filename": "1752059088_modele-facture-gratuit-sevdesk.png",
+    "original_filename": "modele-facture-gratuit-sevdesk.png",
+    "file_path": "C:\\Users\\user\\Desktop\\Nouveau dossier\\DMS-main\\DMS-main\\dms\\upload\\primatec\\fiche_de_paie\\1752059088_modele-facture-gratuit-sevdesk.png",
+    "text_path": "C:\\Users\\user\\Desktop\\Nouveau dossier\\DMS-main\\DMS-main\\dms\\upload\\primatec\\fiche_de_paie\\1752059088_modele-facture-gratuit-sevdesk.txt",
+    "ocr_text": "‘Serenit mbit\nHauptstrate 40\n71654 Offenburg\nMonsieur Jean Dupont\n‘Acheteur SA\nRue du Chateau\n34000 MONTPELLIER\n\nNuméro de facture : 1001\nDate de facture : 02/08/2018\nN° client : 321\n\nMain-d’oeuvre\nTracteur\nBois de chauffage\nTotal HT Total TVA Total HT 3.800,00 €\nTWA20% — 600,00€  3000,00€ TVA20% 600,00 €\nTWAIO% —80,00€ _—800,00€ TVA10%\nToatTre | 4.480.006\n\nConditions de paiement : 30% a la commande, paiement & réception de facture\n‘Mode de paiement : par virement ou cheque\n\n‘Nous vous remercions de votre confiance.\nCordialement\n\nSevenis Gmot Détais panguaices Directeur:\n85 12345678 0122456769\n\nN° ts 380 ooo ooo ono\nFe Te aPEOBTS C\n\nN° Twaintracom, DE #4 380 000 000\n\n",
+    "extracted_data": {
+      "invoice_number": "1001",
+      "date": "2018-08-02",
+      "total": null,
+      "vendor": "‘Serenit mbit",
+      "client": "Jean Dupont",
+      "tva": 600.0,
+      "total_ht": 3.8,
+      "total_ttc": null,
+      "is_invoice": true
+    },
+    "company_folder": "C:\\Users\\user\\Desktop\\Nouveau dossier\\DMS-main\\DMS-main\\dms\\upload\\primatec",
+    "doctype_folder": "C:\\Users\\user\\Desktop\\Nouveau dossier\\DMS-main\\DMS-main\\dms\\upload\\primatec\\fiche_de_paie",
+    "summary_folder": "C:\\Users\\user\\Desktop\\Nouveau dossier\\DMS-main\\DMS-main\\dms\\upload\\primatec\\fiche_de_paie\\summary"
+  },
+  "user_id": 1
+}

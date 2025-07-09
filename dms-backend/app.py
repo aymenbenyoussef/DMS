@@ -1059,3 +1059,111 @@ if __name__ == '__main__':
     # Ensure log directory exists when app starts
     ensure_log_dir()
     app.run(host='0.0.0.0', debug=True)
+
+@app.route('/partners', methods=['GET'])
+@jwt_required()
+def get_partners():
+    try:
+        partners = db.get_all_partners()
+        return jsonify(partners), 200
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+
+@app.route('/partners', methods=['POST'])
+@jwt_required()
+def create_partner():
+    current_user_claims = get_jwt()
+    data = request.get_json()
+    
+    if not data or 'name' not in data:
+        return jsonify({"msg": "Partner name is required"}), 400
+    
+    try:
+        partner_id = db.create_partner(
+            name=data['name'],
+            status=data.get('status', True)
+        )
+        
+        # Log partner creation
+        """log_activity(
+            actor=current_user_claims['username'],
+            action="Create",
+            resource_type="partner",
+            resource_data={
+                'id': partner_id,
+                'name': data['name']
+            }
+        )"""
+        
+        return jsonify({
+            "msg": "Partner created successfully",
+            "partner_id": partner_id
+        }), 201
+    except Exception as e:
+        if "Duplicate entry" in str(e):
+            return jsonify({"msg": "A partner with this name already exists"}), 400
+        return jsonify({"msg": str(e)}), 500
+
+@app.route('/partners/<int:partner_id>', methods=['PUT'])
+@jwt_required()
+def update_partner(partner_id):
+    current_user_claims = get_jwt()
+    data = request.get_json()
+    
+    if not data:
+        return jsonify({"msg": "No data provided"}), 400
+    
+    try:
+        success = db.update_partner(
+            partner_id=partner_id,
+            name=data.get('name'),
+            status=data.get('status')
+        )
+        
+        if success:
+            # Log partner update
+            """log_activity(
+                actor=current_user_claims['username'],
+                action="Update",
+                resource_type="partner",
+                resource_data={
+                    'id': partner_id,
+                    'name': data.get('name', '[unchanged]')
+                }
+            )"""
+            return jsonify({"msg": "Partner updated successfully"}), 200
+        else:
+            return jsonify({"msg": "Partner not found"}), 404
+    except Exception as e:
+        if "Duplicate entry" in str(e):
+            return jsonify({"msg": "A partner with this name already exists"}), 400
+        return jsonify({"msg": str(e)}), 500
+
+@app.route('/partners/<int:partner_id>', methods=['DELETE'])
+@jwt_required()
+def delete_partner(partner_id):
+    current_user_claims = get_jwt()
+    
+    try:
+        # Get partner info before deletion for logging
+        partner = db.get_partner_by_id(partner_id)
+        if not partner:
+            return jsonify({"msg": "Partner not found"}), 404
+        
+        success = db.delete_partner(partner_id)
+        if success:
+            # Log partner deletion
+            """log_activity(
+                actor=current_user_claims['username'],
+                action="Delete",
+                resource_type="partner",
+                resource_data={
+                    'id': partner_id,
+                    'name': partner['name']
+                }
+            )"""
+            return jsonify({"msg": "Partner deleted successfully"}), 200
+        else:
+            return jsonify({"msg": "Partner not found"}), 404
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500

@@ -101,7 +101,7 @@ const DocumentConfirmationForm = ({
         </h4>
         <div className="document-meta">
           <span className="meta-item">
-            <strong>Entreprise:</strong> {document?.company}
+            <strong>Entity:</strong> {document?.company}
           </span>
           <span className="meta-item">
             <strong>Type:</strong> {document?.doctype}
