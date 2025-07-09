@@ -1077,7 +1077,7 @@ def create_partner():
     
     if not data or 'name' not in data:
         return jsonify({"msg": "Partner name is required"}), 400
-    
+    print(data)
     try:
         partner_id = db.create_partner(
             name=data['name'],
