@@ -297,7 +297,7 @@ const DragDropUpload = ({ onUpload, onClose }) => {
                   
                   <div className="form-row">
                     <div className="form-group">
-                      <label>Fournisseur:</label>
+                      <label>Partner:</label>
                       <input
                         type="text"
                         value={confirmedDocument?.confirmed_data?.vendor || ''}
@@ -379,15 +379,15 @@ const DragDropUpload = ({ onUpload, onClose }) => {
     <div className="upload-modal-overlay">
       <div className="upload-modal">
         <div className="upload-header">
-          <h3>Upload de document</h3>
+          <h3>Document Upload</h3>
           <button className="close-btn" onClick={onClose}>×</button>
         </div>
         
         <div className="upload-content">
           {selectedCompany && selectedDoctype && (
             <div className="selection-info">
-              <p><strong>Entreprise:</strong> {selectedCompany.name}</p>
-              <p><strong>Type de document:</strong> {selectedDoctype.name}</p>
+              <p><strong>Entity :</strong> {selectedCompany.name}</p>
+              <p><strong>Document Type :</strong> {selectedDoctype.name}</p>
             </div>
           )}
           
@@ -402,7 +402,7 @@ const DragDropUpload = ({ onUpload, onClose }) => {
               {!file ? (
                 <>
                   <div className="upload-icon">📄</div>
-                  <p>Glissez-déposez votre fichier ici ou</p>
+                  <p>Upload Your File Here</p>
                   <label className="file-input-label">
                     <input
                       type="file"
@@ -410,13 +410,13 @@ const DragDropUpload = ({ onUpload, onClose }) => {
                       onChange={handleFileChange}
                       className="file-input"
                     />
-                    Parcourir les fichiers
+                    Browse Files
                   </label>
                   <p className="file-types">
-                    Formats acceptés: PDF, JPG, PNG, TIFF, DOC, DOCX
+                    Accepted Format : PDF, JPG, PNG, TIFF, DOC, DOCX
                   </p>
                   <p className="single-file-note">
-                    ⚠️ Un seul fichier à la fois
+                    ⚠️ Only one file at a time
                   </p>
                 </>
               ) : (
@@ -464,14 +464,14 @@ const DragDropUpload = ({ onUpload, onClose }) => {
               onClick={onClose}
               disabled={isUploading}
             >
-              Annuler
+              Cancel
             </button>
             <button 
               className="btn-primary" 
               onClick={handleUpload}
               disabled={!file || isUploading || !selectedCompany || !selectedDoctype}
             >
-              {isUploading ? 'Traitement...' : 'Upload'}
+              {isUploading ? 'Treatment...' : 'Upload'}
             </button>
           </div>
         </div>

@@ -62,7 +62,7 @@ const AdminCompanies = ({ user }) => {
       phone: '',
     });
     setFieldErrors({});
-    /*window.dispatchEvent(new Event('companyAdded'));*/
+    window.dispatchEvent(new Event('companyAdded'));
     navigate('/companies');
   } catch (err) {
     const errorMsg =

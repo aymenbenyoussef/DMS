@@ -194,12 +194,12 @@ const ocr = {
   }
 };
 
-const partners = {
-  getAll: () => API.get('/partners'),
-  create: (partnerData) => API.post('/partners', partnerData),
-  update: (partnerId, partnerData) => API.put(`/partners/${partnerId}`, partnerData),
-  updateStatus: (partnerId, status) => API.put(`/partners/${partnerId}/status`, { status }),
-  delete: (partnerId) => API.delete(`/partners/${partnerId}`),
+const partnerTypes = {
+  getAll: () => API.get('/partnerTypes'),
+  create: (partnerTypeData) => API.post('/partnerTypes', partnerTypeData),
+  update: (partnerTypeId, partnerTypeData) => API.put(`/partnerTypes/${partnerTypeId}`, partnerTypeData),
+  updateStatus: (partnerTypeId, status) => API.put(`/partnerTypes/${partnerTypeId}/status`, { status }),
+  delete: (partnerTypeId) => API.delete(`/partnerTypes/${partnerTypeId}`),
 };
 
 // Export the API instance and endpoint groups
@@ -212,8 +212,7 @@ export default {
   documents,
   folders,
   ocr,
-  partners
+  partnerTypes
 };
 
 // Export individual modules for easier imports
-export { users, admin, doctype, companies, documents, folders, ocr, partners };

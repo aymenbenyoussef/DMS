@@ -7,19 +7,16 @@ const DocumentConfirmationForm = ({
   onConfirm, 
   onCancel, 
   isLoading = false 
-}) => {
-  const [formData, setFormData] = useState({
+}) => {  const [formData, setFormData] = useState({
     is_invoice: document?.is_invoice || false,
-    invoice_number: document?.confirmed_data?.invoice_number || '',
-    date: document?.confirmed_data?.date || '',
-    vendor: document?.confirmed_data?.vendor || '',
-    client: document?.confirmed_data?.client || '',
-    total_ht: document?.confirmed_data?.total_ht || '',
-    tva: document?.confirmed_data?.tva || '',
-    total_ttc: document?.confirmed_data?.total_ttc || ''
-  });
-
-  const [errors, setErrors] = useState({});
+    invoice_number: document?.confirmed_data?.invoice_number || "",
+    date: document?.confirmed_data?.date || "",
+    partner: document?.confirmed_data?.partner || "",
+    client: document?.confirmed_data?.client || "",
+    total_ht: document?.confirmed_data?.total_ht || "",
+    tva: document?.confirmed_data?.tva || "",
+    total_ttc: document?.confirmed_data?.total_ttc || ""
+  }); const [errors, setErrors] = useState({});
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -49,8 +46,8 @@ const DocumentConfirmationForm = ({
       if (!formData.date) {
         newErrors.date = 'La date est requise';
       }
-      if (!formData.vendor.trim()) {
-        newErrors.vendor = 'Le fournisseur est requis';
+      if (!formData.partner.trim()) {
+        newErrors.partner = 'Le partenaire est requis';
       }
       if (!formData.total_ttc || formData.total_ttc <= 0) {
         newErrors.total_ttc = 'Le total TTC doit être supérieur à 0';
@@ -177,20 +174,20 @@ const DocumentConfirmationForm = ({
             {/* Parties */}
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="vendor">
+                <label htmlFor="partner">
                   Partner <span className="required">*</span>
                 </label>
                 <input
-                  id="vendor"
+                  id="partner"
                   type="text"
-                  value={formData.vendor}
-                  onChange={(e) => handleInputChange('vendor', e.target.value)}
-                  className={errors.vendor ? 'error' : ''}
-                  placeholder="Nom du fournisseur"
+                  value={formData.partner}
+                  onChange={(e) => handleInputChange("partner", e.target.value)}
+                  className={errors.partner ? "error" : ""}
+                  placeholder="Nom du partenaire"
                   disabled={isLoading}
                 />
-                {errors.vendor && (
-                  <span className="error-message">{errors.vendor}</span>
+                {errors.partner && (
+                  <span className="error-message">{errors.partner}</span>
                 )}
               </div>
               

@@ -174,7 +174,7 @@ class DatabaseManager:
                 """)
             
             cursor.execute("""
-            CREATE TABLE IF NOT EXISTS partners (
+            CREATE TABLE IF NOT EXISTS partnerTypes (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 name VARCHAR(255) NOT NULL UNIQUE,
                 status BOOLEAN DEFAULT TRUE,
@@ -846,33 +846,33 @@ class DatabaseManager:
         return self.execute_query(query, (company_id,), fetch=True)
 
 
-    # Partner management methods
-    def check_partner_name_exists(self, name):
-        """Check if a partner name already exists"""
-        query = "SELECT id FROM partners WHERE name = %s LIMIT 1"
+    # PartnerType management methods
+    def check_partner_type_name_exists(self, name):
+        """Check if a partner type name already exists"""
+        query = "SELECT id FROM partnerTypes WHERE name = %s LIMIT 1"
         result = self.execute_query(query, (name,), fetch=True)
         return bool(result)
     
-    def check_partner_name_exists_except_id(self, name, partner_id):
-        """Check if a partner name exists excluding a specific partner ID"""
-        query = "SELECT id FROM partners WHERE name = %s AND id != %s LIMIT 1"
-        result = self.execute_query(query, (name, partner_id), fetch=True)
+    def check_partner_type_name_exists_except_id(self, name, partner_type_id):
+        """Check if a partner type name exists excluding a specific partner type ID"""
+        query = "SELECT id FROM partnerTypes WHERE name = %s AND id != %s LIMIT 1"
+        result = self.execute_query(query, (name, partner_type_id), fetch=True)
         return bool(result)
 
     def create_partner(self, name, status=True):
         query = "INSERT INTO partners (name, status) VALUES (%s, %s)"
-        return self.execute_query(query, (name, status))
+        return self.execute_query(query, (name, status,))
 
-    def get_all_partners(self):
-        query = "SELECT * FROM partners ORDER BY name"
+    def get_all_partner_types(self):
+        query = "SELECT * FROM partnerTypes ORDER BY name"
         return self.execute_query(query, fetch=True)
 
-    def get_partner_by_id(self, partner_id):
-        query = "SELECT * FROM partners WHERE id = %s"
-        result = self.execute_query(query, (partner_id,), fetch=True)
+    def get_partner_type_by_id(self, partner_type_id):
+        query = "SELECT * FROM partnerTypes WHERE id = %s"
+        result = self.execute_query(query, (partner_type_id,), fetch=True)
         return result[0] if result else None
 
-    def update_partner(self, partner_id, name=None, status=None):
+    def update_partner_type(self, partner_type_id, name=None, status=None):
         updates = []
         params = []
         
@@ -886,32 +886,32 @@ class DatabaseManager:
         if not updates:
             return False
         
-        params.append(partner_id)
-        query = f"UPDATE partners SET {', '.join(updates)} WHERE id = %s"
+        params.append(partner_type_id)
+        query = f"UPDATE partnerTypes SET {', '.join(updates)} WHERE id = %s"
         try:
             self.execute_query(query, params)
             return True
         except Exception as e:
-            print(f"Error updating partner: {e}")
+            print(f"Error updating partner type: {e}")
             return False
 
-    def update_partner_status(self, partner_id, status):
-        """Update only the status of a partner"""
-        query = "UPDATE partners SET status = %s WHERE id = %s"
+    def update_partner_type_status(self, partner_type_id, status):
+        """Update only the status of a partner type"""
+        query = "UPDATE partnerTypes SET status = %s WHERE id = %s"
         try:
-            self.execute_query(query, (status, partner_id))
+            self.execute_query(query, (status, partner_type_id))
             return True
         except Exception as e:
-            print(f"Error updating partner status: {e}")
+            print(f"Error updating partner type status: {e}")
             return False
 
-    def delete_partner(self, partner_id):
-        query = "DELETE FROM partners WHERE id = %s"
+    def delete_partner_type(self, partner_type_id):
+        query = "DELETE FROM partnerTypes WHERE id = %s"
         try:
-            self.execute_query(query, (partner_id,))
+            self.execute_query(query, (partner_type_id,))
             return True
         except Exception as e:
-            print(f"Error deleting partner: {e}")
+            print(f"Error deleting partner type: {e}")
             return False
 # Create global database instance
 db = DatabaseManager()

@@ -35,24 +35,24 @@ def log_activity(actor, action, resource_type, resource_data):
     # Format log entry based on resource type
     if resource_type == "user":
         log_entry = (
-            f"{timestamp} - {actor} - {action} user: "
+            f"{timestamp} - {actor} - {action} User: "
             f"{resource_data['id']}, {resource_data['username']}, "
             f"{resource_data['email']}, {'enabled' if resource_data['is_active'] else 'disabled'}"
         )
     elif resource_type == "company":
         log_entry = (
-            f"{timestamp} - {actor} - {action} company: "
+            f"{timestamp} - {actor} - {action} Entity: "
             f"{resource_data['id']}, {resource_data['name']}"
         )
     elif resource_type == "document":
         log_entry = (
-            f"{timestamp} - {actor} - {action} document: "
+            f"{timestamp} - {actor} - {action} Document: "
             f"{resource_data['id']}, {resource_data['filename']}, "
             f"company_id={resource_data['company_id']}"
         )
     elif resource_type == "doctype":
         log_entry = (
-            f"{timestamp} - {actor} - {action} document type: "
+            f"{timestamp} - {actor} - {action} DocType: "
             f"{resource_data['id']}, {resource_data['name']}"
         )
     else:
@@ -939,8 +939,13 @@ def confirm_document():
         
         for doc_data in confirmed_documents:
             filename = doc_data['filename']
-            is_invoice = doc_data.get('is_invoice', False)
-            confirmed_info = doc_data.get('confirmed_data', {})
+            is_invoice = doc_data.get("is_invoice", False)
+            confirmed_info = doc_data.get("confirmed_data", {})
+            # Rename fields from frontend to match backend/database expectations
+            if "vendor" in confirmed_info:
+                confirmed_info["partner"] = confirmed_info.pop("vendor")
+            if "client" in confirmed_info:
+                confirmed_info["partner_id"] = confirmed_info.pop("client")
             
             try:
                 # Save document to database
@@ -958,6 +963,17 @@ def confirm_document():
                     report_filename = f"{os.path.splitext(filename)[0]}_report.pdf"
                     report_path = os.path.join(summary_folder, report_filename)
                     generate_report_pdf(confirmed_info, report_path, filename)
+                
+                # Generate JSON summary file with confirmed information
+                json_filename = f"{os.path.splitext(filename)[0]}_summary.json"
+                json_path = os.path.join(summary_folder, json_filename)
+                with open(json_path, 'w', encoding='utf-8') as json_file:
+                    json.dump({
+                        'filename': filename,
+                        'processing_date': datetime.now().isoformat(),
+                        'is_invoice': is_invoice,
+                        'confirmed_data': confirmed_info
+                    }, json_file, ensure_ascii=False, indent=2)
                 
                 # Log document creation
                 current_user_claims = get_jwt()
@@ -1059,65 +1075,72 @@ if __name__ == '__main__':
     ensure_log_dir()
     app.run(host='0.0.0.0', debug=True)
 
-
-
-@app.route('/partners', methods=['POST'])
+@app.route('/partners', methods=['GET'])
 @jwt_required()
-def create_partner():
+def get_partners():
+    try:
+        partners = db.get_all_partners()
+        return jsonify(partners), 200
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+
+@app.route('/partnerTypes', methods=['POST'])
+@jwt_required()
+def create_partner_type():
     current_user_claims = get_jwt()
     data = request.get_json()
     print(data)
     if not data or 'name' not in data:
-        return jsonify({"msg": "Partner name is required"}), 400
+        return jsonify({"msg": "Partner type name is required"}), 400
     
     # Vérifier si le nom existe déjà
-    if db.check_partner_name_exists(data['name'].strip()):
-        return jsonify({"msg": "A partner with this name already exists"}), 400
+    if db.check_partner_type_name_exists(data['name'].strip()):
+        return jsonify({"msg": "A partner type with this name already exists"}), 400
     
     try:
-        partner_id = db.create_partner(
+        partner_type_id = db.create_partner_type(
             name=data['name'].strip(),
             status=data.get('status', True)
         )
         
         return jsonify({
-            "msg": "Partner created successfully",
-            "partner_id": partner_id
+            "msg": "Partner type created successfully",
+            "partner_type_id": partner_type_id
         }), 201
     except Exception as e:
         return jsonify({"msg": str(e)}), 500
 
-@app.route('/partners/<int:partner_id>', methods=['PUT'])
+@app.route('/partnerTypes/<int:partner_type_id>', methods=['PUT'])
 @jwt_required()
-def update_partner(partner_id):
+def update_partner_type(partner_type_id):
     current_user_claims = get_jwt()
     data = request.get_json()
     
     if not data:
         return jsonify({"msg": "No data provided"}), 400
     
-    # Si le nom est fourni, vérifier qu'il n'existe pas déjà (sauf pour ce partenaire)
+    # Si le nom est fourni, vérifier qu'il n'existe pas déjà (sauf pour ce type de partenaire)
     if 'name' in data and data['name']:
-        if db.check_partner_name_exists_except_id(data['name'].strip(), partner_id):
-            return jsonify({"msg": "A partner with this name already exists"}), 400
+        if db.check_partner_type_name_exists_except_id(data['name'].strip(), partner_type_id):
+            return jsonify({"msg": "A partner type with this name already exists"}), 400
     
     try:
-        success = db.update_partner(
-            partner_id=partner_id,
+        success = db.update_partner_type(
+            partner_type_id=partner_type_id,
             name=data.get('name').strip() if data.get('name') else None,
             status=data.get('status')
         )
         
         if success:
-            return jsonify({"msg": "Partner updated successfully"}), 200
+            return jsonify({"msg": "Partner type updated successfully"}), 200
         else:
-            return jsonify({"msg": "Partner not found"}), 404
+            return jsonify({"msg": "Partner type not found"}), 404
     except Exception as e:
         return jsonify({"msg": str(e)}), 500
 
-@app.route('/partners/<int:partner_id>/status', methods=['PUT'])
+@app.route('/partnerTypes/<int:partner_type_id>/status', methods=['PUT'])
 @jwt_required()
-def update_partner_status(partner_id):
+def update_partner_type_status(partner_type_id):
     current_user_claims = get_jwt()
     data = request.get_json()
     
@@ -1125,40 +1148,40 @@ def update_partner_status(partner_id):
         return jsonify({"msg": "Status is required"}), 400
     
     try:
-        success = db.update_partner_status(partner_id, data['status'])
+        success = db.update_partner_type_status(partner_type_id, data['status'])
         
         if success:
-            return jsonify({"msg": "Partner status updated successfully"}), 200
+            return jsonify({"msg": "Partner type status updated successfully"}), 200
         else:
-            return jsonify({"msg": "Partner not found"}), 404
+            return jsonify({"msg": "Partner type not found"}), 404
     except Exception as e:
         return jsonify({"msg": str(e)}), 500
 
-@app.route('/partners/<int:partner_id>', methods=['DELETE'])
+@app.route('/partnerTypes/<int:partner_type_id>', methods=['DELETE'])
 @jwt_required()
-def delete_partner(partner_id):
+def delete_partner_type(partner_type_id):
     current_user_claims = get_jwt()
     
     try:
-        # Get partner info before deletion for logging
-        partner = db.get_partner_by_id(partner_id)
-        if not partner:
-            return jsonify({"msg": "Partner not found"}), 404
+        # Get partner type info before deletion for logging
+        partner_type = db.get_partner_type_by_id(partner_type_id)
+        if not partner_type:
+            return jsonify({"msg": "Partner type not found"}), 404
         
-        success = db.delete_partner(partner_id)
+        success = db.delete_partner_type(partner_type_id)
         if success:
-            # Log partner deletion
+            # Log partner type deletion
             """log_activity(
                 actor=current_user_claims['username'],
                 action="Delete",
-                resource_type="partner",
+                resource_type="partner_type",
                 resource_data={
-                    'id': partner_id,
-                    'name': partner['name']
+                    'id': partner_type_id,
+                    'name': partner_type['name']
                 }
             )"""
-            return jsonify({"msg": "Partner deleted successfully"}), 200
+            return jsonify({"msg": "Partner type deleted successfully"}), 200
         else:
-            return jsonify({"msg": "Partner not found"}), 404
+            return jsonify({"msg": "Partner type not found"}), 404
     except Exception as e:
         return jsonify({"msg": str(e)}), 500
