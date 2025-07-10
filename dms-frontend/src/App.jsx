@@ -174,7 +174,7 @@ function App() {
                 <Route path="/admin/activity_logs" element={<ActivityLogs />} />
                 <Route path="/companies" element={<AdminCompanies />} />
                 <Route path="/doctypes" element={<AdminDoctypes />} />
-                <Route path="/partners" element={<AdminPartners />} />
+                <Route path="/partnertypes" element={<AdminPartners />} />
               </>
             )}
             <Route path="*" element={<Navigate to="/" replace />} />

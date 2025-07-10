@@ -211,7 +211,7 @@ const AdminCompanies = () => {
   return (
     <div className="admin-users">
       <div className="admin-header">
-        <h1>Entities Management</h1>
+       
         <div className="admin-tabs">
           <button
             className={`tab-btn ${activeTab === 'list' ? 'active' : ''}`}
