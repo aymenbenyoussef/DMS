@@ -19,7 +19,7 @@ app = Flask(__name__)
 CORS(app, origins="*", supports_credentials=True)
 
 # ====== Logging Configuration ======
-LOG_DIR = "../logs"
+LOG_DIR = "../../logs"
 ACTIVITY_LOG = os.path.join(LOG_DIR, "activity.log")
 
 def ensure_log_dir():
@@ -71,8 +71,8 @@ def get_activity_logs():
         return [line.strip() for line in f.readlines() if line.strip()]
 
 # ====== Upload Configuration ======
-DMS_UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), '../dms/upload'))
-TEMP_UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), '../uploads'))
+DMS_UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../dms-data/upload'))
+TEMP_UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../uploads'))
 ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'docx', 'txt', 'doc', 'tiff'}
 
 app.config['DMS_UPLOAD_FOLDER'] = DMS_UPLOAD_FOLDER
