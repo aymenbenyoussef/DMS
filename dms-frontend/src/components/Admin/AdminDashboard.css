@@ -221,6 +221,21 @@
   right: 44px;
   text-decoration: none;
 }
+.btn-primary-3{
+  padding: 12px 24px;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background-color: #007bff;
+  color: white;
+  position: absolute;
+  top : 175px;
+  right: 70px;
+  text-decoration: none;
+}
 .btn-primary{
   padding: 12px 24px;
   border: none;

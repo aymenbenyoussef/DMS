@@ -5,35 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 
 // Styles pour les boutons de statut
-const statusButtonStyles = `
-  .status-btn {
-    padding: 4px 12px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: bold;
-    transition: all 0.2s ease;
-  }
-  
-  .status-active {
-    background-color: #4CAF50;
-    color: white;
-  }
-  
-  .status-active:hover {
-    background-color: #45a049;
-  }
-  
-  .status-inactive {
-    background-color: #f44336;
-    color: white;
-  }
-  
-  .status-inactive:hover {
-    background-color: #da190b;
-  }
-`;
+
 
 const AdminPartnerTypes = ({ user }) => {
   const [partnerTypes, setPartnerTypes] = useState([]);
@@ -57,7 +29,7 @@ const AdminPartnerTypes = ({ user }) => {
     name: '',
     status: true
   });
-
+  
   const fetchPartnerTypes = async () => {
     try {
       setLoading(true);
@@ -71,20 +43,10 @@ const AdminPartnerTypes = ({ user }) => {
       setLoading(false);
     }
   };
+ 
+    
 
-  useEffect(() => {
-    // Inject status button styles
-    const styleElement = document.createElement('style');
-    styleElement.textContent = statusButtonStyles;
-    document.head.appendChild(styleElement);
-    
-    fetchPartnerTypes();
-    
-    // Cleanup function to remove styles when component unmounts
-    return () => {
-      document.head.removeChild(styleElement);
-    };
-  }, []);
+  
 
   useEffect(() => {
     applyFilters();
@@ -198,14 +160,14 @@ const AdminPartnerTypes = ({ user }) => {
       fetchPartnerTypes();
     } catch (err) {
       const apiError = err.response?.data;
-      const errorMessage = apiError?.msg || apiError?.error || apiError?.message || '';
+      const errorMessage = apiError?.msg || apiError?.error || apiError?.message || 'Error updating partner';
       
       if (errorMessage.toLowerCase().includes('name')) {
-        setFieldErrors({ name: 'Partner type name already exists' });
-        setGlobalErrors(['Partner type name already exists']);
+        setFieldErrors({ name: 'Partner name already exists' });
+        setGlobalErrors(['Partner name already exists']);
       } else {
-        setError('Error updating partner type');
-        console.error('Error updating partner type:', err);
+        setError('Error updating partner');
+        console.error('Error updating partner:', err);
       }
     }
   };
@@ -233,7 +195,10 @@ const AdminPartnerTypes = ({ user }) => {
               Modify Partner Type
             </button>
           )}
-          <Link to="/AddPartner" className="btn-primary-2">
+          <Link to="/AddPartner" className="btnthird">
+            Add Partner 
+          </Link>
+          <Link to="/AddPartnerType" className="btn-primary-2">
             Add Partner Type
           </Link>
         </div>

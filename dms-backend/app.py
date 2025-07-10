@@ -19,7 +19,7 @@ app = Flask(__name__)
 CORS(app, origins="*", supports_credentials=True)
 
 # ====== Logging Configuration ======
-LOG_DIR = "../logs"
+LOG_DIR = "../../logs"
 ACTIVITY_LOG = os.path.join(LOG_DIR, "activity.log")
 
 def ensure_log_dir():
@@ -71,8 +71,8 @@ def get_activity_logs():
         return [line.strip() for line in f.readlines() if line.strip()]
 
 # ====== Upload Configuration ======
-DMS_UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), '../dms/upload'))
-TEMP_UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), '../uploads'))
+DMS_UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../dms-data/upload'))
+TEMP_UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../uploads'))
 ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'docx', 'txt', 'doc', 'tiff'}
 
 app.config['DMS_UPLOAD_FOLDER'] = DMS_UPLOAD_FOLDER
@@ -552,7 +552,6 @@ def get_companies_by_user(user_id):
 def create_doctype():
     current_user_claims = get_jwt()
     data = request.get_json()
-
     if not data or 'name' not in data or not data['name'].strip():
         return jsonify({"msg": "Name is required"}), 400
 
@@ -1078,26 +1077,28 @@ if __name__ == '__main__':
 
 @app.route('/partnerTypes', methods=['GET'])
 @jwt_required()
-def get_partner_types():
+def get_partners():
+    print("backend")
     try:
-        partner_types = db.get_all_partner_types()
-        return jsonify(partner_types), 200
+        partners = db.get_all_partner_types()
+        return jsonify(partners), 200
     except Exception as e:
         return jsonify({"msg": str(e)}), 500
 
 @app.route('/partnerTypes', methods=['POST'])
 @jwt_required()
 def create_partner_type():
+    print("hello")
     current_user_claims = get_jwt()
     data = request.get_json()
-    
+    print("backend")
+    print(f"Received data for partner type creation: {data}") # Added logging
     if not data or 'name' not in data:
         return jsonify({"msg": "Partner type name is required"}), 400
     
     # Vérifier si le nom existe déjà
     if db.check_partner_type_name_exists(data['name'].strip()):
         return jsonify({"msg": "A partner type with this name already exists"}), 400
-    
     try:
         partner_type_id = db.create_partner_type(
             name=data['name'].strip(),
@@ -1109,6 +1110,7 @@ def create_partner_type():
             "partner_type_id": partner_type_id
         }), 201
     except Exception as e:
+        print("Error in create_partner_type:", str(e))
         return jsonify({"msg": str(e)}), 500
 
 @app.route('/partnerTypes/<int:partner_type_id>', methods=['PUT'])

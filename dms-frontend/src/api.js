@@ -79,6 +79,13 @@ const doctype = {
     return API.get(`/doctype${params}`);
   },
 }
+const partnerTypes = {
+  getAll: () => API.get('/partnerTypes'),
+  create: (partnerTypeData) => API.post('/partnerTypes', partnerTypeData),
+  update: (partnerTypeId, partnerTypeData) => API.put(`/partnerTypes/${partnerTypeId}`, partnerTypeData),
+  updateStatus: (partnerTypeId, status) => API.put(`/partnerTypes/${partnerTypeId}/status`, { status }),
+  delete: (partnerTypeId) => API.delete(`/partnerTypes/${partnerTypeId}`),
+};
 
 // Document management endpoints - Enhanced for OCR workflow
 const documents = {
@@ -194,13 +201,7 @@ const ocr = {
   }
 };
 
-const partnerTypes = {
-  getAll: () => API.get('/partnerTypes'),
-  create: (partnerTypeData) => API.post('/partnerTypes', partnerTypeData),
-  update: (partnerTypeId, partnerTypeData) => API.put(`/partnerTypes/${partnerTypeId}`, partnerTypeData),
-  updateStatus: (partnerTypeId, status) => API.put(`/partnerTypes/${partnerTypeId}/status`, { status }),
-  delete: (partnerTypeId) => API.delete(`/partnerTypes/${partnerTypeId}`),
-};
+
 
 // Export the API instance and endpoint groups
 export default {
@@ -216,4 +217,3 @@ export default {
 };
 
 // Export individual modules for easier imports
-export { users, admin, doctype, companies, documents, folders, ocr, partnerTypes };
