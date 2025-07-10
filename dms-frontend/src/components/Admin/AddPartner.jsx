@@ -59,10 +59,9 @@ const AddPartner = () => {
       console.log('Sending data:', dataToSend);
       console.error('API error:', err.response?.data || err.message);
       
-      const msg = err.response?.data?.msg || 'Error occurred while creating the partner.';
+      const msg = err.response?.data?.msg || err.response?.data?.error || err.response?.data?.message || 'Error occurred while creating the partner.';
       
-      // Check for specific name conflict error
-      if (msg.toLowerCase().includes('name already exists') || msg.toLowerCase().includes('name') && msg.toLowerCase().includes('exists')) {
+      if (msg.toLowerCase().includes('name already exists')) {
         setFieldErrors({ name: 'A partner with this name already exists.' });
         setError('');
       } else {

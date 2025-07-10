@@ -552,7 +552,6 @@ def get_companies_by_user(user_id):
 def create_doctype():
     current_user_claims = get_jwt()
     data = request.get_json()
-
     if not data or 'name' not in data or not data['name'].strip():
         return jsonify({"msg": "Name is required"}), 400
 
@@ -1060,21 +1059,14 @@ if __name__ == '__main__':
     ensure_log_dir()
     app.run(host='0.0.0.0', debug=True)
 
-@app.route('/partners', methods=['GET'])
-@jwt_required()
-def get_partners():
-    try:
-        partners = db.get_all_partners()
-        return jsonify(partners), 200
-    except Exception as e:
-        return jsonify({"msg": str(e)}), 500
+
 
 @app.route('/partners', methods=['POST'])
 @jwt_required()
 def create_partner():
     current_user_claims = get_jwt()
     data = request.get_json()
-    
+    print(data)
     if not data or 'name' not in data:
         return jsonify({"msg": "Partner name is required"}), 400
     

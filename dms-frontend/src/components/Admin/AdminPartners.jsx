@@ -198,13 +198,13 @@ const AdminPartners = ({ user }) => {
       fetchPartners();
     } catch (err) {
       const apiError = err.response?.data;
-      const errorMessage = apiError?.msg || apiError?.error || apiError?.message || '';
+      const errorMessage = apiError?.msg || apiError?.error || apiError?.message || 'Error updating partner';
       
-      if (errorMessage.toLowerCase().includes('name')) {
-        setFieldErrors({ name: 'Partner name already exists' });
-        setGlobalErrors(['Partner name already exists']);
+      if (errorMessage.toLowerCase().includes('name already exists')) {
+        setFieldErrors({ name: 'A partner with this name already exists.' });
+        setGlobalErrors(['A partner with this name already exists.']);
       } else {
-        setError('Error updating partner');
+        setError(errorMessage);
         console.error('Error updating partner:', err);
       }
     }

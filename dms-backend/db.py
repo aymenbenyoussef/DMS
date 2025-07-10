@@ -861,7 +861,7 @@ class DatabaseManager:
 
     def create_partner(self, name, status=True):
         query = "INSERT INTO partners (name, status) VALUES (%s, %s)"
-        return self.execute_query(query, (name, status,))
+        return self.execute_query(query, (name, status))
 
     def get_all_partners(self):
         query = "SELECT * FROM partners ORDER BY name"

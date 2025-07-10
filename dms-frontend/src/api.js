@@ -216,4 +216,4 @@ export default {
 };
 
 // Export individual modules for easier imports
-export { users, admin, doctype, companies, documents, folders, ocr };
+export { users, admin, doctype, companies, documents, folders, ocr, partners };
