@@ -1,0 +1,28 @@
+Gh INV2A.FR
+
+logiciel de Facturation
+
+Destinataire:
+
+[Nom de I'entreprise du client]
+[Adresse de I'entreprise du client]
+SIRET: [SIRET du client]
+
+No de TVA: [Numéro de TVA du client]
+
+Date de facturation: 12/07/2021
+Echéance: 26/07/2021
+
+Facture No 552
+
+Désignation Quantité Prix Total
+mon produit 2 50,00 100,00
+mon service 3 100,00 300,00
+
+Total: 400,00 €
+TVA(20%): 80,00 €
+Total TTC: 480,00 €
+
+[Nom de I'entreprise] [Adresse] [Nom de la banque]
+SIRET: [SIRET] Tél: [Téléphone] [Compte bancaire (IBAN)]
+No de TVA: [Numéro de TVA] SWIFT/BIC: [SWIFT/BIC]

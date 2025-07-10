@@ -3,7 +3,7 @@ import API from '../../api';
 import './AdminUsers.css'; 
 import { Link, useNavigate } from 'react-router-dom';
 
-const AddPartner = () => {
+const AddPartnerType = () => {
   const [formData, setFormData] = useState({
     name: '',
     status: true,
@@ -32,7 +32,7 @@ const AddPartner = () => {
     setLoading(true);
 
     const errors = {};
-    if (!formData.name.trim()) errors.name = 'Partner name is required.';
+    if (!formData.name.trim()) errors.name = 'Partner type name is required.';
 
     if (Object.keys(errors).length) {
       setFieldErrors(errors);
@@ -44,26 +44,26 @@ const AddPartner = () => {
         status: formData.status,
       };
     try {
-      await API.partners.create(dataToSend);
+      await API.partnerTypes.create(dataToSend);
 
-      setSuccess('Partner created successfully!');
+      setSuccess('Partner type created successfully!');
       setFormData({ name: '', status: true });
       setFieldErrors({});
       setError('');
       
       // Navigate after a short delay to show success message
       setTimeout(() => {
-        navigate('/partners');
+        navigate('/partnerTypes');
       }, 1500);
     } catch (err) {
       console.log('Sending data:', dataToSend);
       console.error('API error:', err.response?.data || err.message);
       
-      const msg = err.response?.data?.msg || 'Error occurred while creating the partner.';
+      const msg = err.response?.data?.msg || 'Error occurred while creating the partner type.';
       
       // Check for specific name conflict error
       if (msg.toLowerCase().includes('name already exists') || msg.toLowerCase().includes('name') && msg.toLowerCase().includes('exists')) {
-        setFieldErrors({ name: 'A partner with this name already exists.' });
+        setFieldErrors({ name: 'A partner type with this name already exists.' });
         setError('');
       } else {
         setError(msg);
@@ -76,7 +76,7 @@ const AddPartner = () => {
 
   return (
     <div className="admin-users">
-      <h1>Add New Partner</h1>
+      <h1>Add New Partner Type</h1>
 
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
@@ -85,14 +85,14 @@ const AddPartner = () => {
         <form onSubmit={handleSubmit}>
           {/* name */}
           <div className="form-group">
-            <label htmlFor="name">Partner Name</label>
+            <label htmlFor="name">Partner Type Name</label>
             <input
               type="text"
               id="name"
               name="name"
               value={formData.name}
               onChange={handleInputChange}
-              placeholder="Enter partner name"
+              placeholder="Enter partner type name"
               className={fieldErrors.name ? 'input-error' : ''}
             />
             {fieldErrors.name && <p className="error-text">{fieldErrors.name}</p>}
@@ -113,14 +113,14 @@ const AddPartner = () => {
 
           {/* submit */}
           <div className="form-actions">
-            <Link to="/partners" className="btn btn-primary">
+            <Link to="/partnerTypes" className="btn btn-primary">
               Cancel
             </Link>
             <button 
               type="submit" 
               className="btn btn-primary" 
               disabled={loading}>
-              {loading ? 'Creating...' : 'Create Partner'}
+              {loading ? 'Creating...' : 'Create Partner Type'}
             </button>
           </div>
         </form>
@@ -129,4 +129,4 @@ const AddPartner = () => {
   );
 };
 
-export default AddPartner;
+export default AddPartnerType;

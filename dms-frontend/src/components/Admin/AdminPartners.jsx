@@ -35,13 +35,13 @@ const statusButtonStyles = `
   }
 `;
 
-const AdminPartners = ({ user }) => {
-  const [partners, setPartners] = useState([]);
-  const [filteredPartners, setFilteredPartners] = useState([]);
+const AdminPartnerTypes = ({ user }) => {
+  const [partnerTypes, setPartnerTypes] = useState([]);
+  const [filteredPartnerTypes, setFilteredPartnerTypes] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
-  const [editingPartner, setEditingPartner] = useState(null);
+  const [editingPartnerType, setEditingPartnerType] = useState(null);
   const [activeTab, setActiveTab] = useState('list');
   const [showModifyTab, setShowModifyTab] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
@@ -58,14 +58,14 @@ const AdminPartners = ({ user }) => {
     status: true
   });
 
-  const fetchPartners = async () => {
+  const fetchPartnerTypes = async () => {
     try {
       setLoading(true);
-      const response = await API.partners.getAll();
-      setPartners(response.data);
-      setFilteredPartners(response.data);
+      const response = await API.partnerTypes.getAll();
+      setPartnerTypes(response.data);
+      setFilteredPartnerTypes(response.data);
     } catch (err) {
-      setError('Error loading partners');
+      setError('Error loading partner types');
       console.error('Error details:', err.response?.data || err.message);
     } finally {
       setLoading(false);
@@ -78,7 +78,7 @@ const AdminPartners = ({ user }) => {
     styleElement.textContent = statusButtonStyles;
     document.head.appendChild(styleElement);
     
-    fetchPartners();
+    fetchPartnerTypes();
     
     // Cleanup function to remove styles when component unmounts
     return () => {
@@ -88,28 +88,28 @@ const AdminPartners = ({ user }) => {
 
   useEffect(() => {
     applyFilters();
-  }, [filters, partners]);
+  }, [filters, partnerTypes]);
 
   const applyFilters = () => {
-    let result = [...partners];
+    let result = [...partnerTypes];
     
     Object.keys(filters).forEach(key => {
       if (filters[key]) {
         if (key === 'status') {
           const filterValue = filters[key].toLowerCase();
-          result = result.filter(partner => {
-            const statusStr = partner.status ? 'active' : 'inactive';
+          result = result.filter(partnerType => {
+            const statusStr = partnerType.status ? 'active' : 'inactive';
             return statusStr.includes(filterValue);
           });
         } else {
-          result = result.filter(partner => 
-            String(partner[key]).toLowerCase().includes(filters[key].toLowerCase())
+          result = result.filter(partnerType => 
+            String(partnerType[key]).toLowerCase().includes(filters[key].toLowerCase())
           );
         }
       }
     });
     
-    setFilteredPartners(result);
+    setFilteredPartnerTypes(result);
   };
 
   const handleFilterChange = (e, field) => {
@@ -133,22 +133,22 @@ const AdminPartners = ({ user }) => {
     return errorMessages.length === 0;
   };
 
-  const handleStatusToggle = async (partnerId, currentStatus) => {
+  const handleStatusToggle = async (partnerTypeId, currentStatus) => {
     try {
-      await API.partners.updateStatus(partnerId, !currentStatus);
-      setSuccess('Partner status updated successfully');
-      fetchPartners();
+      await API.partnerTypes.updateStatus(partnerTypeId, !currentStatus);
+      setSuccess('Partner type status updated successfully');
+      fetchPartnerTypes();
     } catch (err) {
-      setError('Error updating partner status');
-      console.error('Error updating partner status:', err);
+      setError('Error updating partner type status');
+      console.error('Error updating partner type status:', err);
     }
   };
 
-  const handleEdit = (partner) => {
-    setEditingPartner(partner);
+  const handleEdit = (partnerType) => {
+    setEditingPartnerType(partnerType);
     setFormData({
-      name: partner.name || '',
-      status: partner.status || true
+      name: partnerType.name || '',
+      status: partnerType.status || true
     });
     setShowModifyTab(true);
     setActiveTab('form');
@@ -156,15 +156,15 @@ const AdminPartners = ({ user }) => {
     setGlobalErrors([]);
   };
 
-  const handleDelete = async (partnerId) => {
-    if (window.confirm('Are you sure you want to delete this partner?')) {
+  const handleDelete = async (partnerTypeId) => {
+    if (window.confirm('Are you sure you want to delete this partner type?')) {
       try {
-        await API.partners.delete(partnerId);
-        setSuccess('Partner deleted successfully');
-        fetchPartners();
+        await API.partnerTypes.delete(partnerTypeId);
+        setSuccess('Partner type deleted successfully');
+        fetchPartnerTypes();
       } catch (err) {
-        setError('Error deleting partner');
-        console.error('Error deleting partner:', err);
+        setError('Error deleting partner type');
+        console.error('Error deleting partner type:', err);
       }
     }
   };
@@ -187,25 +187,25 @@ const AdminPartners = ({ user }) => {
     setGlobalErrors([]);
     
     if (!validate()) return;
-    if (!editingPartner) return;
+    if (!editingPartnerType) return;
     
     try {
-      await API.partners.update(editingPartner.id, formData);
-      setSuccess('Partner updated successfully');
-      setEditingPartner(null);
+      await API.partnerTypes.update(editingPartnerType.id, formData);
+      setSuccess('Partner type updated successfully');
+      setEditingPartnerType(null);
       setShowModifyTab(false);
       setActiveTab('list');
-      fetchPartners();
+      fetchPartnerTypes();
     } catch (err) {
       const apiError = err.response?.data;
       const errorMessage = apiError?.msg || apiError?.error || apiError?.message || '';
       
       if (errorMessage.toLowerCase().includes('name')) {
-        setFieldErrors({ name: 'Partner name already exists' });
-        setGlobalErrors(['Partner name already exists']);
+        setFieldErrors({ name: 'Partner type name already exists' });
+        setGlobalErrors(['Partner type name already exists']);
       } else {
-        setError('Error updating partner');
-        console.error('Error updating partner:', err);
+        setError('Error updating partner type');
+        console.error('Error updating partner type:', err);
       }
     }
   };
@@ -213,24 +213,24 @@ const AdminPartners = ({ user }) => {
   return (
     <div className="admin-users">
       <div className="admin-header">
-        <h1>Partners Management</h1>
+        <h1>Partner Types Management</h1>
         <div className="admin-tabs">
           <button
             className={`tab-btn ${activeTab === 'list' ? 'active' : ''}`}
             onClick={() => {
               setActiveTab('list');
               setShowModifyTab(false);
-              setEditingPartner(null);
+              setEditingPartnerType(null);
             }}
           >
-            Partners List
+            Partner Types List
           </button>
           {showModifyTab && (
             <button
               className={`tab-btn ${activeTab === 'form' ? 'active' : ''}`}
               onClick={() => setActiveTab('form')}
             >
-              Modify Partner
+              Modify Partner Type
             </button>
           )}
           <Link to="/AddPartner" className="btn-primary-2">
@@ -291,34 +291,34 @@ const AdminPartners = ({ user }) => {
                 {loading ? (
                   <tr>
                     <td colSpan="4" className="loading-message">
-                      Loading partners...
+                      Loading partner types...
                     </td>
                   </tr>
-                ) : filteredPartners.length > 0 ? (
-                  filteredPartners.map(partner => (
-                    <tr key={partner.id}>
-                      <td>{partner.id}</td>
-                      <td>{partner.name}</td>
+                ) : filteredPartnerTypes.length > 0 ? (
+                  filteredPartnerTypes.map(partnerType => (
+                    <tr key={partnerType.id}>
+                      <td>{partnerType.id}</td>
+                      <td>{partnerType.name}</td>
                       <td>
                         <button
-                          className={`status-btn ${partner.status ? 'status-active' : 'status-inactive'}`}
-                          onClick={() => handleStatusToggle(partner.id, partner.status)}
+                          className={`status-btn ${partnerType.status ? 'status-active' : 'status-inactive'}`}
+                          onClick={() => handleStatusToggle(partnerType.id, partnerType.status)}
                           title="Click to toggle status"
                         >
-                          {partner.status ? 'Active' : 'Inactive'}
+                          {partnerType.status ? 'Active' : 'Inactive'}
                         </button>
                       </td>
                       <td>
                         <div className="action-buttons">
                           <button
                             className="btn-edit"
-                            onClick={() => handleEdit(partner)}
+                            onClick={() => handleEdit(partnerType)}
                           >
                             Modify
                           </button>
                           <button
                             className="btn-delete"
-                            onClick={() => handleDelete(partner.id)}
+                            onClick={() => handleDelete(partnerType.id)}
                           >
                             Delete
                           </button>
@@ -329,7 +329,7 @@ const AdminPartners = ({ user }) => {
                 ) : (
                   <tr>
                     <td colSpan="4" className="no-results">
-                      {partners.length === 0 ? 'No partners available' : 'No partners found matching your filters'}
+                      {partnerTypes.length === 0 ? 'No partner types available' : 'No partner types found matching your filters'}
                     </td>
                   </tr>
                 )}
@@ -341,7 +341,7 @@ const AdminPartners = ({ user }) => {
 
       {activeTab === 'form' && (
         <div className="user-form">
-          <h2>Modify Partner</h2>
+          <h2>Modify Partner Type</h2>
           <form onSubmit={handleUpdate}>
             <div className="form-group">
               <label>Name</label>
@@ -350,7 +350,7 @@ const AdminPartners = ({ user }) => {
                 name="name"
                 value={formData.name}
                 onChange={handleInputChange}
-                placeholder="Partner name"
+                placeholder="Partner type name"
                 className={fieldErrors.name ? 'error-input' : ''}
               />
               {fieldErrors.name && <div className="field-error">{fieldErrors.name}</div>}
@@ -377,7 +377,7 @@ const AdminPartners = ({ user }) => {
                 onClick={() => {
                   setActiveTab('list');
                   setShowModifyTab(false);
-                  setEditingPartner(null);
+                  setEditingPartnerType(null);
                 }}
               >
                 Cancel
@@ -390,4 +390,4 @@ const AdminPartners = ({ user }) => {
   );
 };
 
-export default AdminPartners;
+export default AdminPartnerTypes;

@@ -21,8 +21,8 @@ def extract_invoice_data(text):
         "invoice_number": None,
         "date": None,
         "total": None,
-        "vendor": None,
-        "client": None,
+        "partner": None,
+        "partner_id": None,
         "tva": None,
         "total_ht": None,
         "total_ttc": None,
@@ -117,26 +117,26 @@ def extract_invoice_data(text):
             except:
                 continue
     
-    # Extract vendor (first few lines usually contain vendor info)
-    lines = text.split('\n')[:10]  # Check first 10 lines
+    # Extract partner (first few lines usually contain partner info)
+    lines = text.split("\n")[:10]  # Check first 10 lines
     for line in lines:
         line = line.strip()
-        if len(line) > 5 and not re.search(r'\d{1,2}[./]\d{1,2}[./]\d{2,4}', line):
+        if len(line) > 5 and not re.search(r"\d{1,2}[./]\d{1,2}[./]\d{2,4}", line):
             # Skip lines with dates, numbers only, or common headers
-            if not re.match(r'^[\d\s\-\.]+$', line) and 'facture' not in line.lower():
-                data["vendor"] = line
+            if not re.match(r"^[\d\s\-\.]+", line) and "facture" not in line.lower():
+                data["partner"] = line
                 break
     
-    # Extract client info (look for patterns after "Monsieur", "Madame", "Client", etc.)
+    # Extract partner_id info (look for patterns after "Monsieur", "Madame", "Client", etc.)
     client_patterns = [
-        r'(?:monsieur|madame|m\.|mme|client)\s+(.+?)(?:\n|$)',
+        r'(?:monsieur|madame|m\.|mme|client|id)\s+(.+?)(?:\n|$)',
         r'(?:destinataire|à)\s*[:#]?\s*(.+?)(?:\n|$)'
     ]
     
     for pattern in client_patterns:
         client_match = re.search(pattern, text, re.IGNORECASE)
         if client_match:
-            data["client"] = client_match.group(1).strip()
+            data["partner_id"] = client_match.group(1).strip()
             break
     
     return data
@@ -220,8 +220,8 @@ def generate_report_pdf(confirmed_data, output_path, original_filename):
             ['Champ', 'Valeur'],
             ['Numéro de facture', confirmed_data.get('invoice_number', 'N/A')],
             ['Date', confirmed_data.get('date', 'N/A')],
-            ['Fournisseur', confirmed_data.get('vendor', 'N/A')],
-            ['Client', confirmed_data.get('client', 'N/A')],
+            ["Fournisseur", confirmed_data.get("partner", "N/A")],
+            ["Client", confirmed_data.get("partner_id", "N/A")],
             ['Total HT', f"{confirmed_data.get('total_ht', 'N/A')} €" if confirmed_data.get('total_ht') else 'N/A'],
             ['TVA', f"{confirmed_data.get('tva', 'N/A')} €" if confirmed_data.get('tva') else 'N/A'],
             ['Total TTC', f"{confirmed_data.get('total_ttc', 'N/A')} €" if confirmed_data.get('total_ttc') else 'N/A'],
