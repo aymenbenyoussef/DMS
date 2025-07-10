@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState ,useEffect} from 'react';
 import API from '../../api';
 import './AdminUsers.css';
 import { Link, useNavigate } from 'react-router-dom';
@@ -20,15 +20,19 @@ const AddPartner = () => {
     bankAccountNumber: '',
     bankName: '',
     notes: '',
-    isActive: true
+    isActive: true,
+    companies: [],
+    partnertypes :[]
   });
 
   const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [globalErrors, setGlobalErrors] = useState([]);
+  const [companies, setCompanies] = useState([]);
+  const [partnertypes, setPartnertypes] = useState([]);
   const navigate = useNavigate();
-
+   const [error, setError] = useState('');
   const validate = (tab = activeTab) => {
     const errors = {};
     const errorMessages = [];
@@ -67,24 +71,66 @@ const AddPartner = () => {
     return { errors, errorMessages };
   };
 
+  useEffect(() => {
+      const fetchCompanies = async () => {
+        try {
+          const response = await API.companies.getAll();
+          const data = response.data;
+          if (Array.isArray(data)) setCompanies(data);
+          else if (data.companies) setCompanies(data.companies);
+        } catch (err) {
+          setError('Error loading companies');
+          console.error(err);
+        }
+      };
+      fetchCompanies();
+    }, []);
+
+  useEffect(() => {
+      const fetchPartnertypes = async () => {
+        try {
+          const response = await API.partnerTypes.getAll();
+          const data = response.data;
+          if (Array.isArray(data)) setPartnertypes(data);
+          else if (data.partnertypes) setPartnertypes(data.partnertypes);
+        } catch (err) {
+          setError('Error loading partnertypes');
+          console.error(err);
+        }
+      };
+      fetchPartnertypes();
+    }, []);
+
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-    setFieldErrors(prev => ({ ...prev, [name]: '' }));
+    if (name === 'companies') {
+      const companyId = parseInt(value, 10);
+      setFormData((prev) => {
+        const current = Array.isArray(prev.companies) ? prev.companies : [];
+        let next;
+        if (checked) next = Array.from(new Set([...current, companyId]));
+        else next = current.filter((id) => id !== companyId);
+        return { ...prev, companies: next };
+      });
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: type === 'checkbox' ? checked : value
+      }));
+    }
+    setFieldErrors((prev) => ({ ...prev, [name]: '' }));
   };
 
   const handleTabChange = (tab) => {
-    const { errors, errorMessages } = validate(activeTab);
+    setActiveTab(tab);
+    /*const { errors, errorMessages } = validate(activeTab);
     if (errorMessages.length === 0) {
       setActiveTab(tab);
       setGlobalErrors([]);
     } else {
       setFieldErrors(errors);
       setGlobalErrors(errorMessages);
-    }
+    }*/
   };
 
   const handleSubmit = async (e) => {
@@ -124,7 +170,7 @@ const AddPartner = () => {
         isActive: formData.isActive
       };
 
-      await API.partnerTypes.create(partnerData);
+      await API.partner.create(partnerData);
       setSuccess('Partner created successfully');
       
       setTimeout(() => {
@@ -232,6 +278,41 @@ const AddPartner = () => {
             />
             {fieldErrors.uniqueIdentifier && <div className="field-error">{fieldErrors.uniqueIdentifier}</div>}
           </div>
+
+          <div className="form-group">
+            <label>Entities</label>
+            <div className="checkbox-list">
+              {companies.map((c) => (
+                <label key={c.id} className="checkbox-item">
+                  <input
+                    type="checkbox"
+                    name="companies"
+                    value={c.id}
+                    checked={formData.companies.includes(c.id)}
+                    onChange={handleInputChange}
+                  />
+                  <span className="company-name">{c.name}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          <div className="form-group">
+            <label>Partner types</label>
+            <div className="checkbox-list">
+              {partnertypes.map((c) => (
+                <label key={c.id} className="checkbox-item">
+                  <input
+                    type="checkbox"
+                    name="partnertypes"
+                    value={c.id}
+                    checked={formData.partnertypes.includes(c.id)}
+                    onChange={handleInputChange}
+                  />
+                  <span className="partnertype-name">{c.name}</span>
+                </label>
+              ))}
+            </div>
+          </div>  
           <div className="form-group checkbox-group">
             <label>
               <input

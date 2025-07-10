@@ -1078,6 +1078,7 @@ if __name__ == '__main__':
 @app.route('/partnerTypes', methods=['GET'])
 @jwt_required()
 def get_partners():
+    print("backend")
     try:
         partners = db.get_all_partner_types()
         return jsonify(partners), 200

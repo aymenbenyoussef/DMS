@@ -180,7 +180,7 @@ class DatabaseManager:
                 status BOOLEAN DEFAULT TRUE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
-""")
+            """)
             self.connection.commit()
 
 
