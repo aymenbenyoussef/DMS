@@ -3,7 +3,7 @@ import API from '../../api';
 import './AdminUsers.css';
 import { Link, useNavigate } from 'react-router-dom';
 
-const AddPartner = () => {
+const AddPartner = ({user}) => {
   const [activeTab, setActiveTab] = useState('Identity');
   const [formData, setFormData] = useState({
     companyName: '',
@@ -89,7 +89,7 @@ const AddPartner = () => {
   useEffect(() => {
       const fetchPartnertypes = async () => {
         try {
-          const response = await API.partnerTypes.getAll();
+          const response = await API.partnertype.getAll();
           const data = response.data;
           if (Array.isArray(data)) setPartnertypes(data);
           else if (data.partnertypes) setPartnertypes(data.partnertypes);

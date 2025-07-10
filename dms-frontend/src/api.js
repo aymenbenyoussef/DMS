@@ -65,6 +65,7 @@ const companies = {
   delete:(company_id) => API.delete(`/companies/${company_id}`),
   getByUser:(user_id) => API.get(`/companies/${user_id}`),
   update: (company_id, companyData) => API.put(`/companies/${company_id}`, companyData),
+  getAll_part: (user_id) => API.get(`/companies/${user_id}`)
 };
 
 // Document type management
@@ -79,14 +80,21 @@ const doctype = {
     return API.get(`/doctype${params}`);
   },
 }
-const partnerTypes = {
-  getAll: () => API.get('/partnerTypes'),
-  create: (partnerTypeData) => API.post('/partnerTypes', partnerTypeData),
-  update: (partnerTypeId, partnerTypeData) => API.put(`/partnerTypes/${partnerTypeId}`, partnerTypeData),
-  updateStatus: (partnerTypeId, status) => API.put(`/partnerTypes/${partnerTypeId}/status`, { status }),
-  delete: (partnerTypeId) => API.delete(`/partnerTypes/${partnerTypeId}`),
+const partnertypes = {
+  getAll: () => API.get('/partnertypes'),
+  create: (partnerTypeData) => API.post('/partnertypes', partnerTypeData),
+  update: (partnerTypeId, partnerTypeData) => API.put(`/partnertypes/${partnerTypeId}`, partnerTypeData),
+  updateStatus: (partnerTypeId, status) => API.put(`/partnertypes/${partnerTypeId}/status`, { status }),
+  delete: (partnerTypeId) => API.delete(`/partnertypes/${partnerTypeId}`)
 };
 
+const partnertype ={
+  getAll : () => API.get('/partnertype'),
+  create: (partnerTypeData) => API.post('/partnertype', partnerTypeData),
+  update: (partnerTypeId, partnerTypeData) => API.put(`/partnertype/${partnerTypeId}`, partnerTypeData),
+  updateStatus: (partnerTypeId, status) => API.put(`/partnertype/${partnerTypeId}/status`, { status }),
+  delete: (partnerTypeId) => API.delete(`/partnertype/${partnerTypeId}`)
+}
 // Document management endpoints - Enhanced for OCR workflow
 const documents = {
   getByCompany: (companyId, documentType = null) => {
@@ -210,10 +218,12 @@ export default {
   admin,
   doctype,
   companies,
+  partnertypes,
+  partnertype,
   documents,
   folders,
-  ocr,
-  partnerTypes
+  ocr
+  
 };
 
 // Export individual modules for easier imports

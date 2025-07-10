@@ -372,7 +372,119 @@ def delete_user(user_id):
     except Exception as e:
         return jsonify({"msg": str(e)}), 400
 
+@app.route('/partnertype', methods=['GET'])
+@jwt_required()
+def get_partners():
+    
+    try:
+        partners = db.get_all_partner_types()
+        return jsonify(partners), 200
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
 
+@app.route('/partnertype', methods=['POST'])
+@jwt_required()
+def create_partner_type():
+    print("hello")
+    current_user_claims = get_jwt()
+    data = request.get_json()
+    print("backend")
+    print(f"Received data for partner type creation: {data}") # Added logging
+    if not data or 'name' not in data:
+        return jsonify({"msg": "Partner type name is required"}), 400
+    
+    # Vérifier si le nom existe déjà
+    if db.check_partner_type_name_exists(data['name'].strip()):
+        return jsonify({"msg": "A partner type with this name already exists"}), 400
+    try:
+        partner_type_id = db.create_partner_type(
+            name=data['name'].strip(),
+            status=data.get('status', True)
+        )
+        
+        return jsonify({
+            "msg": "Partner type created successfully",
+            "partner_type_id": partner_type_id
+        }), 201
+    except Exception as e:
+        print("Error in create_partner_type:", str(e))
+        return jsonify({"msg": str(e)}), 500
+
+@app.route('/partnertype/<int:partner_type_id>', methods=['PUT'])
+@jwt_required()
+def update_partner_type(partner_type_id):
+    current_user_claims = get_jwt()
+    data = request.get_json()
+    
+    if not data:
+        return jsonify({"msg": "No data provided"}), 400
+    
+    # Si le nom est fourni, vérifier qu'il n'existe pas déjà (sauf pour ce type de partenaire)
+    if 'name' in data and data['name']:
+        if db.check_partner_type_name_exists_except_id(data['name'].strip(), partner_type_id):
+            return jsonify({"msg": "A partner type with this name already exists"}), 400
+    
+    try:
+        success = db.update_partner_type(
+            partner_type_id=partner_type_id,
+            name=data.get('name').strip() if data.get('name') else None,
+            status=data.get('status')
+        )
+        
+        if success:
+            return jsonify({"msg": "Partner type updated successfully"}), 200
+        else:
+            return jsonify({"msg": "Partner type not found"}), 404
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+
+@app.route('/partnertype/<int:partner_type_id>/status', methods=['PUT'])
+@jwt_required()
+def update_partner_type_status(partner_type_id):
+    current_user_claims = get_jwt()
+    data = request.get_json()
+    
+    if not data or 'status' not in data:
+        return jsonify({"msg": "Status is required"}), 400
+    
+    try:
+        success = db.update_partner_type_status(partner_type_id, data['status'])
+        
+        if success:
+            return jsonify({"msg": "Partner type status updated successfully"}), 200
+        else:
+            return jsonify({"msg": "Partner type not found"}), 404
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+
+@app.route('/partnertype/<int:partner_type_id>', methods=['DELETE'])
+@jwt_required()
+def delete_partner_type(partner_type_id):
+    current_user_claims = get_jwt()
+    
+    try:
+        # Get partner type info before deletion for logging
+        partner_type = db.get_partner_type_by_id(partner_type_id)
+        if not partner_type:
+            return jsonify({"msg": "Partner type not found"}), 404
+        
+        success = db.delete_partner_type(partner_type_id)
+        if success:
+            # Log partner type deletion
+            """log_activity(
+                actor=current_user_claims['username'],
+                action="Delete",
+                resource_type="partner_type",
+                resource_data={
+                    'id': partner_type_id,
+                    'name': partner_type['name']
+                }
+            )"""
+            return jsonify({"msg": "Partner type deleted successfully"}), 200
+        else:
+            return jsonify({"msg": "Partner type not found"}), 404
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
 # Company management routes
 @app.route('/companies', methods=['POST'])
 @jwt_required()
@@ -1075,116 +1187,3 @@ if __name__ == '__main__':
     ensure_log_dir()
     app.run(host='0.0.0.0', debug=True)
 
-@app.route('/partnerTypes', methods=['GET'])
-@jwt_required()
-def get_partners():
-    print("backend")
-    try:
-        partners = db.get_all_partner_types()
-        return jsonify(partners), 200
-    except Exception as e:
-        return jsonify({"msg": str(e)}), 500
-
-@app.route('/partnerTypes', methods=['POST'])
-@jwt_required()
-def create_partner_type():
-    print("hello")
-    current_user_claims = get_jwt()
-    data = request.get_json()
-    print("backend")
-    print(f"Received data for partner type creation: {data}") # Added logging
-    if not data or 'name' not in data:
-        return jsonify({"msg": "Partner type name is required"}), 400
-    
-    # Vérifier si le nom existe déjà
-    if db.check_partner_type_name_exists(data['name'].strip()):
-        return jsonify({"msg": "A partner type with this name already exists"}), 400
-    try:
-        partner_type_id = db.create_partner_type(
-            name=data['name'].strip(),
-            status=data.get('status', True)
-        )
-        
-        return jsonify({
-            "msg": "Partner type created successfully",
-            "partner_type_id": partner_type_id
-        }), 201
-    except Exception as e:
-        print("Error in create_partner_type:", str(e))
-        return jsonify({"msg": str(e)}), 500
-
-@app.route('/partnerTypes/<int:partner_type_id>', methods=['PUT'])
-@jwt_required()
-def update_partner_type(partner_type_id):
-    current_user_claims = get_jwt()
-    data = request.get_json()
-    
-    if not data:
-        return jsonify({"msg": "No data provided"}), 400
-    
-    # Si le nom est fourni, vérifier qu'il n'existe pas déjà (sauf pour ce type de partenaire)
-    if 'name' in data and data['name']:
-        if db.check_partner_type_name_exists_except_id(data['name'].strip(), partner_type_id):
-            return jsonify({"msg": "A partner type with this name already exists"}), 400
-    
-    try:
-        success = db.update_partner_type(
-            partner_type_id=partner_type_id,
-            name=data.get('name').strip() if data.get('name') else None,
-            status=data.get('status')
-        )
-        
-        if success:
-            return jsonify({"msg": "Partner type updated successfully"}), 200
-        else:
-            return jsonify({"msg": "Partner type not found"}), 404
-    except Exception as e:
-        return jsonify({"msg": str(e)}), 500
-
-@app.route('/partnerTypes/<int:partner_type_id>/status', methods=['PUT'])
-@jwt_required()
-def update_partner_type_status(partner_type_id):
-    current_user_claims = get_jwt()
-    data = request.get_json()
-    
-    if not data or 'status' not in data:
-        return jsonify({"msg": "Status is required"}), 400
-    
-    try:
-        success = db.update_partner_type_status(partner_type_id, data['status'])
-        
-        if success:
-            return jsonify({"msg": "Partner type status updated successfully"}), 200
-        else:
-            return jsonify({"msg": "Partner type not found"}), 404
-    except Exception as e:
-        return jsonify({"msg": str(e)}), 500
-
-@app.route('/partnerTypes/<int:partner_type_id>', methods=['DELETE'])
-@jwt_required()
-def delete_partner_type(partner_type_id):
-    current_user_claims = get_jwt()
-    
-    try:
-        # Get partner type info before deletion for logging
-        partner_type = db.get_partner_type_by_id(partner_type_id)
-        if not partner_type:
-            return jsonify({"msg": "Partner type not found"}), 404
-        
-        success = db.delete_partner_type(partner_type_id)
-        if success:
-            # Log partner type deletion
-            """log_activity(
-                actor=current_user_claims['username'],
-                action="Delete",
-                resource_type="partner_type",
-                resource_data={
-                    'id': partner_type_id,
-                    'name': partner_type['name']
-                }
-            )"""
-            return jsonify({"msg": "Partner type deleted successfully"}), 200
-        else:
-            return jsonify({"msg": "Partner type not found"}), 404
-    except Exception as e:
-        return jsonify({"msg": str(e)}), 500

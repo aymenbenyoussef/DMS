@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import API from '../../api';
-import './AdminUsers.css';
+import './AdminUsers.css'; // Keeping original CSS import
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
-
-// Styles pour les boutons de statut
-
 
 const AdminPartnerTypes = ({ user }) => {
   const [partnerTypes, setPartnerTypes] = useState([]);
@@ -29,11 +26,16 @@ const AdminPartnerTypes = ({ user }) => {
     name: '',
     status: true
   });
-  
+
+  // Fetch partner types on component mount
+  useEffect(() => {
+    fetchPartnerTypes();
+  }, []);
+
   const fetchPartnerTypes = async () => {
     try {
       setLoading(true);
-      const response = await API.partnerTypes.getAll();
+      const response = await API.partnertype.getAll();
       setPartnerTypes(response.data);
       setFilteredPartnerTypes(response.data);
     } catch (err) {
@@ -43,10 +45,6 @@ const AdminPartnerTypes = ({ user }) => {
       setLoading(false);
     }
   };
- 
-    
-
-  
 
   useEffect(() => {
     applyFilters();
@@ -97,7 +95,7 @@ const AdminPartnerTypes = ({ user }) => {
 
   const handleStatusToggle = async (partnerTypeId, currentStatus) => {
     try {
-      await API.partnerTypes.updateStatus(partnerTypeId, !currentStatus);
+      await API.partnertype.updateStatus(partnerTypeId, !currentStatus);
       setSuccess('Partner type status updated successfully');
       fetchPartnerTypes();
     } catch (err) {
@@ -121,7 +119,7 @@ const AdminPartnerTypes = ({ user }) => {
   const handleDelete = async (partnerTypeId) => {
     if (window.confirm('Are you sure you want to delete this partner type?')) {
       try {
-        await API.partnerTypes.delete(partnerTypeId);
+        await API.partnertype.delete(partnerTypeId);
         setSuccess('Partner type deleted successfully');
         fetchPartnerTypes();
       } catch (err) {
@@ -152,7 +150,7 @@ const AdminPartnerTypes = ({ user }) => {
     if (!editingPartnerType) return;
     
     try {
-      await API.partnerTypes.update(editingPartnerType.id, formData);
+      await API.partnertype.update(editingPartnerType.id, formData);
       setSuccess('Partner type updated successfully');
       setEditingPartnerType(null);
       setShowModifyTab(false);
@@ -175,7 +173,6 @@ const AdminPartnerTypes = ({ user }) => {
   return (
     <div className="admin-users">
       <div className="admin-header">
-        <h1>Partner Types Management</h1>
         <div className="admin-tabs">
           <button
             className={`tab-btn ${activeTab === 'list' ? 'active' : ''}`}
@@ -206,101 +203,108 @@ const AdminPartnerTypes = ({ user }) => {
 
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
+      {globalErrors.length > 0 && (
+        <div className="alert alert-error">
+          {globalErrors.map((err, index) => (
+            <div key={index}>{err}</div>
+          ))}
+        </div>
+      )}
 
       {activeTab === 'list' && (
         <div className="users-list">
-          <div className="users-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>
-                    ID
-                    <div className="filter-container">
-                      <input
-                        type="text"
-                        value={filters.id}
-                        onChange={(e) => handleFilterChange(e, 'id')}
-                        placeholder="Filter ID"
-                        className="filter-input"
-                      />
-                    </div>
-                  </th>
-                  <th>
-                    Name
-                    <div className="filter-container">
-                      <input
-                        type="text"
-                        value={filters.name}
-                        onChange={(e) => handleFilterChange(e, 'name')}
-                        placeholder="Filter Name"
-                        className="filter-input"
-                      />
-                    </div>
-                  </th>
-                  <th>
-                    Status
-                    <div className="filter-container">
-                      <input
-                        type="text"
-                        value={filters.status}
-                        onChange={(e) => handleFilterChange(e, 'status')}
-                        placeholder="Filter Status (active/inactive)"
-                        className="filter-input"
-                      />
-                    </div>
-                  </th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
+          {loading ? (
+            <div className="loading-message">
+              Loading partner types...
+            </div>
+          ) : (
+            <div className="users-table">
+              <table>
+                <thead>
                   <tr>
-                    <td colSpan="4" className="loading-message">
-                      Loading partner types...
-                    </td>
+                    <th>
+                      ID
+                      <div className="filter-container">
+                        <input
+                          type="text"
+                          value={filters.id}
+                          onChange={(e) => handleFilterChange(e, 'id')}
+                          placeholder="Filter ID"
+                          className="filter-input"
+                        />
+                      </div>
+                    </th>
+                    <th>
+                      Name
+                      <div className="filter-container">
+                        <input
+                          type="text"
+                          value={filters.name}
+                          onChange={(e) => handleFilterChange(e, 'name')}
+                          placeholder="Filter Name"
+                          className="filter-input"
+                        />
+                      </div>
+                    </th>
+                    <th>
+                      Status
+                      <div className="filter-container">
+                        <input
+                          type="text"
+                          value={filters.status}
+                          onChange={(e) => handleFilterChange(e, 'status')}
+                          placeholder="Filter Status (active/inactive)"
+                          className="filter-input"
+                        />
+                      </div>
+                    </th>
+                    <th>Actions</th>
                   </tr>
-                ) : filteredPartnerTypes.length > 0 ? (
-                  filteredPartnerTypes.map(partnerType => (
-                    <tr key={partnerType.id}>
-                      <td>{partnerType.id}</td>
-                      <td>{partnerType.name}</td>
-                      <td>
-                        <button
-                          className={`status-btn ${partnerType.status ? 'status-active' : 'status-inactive'}`}
-                          onClick={() => handleStatusToggle(partnerType.id, partnerType.status)}
-                          title="Click to toggle status"
-                        >
-                          {partnerType.status ? 'Active' : 'Inactive'}
-                        </button>
-                      </td>
-                      <td>
-                        <div className="action-buttons">
+                </thead>
+                <tbody>
+                  {filteredPartnerTypes.length > 0 ? (
+                    filteredPartnerTypes.map(partnerType => (
+                      <tr key={partnerType.id}>
+                        <td>{partnerType.id}</td>
+                        <td>{partnerType.name}</td>
+                        <td>
                           <button
-                            className="btn-edit"
-                            onClick={() => handleEdit(partnerType)}
+                            className={`status-btn ${partnerType.status ? 'status-active' : 'status-inactive'}`}
+                            onClick={() => handleStatusToggle(partnerType.id, partnerType.status)}
+                            title="Click to toggle status"
                           >
-                            Modify
+                            {partnerType.status ? 'Active' : 'Inactive'}
                           </button>
-                          <button
-                            className="btn-delete"
-                            onClick={() => handleDelete(partnerType.id)}
-                          >
-                            Delete
-                          </button>
-                        </div>
+                        </td>
+                        <td>
+                          <div className="action-buttons">
+                            <button
+                              className="btn-edit"
+                              onClick={() => handleEdit(partnerType)}
+                            >
+                              Modify
+                            </button>
+                            <button
+                              className="btn-delete"
+                              onClick={() => handleDelete(partnerType.id)}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="4" className="no-results">
+                        {partnerTypes.length === 0 ? 'No partner types available' : 'No partner types found matching your filters'}
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="4" className="no-results">
-                      {partnerTypes.length === 0 ? 'No partner types available' : 'No partner types found matching your filters'}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 

@@ -44,7 +44,7 @@ const AddPartnerType = () => {
         status: !!formData.status
       };
     try {
-      await API.partnerTypes.create(dataToSend);
+      await API.partnertype.create(dataToSend);
 
       setSuccess('Partner type created successfully!');
       setFormData({ name: '', status: true });
