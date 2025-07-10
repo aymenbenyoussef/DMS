@@ -17,7 +17,8 @@ import ActivityLogs from './components/Admin/ActivityLogs';
 import AddDoctype from './components/Admin/AddDocType';
 import AdminDoctypes from './components/Admin/AdminDoctypes';
 import AdminPartners from './components/Admin/AdminPartners';
-import AddPartner from './components/Admin/AddPartner'
+import AddPartnerType from './components/Admin/AddPartnerType';
+import AddPartner from './components/Admin/AddPartner';
 import { AppProvider } from './components/context';  // Updated import
 import './App.css';
 
@@ -192,7 +193,9 @@ function App() {
             <Route 
               path="/AddUsers" element={<AddUsers />} />
               <Route 
-              path="/AddPartner" element={<AddPartner />} />
+              path="/AddPartnerType" element={<AddPartnerType user={user}/>} />
+              <Route 
+              path="/AddPartner" element={<AddPartner user={user}/>} />
           </Routes>
         </Layout>
       </Router>

@@ -174,7 +174,7 @@ class DatabaseManager:
                 """)
             
             cursor.execute("""
-            CREATE TABLE IF NOT EXISTS partnerTypes (
+            CREATE TABLE IF NOT EXISTS partnertypes (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 name VARCHAR(255) NOT NULL UNIQUE,
                 status BOOLEAN DEFAULT TRUE,
@@ -849,26 +849,27 @@ class DatabaseManager:
     # PartnerType management methods
     def check_partner_type_name_exists(self, name):
         """Check if a partner type name already exists"""
-        query = "SELECT id FROM partnerTypes WHERE name = %s LIMIT 1"
+        query = "SELECT id FROM partnertypes WHERE name = %s LIMIT 1"
         result = self.execute_query(query, (name,), fetch=True)
         return bool(result)
     
     def check_partner_type_name_exists_except_id(self, name, partner_type_id):
         """Check if a partner type name exists excluding a specific partner type ID"""
-        query = "SELECT id FROM partnerTypes WHERE name = %s AND id != %s LIMIT 1"
+        query = "SELECT id FROM partnertypes WHERE name = %s AND id != %s LIMIT 1"
         result = self.execute_query(query, (name, partner_type_id), fetch=True)
         return bool(result)
 
-    def create_partner(self, name, status=True):
-        query = "INSERT INTO partners (name, status) VALUES (%s, %s)"
-        return self.execute_query(query, (name, status,))
+    def create_partner_type(self, name, status=True):
+        status_int = 1 if status in [True, 'true', 'True', '1', 1] else 0
+        query = "INSERT INTO partnertypes (name, status) VALUES (%s, %s)"
+        return self.execute_query(query, (name, status_int))
 
     def get_all_partner_types(self):
-        query = "SELECT * FROM partnerTypes ORDER BY name"
+        query = "SELECT * FROM partnertypes ORDER BY name"
         return self.execute_query(query, fetch=True)
 
     def get_partner_type_by_id(self, partner_type_id):
-        query = "SELECT * FROM partnerTypes WHERE id = %s"
+        query = "SELECT * FROM partnertypes WHERE id = %s"
         result = self.execute_query(query, (partner_type_id,), fetch=True)
         return result[0] if result else None
 
@@ -887,7 +888,7 @@ class DatabaseManager:
             return False
         
         params.append(partner_type_id)
-        query = f"UPDATE partnerTypes SET {', '.join(updates)} WHERE id = %s"
+        query = f"UPDATE partnertypes SET {', '.join(updates)} WHERE id = %s"
         try:
             self.execute_query(query, params)
             return True
@@ -897,7 +898,7 @@ class DatabaseManager:
 
     def update_partner_type_status(self, partner_type_id, status):
         """Update only the status of a partner type"""
-        query = "UPDATE partnerTypes SET status = %s WHERE id = %s"
+        query = "UPDATE partnertypes SET status = %s WHERE id = %s"
         try:
             self.execute_query(query, (status, partner_type_id))
             return True
@@ -906,7 +907,7 @@ class DatabaseManager:
             return False
 
     def delete_partner_type(self, partner_type_id):
-        query = "DELETE FROM partnerTypes WHERE id = %s"
+        query = "DELETE FROM partnertypes WHERE id = %s"
         try:
             self.execute_query(query, (partner_type_id,))
             return True

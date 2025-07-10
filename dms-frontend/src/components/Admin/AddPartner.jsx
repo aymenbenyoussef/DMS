@@ -1,74 +1,151 @@
 import React, { useState } from 'react';
 import API from '../../api';
-import './AdminUsers.css'; 
+import './AdminUsers.css';
 import { Link, useNavigate } from 'react-router-dom';
 
-const AddPartnerType = () => {
+const AddPartner = () => {
+  const [activeTab, setActiveTab] = useState('Identity');
   const [formData, setFormData] = useState({
-    name: '',
-    status: true,
+    companyName: '',
+    tradeName: '',
+    uniqueIdentifier: '',
+    mailingAddress: '',
+    billingAddress: '',
+    phone1: '',
+    phone2: '',
+    phone3: '',
+    email: '',
+    paymentTerms: '',
+    billingTerms: '',
+    bankAccountNumber: '',
+    bankName: '',
+    notes: '',
+    isActive: true
   });
 
-  const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
+  const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
-  const [error, setError] = useState('');
+  const [globalErrors, setGlobalErrors] = useState([]);
   const navigate = useNavigate();
+
+  const validate = (tab = activeTab) => {
+    const errors = {};
+    const errorMessages = [];
+
+    // Identity tab validation
+    if (tab === 'Identity') {
+      if (!formData.companyName.trim()) {
+        errors.companyName = 'Company name is required';
+        errorMessages.push('Company name is required');
+      }
+      if (!formData.uniqueIdentifier.trim()) {
+        errors.uniqueIdentifier = 'Unique identifier is required';
+        errorMessages.push('Unique identifier is required');
+      }
+    }
+
+    // Contact tab validation
+    if (tab === 'Contact') {
+      if (!formData.mailingAddress.trim()) {
+        errors.mailingAddress = 'Mailing address is required';
+        errorMessages.push('Mailing address is required');
+      }
+      if (!formData.phone1.trim()) {
+        errors.phone1 = 'Primary phone is required';
+        errorMessages.push('Primary phone is required');
+      }
+      if (!formData.email.trim()) {
+        errors.email = 'Email is required';
+        errorMessages.push('Email is required');
+      } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
+        errors.email = 'Email is invalid';
+        errorMessages.push('Email is invalid');
+      }
+    }
+
+    return { errors, errorMessages };
+  };
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value,
+      [name]: type === 'checkbox' ? checked : value
     }));
+    setFieldErrors(prev => ({ ...prev, [name]: '' }));
+  };
 
-    setFieldErrors((prev) => ({ ...prev, [name]: '' }));
+  const handleTabChange = (tab) => {
+    const { errors, errorMessages } = validate(activeTab);
+    if (errorMessages.length === 0) {
+      setActiveTab(tab);
+      setGlobalErrors([]);
+    } else {
+      setFieldErrors(errors);
+      setGlobalErrors(errorMessages);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSuccess('');
-    setLoading(true);
-
-    const errors = {};
-    if (!formData.name.trim()) errors.name = 'Partner type name is required.';
-
-    if (Object.keys(errors).length) {
-      setFieldErrors(errors);
-      setLoading(false);
+    setGlobalErrors([]);
+    
+    // Validate all tabs before submitting
+    const { errors: identityErrors, errorMessages: identityMessages } = validate('Identity');
+    const { errors: contactErrors, errorMessages: contactMessages } = validate('Contact');
+    
+    const allErrors = { ...identityErrors, ...contactErrors };
+    const allMessages = [...identityMessages, ...contactMessages];
+    
+    if (allMessages.length > 0) {
+      setFieldErrors(allErrors);
+      setGlobalErrors(allMessages);
       return;
     }
-    const dataToSend = {
-        name: formData.name.trim(),
-        status: formData.status,
-      };
-    try {
-      await API.partnerTypes.create(dataToSend);
 
-      setSuccess('Partner type created successfully!');
-      setFormData({ name: '', status: true });
-      setFieldErrors({});
-      setError('');
+    setLoading(true);
+    try {
+      const partnerData = {
+        companyName: formData.companyName,
+        tradeName: formData.tradeName,
+        uniqueIdentifier: formData.uniqueIdentifier,
+        mailingAddress: formData.mailingAddress,
+        billingAddress: formData.billingAddress,
+        phone1: formData.phone1,
+        phone2: formData.phone2,
+        phone3: formData.phone3,
+        email: formData.email,
+        paymentTerms: formData.paymentTerms,
+        billingTerms: formData.billingTerms,
+        bankAccountNumber: formData.bankAccountNumber,
+        bankName: formData.bankName,
+        notes: formData.notes,
+        isActive: formData.isActive
+      };
+
+      await API.partnerTypes.create(partnerData);
+      setSuccess('Partner created successfully');
       
-      // Navigate after a short delay to show success message
       setTimeout(() => {
-        navigate('/partnerTypes');
+        navigate('/partners');
       }, 1500);
     } catch (err) {
-      console.log('Sending data:', dataToSend);
-      console.error('API error:', err.response?.data || err.message);
-      
-      const msg = err.response?.data?.msg || 'Error occurred while creating the partner.';
-      
-      // Check for specific name conflict error
-      if (msg.toLowerCase().includes('name already exists') || msg.toLowerCase().includes('name') && msg.toLowerCase().includes('exists')) {
-        setFieldErrors({ name: 'A partner with this name already exists.' });
-        setError('');
-      } else {
-        setError(msg);
-        setFieldErrors({});
+      let errorMsg = 'Error creating partner';
+      const apiErrors = {};
+
+      if (err.response?.data?.msg) {
+        errorMsg = err.response.data.msg;
+        
+        if (err.response.data.errors) {
+          Object.keys(err.response.data.errors).forEach(key => {
+            apiErrors[key] = err.response.data.errors[key];
+          });
+        }
       }
+
+      setFieldErrors(apiErrors);
+      setGlobalErrors([errorMsg]);
     } finally {
       setLoading(false);
     }
@@ -76,57 +153,285 @@ const AddPartnerType = () => {
 
   return (
     <div className="admin-users">
-      <h1>Add New Partner Type</h1>
-      
-      {error && <div className="alert alert-error">{error}</div>}
-      {success && <div className="alert alert-success">{success}</div>}
+      <h1>Add New Partner</h1>
 
-      <div className="user-form">
-        <form onSubmit={handleSubmit}>
-          {/* name */}
+      <div className="admin-tabs">
+        <button
+          type="button"
+          className={`tab-btn ${activeTab === 'Identity' ? 'active' : ''}`}
+          onClick={() => handleTabChange('Identity')}
+        >
+          Identity
+        </button>
+        <button
+          type="button"
+          className={`tab-btn ${activeTab === 'Contact' ? 'active' : ''}`}
+          onClick={() => handleTabChange('Contact')}
+        >
+          Contact
+        </button>
+        <button
+          type="button"
+          className={`tab-btn ${activeTab === 'Billing and payments' ? 'active' : ''}`}
+          onClick={() => handleTabChange('Billing and payments')}
+        >
+          Billing and payments
+        </button>
+        <button
+          type="button"
+          className={`tab-btn ${activeTab === 'Notes' ? 'active' : ''}`}
+          onClick={() => handleTabChange('Notes')}
+        >
+          Notes
+        </button>
+      </div>
+
+      {success && <div className="alert alert-success">{success}</div>}
+      {globalErrors.length > 0 && (
+        <div className="alert alert-error">
+          {globalErrors.map((err, index) => (
+            <div key={index}>{err}</div>
+          ))}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="user-form">
+        {/* Identity Tab */}
+        <div className="tab-panel" style={{ display: activeTab === 'Identity' ? 'block' : 'none' }}>
           <div className="form-group">
-            <label htmlFor="name">Partner Type Name</label>
+            <label>Company name</label>
             <input
               type="text"
-              id="name"
-              name="name"
-              value={formData.name}
+              name="companyName"
+              placeholder="Enter company name"
+              value={formData.companyName}
               onChange={handleInputChange}
-              placeholder="Enter partner type name"
-              className={fieldErrors.name ? 'input-error' : ''}
+              className={fieldErrors.companyName ? 'input-error' : ''}
             />
-            {fieldErrors.name && <p className="error-text">{fieldErrors.name}</p>}
+            {fieldErrors.companyName && <div className="field-error">{fieldErrors.companyName}</div>}
           </div>
-
-          {/* status */}
+          <div className="form-group">
+            <label>Trade name (if different)</label>
+            <input
+              type="text"
+              name="tradeName"
+              placeholder="Enter trade name"
+              value={formData.tradeName}
+              onChange={handleInputChange}
+            />
+          </div>
+          <div className="form-group">
+            <label>Unique identifier</label>
+            <input
+              type="text"
+              name="uniqueIdentifier"
+              placeholder="Enter unique identifier"
+              value={formData.uniqueIdentifier}
+              onChange={handleInputChange}
+              className={fieldErrors.uniqueIdentifier ? 'input-error' : ''}
+            />
+            {fieldErrors.uniqueIdentifier && <div className="field-error">{fieldErrors.uniqueIdentifier}</div>}
+          </div>
           <div className="form-group checkbox-group">
             <label>
               <input
                 type="checkbox"
-                name="status"
-                checked={formData.status}
+                name="isActive"
+                checked={formData.isActive}
                 onChange={handleInputChange}
               />{' '}
               Active
             </label>
           </div>
-
-          {/* submit */}
           <div className="form-actions">
-            <Link to="/partnerTypes" className="btn btn-primary">
-              Cancel
-            </Link>
-            <button 
-              type="submit" 
-              className="btn btn-primary" 
-              disabled={loading}>
-              {loading ? 'Creating...' : 'Create Partner Type'}
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => handleTabChange('Contact')}
+            >
+              Next
             </button>
           </div>
-        </form>
-      </div>
+        </div>
+
+        {/* Contact Tab */}
+        <div className="tab-panel" style={{ display: activeTab === 'Contact' ? 'block' : 'none' }}>
+          <div className="form-group">
+            <label>Mailing address</label>
+            <input
+              type="text"
+              name="mailingAddress"
+              placeholder="Enter mailing address"
+              value={formData.mailingAddress}
+              onChange={handleInputChange}
+              className={fieldErrors.mailingAddress ? 'input-error' : ''}
+            />
+            {fieldErrors.mailingAddress && <div className="field-error">{fieldErrors.mailingAddress}</div>}
+          </div>
+          <div className="form-group">
+            <label>Head office or billing address</label>
+            <input
+              type="text"
+              name="billingAddress"
+              placeholder="Enter billing address"
+              value={formData.billingAddress}
+              onChange={handleInputChange}
+            />
+          </div>
+          <div className="form-group">
+            <label>Phone 1 (primary)</label>
+            <input
+              type="text"
+              name="phone1"
+              placeholder="Enter primary phone"
+              value={formData.phone1}
+              onChange={handleInputChange}
+              className={fieldErrors.phone1 ? 'input-error' : ''}
+            />
+            {fieldErrors.phone1 && <div className="field-error">{fieldErrors.phone1}</div>}
+          </div>
+          <div className="form-group">
+            <label>Phone 2</label>
+            <input
+              type="text"
+              name="phone2"
+              placeholder="Enter secondary phone"
+              value={formData.phone2}
+              onChange={handleInputChange}
+            />
+          </div>
+          <div className="form-group">
+            <label>Phone 3</label>
+            <input
+              type="text"
+              name="phone3"
+              placeholder="Enter additional phone"
+              value={formData.phone3}
+              onChange={handleInputChange}
+            />
+          </div>
+          <div className="form-group">
+            <label>Email</label>
+            <input
+              type="email"
+              name="email"
+              placeholder="Enter email"
+              value={formData.email}
+              onChange={handleInputChange}
+              className={fieldErrors.email ? 'input-error' : ''}
+            />
+            {fieldErrors.email && <div className="field-error">{fieldErrors.email}</div>}
+          </div>
+          <div className="form-actions">
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => handleTabChange('Identity')}
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => handleTabChange('Billing and payments')}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+
+        {/* Billing and payments Tab */}
+        <div className="tab-panel" style={{ display: activeTab === 'Billing and payments' ? 'block' : 'none' }}>
+          <div className="form-group">
+            <label>Payment terms</label>
+            <input
+              type="text"
+              name="paymentTerms"
+              placeholder="Enter payment terms"
+              value={formData.paymentTerms}
+              onChange={handleInputChange}
+            />
+          </div>
+          <div className="form-group">
+            <label>Billing terms</label>
+            <input
+              type="text"
+              name="billingTerms"
+              placeholder="Enter billing terms"
+              value={formData.billingTerms}
+              onChange={handleInputChange}
+            />
+          </div>
+          <div className="form-group">
+            <label>Bank account number</label>
+            <input
+              type="text"
+              name="bankAccountNumber"
+              placeholder="Enter bank account number"
+              value={formData.bankAccountNumber}
+              onChange={handleInputChange}
+            />
+          </div>
+          <div className="form-group">
+            <label>Bank name</label>
+            <input
+              type="text"
+              name="bankName"
+              placeholder="Enter bank name"
+              value={formData.bankName}
+              onChange={handleInputChange}
+            />
+          </div>
+          <div className="form-actions">
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => handleTabChange('Contact')}
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => handleTabChange('Notes')}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+
+        {/* Notes Tab */}
+        <div className="tab-panel" style={{ display: activeTab === 'Notes' ? 'block' : 'none' }}>
+          <div className="form-group">
+            <label>Notes</label>
+            <textarea
+              name="notes"
+              placeholder="Enter any additional notes"
+              value={formData.notes}
+              onChange={handleInputChange}
+              rows="4"
+            />
+          </div>
+
+          <div className="form-actions">
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => handleTabChange('Billing and payments')}
+            >
+              Previous
+            </button>
+            <Link to="/partners" className="btn-primary">
+              Cancel
+            </Link>
+            <button type="submit" disabled={loading} className="btn-primary">
+              {loading ? 'Creating...' : 'Create Partner'}
+            </button>
+          </div>
+        </div>
+      </form>
     </div>
   );
 };
 
-export default AddPartnerType;
+export default AddPartner;

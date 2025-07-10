@@ -233,7 +233,10 @@ const AdminPartnerTypes = ({ user }) => {
               Modify Partner Type
             </button>
           )}
-          <Link to="/AddPartner" className="btn-primary-2">
+          <Link to="/AddPartner" className="btnthird">
+            Add Partner 
+          </Link>
+          <Link to="/AddPartnerType" className="btn-primary-2">
             Add Partner Type
           </Link>
         </div>

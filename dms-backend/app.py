@@ -1075,11 +1075,11 @@ if __name__ == '__main__':
     ensure_log_dir()
     app.run(host='0.0.0.0', debug=True)
 
-@app.route('/partners', methods=['GET'])
+@app.route('/partnerTypes', methods=['GET'])
 @jwt_required()
 def get_partners():
     try:
-        partners = db.get_all_partners()
+        partners = db.get_all_partner_types()
         return jsonify(partners), 200
     except Exception as e:
         return jsonify({"msg": str(e)}), 500
@@ -1087,16 +1087,17 @@ def get_partners():
 @app.route('/partnerTypes', methods=['POST'])
 @jwt_required()
 def create_partner_type():
+    print("hello")
     current_user_claims = get_jwt()
     data = request.get_json()
-    print(data)
+    print("backend")
+    print(f"Received data for partner type creation: {data}") # Added logging
     if not data or 'name' not in data:
         return jsonify({"msg": "Partner type name is required"}), 400
     
     # Vérifier si le nom existe déjà
     if db.check_partner_type_name_exists(data['name'].strip()):
         return jsonify({"msg": "A partner type with this name already exists"}), 400
-    
     try:
         partner_type_id = db.create_partner_type(
             name=data['name'].strip(),
@@ -1108,6 +1109,7 @@ def create_partner_type():
             "partner_type_id": partner_type_id
         }), 201
     except Exception as e:
+        print("Error in create_partner_type:", str(e))
         return jsonify({"msg": str(e)}), 500
 
 @app.route('/partnerTypes/<int:partner_type_id>', methods=['PUT'])
