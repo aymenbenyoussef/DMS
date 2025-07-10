@@ -10,3 +10,10 @@
 09/07/2025 17:51:29 - admin - Create user: 2, user, user@gmail.com, enabled
 09/07/2025 22:05:03 - admin - Update document type: 2, fiche de paie
 09/07/2025 22:16:07 - admin - Create DocType: 5, emploi
+10/07/2025 12:10:24 - admin - Create Entity: 8, tunisair
+10/07/2025 12:10:43 - admin - Update DocType: 2, fiche de paie
+10/07/2025 12:28:07 - admin - Update DocType: 1, facture
+10/07/2025 12:28:45 - admin - Create Entity: 9, Hopital
+10/07/2025 15:25:38 - admin - Update DocType: 1, facture d'achat
+10/07/2025 20:25:45 - admin - Update User: 2, user, user123@gmail.com, enabled
+10/07/2025 20:26:03 - admin - Update User: 2, user, user12@gmail.com, disabled
