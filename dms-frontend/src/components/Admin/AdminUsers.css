@@ -2,7 +2,7 @@
 
 
 .admin-users {
-  padding: 20px;
+  padding-top: 20px;
   max-width: 100%; /* Set max-width to 100% */
   margin: 0 auto;
   height: 100%;
@@ -503,14 +503,18 @@
 }
 .company-tokens {
   display: flex;
+  padding-left: 0;
   align-items: left;
   flex-wrap: wrap;
   gap: 6px;
   margin: 4px 0;
 }
-
+.pt{
+  width: 300px;
+}
 .company-token {
   display: inline-block;
+  
   background-color: #e9ecef;
   border-radius: 12px;
   padding: 2px 8px;
