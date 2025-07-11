@@ -36,7 +36,7 @@
 }
 
 .tile-icon {
-  color: #3498db;
+  color: darkgreen;
   font-size: 1.5rem;
   transition: transform 0.3s ease;
 }
@@ -214,7 +214,7 @@
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
-  background-color: #007bff;
+  background-color: darkgreen;
   color: white;
   position: absolute;
   top : 118px;
@@ -229,7 +229,7 @@
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
-  background-color: #007bff;
+  background-color: darkgreen;
   color: white;
   position: absolute;
   top : 118px;
@@ -244,7 +244,7 @@
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
-  background-color: #007bff;
+  background-color: darkgreen;
   color: white;
   
   
@@ -252,7 +252,7 @@
 
 
 .btn-primary:hover:not(:disabled) {
-  background-color: #0056b3;
+  background-color: rgb(10, 120, 10);
 }
 
 .btn-primary:disabled {
@@ -269,9 +269,9 @@
 }
 
 .tab-btn.active {
-  background: #3498db;
+  background: darkgreen;
   color: white;
-  border-color: #2980b9;
+  border-color: darkgreen;
 }
 .company-tokens {
   display: flex;
@@ -305,7 +305,7 @@
 
 .filter-input:focus {
   outline: none;
-  border-color: #007bff;
+  border-color: darkgreen;
   box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
 }
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import API from '../../api';
-import './AdminUsers.css'; // Keeping original CSS import
+import './AdminUsers.css';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 
@@ -27,7 +27,6 @@ const AdminPartnerTypes = ({ user }) => {
     status: true
   });
 
-  // Fetch partner types on component mount
   useEffect(() => {
     fetchPartnerTypes();
   }, []);
@@ -91,17 +90,6 @@ const AdminPartnerTypes = ({ user }) => {
     setFieldErrors(errors);
     setGlobalErrors(errorMessages);
     return errorMessages.length === 0;
-  };
-
-  const handleStatusToggle = async (partnerTypeId, currentStatus) => {
-    try {
-      await API.partnertype.updateStatus(partnerTypeId, !currentStatus);
-      setSuccess('Partner type status updated successfully');
-      fetchPartnerTypes();
-    } catch (err) {
-      setError('Error updating partner type status');
-      console.error('Error updating partner type status:', err);
-    }
   };
 
   const handleEdit = (partnerType) => {
@@ -202,71 +190,66 @@ const AdminPartnerTypes = ({ user }) => {
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
       
-
       {activeTab === 'list' && (
         <div className="users-list">
-          {loading ? (
-            <div className="loading-message">
-              Loading partner types...
-            </div>
-          ) : (
+          
             <div className="users-table">
               <table>
                 <thead>
                   <tr>
-                    <th>
-                      ID
-                      <div className="filter-container">
-                        <input
-                          type="text"
-                          value={filters.id}
-                          onChange={(e) => handleFilterChange(e, 'id')}
-                          placeholder="Filter ID"
-                          className="filter-input"
-                        />
-                      </div>
-                    </th>
-                    <th>
-                      Name
-                      <div className="filter-container">
-                        <input
-                          type="text"
-                          value={filters.name}
-                          onChange={(e) => handleFilterChange(e, 'name')}
-                          placeholder="Filter Name"
-                          className="filter-input"
-                        />
-                      </div>
-                    </th>
-                    <th>
-                      Status
-                      <div className="filter-container">
-                        <input
-                          type="text"
-                          value={filters.status}
-                          onChange={(e) => handleFilterChange(e, 'status')}
-                          placeholder="Filter Status (active/inactive)"
-                          className="filter-input"
-                        />
-                      </div>
-                    </th>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Status</th>
                     <th>Actions</th>
+                  </tr>
+                  <tr className="filter-row">
+                    <td>
+                      <input
+                        type="text"
+                        value={filters.id}
+                        onChange={(e) => handleFilterChange(e, 'id')}
+                        placeholder="Filter ID"
+                        className="filter-input"
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="text"
+                        value={filters.name}
+                        onChange={(e) => handleFilterChange(e, 'name')}
+                        placeholder="Filter Name"
+                        className="filter-input"
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="text"
+                        value={filters.status}
+                        onChange={(e) => handleFilterChange(e, 'status')}
+                        placeholder="Filter Status"
+                        className="filter-input"
+                      />
+                    </td>
+                    <td></td>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredPartnerTypes.length > 0 ? (
+                  {loading ? (
+                  <tr>
+                    <td colSpan="5" className="loading-message">
+                      Loading partner types...
+                    </td>
+                  </tr>
+                ) : 
+                  filteredPartnerTypes.length > 0 ? (
                     filteredPartnerTypes.map(partnerType => (
                       <tr key={partnerType.id}>
                         <td>{partnerType.id}</td>
                         <td>{partnerType.name}</td>
                         <td>
-                          <button
-                            className={`status-btn ${partnerType.status ? 'status-active' : 'status-inactive'}`}
-                            onClick={() => handleStatusToggle(partnerType.id, partnerType.status)}
-                            title="Click to toggle status"
-                          >
+                          <span className={`status-text ${partnerType.status ? 'status-active' : 'status-inactive'}`}>
                             {partnerType.status ? 'Active' : 'Inactive'}
-                          </button>
+                          </span>
                         </td>
                         <td>
                           <div className="action-buttons">
@@ -296,8 +279,7 @@ const AdminPartnerTypes = ({ user }) => {
                 </tbody>
               </table>
             </div>
-          )}
-        </div>
+          </div>
       )}
 
       {activeTab === 'form' && (

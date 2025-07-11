@@ -58,7 +58,7 @@ const AdminCompanies = () => {
         setSuccess('');
         
       }
-    }, 3000); // 5 seconds
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, [success, error, fieldErrors]);
@@ -74,15 +74,12 @@ const AdminCompanies = () => {
     return () => clearTimeout(timer2);
   }, [ error, fieldErrors]);
 
-  // Add this useEffect to clear on tab change
- const handleTabChange = (tab) => {
+  const handleTabChange = (tab) => {
     if (tab !== 'list') {
-      // Clear all messages when switching away from list
       setError('');
       setSuccess('');
       setFieldErrors({});
     } else {
-      // When switching to list, only clear errors (keep success)
       setError('');
       setSuccess('');
       setFieldErrors({});
@@ -124,8 +121,6 @@ const AdminCompanies = () => {
     });
   };
 
-  
-
   const handleEdit = (company) => {
     setEditingCompany(company);
     setFormData({
@@ -137,8 +132,6 @@ const AdminCompanies = () => {
     setShowModifyTab(true);
     setActiveTab('form');
   };
-
-
 
   const handleDelete = async (companyId) => {
     if (window.confirm('Are you sure you want to delete this Entity?')) {
@@ -193,7 +186,6 @@ const AdminCompanies = () => {
       err.response?.data?.msg ||
       "Error occurred while updating the entity.";
 
-      // If duplicate error, set field-level messages
       if (errorMsg.toLowerCase().includes("name") || errorMsg.toLowerCase().includes("email")) {
         const duplicateErrors = {};
         if (errorMsg.toLowerCase().includes("name")) {
@@ -249,68 +241,62 @@ const AdminCompanies = () => {
             <table>
               <thead>
                 <tr>
-                  <th>
-                    ID
-                    <div className="filter-container">
-                      <input
-                        type="text"
-                        value={filters.id}
-                        onChange={(e) => handleFilterChange(e, 'id')}
-                        placeholder="Filter ID"
-                        className="filter-input"
-                      />
-                    </div>
-                  </th>
-                  <th>
-                    Entity Name
-                    <div className="filter-container">
-                      <input
-                        type="text"
-                        value={filters.name}
-                        onChange={(e) => handleFilterChange(e, 'name')}
-                        placeholder="Filter Name"
-                        className="filter-input"
-                      />
-                    </div>
-                  </th>
-                  <th>
-                    Address
-                    <div className="filter-container">
-                      <input
-                        type="text"
-                        value={filters.address}
-                        onChange={(e) => handleFilterChange(e, 'address')}
-                        placeholder="Filter Address"
-                        className="filter-input"
-                      />
-                    </div>
-                  </th>
-                  <th>
-                    Email
-                    <div className="filter-container">
-                      <input
-                        type="text"
-                        value={filters.email}
-                        onChange={(e) => handleFilterChange(e, 'email')}
-                        placeholder="Filter Email"
-                        className="filter-input"
-                      />
-                    </div>
-                  </th>
-                  <th>
-                    Phone
-                    <div className="filter-container">
-                      <input
-                        type="text"
-                        value={filters.phone}
-                        onChange={(e) => handleFilterChange(e, 'phone')}
-                        placeholder="Filter Phone"
-                        className="filter-input"
-                      />
-                    </div>
-                  </th>
+                  <th>ID</th>
+                  <th>Entity Name</th>
+                  <th>Address</th>
+                  <th>Email</th>
+                  <th>Phone</th>
                   <th>Creation date</th>
                   <th>Actions</th>
+                </tr>
+                <tr className="filter-row">
+                  <td>
+                    <input
+                      type="text"
+                      value={filters.id}
+                      onChange={(e) => handleFilterChange(e, 'id')}
+                      placeholder="Filter ID"
+                      className="filter-input"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      value={filters.name}
+                      onChange={(e) => handleFilterChange(e, 'name')}
+                      placeholder="Filter Name"
+                      className="filter-input"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      value={filters.address}
+                      onChange={(e) => handleFilterChange(e, 'address')}
+                      placeholder="Filter Address"
+                      className="filter-input"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      value={filters.email}
+                      onChange={(e) => handleFilterChange(e, 'email')}
+                      placeholder="Filter Email"
+                      className="filter-input"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      value={filters.phone}
+                      onChange={(e) => handleFilterChange(e, 'phone')}
+                      placeholder="Filter Phone"
+                      className="filter-input"
+                    />
+                  </td>
+                  <td></td>
+                  <td></td>
                 </tr>
               </thead>
               <tbody>

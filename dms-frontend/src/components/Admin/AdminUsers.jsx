@@ -339,85 +339,82 @@ const AdminUsers = ({user}) => {
             <table>
               <thead>
                 <tr>
-                  <th>ID
-                    <div className="filter-container">
-                      <input
-                        type="text"
-                        value={filters.id}
-                        onChange={(e) => handleFilterChange(e, 'id')}
-                        placeholder="Filter ID"
-                        className="filter-input"
-                      />
-                    </div>
-                  </th>
-                  <th>User Name
-                    <div className="filter-container">
-                      <input
-                        type="text"
-                        value={filters.username}
-                        onChange={(e) => handleFilterChange(e, 'username')}
-                        placeholder="Filter Name"
-                        className="filter-input"
-                      />
-                    </div>
-                  </th>
-                  <th>User Surname
-                    <div className="filter-container">
-                      <input
-                        type="text"
-                        value={filters.surname}
-                        onChange={(e) => handleFilterChange(e, 'surname')}
-                        placeholder="Filter Surname"
-                        className="filter-input"
-                      />
-                    </div>
-                  </th>
-                  <th>Email
-                    <div className="filter-container">
-                      <input
-                        type="text"
-                        value={filters.email}
-                        onChange={(e) => handleFilterChange(e, 'email')}
-                        placeholder="Filter Email"
-                        className="filter-input"
-                      />
-                    </div>
-                  </th>
-                  <th>Role
-                    <div className="filter-container">
-                      <input
-                        type="text"
-                        value={filters.role}
-                        onChange={(e) => handleFilterChange(e, 'role')}
-                        placeholder="Filter Role"
-                        className="filter-input"
-                      />
-                    </div>
-                  </th>
-                  <th>Status
-                    <div className="filter-container">
-                      <input
-                        type="text"
-                        value={filters.status}
-                        onChange={(e) => handleFilterChange(e, 'status')}
-                        placeholder="Filter Status (active/inactive)"
-                        className="filter-input"
-                      />
-                    </div>
-                  </th>
-                  <th>Companies
-                    <div className="filter-container">
-                      <input
-                        type="text"
-                        value={filters.companies}
-                        onChange={(e) => handleFilterChange(e, 'companies')}
-                        placeholder="Filter entities "
-                        className="filter-input"
-                      />
-                    </div>
-                  </th>
+                  <th>ID</th>
+                  <th>User Name</th>
+                  <th>User Surname</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Companies</th>
                   <th>Creation date</th>
                   <th>Actions</th>
+                </tr>
+                <tr className="filter-row">
+                  <td>
+                    <input
+                      type="text"
+                      value={filters.id}
+                      onChange={(e) => handleFilterChange(e, 'id')}
+                      placeholder="Filter ID"
+                      className="filter-input"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      value={filters.username}
+                      onChange={(e) => handleFilterChange(e, 'username')}
+                      placeholder="Filter Name"
+                      className="filter-input"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      value={filters.surname}
+                      onChange={(e) => handleFilterChange(e, 'surname')}
+                      placeholder="Filter Surname"
+                      className="filter-input"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      value={filters.email}
+                      onChange={(e) => handleFilterChange(e, 'email')}
+                      placeholder="Filter Email"
+                      className="filter-input"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      value={filters.role}
+                      onChange={(e) => handleFilterChange(e, 'role')}
+                      placeholder="Filter Role"
+                      className="filter-input"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      value={filters.status}
+                      onChange={(e) => handleFilterChange(e, 'status')}
+                      placeholder="Filter Status"
+                      className="filter-input"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      value={filters.companies}
+                      onChange={(e) => handleFilterChange(e, 'companies')}
+                      placeholder="Filter Companies"
+                      className="filter-input"
+                    />
+                  </td>
+                  <td></td>
+                  <td></td>
                 </tr>
               </thead>
               <tbody>

@@ -255,54 +255,50 @@ const AdminDoctypes = ({ user }) => {
             <table>
               <thead>
                 <tr>
-                  <th>
-                    ID
-                    <div className="filter-container">
-                      <input
-                        type="text"
-                        value={filters.id}
-                        onChange={(e) => handleFilterChange(e, 'id')}
-                        placeholder="Filter ID"
-                        className="filter-input"
-                      />
-                    </div>
-                  </th>
-                  <th>
-                    Name
-                    <div className="filter-container">
-                      <input
-                        type="text"
-                        value={filters.name}
-                        onChange={(e) => handleFilterChange(e, 'name')}
-                        placeholder="Filter Name"
-                        className="filter-input"
-                      />
-                    </div>
-                  </th>
-                  <th>
-                    Status
-                    <div className="filter-container">
-                      <input
-                        type="text"
-                        value={filters.status}
-                        onChange={(e) => handleFilterChange(e, 'status')}
-                        placeholder="Filter Status (active/inactive)"
-                        className="filter-input"
-                      />
-                    </div>
-                  </th>
-                  <th>Companies
-                    <div className="filter-container">
-                      <input
-                        type="text"
-                        value={filters.company}
-                        onChange={(e) => handleFilterChange(e, 'companies')}
-                        placeholder="Filter by entity"
-                        className="filter-input"
-                      />
-                    </div>
-                  </th>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Status</th>
+                  <th>Entities</th>
                   <th>Actions</th>
+                </tr>
+                <tr className="filter-row">
+                  <td>
+                    <input
+                      type="text"
+                      value={filters.id}
+                      onChange={(e) => handleFilterChange(e, 'id')}
+                      placeholder="Filter ID"
+                      className="filter-input"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      value={filters.name}
+                      onChange={(e) => handleFilterChange(e, 'name')}
+                      placeholder="Filter Name"
+                      className="filter-input"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      value={filters.status}
+                      onChange={(e) => handleFilterChange(e, 'status')}
+                      placeholder="Filter Status"
+                      className="filter-input"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      value={filters.companies}
+                      onChange={(e) => handleFilterChange(e, 'companies')}
+                      placeholder="Filter Entities"
+                      className="filter-input"
+                    />
+                  </td>
+                  <td></td>
                 </tr>
               </thead>
               <tbody>

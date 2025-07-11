@@ -176,17 +176,6 @@ const AdminPartners = ({ user }) => {
     return errorMessages.length === 0;
   };
 
-  const handleStatusToggle = async (partnerId, currentStatus) => {
-    try {
-      await API.partner.updateStatus(partnerId, !currentStatus);
-      setSuccess('Partner status updated successfully');
-      fetchPartners();
-    } catch (err) {
-      setError('Error updating partner status');
-      console.error('Error updating partner status:', err);
-    }
-  };
-
   const handleEdit = async (partner) => {
     try {
       const fullPartner = await API.partner.getById(partner.id);
@@ -343,11 +332,7 @@ const AdminPartners = ({ user }) => {
 
       {activeTab === 'list' && (
         <div className="users-list">
-          {loading ? (
-            <div className="loading-message">
-              Loading partners...
-            </div>
-          ) : (
+          
             <div className="users-table">
               <table>
                 <thead>
@@ -439,28 +424,37 @@ const AdminPartners = ({ user }) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredPartners.length > 0 ? (
+                  {loading ? (
+                  <tr>
+                    <td colSpan="5" className="loading-message">
+                      Loading partners...
+                    </td>
+                  </tr>
+                ) : 
+                  filteredPartners.length > 0 ? (
                     filteredPartners.map(partner => (
                       <tr key={partner.id}>
                         <td>{partner.id}</td>
                         <td>{partner.unique_identifier}</td>
                         <td>{partner.company_name}</td>
                         <td>
-                          {partner.companies?.map(c => c.name).join(', ') || 'None'}
+                          <ul className="company-tokens">
+
+
+                          {partner.companies?.map(c => (<li key={c.id} className="company-token">{c.name}</li>))}
+                          </ul>
                         </td>
                         <td>
-                          {partner.partnertypes?.map(pt => pt.name).join(', ') || 'None'}
+                          <ul className="company-tokens">
+                          {partner.partnertypes?.map(pt => (<li key={pt.id} className="company-token">{pt.name}</li>))}
+                          </ul>
                         </td>
                         <td>{partner.phone1 || 'N/A'}</td>
                         <td>{partner.email}</td>
                         <td>
-                          <button
-                            className={`status-btn ${partner.is_active ? 'status-active' : 'status-inactive'}`}
-                            onClick={() => handleStatusToggle(partner.id, partner.is_active)}
-                            title="Click to toggle status"
-                          >
+                          <span className={`status-text ${partner.is_active ? 'status-active' : 'status-inactive'}`}>
                             {partner.is_active ? 'Active' : 'Inactive'}
-                          </button>
+                          </span>
                         </td>
                         <td>
                           <div className="action-buttons">
@@ -490,7 +484,7 @@ const AdminPartners = ({ user }) => {
                 </tbody>
               </table>
             </div>
-          )}
+          
         </div>
       )}
 

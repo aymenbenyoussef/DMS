@@ -10,14 +10,29 @@ import {
   BiCog, 
   BiUser, 
   BiLogOut,
-  BiChevronDown
+  BiChevronDown,
+  BiBuildings,
+  BiCollection,
+  BiFile
 } from 'react-icons/bi';
 
 const NavBar = ({ user, onLogout }) => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showAdminTools, setShowAdminTools] = useState(false);
   const location = useLocation();
   const profileRef = useRef(null);
+  const adminToolsRef = useRef(null);
   
+  // Admin tools links
+  const adminToolsLinks = [
+    { icon: <BiGroup size={16} />, label: 'Users', link: '/admin/users' },
+    { icon: <BiBuildings size={16} />, label: 'Entities', link: '/companies' },
+    { icon: <BiCollection size={16} />, label: 'Data types', link: '/doctypes' },
+    { icon: <BiFolder size={16} />, label: 'Partner types', link: '/partnertypes' },
+    { icon: <BiBarChart size={16} />, label: 'Partner', link: '/partners' },
+    { icon: <BiFile size={16} />, label: 'Log files', link: '/admin/activity_logs' },
+  ];
+
   // Get resetSelection function from context
   const { resetSelection } = useContext(AppContext);
   
@@ -25,11 +40,14 @@ const NavBar = ({ user, onLogout }) => {
     return location.pathname === path ? 'active' : '';
   };
 
-  // Close dropdown when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (profileRef.current && !profileRef.current.contains(event.target)) {
         setShowProfileMenu(false);
+      }
+      if (adminToolsRef.current && !adminToolsRef.current.contains(event.target)) {
+        setShowAdminTools(false);
       }
     };
     
@@ -42,7 +60,7 @@ const NavBar = ({ user, onLogout }) => {
   return (
     <nav className="navbar">
       <div className="navbar-container">
-        {/* Logo Section - Make clickable and reset selections */}
+        {/* Logo Section */}
         <div className="navbar-brand" onClick={resetSelection}>
           <Link to="/" className="logo-link">
             <div className="logo">
@@ -69,7 +87,7 @@ const NavBar = ({ user, onLogout }) => {
 
         {/* Navigation Links */}
         <div className="navbar-links">
-          {/* Dashboard link - reset selections on click */}
+          {/* Dashboard link */}
           <Link 
             to="/" 
             className={`nav-link ${isActive('/')}`}
@@ -79,13 +97,39 @@ const NavBar = ({ user, onLogout }) => {
             <span>Dashboard</span>
           </Link>
           
+          {/* Admin Tools Dropdown */}
           {user && user.role === 'admin' && (
-            <Link to="/admin/tools" className={`nav-link ${isActive('/admin/tools')}`}>
-              <span className="nav-icon"><BiGroup size={20} /></span>
-              <span>Admin Tools</span>
-            </Link>
+            <div className="admin-tools-container" ref={adminToolsRef}>
+              <button 
+                className={`nav-link ${isActive('/admin/tools')}`}
+                onClick={() => setShowAdminTools(!showAdminTools)}
+              >
+                <span className="nav-icon"><BiGroup size={20} /></span>
+                <span>Admin Tools</span>
+                <span className={`dropdown-icon ${showAdminTools ? 'open' : ''}`}>
+                  <BiChevronDown size={14} />
+                </span>
+              </button>
+              
+              {showAdminTools && (
+                <div className="admin-tools-dropdown">
+                  {adminToolsLinks.map((item, index) => (
+                    <Link 
+                      key={index} 
+                      to={item.link} 
+                      className="dropdown-item"
+                      onClick={() => setShowAdminTools(false)}
+                    >
+                      <span className="dropdown-icon">{item.icon}</span>
+                      <span>{item.label}</span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
           
+          {/* Settings link */}
           <Link to="/settings" className={`nav-link ${isActive('/settings')}`}>
             <span className="nav-icon"><BiCog size={20} /></span>
             <span>Settings</span>
