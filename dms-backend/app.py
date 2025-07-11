@@ -815,12 +815,39 @@ def get_partner(partner_id):
     except Exception as e:
         return jsonify({"msg": str(e)}), 400
 
-@app.route('/partners', methods=['GET'])
+
+@app.route("/partners/<int:partner_id>/companies", methods=["GET"])
+@jwt_required()
+def get_companies_by_partner(partner_id):
+    try:
+        companies = db.get_companies_by_partner_id(partner_id)
+        return jsonify(companies), 200
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 400
+
+@app.route("/partners/<int:partner_id>/partnertypes", methods=["GET"])
+@jwt_required()
+def get_partnertypes_by_partner(partner_id):
+    try:
+        partnertypes = db.get_partnertypes_by_partner_id(partner_id)
+        return jsonify(partnertypes), 200
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 400
+
+@app.route("/partners", methods=["GET"])
 @jwt_required()
 def get_partners():
     try:
         partners = db.get_all_partners()
-        return jsonify(partners), 200
+        # For each partner, get associated companies and partner types
+        result = []
+        for partner in partners:
+            partner_companies = db.get_companies_by_partner_id(partner["id"])
+            partner_partnertypes = db.get_partnertypes_by_partner_id(partner["id"])
+            partner["companies"] = partner_companies
+            partner["partnertypes"] = partner_partnertypes
+            result.append(partner)
+        return jsonify(result), 200
     except Exception as e:
         return jsonify({"msg": str(e)}), 400
 

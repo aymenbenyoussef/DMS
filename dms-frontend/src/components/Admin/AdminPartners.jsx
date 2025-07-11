@@ -20,7 +20,10 @@ const AdminPartners = ({ user }) => {
     unique_identifier: '',
     company_name: '',
     email: '',
-    status: ''
+    status: '',
+    phone: '',
+    company: '',
+    partnertype: ''
   });
   const [companies, setCompanies] = useState([]);
   const [partnertypes, setPartnertypes] = useState([]);
@@ -100,6 +103,23 @@ const AdminPartners = ({ user }) => {
             const statusStr = partner.is_active ? 'active' : 'inactive';
             return statusStr.includes(filterValue);
           });
+        } else if (key === 'phone') {
+          const filterValue = filters[key].toLowerCase();
+          result = result.filter(partner => 
+            (partner.phone1 && partner.phone1.toLowerCase().includes(filterValue)) ||
+            (partner.phone2 && partner.phone2.toLowerCase().includes(filterValue)) ||
+            (partner.phone3 && partner.phone3.toLowerCase().includes(filterValue))
+          );
+        } else if (key === 'company') {
+                const filterValue = filters[key].toLowerCase();
+                result = result.filter(partner => 
+                  partner.companies?.some(c => c.name.toLowerCase().includes(filterValue))
+                );
+              } else if (key === 'partnertype') {
+          const filterValue = filters[key].toLowerCase();
+          result = result.filter(partner => 
+            partner.partnertypes?.some(pt => pt.name.toLowerCase().includes(filterValue))
+          );
         } else {
           result = result.filter(partner => 
             String(partner[key]).toLowerCase().includes(filters[key].toLowerCase())
@@ -370,9 +390,33 @@ const AdminPartners = ({ user }) => {
                         className="filter-input"
                       />
                     </td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
+                    <td>
+                      <input
+                        type="text"
+                        value={filters.company}
+                        onChange={(e) => handleFilterChange(e, 'company')}
+                        placeholder="Filter Entities"
+                        className="filter-input"
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="text"
+                        value={filters.partnertype}
+                        onChange={(e) => handleFilterChange(e, 'partnertype')}
+                        placeholder="Filter Types"
+                        className="filter-input"
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="text"
+                        value={filters.phone}
+                        onChange={(e) => handleFilterChange(e, 'phone')}
+                        placeholder="Filter Phone"
+                        className="filter-input"
+                      />
+                    </td>
                     <td>
                       <input
                         type="text"
@@ -407,7 +451,7 @@ const AdminPartners = ({ user }) => {
                         <td>
                           {partner.partnertypes?.map(pt => pt.name).join(', ') || 'None'}
                         </td>
-                        <td>{partner.phone1}</td>
+                        <td>{partner.phone1 || 'N/A'}</td>
                         <td>{partner.email}</td>
                         <td>
                           <button

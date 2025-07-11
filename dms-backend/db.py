@@ -747,7 +747,11 @@ class DatabaseManager:
     def get_all_partners(self):
         """Get all partners with basic information"""
         try:
-            query = "SELECT id, company_name, unique_identifier, email, is_active FROM partners ORDER BY company_name"
+            query = """
+                SELECT id, company_name, unique_identifier, email, phone1, is_active 
+                FROM partners 
+                ORDER BY company_name
+            """
             return self.execute_query(query, fetch=True)
         except Exception as e:
             raise Exception(f"Error fetching partners: {str(e)}")
@@ -1162,7 +1166,29 @@ class DatabaseManager:
         except Exception as e:
             print(f"Error deleting partner type: {e}")
             return False
+
+    def get_companies_by_partner_id(self, partner_id):
+        """Get all companies associated with a specific partner"""
+        query = """
+            SELECT c.id, c.name 
+            FROM partner_entities pe
+            JOIN companies c ON pe.company_id = c.id
+            WHERE pe.partner_id = %s
+        """
+        return self.execute_query(query, (partner_id,), fetch=True)
+
+    def get_partnertypes_by_partner_id(self, partner_id):
+        """Get all partner types associated with a specific partner"""
+        query = """
+            SELECT pt.id, pt.name 
+            FROM partner_partnertypes ppt
+            JOIN partnertypes pt ON ppt.partnertype_id = pt.id
+            WHERE ppt.partner_id = %s
+        """
+        return self.execute_query(query, (partner_id,), fetch=True)
+
 # Create global database instance
 db = DatabaseManager()
 db.init_database()
+
 
