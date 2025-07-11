@@ -146,7 +146,7 @@ const AddUser = () => {
 
   return (
     <div className="admin-users">
-      <h1>Add New User</h1>
+     
 
       <div className="admin-tabs">
         <button

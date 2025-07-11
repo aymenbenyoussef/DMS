@@ -692,6 +692,7 @@ def get_companies_by_user(user_id):
 
 
 # Partner management routes
+# In app.py, modify the create_partner endpoint
 @app.route('/partners', methods=['POST'])
 @jwt_required()
 def create_partner():
@@ -704,6 +705,14 @@ def create_partner():
         return jsonify({"msg": "No data provided"}), 400
     
     try:
+        # Check for existing unique identifier first
+        if db.check_partner_unique_identifier_exists(data.get('unique_identifier')):
+            return jsonify({"msg": "A partner with this unique identifier already exists"}), 400
+        
+        # Check for existing email
+        if db.check_partner_email_exists(data.get('email')):
+            return jsonify({"msg": "A partner with this email already exists"}), 400
+            
         # Convert empty strings to None for optional fields
         for field in ['trade_name', 'billing_address', 'phone2', 'phone3', 
                     'payment_terms', 'billing_terms', 'bank_account_number', 
@@ -712,17 +721,6 @@ def create_partner():
                 data[field] = None
         
         partner_id = db.create_partner(data)
-        
-        # Log the creation
-        """log_activity(
-            actor=current_user_claims['username'],
-            action="Create",
-            resource_type="partner",
-            resource_data={
-                'id': partner_id,
-                'name': data['company_name']
-            }
-        )"""
         
         return jsonify({
             "msg": "Partner created successfully",

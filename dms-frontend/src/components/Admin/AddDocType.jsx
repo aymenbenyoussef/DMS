@@ -106,7 +106,7 @@ const AddDocType = () => {
   /* ---------- render ---------- */
   return (
     <div className="admin-users">
-      <h1>Add New Document Type</h1>
+      
 
       {fieldErrors.global && <div className="alert alert-error">{fieldErrors.global}</div>}
       {success && <div className="alert alert-success">{success}</div>}

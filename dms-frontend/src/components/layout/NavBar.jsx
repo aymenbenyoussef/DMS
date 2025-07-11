@@ -13,7 +13,9 @@ import {
   BiChevronDown,
   BiBuildings,
   BiCollection,
-  BiFile
+  BiFile,
+  BiServer,
+  BiData
 } from 'react-icons/bi';
 
 const NavBar = ({ user, onLogout }) => {
@@ -23,15 +25,27 @@ const NavBar = ({ user, onLogout }) => {
   const profileRef = useRef(null);
   const adminToolsRef = useRef(null);
   
-  // Admin tools links
-  const adminToolsLinks = [
-    { icon: <BiGroup size={16} />, label: 'Users', link: '/admin/users' },
-    { icon: <BiBuildings size={16} />, label: 'Entities', link: '/companies' },
-    { icon: <BiCollection size={16} />, label: 'Data types', link: '/doctypes' },
-    { icon: <BiFolder size={16} />, label: 'Partner types', link: '/partnertypes' },
-    { icon: <BiBarChart size={16} />, label: 'Partner', link: '/partners' },
-    { icon: <BiFile size={16} />, label: 'Log files', link: '/admin/activity_logs' },
-  ];
+  // Admin tools links grouped by category
+  const adminToolsCategories = {
+    systemConfig: {
+      title: 'System Configuration',
+      icon: <BiServer size={16} />,
+      items: [
+        { icon: <BiGroup size={16} />, label: 'Users', link: '/admin/users' },
+        { icon: <BiBuildings size={16} />, label: 'Entities', link: '/companies' },
+        { icon: <BiCollection size={16} />, label: 'Data types', link: '/doctypes' },
+        { icon: <BiFolder size={16} />, label: 'Partner types', link: '/partnertypes' },
+        { icon: <BiBarChart size={16} />, label: 'Partners', link: '/partners' },
+        { icon: <BiFile size={16} />, label: 'Logs', link: '/admin/activity_logs' },
+        { icon: <BiCog size={16} />, label: 'Settings', link: '/settings' }
+      ]
+    },
+    businessData: {
+      title: 'Business Data',
+      icon: <BiData size={16} />,
+      items: [] // Empty for now as requested
+    }
+  };
 
   // Get resetSelection function from context
   const { resetSelection } = useContext(AppContext);
@@ -113,30 +127,81 @@ const NavBar = ({ user, onLogout }) => {
               
               {showAdminTools && (
                 <div className="admin-tools-dropdown">
-                  {adminToolsLinks.map((item, index) => (
-                    <Link 
-                      key={index} 
-                      to={item.link} 
-                      className="dropdown-item"
-                      onClick={() => setShowAdminTools(false)}
+                  <div className="dropdown-columns">
+                    {/* System Configuration Column */}
+                    <div className="dropdown-column">
+                      <div className="category-header">
+                        <span className="category-icon">{adminToolsCategories.systemConfig.icon}</span>
+                        <span className="category-title">{adminToolsCategories.systemConfig.title}</span>
+                      </div>
+                      <div className="category-items">
+                        {adminToolsCategories.systemConfig.items.map((item, index) => (
+                          <Link 
+                            key={index} 
+                            to={item.link} 
+                            className="dropdown-item"
+                            onClick={() => setShowAdminTools(false)}
+                          >
+                            <span className="dropdown-icon">{item.icon}</span>
+                            <span>{item.label}</span>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {/* Business Data Column */}
+                    <div className="dropdown-column">
+                      <div className="category-header">
+                        <span className="category-icon">{adminToolsCategories.businessData.icon}</span>
+                        <span className="category-title">{adminToolsCategories.businessData.title}</span>
+                      </div>
+                      {adminToolsCategories.businessData.items.length > 0 ? (
+                        <div className="category-items">
+                          {adminToolsCategories.businessData.items.map((item, index) => (
+                            <Link 
+                              key={index} 
+                              to={item.link} 
+                              className="dropdown-item"
+                              onClick={() => setShowAdminTools(false)}
+                            >
+                              <span className="dropdown-icon">{item.icon}</span>
+                              <span>{item.label}</span>
+                            </Link>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="empty-category">No items available</div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="dropdown-footer">
+                    <button
+                      onClick={() => {
+                        setShowAdminTools(false);
+                        onLogout();
+                      }}
+                      className="logout-button"
                     >
-                      <span className="dropdown-icon">{item.icon}</span>
-                      <span>{item.label}</span>
-                    </Link>
-                  ))}
+                      <BiLogOut size={16} />
+                      <span>Logout</span>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
           )}
           
-          {/* Settings link */}
-          <Link to="/settings" className={`nav-link ${isActive('/settings')}`}>
-            <span className="nav-icon"><BiCog size={20} /></span>
-            <span>Settings</span>
-          </Link>
+          {/* Settings link - Only show if not admin */}
+          {(!user || user.role !== 'admin') && (
+            <Link to="/settings" className={`nav-link ${isActive('/settings')}`}>
+              <span className="nav-icon"><BiCog size={20} /></span>
+              <span>Settings</span>
+            </Link>
+          )}
           
-          {/* User Profile Dropdown */}
-          {user && (
+          {/* User Profile Dropdown - Only show if not admin */}
+          {user && user.role !== 'admin' && (
             <div className="profile-container" ref={profileRef}>
               <button 
                 className="profile-button"

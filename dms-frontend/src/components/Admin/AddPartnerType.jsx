@@ -77,7 +77,7 @@ const AddPartnerType = () => {
 
   return (
     <div className="admin-users">
-      <h1>Add New Partner Type</h1>
+      
       
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}

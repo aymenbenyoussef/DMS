@@ -589,7 +589,22 @@ class DatabaseManager:
         query += " LIMIT 1"
         result = self.execute_query(query, params, fetch=True)
         return bool(result)
+    # In db.py, add these methods to the DatabaseManager class
+    def check_partner_unique_identifier_exists(self, unique_identifier):
+        """Check if a partner with this unique identifier already exists"""
+        if not unique_identifier:
+            return False
+        query = "SELECT id FROM partners WHERE unique_identifier = %s LIMIT 1"
+        result = self.execute_query(query, (unique_identifier,), fetch=True)
+        return bool(result)
 
+    def check_partner_email_exists(self, email):
+        """Check if a partner with this email already exists"""
+        if not email:
+            return False
+        query = "SELECT id FROM partners WHERE email = %s LIMIT 1"
+        result = self.execute_query(query, (email,), fetch=True)
+        return bool(result)
     def create_partner(self, partner_data):
         """Create a new partner with associated entities and types"""
         try:

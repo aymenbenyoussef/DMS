@@ -91,7 +91,7 @@ const AdminCompanies = ({ user }) => {
 
   return (
     <div className="admin-users">
-      <h1>Add new entity</h1>
+      
 
       {fieldErrors.global && (
         <div className="alert alert-error">{fieldErrors.global}</div>

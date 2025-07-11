@@ -153,7 +153,8 @@ const AddPartner = ({ user }) => {
     }
   };
 
-  const handleSubmit = async (e) => {
+  // In AddPartner.jsx, update the handleSubmit function
+const handleSubmit = async (e) => {
   e.preventDefault();
   setGlobalErrors([]);
   
@@ -192,7 +193,7 @@ const AddPartner = ({ user }) => {
       partnertypes: formData.partnertypes
     };
 
-    await API.partner.create(partnerData);
+    const response = await API.partner.create(partnerData);
     setSuccess('Partner created successfully');
     
     setTimeout(() => {
@@ -202,10 +203,16 @@ const AddPartner = ({ user }) => {
     let errorMsg = 'Error creating partner';
     
     if (err.response) {
-      // Handle transaction errors specifically
-      if (err.response.data.message?.includes('transaction')) {
-        errorMsg = 'Database operation failed. Please try again.';
-      } else {
+      // Handle specific validation errors
+      if (err.response.data.message?.includes('unique identifier')) {
+        setFieldErrors({...fieldErrors, uniqueIdentifier: err.response.data.message});
+        errorMsg = err.response.data.message;
+      } 
+      else if (err.response.data.message?.includes('email')) {
+        setFieldErrors({...fieldErrors, email: err.response.data.message});
+        errorMsg = err.response.data.message;
+      }
+      else {
         errorMsg = err.response.data.message || err.response.data.msg || errorMsg;
       }
       
@@ -222,11 +229,12 @@ const AddPartner = ({ user }) => {
   } finally {
     setLoading(false);
   }
+  
 };
 
   return (
     <div className="admin-users">
-      <h1>Add New Partner</h1>
+     
 
       <div className="admin-tabs">
         <button
