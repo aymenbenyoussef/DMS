@@ -60,7 +60,14 @@ def log_activity(actor, action, resource_type, resource_data):
             f"{timestamp} - {actor} - {action} PartnerType: "
             f"{resource_data['id']}, {resource_data['name']}, "
             f"{'active' if resource_data.get('status', True) else 'inactive'}"
-        )    
+        )   
+    elif resource_type == "partner":
+        log_entry = (
+            f"{timestamp} - {actor} - {action} Partner: "
+            f"{resource_data['id']}, {resource_data['company_name']}, "
+            f"type={resource_data.get('partner_type', 'N/A')}, "
+            f"status={'active' if resource_data.get('status', True) else 'inactive'}"
+        )     
     else:
         return  # Unsupported resource type
     
@@ -705,14 +712,24 @@ def create_partner():
         return jsonify({"msg": "No data provided"}), 400
     
     try:
-        # Check for existing unique identifier first
-        if db.check_partner_unique_identifier_exists(data.get('unique_identifier')):
-            return jsonify({"msg": "A partner with this unique identifier already exists"}), 400
+        # Check for existing unique fields
+        if db.check_partner_exists(data):
+            # Determine which field caused the conflict for a more specific error message
+            if db.check_partner_field_exists('company_name', data.get('company_name')):
+                return jsonify({"msg": "Un partenaire avec ce nom d'entreprise existe déjà"}), 400
+            if db.check_partner_field_exists('unique_identifier', data.get('unique_identifier')):
+                return jsonify({"msg": "Un partenaire avec cet identifiant unique existe déjà"}), 400
+            if db.check_partner_field_exists('email', data.get('email')):
+                return jsonify({"msg": "Un partenaire avec cet e-mail existe déjà"}), 400
+            if db.check_partner_field_exists('phone1', data.get('phone1')):
+                return jsonify({"msg": "Un partenaire avec ce numéro de téléphone principal existe déjà"}), 400
+            if db.check_partner_field_exists('mailing_address', data.get('mailing_address')):
+                return jsonify({"msg": "Un partenaire avec cette adresse postale existe déjà"}), 400
+            if db.check_partner_field_exists('bank_account_number', data.get('bank_account_number')):
+                return jsonify({"msg": "Un partenaire avec ce numéro de compte bancaire existe déjà"}), 400
+            # Fallback generic message if no specific conflict is found
+            return jsonify({"msg": "Un partenaire avec des champs uniques similaires existe déjà"}), 400
         
-        # Check for existing email
-        if db.check_partner_email_exists(data.get('email')):
-            return jsonify({"msg": "A partner with this email already exists"}), 400
-            
         # Convert empty strings to None for optional fields
         for field in ['trade_name', 'billing_address', 'phone2', 'phone3', 
                     'payment_terms', 'billing_terms', 'bank_account_number', 
@@ -721,7 +738,20 @@ def create_partner():
                 data[field] = None
         
         partner_id = db.create_partner(data)
+        partner = db.get_partner_by_id(partner_id)
         
+        # Log partner creation
+        log_activity(
+            actor=current_user_claims['username'],
+            action="Create",
+            resource_type="partner",
+            resource_data={
+                'id': partner_id,
+                'company_name': partner['company_name'],
+                'partner_type': partner['partner_type'],
+                'status': partner['status']
+            }
+        )
         return jsonify({
             "msg": "Partner created successfully",
             "partner_id": partner_id
@@ -742,10 +772,28 @@ def update_partner(partner_id):
         return jsonify({"msg": "No data provided"}), 400
     
     try:
+        # Check if updated values conflict with other partners, excluding the current one
+        if db.check_partner_exists(data, exclude_id=partner_id):
+            # Determine which field caused the conflict for a more specific error message
+            if db.check_partner_field_exists("company_name", data.get("company_name"), exclude_id=partner_id):
+                return jsonify({"msg": "Un autre partenaire avec ce nom d\"entreprise existe déjà"}), 400
+            if db.check_partner_field_exists("unique_identifier", data.get("unique_identifier"), exclude_id=partner_id):
+                return jsonify({"msg": "Un autre partenaire avec cet identifiant unique existe déjà"}), 400
+            if db.check_partner_field_exists("email", data.get("email"), exclude_id=partner_id):
+                return jsonify({"msg": "Un autre partenaire avec cet e-mail existe déjà"}), 400
+            if db.check_partner_field_exists("phone1", data.get("phone1"), exclude_id=partner_id):
+                return jsonify({"msg": "Un autre partenaire avec ce numéro de téléphone principal existe déjà"}), 400
+            if db.check_partner_field_exists("mailing_address", data.get("mailing_address"), exclude_id=partner_id):
+                return jsonify({"msg": "Un autre partenaire avec cette adresse postale existe déjà"}), 400
+            if db.check_partner_field_exists("bank_account_number", data.get("bank_account_number"), exclude_id=partner_id):
+                return jsonify({"msg": "Un autre partenaire avec ce numéro de compte bancaire existe déjà"}), 400
+            # Fallback generic message if no specific conflict is found
+            return jsonify({"msg": "Un autre partenaire avec des champs uniques similaires existe déjà"}), 400
+        
         # Convert empty strings to None for optional fields
-        for field in ['trade_name', 'billing_address', 'phone2', 'phone3', 
-                    'payment_terms', 'billing_terms', 'bank_account_number', 
-                    'bank_name', 'notes']:
+        for field in ["trade_name", "billing_address", "phone2", "phone3", 
+                    "payment_terms", "billing_terms", "bank_account_number", 
+                    "bank_name", "notes"]:
             if field in data and data[field] == '':
                 data[field] = None
         
@@ -753,15 +801,17 @@ def update_partner(partner_id):
         
         if success:
             # Log the update
-            """log_activity(
-                actor=current_user_claims['username'],
+            log_activity(
+                actor=current_user_claims["username"],
                 action="Update",
                 resource_type="partner",
                 resource_data={
-                    'id': partner_id,
-                    'name': data.get('company_name', '[name not updated]')
+                    "id": partner_id,
+                    "company_name": partner["company_name"],
+                    "partner_type": partner["partner_type"],
+                    "status": partner["status"]
                 }
-            )"""
+            )
             return jsonify({"msg": "Partner updated successfully"}), 200
         else:
             return jsonify({"msg": "Partner not found"}), 404
@@ -784,16 +834,18 @@ def delete_partner(partner_id):
         
         success = db.delete_partner(partner_id)
         if success:
-            # Log the deletion
-            """log_activity(
+            # Log the status change
+            log_activity(
                 actor=current_user_claims['username'],
                 action="Delete",
                 resource_type="partner",
                 resource_data={
                     'id': partner_id,
-                    'name': partner['company_name']
+                    'company_name': partner['company_name'],
+                    'partner_type': partner['partner_type'],
+                    'status': False  # Mark as inactive when deleted
                 }
-            )"""
+            )
             return jsonify({"msg": "Partner deleted successfully"}), 200
         else:
             return jsonify({"msg": "Partner not found"}), 404
@@ -1378,4 +1430,74 @@ if __name__ == '__main__':
     # Ensure log directory exists when app starts
     ensure_log_dir()
     app.run(host='0.0.0.0', debug=True)
+
+
+# Partner field verification endpoints
+@app.route('/partners/check-field', methods=['POST'])
+@jwt_required()
+def check_partner_field():
+    """Check if a specific partner field value already exists"""
+    current_user_claims = get_jwt()
+    if current_user_claims.get('role') != 'admin':
+        return jsonify({"msg": "Admin access required"}), 403
+    
+    data = request.get_json()
+    if not data or 'field_name' not in data or 'field_value' not in data:
+        return jsonify({"msg": "field_name and field_value are required"}), 400
+    
+    field_name = data['field_name']
+    field_value = data['field_value']
+    exclude_id = data.get('exclude_id')  # For update operations
+    
+    # Validate field name
+    allowed_fields = ['company_name', 'unique_identifier', 'email', 'phone1', 'mailing_address', 'bank_account_number']
+    if field_name not in allowed_fields:
+        return jsonify({"msg": f"Field {field_name} is not allowed for verification"}), 400
+    
+    try:
+        exists = db.check_partner_field_exists(field_name, field_value, exclude_id)
+        return jsonify({
+            "exists": exists,
+            "field_name": field_name,
+            "field_value": field_value
+        }), 200
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+
+@app.route('/partners/check-multiple-fields', methods=['POST'])
+@jwt_required()
+def check_multiple_partner_fields():
+    """Check multiple partner fields for conflicts"""
+    current_user_claims = get_jwt()
+    if current_user_claims.get('role') != 'admin':
+        return jsonify({"msg": "Admin access required"}), 403
+    
+    data = request.get_json()
+    if not data or 'fields' not in data:
+        return jsonify({"msg": "fields object is required"}), 400
+    
+    fields = data['fields']
+    exclude_id = data.get('exclude_id')  # For update operations
+    
+    # Validate and check each field
+    conflicts = {}
+    allowed_fields = ['company_name', 'unique_identifier', 'email', 'phone1', 'mailing_address', 'bank_account_number']
+    
+    try:
+        for field_name, field_value in fields.items():
+            if field_name in allowed_fields and field_value:
+                exists = db.check_partner_field_exists(field_name, field_value, exclude_id)
+                if exists:
+                    conflicts[field_name] = {
+                        "exists": True,
+                        "message": f"Un partenaire avec ce {field_name} existe déjà"
+                    }
+        
+        return jsonify({
+            "has_conflicts": len(conflicts) > 0,
+            "conflicts": conflicts
+        }), 200
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+
 

@@ -2,6 +2,7 @@ import mysql.connector
 from mysql.connector import Error
 import bcrypt
 from datetime import datetime
+import json
 
 # Database configuration
 DB_CONFIG = {
@@ -374,7 +375,7 @@ class DatabaseManager:
         # Update user fields if there are changes
         if updates:
             params.append(user_id)
-            query = f"UPDATE users SET {', '.join(updates)} WHERE id = %s"
+            query = f"UPDATE users SET {' , '.join(updates)} WHERE id = %s"
             try:
                 self.execute_query(query, params)
             except Exception as e:
@@ -558,13 +559,18 @@ class DatabaseManager:
         queries = []
         params = []
         
+        # Check company_name
+        if 'company_name' in partner_data and partner_data['company_name']:
+            queries.append("company_name = %s")
+            params.append(partner_data['company_name'])
+
         # Check unique_identifier
-        if 'unique_identifier' in partner_data:
+        if 'unique_identifier' in partner_data and partner_data['unique_identifier']:
             queries.append("unique_identifier = %s")
             params.append(partner_data['unique_identifier'])
         
         # Check email
-        if 'email' in partner_data:
+        if 'email' in partner_data and partner_data['email']:
             queries.append("email = %s")
             params.append(partner_data['email'])
         
@@ -574,13 +580,19 @@ class DatabaseManager:
             params.append(partner_data['bank_account_number'])
         
         # Check phone1 if provided
-        if 'phone1' in partner_data:
+        if 'phone1' in partner_data and partner_data['phone1']:
             queries.append("phone1 = %s")
             params.append(partner_data['phone1'])
+
+        # Check mailing_address if provided
+        if 'mailing_address' in partner_data and partner_data['mailing_address']:
+            queries.append("mailing_address = %s")
+            params.append(partner_data['mailing_address'])
         
         if not queries:
             return False
         
+        # Combine all checks with OR to find any conflict
         query = "SELECT id FROM partners WHERE (" + " OR ".join(queries) + ")"
         if exclude_id:
             query += " AND id != %s"
@@ -589,27 +601,26 @@ class DatabaseManager:
         query += " LIMIT 1"
         result = self.execute_query(query, params, fetch=True)
         return bool(result)
-    # In db.py, add these methods to the DatabaseManager class
-    def check_partner_unique_identifier_exists(self, unique_identifier):
-        """Check if a partner with this unique identifier already exists"""
-        if not unique_identifier:
-            return False
-        query = "SELECT id FROM partners WHERE unique_identifier = %s LIMIT 1"
-        result = self.execute_query(query, (unique_identifier,), fetch=True)
-        return bool(result)
 
-    def check_partner_email_exists(self, email):
-        """Check if a partner with this email already exists"""
-        if not email:
-            return False
-        query = "SELECT id FROM partners WHERE email = %s LIMIT 1"
-        result = self.execute_query(query, (email,), fetch=True)
-        return bool(result)
     def create_partner(self, partner_data):
         """Create a new partner with associated entities and types"""
         try:
-            # Check if partner already exists
+            # Check if partner already exists based on unique fields
             if self.check_partner_exists(partner_data):
+                # Determine which field caused the conflict for a more specific error message
+                if self.check_partner_field_exists('company_name', partner_data.get('company_name')):
+                    raise Exception("A partner with this company name already exists")
+                if self.check_partner_field_exists('unique_identifier', partner_data.get('unique_identifier')):
+                    raise Exception("A partner with this unique identifier already exists")
+                if self.check_partner_field_exists('email', partner_data.get('email')):
+                    raise Exception("A partner with this email already exists")
+                if self.check_partner_field_exists('phone1', partner_data.get('phone1')):
+                    raise Exception("A partner with this primary phone number already exists")
+                if self.check_partner_field_exists('mailing_address', partner_data.get('mailing_address')):
+                    raise Exception("A partner with this mailing address already exists")
+                if self.check_partner_field_exists('bank_account_number', partner_data.get('bank_account_number')):
+                    raise Exception("A partner with this bank account number already exists")
+                # Fallback generic message if no specific conflict is found (should not happen with check_partner_exists)
                 raise Exception("A partner with similar unique fields already exists")
             
             # Insert partner
@@ -665,6 +676,20 @@ class DatabaseManager:
             
             # Check if updated values conflict with other partners
             if self.check_partner_exists(partner_data, exclude_id=partner_id):
+                # Determine which field caused the conflict for a more specific error message
+                if self.check_partner_field_exists('company_name', partner_data.get('company_name'), exclude_id=partner_id):
+                    raise Exception("A partner with this company name already exists")
+                if self.check_partner_field_exists('unique_identifier', partner_data.get('unique_identifier'), exclude_id=partner_id):
+                    raise Exception("A partner with this unique identifier already exists")
+                if self.check_partner_field_exists('email', partner_data.get('email'), exclude_id=partner_id):
+                    raise Exception("A partner with this email already exists")
+                if self.check_partner_field_exists('phone1', partner_data.get('phone1'), exclude_id=partner_id):
+                    raise Exception("A partner with this primary phone number already exists")
+                if self.check_partner_field_exists('mailing_address', partner_data.get('mailing_address'), exclude_id=partner_id):
+                    raise Exception("A partner with this mailing address already exists")
+                if self.check_partner_field_exists('bank_account_number', partner_data.get('bank_account_number'), exclude_id=partner_id):
+                    raise Exception("A partner with this bank account number already exists")
+                # Fallback generic message if no specific conflict is found
                 raise Exception("A partner with similar unique fields already exists")
             
             # Build update query
@@ -684,7 +709,7 @@ class DatabaseManager:
                     params.append(partner_data[field])
             
             if updates:
-                query = f"UPDATE partners SET {', '.join(updates)} WHERE id = %s"
+                query = f"UPDATE partners SET {' , '.join(updates)} WHERE id = %s"
                 params.append(partner_id)
                 self.execute_query(query, params)
             
@@ -771,6 +796,18 @@ class DatabaseManager:
         except Exception as e:
             raise Exception(f"Error fetching partners: {str(e)}")
 
+    def check_partner_field_exists(self, field_name, field_value, exclude_id=None):
+        """Check if a specific field value exists for any partner, excluding a given ID"""
+        if not field_value:
+            return False
+        query = f"SELECT id FROM partners WHERE {field_name} = %s"
+        params = [field_value]
+        if exclude_id:
+            query += " AND id != %s"
+            params.append(exclude_id)
+        query += " LIMIT 1"
+        result = self.execute_query(query, params, fetch=True)
+        return bool(result)
 
 
     #DocType management
@@ -801,8 +838,7 @@ class DatabaseManager:
                     VALUES (%s, %s)
                 """
                 try:
-                    link_params = (doctype_id, comp_id)
-                    self.execute_query(insert_companies_query, link_params)
+                    self.execute_query(insert_companies_query, (doctype_id, comp_id))
                 except Exception as e:
                     print(f"Warning: could not link doctype {doctype_id} to company {comp_id}: {e}")
 
@@ -867,7 +903,7 @@ class DatabaseManager:
         # Update doctype fields if there are changes
         if updates:
             params.append(doctype_id)
-            query = f"UPDATE doctype SET {', '.join(updates)} WHERE id = %s"
+            query = f"UPDATE doctype SET {' , '.join(updates)} WHERE id = %s"
             try:
                 self.execute_query(query, params)
             except Exception as e:
@@ -965,7 +1001,7 @@ class DatabaseManager:
         updates.append("updated_at = CURRENT_TIMESTAMP")
         params.append(document_id)
         
-        query = f"UPDATE documents SET {', '.join(updates)} WHERE id = %s"
+        query = f"UPDATE documents SET {' , '.join(updates)} WHERE id = %s"
         try:
             self.execute_query(query, params)
             return True
@@ -1155,7 +1191,7 @@ class DatabaseManager:
             return False
         
         params.append(partner_type_id)
-        query = f"UPDATE partnertypes SET {', '.join(updates)} WHERE id = %s"
+        query = f"UPDATE partnertypes SET {' , '.join(updates)} WHERE id = %s"
         try:
             self.execute_query(query, params)
             return True
@@ -1205,5 +1241,7 @@ class DatabaseManager:
 # Create global database instance
 db = DatabaseManager()
 db.init_database()
+
+
 
 

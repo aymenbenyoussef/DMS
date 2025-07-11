@@ -31,8 +31,66 @@ const AddPartner = ({ user }) => {
   const [globalErrors, setGlobalErrors] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [partnertypes, setPartnertypes] = useState([]);
+  const [fieldValidation, setFieldValidation] = useState({});
   const navigate = useNavigate();
   const [error, setError] = useState('');
+
+  const validateFieldAsync = async (fieldName, fieldValue) => {
+    if (!fieldValue || fieldValue.trim() === '') {
+      setFieldValidation(prev => ({ ...prev, [fieldName]: null }));
+      return;
+    }
+
+    // Only validate unique fields
+    const uniqueFields = ['companyName', 'uniqueIdentifier', 'email', 'phone1', 'mailingAddress', 'bankAccountNumber'];
+    if (!uniqueFields.includes(fieldName)) return;
+
+    try {
+      // Map frontend field names to backend field names
+      const fieldMapping = {
+        companyName: 'company_name',
+        uniqueIdentifier: 'unique_identifier',
+        mailingAddress: 'mailing_address',
+        bankAccountNumber: 'bank_account_number'
+      };
+      
+      const backendFieldName = fieldMapping[fieldName] || fieldName;
+      const response = await API.partner.checkField(backendFieldName, fieldValue.trim());
+      
+      if (response.data.exists) {
+        setFieldValidation(prev => ({ 
+          ...prev, 
+          [fieldName]: { 
+            isValid: false, 
+            message: `Ce ${fieldName === 'companyName' ? 'nom d\'entreprise' : 
+                              fieldName === 'uniqueIdentifier' ? 'identifiant unique' :
+                              fieldName === 'email' ? 'e-mail' :
+                              fieldName === 'phone1' ? 'numéro de téléphone' :
+                              fieldName === 'mailingAddress' ? 'adresse postale' :
+                              fieldName === 'bankAccountNumber' ? 'numéro de compte bancaire' : 'champ'} existe déjà` 
+          }
+        }));
+        setFieldErrors(prev => ({ 
+          ...prev, 
+          [fieldName]: `Ce ${fieldName === 'companyName' ? 'nom d\'entreprise' : 
+                              fieldName === 'uniqueIdentifier' ? 'identifiant unique' :
+                              fieldName === 'email' ? 'e-mail' :
+                              fieldName === 'phone1' ? 'numéro de téléphone' :
+                              fieldName === 'mailingAddress' ? 'adresse postale' :
+                              fieldName === 'bankAccountNumber' ? 'numéro de compte bancaire' : 'champ'} existe déjà` 
+        }));
+      } else {
+        setFieldValidation(prev => ({ 
+          ...prev, 
+          [fieldName]: { isValid: true, message: 'Disponible' }
+        }));
+        setFieldErrors(prev => ({ ...prev, [fieldName]: '' }));
+      }
+    } catch (err) {
+      console.error('Error validating field:', err);
+      setFieldValidation(prev => ({ ...prev, [fieldName]: null }));
+    }
+  };
 
   const validate = (tab = activeTab) => {
     const errors = {};
@@ -135,6 +193,18 @@ const AddPartner = ({ user }) => {
         ...prev,
         [name]: type === 'checkbox' ? checked : value
       }));
+      
+      // Validate unique fields in real-time with debouncing
+      const uniqueFields = ['companyName', 'uniqueIdentifier', 'email', 'phone1', 'mailingAddress', 'bankAccountNumber'];
+      if (uniqueFields.includes(name) && type !== 'checkbox') {
+        // Clear previous validation state
+        setFieldValidation(prev => ({ ...prev, [name]: null }));
+        
+        // Debounce validation
+        setTimeout(() => {
+          validateFieldAsync(name, value);
+        }, 500);
+      }
     }
     
     // Clear error for this field when it changes
@@ -229,8 +299,9 @@ const handleSubmit = async (e) => {
   } finally {
     setLoading(false);
   }
-  
 };
+  
+
 
   return (
     <div className="admin-users">
@@ -291,6 +362,11 @@ const handleSubmit = async (e) => {
               className={fieldErrors.companyName ? 'input-error' : ''}
             />
             {fieldErrors.companyName && <div className="field-error">{fieldErrors.companyName}</div>}
+            {fieldValidation.companyName && (
+              <div className={`field-validation ${fieldValidation.companyName.isValid ? 'valid' : 'invalid'}`}>
+                {fieldValidation.companyName.message}
+              </div>
+            )}
           </div>
           <div className="form-group">
             <label>Trade name (if different)</label>
@@ -313,6 +389,11 @@ const handleSubmit = async (e) => {
               className={fieldErrors.uniqueIdentifier ? 'input-error' : ''}
             />
             {fieldErrors.uniqueIdentifier && <div className="field-error">{fieldErrors.uniqueIdentifier}</div>}
+            {fieldValidation.uniqueIdentifier && (
+              <div className={`field-validation ${fieldValidation.uniqueIdentifier.isValid ? 'valid' : 'invalid'}`}>
+                {fieldValidation.uniqueIdentifier.message}
+              </div>
+            )}
           </div>
 
           <div className="form-group">
@@ -386,6 +467,11 @@ const handleSubmit = async (e) => {
               className={fieldErrors.mailingAddress ? 'input-error' : ''}
             />
             {fieldErrors.mailingAddress && <div className="field-error">{fieldErrors.mailingAddress}</div>}
+            {fieldValidation.mailingAddress && (
+              <div className={`field-validation ${fieldValidation.mailingAddress.isValid ? 'valid' : 'invalid'}`}>
+                {fieldValidation.mailingAddress.message}
+              </div>
+            )}
           </div>
           <div className="form-group">
             <label>Head office or billing address</label>
@@ -408,6 +494,11 @@ const handleSubmit = async (e) => {
               className={fieldErrors.phone1 ? 'input-error' : ''}
             />
             {fieldErrors.phone1 && <div className="field-error">{fieldErrors.phone1}</div>}
+            {fieldValidation.phone1 && (
+              <div className={`field-validation ${fieldValidation.phone1.isValid ? 'valid' : 'invalid'}`}>
+                {fieldValidation.phone1.message}
+              </div>
+            )}
           </div>
           <div className="form-group">
             <label>Phone 2</label>
@@ -440,6 +531,11 @@ const handleSubmit = async (e) => {
               className={fieldErrors.email ? 'input-error' : ''}
             />
             {fieldErrors.email && <div className="field-error">{fieldErrors.email}</div>}
+            {fieldValidation.email && (
+              <div className={`field-validation ${fieldValidation.email.isValid ? 'valid' : 'invalid'}`}>
+                {fieldValidation.email.message}
+              </div>
+            )}
           </div>
           <div className="form-actions">
             <button
@@ -490,6 +586,11 @@ const handleSubmit = async (e) => {
               value={formData.bankAccountNumber}
               onChange={handleInputChange}
             />
+            {fieldValidation.bankAccountNumber && (
+              <div className={`field-validation ${fieldValidation.bankAccountNumber.isValid ? 'valid' : 'invalid'}`}>
+                {fieldValidation.bankAccountNumber.message}
+              </div>
+            )}
           </div>
           <div className="form-group">
             <label>Bank name</label>
