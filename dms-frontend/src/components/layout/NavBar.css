@@ -1,6 +1,7 @@
 /* src/components/Layout/NavBar.css */
 .navbar {
-  background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%);
+  /*background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%);*/
+  background: darkgreen;
   color: white;
   padding: 0 1.5rem;
   height: 80px; /*80px*/
@@ -334,3 +335,4 @@
   outline: 2px solid #1890ff;
   outline-offset: -2px;
 }
+

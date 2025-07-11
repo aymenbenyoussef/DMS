@@ -203,15 +203,9 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     <div className="container-fluid py-4">
       {/* Upload Modal */}
       {isUploadModalOpen && (
-        <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
           <div className="modal-dialog modal-lg">
+            <div className="modal-content">
 
-                <button 
-                  type="button" 
-                  className="btn-close" 
-                  onClick={closeUploadModal}
-                ></button>
-              </div>
               <div className="modal-body">
                 <DragDropUpload 
                   onClose={closeUploadModal}
@@ -219,38 +213,34 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                 />
                 {uploadError && <p className="text-danger mt-3">{uploadError}</p>}
               </div>
+            </div>
           </div>
-
       )}
 
       {/* Header */}
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h1 className="h2 mb-0">Document Archive</h1>
-        <div className="d-flex gap-2">
-          {selectedDoctype && (
-            <button 
-              className="btn btn-primary d-flex align-items-center"
-              onClick={openUploadModal}
-            >
-              <i className="bi bi-plus me-1"></i> Upload File
-            </button>
-          )}
-        </div>
+        <nav className="breadcrumb mb-0">
+          <ol className="breadcrumb">
+            {getBreadcrumb().split(' > ').map((item, index, arr) => (
+              <li 
+                key={index} 
+                className={`breadcrumb-item ${index === arr.length - 1 ? 'active' : ''}`}
+              >
+                {item}
+              </li>
+            ))}
+          </ol>
+        </nav>
+        
+        {selectedDoctype && (
+          <button 
+            className="btn btn-primary d-flex align-items-center ms-auto"
+            onClick={openUploadModal}
+          >
+            <i className="bi bi-plus me-1"></i> Upload File
+          </button>
+        )}
       </div>
-      
-      {/* Breadcrumb */}
-      <nav className="mb-4">
-        <ol className="breadcrumb">
-          {getBreadcrumb().split(' > ').map((item, index, arr) => (
-            <li 
-              key={index} 
-              className={`breadcrumb-item ${index === arr.length - 1 ? 'active' : ''}`}
-            >
-              {item}
-            </li>
-          ))}
-        </ol>
-      </nav>
       
       {successMessage && (
         <div className="alert alert-success">{successMessage}</div>
@@ -303,7 +293,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
       </div>
 
       {/* Documents Container */}
-      <div className="row g-4">
+ 
         {/* Main Documents */}
         <div className="col-lg-8">
           <div className="card h-100">
@@ -325,35 +315,6 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
           </div>
         </div>
 
-        {/* Recent Documents */} 
-        <div className="col-lg-4">
-          <div className="card h-100">
-            <div className="card-body">
-              <h2 className="h5 mb-3">Recent Documents</h2>
-              <div className="d-flex flex-column gap-2">
-                {[
-                  { name: 'MyCV (1).pdf', date: '24/06/2025', status: 'GETED' },
-                  { name: 'Invoice_001.pdf', date: '24/06/2025', status: 'GETED' },
-                  { name: 'Invoice_001.pdf', date: '24/06/2025', status: 'GETED' },
-                  { name: 'MyCV.pdf', date: '27/06/2025', status: 'GETED' },
-                ].map((doc, index) => (
-                  <div 
-                    key={index} 
-                    className="d-flex justify-content-between align-items-center p-2 rounded hover-bg"
-                    style={{ transition: 'background-color 0.2s' }}
-                  >
-                    <div>
-                      <div className="fw-medium">{doc.name}</div>
-                      <div className="small text-muted">{doc.date}</div>
-                    </div>
-                    <span className="badge bg-success">{doc.status}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Create Folder/Add Data Type Modal */}
       {isModalOpen && (
