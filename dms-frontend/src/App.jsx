@@ -16,6 +16,7 @@ import AddUsers from  './components/Admin/AddUsers';
 import ActivityLogs from './components/Admin/ActivityLogs'; 
 import AddDoctype from './components/Admin/AddDocType';
 import AdminDoctypes from './components/Admin/AdminDoctypes';
+import AdminPartnertypes from './components/Admin/AdminPartnertypes';
 import AdminPartners from './components/Admin/AdminPartners';
 import AddPartnerType from './components/Admin/AddPartnerType';
 import AddPartner from './components/Admin/AddPartner';
@@ -174,7 +175,8 @@ function App() {
                 <Route path="/admin/activity_logs" element={<ActivityLogs />} />
                 <Route path="/companies" element={<AdminCompanies />} />
                 <Route path="/doctypes" element={<AdminDoctypes />} />
-                <Route path="/partnertypes" element={<AdminPartners />} />
+                <Route path="/partnertypes" element={<AdminPartnertypes />} />
+                <Route path="/partners" element={<AdminPartners />} />
               </>
             )}
             <Route path="*" element={<Navigate to="/" replace />} />

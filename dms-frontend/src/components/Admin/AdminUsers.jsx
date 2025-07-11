@@ -22,12 +22,12 @@ const AdminUsers = ({user}) => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [companies, setCompanies] = useState([]);
-  const [userCompanies, setUserCompanies] = useState({}); // Stores companies for each user
+  const [userCompanies, setUserCompanies] = useState({});
   const [showModifyTab, setShowModifyTab] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
   const [globalErrors, setGlobalErrors] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
-   const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState({
     id: '',
     username: '',
     surname: '',
@@ -36,6 +36,7 @@ const AdminUsers = ({user}) => {
     status: '',
     companies:''
   });
+
   useEffect(() => {
     const fetchCompanies = async () => {
       try {
@@ -64,63 +65,56 @@ const AdminUsers = ({user}) => {
   }, []);
 
   const fetchUsers = async () => {
-  try {
-    setLoading(true);
-    const response = await API.admin.getUsers();
-    const usersWithCompanies = response.data.map(user => ({
-      ...user,
-      companies: user.companies || [] // Ensure companies is always an array
-    }));
-    setUsers(usersWithCompanies);
-    setFilteredUsers(usersWithCompanies);
-    // Also update the userCompanies state for editing
-    const companiesMap = {};
-    usersWithCompanies.forEach(user => {
-      companiesMap[user.id] = user.companies;
-    });
-    setUserCompanies(companiesMap);
-  } catch (err) {
-    setError('Erreur lors du chargement des utilisateurs');
-    console.error('Error fetching users:', err);
-  } finally {
-    setLoading(false);
-  }
-};
+    try {
+      setLoading(true);
+      const response = await API.admin.getUsers();
+      const usersWithCompanies = response.data.map(user => ({
+        ...user,
+        companies: user.companies || []
+      }));
+      setUsers(usersWithCompanies);
+      setFilteredUsers(usersWithCompanies);
+      const companiesMap = {};
+      usersWithCompanies.forEach(user => {
+        companiesMap[user.id] = user.companies;
+      });
+      setUserCompanies(companiesMap);
+    } catch (err) {
+      setError('Erreur lors du chargement des utilisateurs');
+      console.error('Error fetching users:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-useEffect(() => {
+  useEffect(() => {
     const timer = setTimeout(() => {
       if (success || error || Object.keys(fieldErrors).length > 0) {
         setError('');
         setSuccess('');
-        
       }
-    }, 3000); // 5 seconds
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, [success, error, fieldErrors]);
   
   useEffect(() => {
-  const timer2 = setTimeout(() => {
+    const timer2 = setTimeout(() => {
       if (error || Object.keys(fieldErrors).length > 0) {
-        
         setFieldErrors({});
       }
     }, 9999999999); 
 
     return () => clearTimeout(timer2);
-  }, [ error, fieldErrors]);
+  }, [error, fieldErrors]);
 
-  // Add this useEffect to clear on tab change
- const handleTabChange = (tab) => {
+  const handleTabChange = (tab) => {
     if (tab !== 'list') {
-      // Clear all messages when switching away from list
       setError('');
       setSuccess('');
       setFieldErrors({});
     } else {
-      // When switching to list, only clear errors (keep success)
       setError('');
-      
       setFieldErrors({});
     }
     setActiveTab(tab);
@@ -129,16 +123,8 @@ useEffect(() => {
       setEditingUser(null);
     }
   };
-/*const location = useLocation();
-  
+
   useEffect(() => {
-    if (location.state?.successMessage) {
-      setSuccess(location.state.successMessage);
-      // Clear the state to prevent showing the message again on refresh
-      window.history.replaceState({}, '');
-    }
-  }, [location.state]);*/
-useEffect(() => {
     applyFilters();
   }, [filters, users]);
 
@@ -189,93 +175,91 @@ useEffect(() => {
       [name]: type === 'checkbox' ? checked : value
     }));
     if (fieldErrors[name]) {
-    setFieldErrors(prev => ({ ...prev, [name]: '' }));
-  }
+      setFieldErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
   const validate = () => {
-  const errors = {};
-  const errorMessages = [];
+    const errors = {};
+    const errorMessages = [];
 
-  if (!formData.username.trim()) {
-    errors.username = 'Username is required';
-    errorMessages.push('Username is required');
-  }
-  if (!formData.surname.trim()) {
-    errors.surname = 'Surname is required';
-    errorMessages.push('Surname is required');
-  }
-  if (!formData.email.trim()) {
-    errors.email = 'Email is required';
-    errorMessages.push('Email is required');
-  } else if (!formData.email.includes('@')) {
-    errors.email = 'Email is invalid';
-    errorMessages.push('Email is invalid');
-  }
-  if (!editingUser && !formData.password) {
-    errors.password = 'Password is required';
-    errorMessages.push('Password is required');
-  }
-  if (!editingUser && !formData.passwordConfirm) {
-    errors.passwordConfirm = 'Please confirm password';
-    errorMessages.push('Please confirm password');
-  } else if (formData.password !== formData.passwordConfirm) {
-    errors.passwordConfirm = 'Passwords do not match';
-    errorMessages.push('Passwords do not match');
-  }
+    if (!formData.username.trim()) {
+      errors.username = 'Username is required';
+      errorMessages.push('Username is required');
+    }
+    if (!formData.surname.trim()) {
+      errors.surname = 'Surname is required';
+      errorMessages.push('Surname is required');
+    }
+    if (!formData.email.trim()) {
+      errors.email = 'Email is required';
+      errorMessages.push('Email is required');
+    } else if (!formData.email.includes('@')) {
+      errors.email = 'Email is invalid';
+      errorMessages.push('Email is invalid');
+    }
+    if (!editingUser && !formData.password) {
+      errors.password = 'Password is required';
+      errorMessages.push('Password is required');
+    }
+    if (!editingUser && !formData.passwordConfirm) {
+      errors.passwordConfirm = 'Please confirm password';
+      errorMessages.push('Please confirm password');
+    } else if (formData.password !== formData.passwordConfirm) {
+      errors.passwordConfirm = 'Passwords do not match';
+      errorMessages.push('Passwords do not match');
+    }
 
-  setFieldErrors(errors);
-  setGlobalErrors(errorMessages);
-  return errorMessages.length === 0;
-};
+    setFieldErrors(errors);
+    setGlobalErrors(errorMessages);
+    return errorMessages.length === 0;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
-    setGlobalErrors([]); // Clear previous global errors
+    setGlobalErrors([]);
     setFieldErrors({});
     if (!validate()) return;
     setLoading(true);
 
     try {
-        if (editingUser) {
-    await API.admin.updateUser(editingUser.id, formData);
-    setSuccess('Utilisateur mis à jour avec succès');
-
-    // ✅ Only reset on success
-    setShowModifyTab(false);
-    setFormData({
-        id:'',
-        username: '',
-        surname:'',
-        email:'',
-        password: '',
-        passwordConfirm: '',
-        role: 'user',
-        is_active: true,
-        companies:[]
-      });
-    setEditingUser(null);
-    setActiveTab('list');
-    fetchUsers();
-  }
-       
+      if (editingUser) {
+        await API.admin.updateUser(editingUser.id, formData);
+        setSuccess('Utilisateur mis à jour avec succès');
+        setShowModifyTab(false);
+        setFormData({
+          id:'',
+          username: '',
+          surname:'',
+          email:'',
+          password: '',
+          passwordConfirm: '',
+          role: 'user',
+          is_active: true,
+          companies:[]
+        });
+        setEditingUser(null);
+        setActiveTab('list');
+        fetchUsers();
+      }
     } catch (err) {
-       const errorMsg = err.response?.data?.msg || "Error occurred while creating the entity.";
+      const errorMsg = err.response?.data?.msg || "Error occurred while creating the entity.";
     
-    if (errorMsg.includes("already exists")) {
-      const duplicateErrors = {};
-      if (errorMsg.includes("name")) {
-        duplicateErrors.name = "This entity name already exists.";
+      if (errorMsg.includes("already exists")) {
+        const duplicateErrors = {};
+        if (errorMsg.includes("name")) {
+          duplicateErrors.name = "This entity name already exists.";
+        }
+        if (errorMsg.includes("email")) {
+          duplicateErrors.email = "This email is already in use.";
+        }
+        setFieldErrors(duplicateErrors);
+      } else {
+        setFieldErrors({ global: errorMsg });
       }
-      if (errorMsg.includes("email")) {
-        duplicateErrors.email = "This email is already in use.";
-      }
-      setFieldErrors(duplicateErrors);
-    } else {
-      setFieldErrors({ global: errorMsg });
-    } }finally {
+    } finally {
       setLoading(false);
     }
   };
@@ -289,7 +273,6 @@ useEffect(() => {
       email: user.email,
       password: '',
       passwordConfirm: '',
-      
       is_active: user.is_active,
       companies: userCompanies[user.id] ? userCompanies[user.id].map(c => c.id) : []
     });
@@ -310,21 +293,9 @@ useEffect(() => {
     }
   };
 
-  const toggleUserStatus = async (userId, currentStatus) => {
-    try {
-      await API.admin.updateUser(userId, { is_active: !currentStatus });
-      setSuccess('Statut utilisateur mis à jour');
-      fetchUsers();
-    } catch (err) {
-      setError('Erreur lors de la mise à jour du statut');
-      console.error('Error updating user status:', err);
-    }
-  };
-
   return (
     <div className="admin-users">
       <div className="admin-header">
-       
         <div className="admin-tabs">
           <button 
             className={`tab-btn ${activeTab === 'list' ? 'active' : ''}`}
@@ -333,30 +304,30 @@ useEffect(() => {
             Users List
           </button>
           {showModifyTab && (
-          <button 
-          className={`tab-btn ${activeTab === 'form' ? 'active' : ''}`}
-          onClick={() => {
-            handleTabChange('form');
-            setFormData({
-              id:'',
-              username: '',
-              surname: '',
-              email: '',
-              password: '',
-              passwordConfirm: '',
-              role: 'user',
-              is_active: true,
-              companies: []
-            });
-          }}
-        >
-          Modify User 
-        </button>)}
-        
-        <Link to="/AddUsers" className="btn-primary-2">
-                    Add User
-            </Link>
-            </div>
+            <button 
+              className={`tab-btn ${activeTab === 'form' ? 'active' : ''}`}
+              onClick={() => {
+                handleTabChange('form');
+                setFormData({
+                  id:'',
+                  username: '',
+                  surname: '',
+                  email: '',
+                  password: '',
+                  passwordConfirm: '',
+                  role: 'user',
+                  is_active: true,
+                  companies: []
+                });
+              }}
+            >
+              Modify User 
+            </button>
+          )}
+          <Link to="/AddUsers" className="btn-primary-2">
+            Add User
+          </Link>
+        </div>
       </div>
 
       {error && <div className="alert alert-error">{error}</div>}
@@ -432,7 +403,8 @@ useEffect(() => {
                         placeholder="Filter Status (active/inactive)"
                         className="filter-input"
                       />
-                    </div></th>
+                    </div>
+                  </th>
                   <th>Companies
                     <div className="filter-container">
                       <input
@@ -468,12 +440,9 @@ useEffect(() => {
                         </span>
                       </td>
                       <td>
-                        <button
-                          className={`status-btn ${user.is_active ? 'active' : 'inactive'}`}
-                          onClick={() => toggleUserStatus(user.id, user.is_active)}
-                        >
+                        <span className={`status-text ${user.is_active ? 'active' : 'inactive'}`}>
                           {user.is_active ? 'Active' : 'Inactive'}
-                        </button>
+                        </span>
                       </td>
                       <td>
                         {user.companies && user.companies.length > 0 ? (
@@ -519,7 +488,6 @@ useEffect(() => {
       )}
 
       {activeTab === 'form' && (
-        
         <div className="user-form">
           <h2> Modify User </h2>
           <form onSubmit={handleSubmit}>
@@ -531,7 +499,6 @@ useEffect(() => {
                 name="username"
                 value={formData.username}
                 onChange={handleInputChange}
-                //required
                 placeholder="Enter User Name"
               />
               {fieldErrors.username && <div className="field-error">{fieldErrors.username}</div>}
@@ -545,7 +512,6 @@ useEffect(() => {
                 name="surname"
                 value={formData.surname}
                 onChange={handleInputChange}
-                //required
                 placeholder="Enter User Surname"
               />
               {fieldErrors.surname && <div className="field-error">{fieldErrors.surname}</div>}
@@ -560,12 +526,10 @@ useEffect(() => {
                 value={formData.email}
                 onChange={handleInputChange}
                 className={fieldErrors.email ? 'error-input' : ''}
-                //required
                 placeholder="Enter Email"
               />
               {fieldErrors.email && (
                 <div className="field-error">
-                  
                   {fieldErrors.email}
                 </div>
               )}
@@ -599,8 +563,6 @@ useEffect(() => {
               {fieldErrors.passwordConfirm && <div className="field-error">{fieldErrors.passwordConfirm}</div>}
             </div>
 
-            
-
             <div className="form-group">
               <label>Companies</label>
               <div className="checkbox-list">
@@ -610,18 +572,17 @@ useEffect(() => {
                       type="checkbox"
                       name="companies"
                       value={c.id}
-                      
                       checked={formData.companies.includes(c.id)}
                       onChange={(e) => {
-                      const { value, checked } = e.target;
-                      const companyId = parseInt(value, 10);
-                      setFormData(prev => ({
-                        ...prev,
-                        companies: checked
-                          ? [...prev.companies, companyId]
-                          : prev.companies.filter(id => id !== companyId)
-                      }));
-                    }}
+                        const { value, checked } = e.target;
+                        const companyId = parseInt(value, 10);
+                        setFormData(prev => ({
+                          ...prev,
+                          companies: checked
+                            ? [...prev.companies, companyId]
+                            : prev.companies.filter(id => id !== companyId)
+                        }));
+                      }}
                     />
                     <span className="company-name">{c.name}</span>
                   </label>
@@ -646,14 +607,12 @@ useEffect(() => {
                 type="button" 
                 onClick={() => handleTabChange('list')}
                 className="btn-primary"
-                
               >
                 Cancel
               </button>
               <button type="submit" disabled={loading} className="btn-primary">
                 {loading ? 'Loading...' : (editingUser ? 'Update' : 'Create')}
               </button>
-              
             </div>
           </form>
         </div>

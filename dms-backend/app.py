@@ -55,6 +55,12 @@ def log_activity(actor, action, resource_type, resource_data):
             f"{timestamp} - {actor} - {action} DocType: "
             f"{resource_data['id']}, {resource_data['name']}"
         )
+    elif resource_type == "partnertype":
+        log_entry = (
+            f"{timestamp} - {actor} - {action} PartnerType: "
+            f"{resource_data['id']}, {resource_data['name']}, "
+            f"{'active' if resource_data.get('status', True) else 'inactive'}"
+        )    
     else:
         return  # Unsupported resource type
     
@@ -301,7 +307,7 @@ def update_user(user_id):
     data = request.get_json()
     if not data:
         return jsonify({"msg": "No data provided"}), 400
-    existing = db.get_user_by_email(data['email'])
+    existing = db.get_user_by_email_except_id(data['email'],user_id)
     if existing:
         return jsonify({"msg": "A user with this email already exists"}), 400
     try:
@@ -374,7 +380,7 @@ def delete_user(user_id):
 
 @app.route('/partnertype', methods=['GET'])
 @jwt_required()
-def get_partners():
+def get_partnertypes():
     
     try:
         partners = db.get_all_partner_types()
@@ -401,7 +407,17 @@ def create_partner_type():
             name=data['name'].strip(),
             status=data.get('status', True)
         )
-        
+        # Log the creation
+        log_activity(
+            actor=current_user_claims['username'],
+            action="Create",
+            resource_type="partnertype",
+            resource_data={
+                'id': partner_type_id,
+                'name': data['name'].strip(),
+                'status': data.get('status', True)
+            }
+        )
         return jsonify({
             "msg": "Partner type created successfully",
             "partner_type_id": partner_type_id
@@ -432,6 +448,17 @@ def update_partner_type(partner_type_id):
         )
         
         if success:
+            
+            log_activity(
+                actor=current_user_claims['username'],
+                action="Update",
+                resource_type="partnertype",
+                resource_data={
+                    'id': partner_type_id,
+                    'name': data.get('name'),
+                    'status': data.get('status')
+                }
+            )
             return jsonify({"msg": "Partner type updated successfully"}), 200
         else:
             return jsonify({"msg": "Partner type not found"}), 404
@@ -471,15 +498,17 @@ def delete_partner_type(partner_type_id):
         success = db.delete_partner_type(partner_type_id)
         if success:
             # Log partner type deletion
-            """log_activity(
+            
+            log_activity(
                 actor=current_user_claims['username'],
                 action="Delete",
-                resource_type="partner_type",
+                resource_type="partnertype",
                 resource_data={
                     'id': partner_type_id,
-                    'name': partner_type['name']
+                    'name': partner_type['name'],
+                    'status': partner_type['status']
                 }
-            )"""
+            )
             return jsonify({"msg": "Partner type deleted successfully"}), 200
         else:
             return jsonify({"msg": "Partner type not found"}), 404
@@ -659,6 +688,144 @@ def get_companies_by_user(user_id):
         app.logger.error(f"Error in /companies: {str(e)}")
         return jsonify({"error": "Internal server error"}), 500
     
+
+
+
+# Partner management routes
+@app.route('/partners', methods=['POST'])
+@jwt_required()
+def create_partner():
+    current_user_claims = get_jwt()
+    if current_user_claims.get('role') != 'admin':
+        return jsonify({"msg": "Admin access required"}), 403
+    
+    data = request.get_json()
+    if not data:
+        return jsonify({"msg": "No data provided"}), 400
+    
+    try:
+        # Convert empty strings to None for optional fields
+        for field in ['trade_name', 'billing_address', 'phone2', 'phone3', 
+                    'payment_terms', 'billing_terms', 'bank_account_number', 
+                    'bank_name', 'notes']:
+            if field in data and data[field] == '':
+                data[field] = None
+        
+        partner_id = db.create_partner(data)
+        
+        # Log the creation
+        """log_activity(
+            actor=current_user_claims['username'],
+            action="Create",
+            resource_type="partner",
+            resource_data={
+                'id': partner_id,
+                'name': data['company_name']
+            }
+        )"""
+        
+        return jsonify({
+            "msg": "Partner created successfully",
+            "partner_id": partner_id
+        }), 201
+        
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 400
+
+@app.route('/partners/<int:partner_id>', methods=['PUT'])
+@jwt_required()
+def update_partner(partner_id):
+    current_user_claims = get_jwt()
+    if current_user_claims.get('role') != 'admin':
+        return jsonify({"msg": "Admin access required"}), 403
+    
+    data = request.get_json()
+    if not data:
+        return jsonify({"msg": "No data provided"}), 400
+    
+    try:
+        # Convert empty strings to None for optional fields
+        for field in ['trade_name', 'billing_address', 'phone2', 'phone3', 
+                    'payment_terms', 'billing_terms', 'bank_account_number', 
+                    'bank_name', 'notes']:
+            if field in data and data[field] == '':
+                data[field] = None
+        
+        success = db.update_partner(partner_id, data)
+        
+        if success:
+            # Log the update
+            """log_activity(
+                actor=current_user_claims['username'],
+                action="Update",
+                resource_type="partner",
+                resource_data={
+                    'id': partner_id,
+                    'name': data.get('company_name', '[name not updated]')
+                }
+            )"""
+            return jsonify({"msg": "Partner updated successfully"}), 200
+        else:
+            return jsonify({"msg": "Partner not found"}), 404
+            
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 400
+
+@app.route('/partners/<int:partner_id>', methods=['DELETE'])
+@jwt_required()
+def delete_partner(partner_id):
+    current_user_claims = get_jwt()
+    if current_user_claims.get('role') != 'admin':
+        return jsonify({"msg": "Admin access required"}), 403
+    
+    try:
+        # Get partner info before deletion for logging
+        partner = db.get_partner_by_id(partner_id)
+        if not partner:
+            return jsonify({"msg": "Partner not found"}), 404
+        
+        success = db.delete_partner(partner_id)
+        if success:
+            # Log the deletion
+            """log_activity(
+                actor=current_user_claims['username'],
+                action="Delete",
+                resource_type="partner",
+                resource_data={
+                    'id': partner_id,
+                    'name': partner['company_name']
+                }
+            )"""
+            return jsonify({"msg": "Partner deleted successfully"}), 200
+        else:
+            return jsonify({"msg": "Partner not found"}), 404
+            
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 400
+
+@app.route('/partners/<int:partner_id>', methods=['GET'])
+@jwt_required()
+def get_partner(partner_id):
+    try:
+        partner = db.get_partner_by_id(partner_id)
+        if partner:
+            return jsonify(partner), 200
+        else:
+            return jsonify({"msg": "Partner not found"}), 404
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 400
+
+@app.route('/partners', methods=['GET'])
+@jwt_required()
+def get_partners():
+    try:
+        partners = db.get_all_partners()
+        return jsonify(partners), 200
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 400
+
+
+
 @app.route('/doctype', methods=['POST'])
 @jwt_required()
 def create_doctype():
