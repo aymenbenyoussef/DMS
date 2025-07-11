@@ -64,8 +64,8 @@ const companies = {
   create: (companyData) => API.post('/companies', companyData),
   delete:(company_id) => API.delete(`/companies/${company_id}`),
   getByUser:(user_id) => API.get(`/companies/${user_id}`),
-  update: (company_id, companyData) => API.put(`/companies/${company_id}`, companyData),
-  getAll_part: (user_id) => API.get(`/companies/${user_id}`)
+  update: (company_id, companyData) => API.put(`/companies/${company_id}`, companyData)
+  
 };
 
 // Document type management
@@ -80,14 +80,21 @@ const doctype = {
     return API.get(`/doctype${params}`);
   },
 }
-const partnertypes = {
-  getAll: () => API.get('/partnertypes'),
-  create: (partnerTypeData) => API.post('/partnertypes', partnerTypeData),
-  update: (partnerTypeId, partnerTypeData) => API.put(`/partnertypes/${partnerTypeId}`, partnerTypeData),
-  updateStatus: (partnerTypeId, status) => API.put(`/partnertypes/${partnerTypeId}/status`, { status }),
-  delete: (partnerTypeId) => API.delete(`/partnertypes/${partnerTypeId}`)
+const partner = {
+  getAll: () => API.get('/partners'),
+  getByCompany: (companyId) => API.get(`/partners/company/${companyId}`),
+  getById: (partnerId) => API.get(`/partners/${partnerId}`),
+  create: (partnerData) => API.post('/partners', partnerData),
+  update: (partnerId, partnerData) => API.put(`/partners/${partnerId}`, partnerData),
+  updateStatus: (partnerId, status) => API.put(`/partners/${partnerId}/status`, { status }),
+  delete: (partnerId) => API.delete(`/partners/${partnerId}`),
+  search: (searchTerm, companyId = null) => {
+    const params = new URLSearchParams();
+    params.append('search', searchTerm);
+    if (companyId) params.append('company_id', companyId);
+    return API.get(`/partners/search?${params.toString()}`);
+  }
 };
-
 const partnertype ={
   getAll : () => API.get('/partnertype'),
   create: (partnerTypeData) => API.post('/partnertype', partnerTypeData),
@@ -218,7 +225,7 @@ export default {
   admin,
   doctype,
   companies,
-  partnertypes,
+  partner,
   partnertype,
   documents,
   folders,

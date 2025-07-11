@@ -1,9 +1,9 @@
-import React, { useState ,useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import API from '../../api';
 import './AdminUsers.css';
 import { Link, useNavigate } from 'react-router-dom';
 
-const AddPartner = ({user}) => {
+const AddPartner = ({ user }) => {
   const [activeTab, setActiveTab] = useState('Identity');
   const [formData, setFormData] = useState({
     companyName: '',
@@ -22,7 +22,7 @@ const AddPartner = ({user}) => {
     notes: '',
     isActive: true,
     companies: [],
-    partnertypes :[]
+    partnertypes: []
   });
 
   const [fieldErrors, setFieldErrors] = useState({});
@@ -32,7 +32,8 @@ const AddPartner = ({user}) => {
   const [companies, setCompanies] = useState([]);
   const [partnertypes, setPartnertypes] = useState([]);
   const navigate = useNavigate();
-   const [error, setError] = useState('');
+  const [error, setError] = useState('');
+
   const validate = (tab = activeTab) => {
     const errors = {};
     const errorMessages = [];
@@ -47,6 +48,14 @@ const AddPartner = ({user}) => {
         errors.uniqueIdentifier = 'Unique identifier is required';
         errorMessages.push('Unique identifier is required');
       }
+      if (formData.companies.length === 0) {
+        errors.companies = 'At least one company must be selected';
+        errorMessages.push('At least one company must be selected');
+      }
+      if (formData.partnertypes.length === 0) {
+        errors.partnertypes = 'At least one partner type must be selected';
+        errorMessages.push('At least one partner type must be selected');
+      }
     }
 
     // Contact tab validation
@@ -58,6 +67,9 @@ const AddPartner = ({user}) => {
       if (!formData.phone1.trim()) {
         errors.phone1 = 'Primary phone is required';
         errorMessages.push('Primary phone is required');
+      } else if (!/^[0-9+\- ]+$/.test(formData.phone1)) {
+        errors.phone1 = 'Invalid phone number format';
+        errorMessages.push('Invalid primary phone number format');
       }
       if (!formData.email.trim()) {
         errors.email = 'Email is required';
@@ -72,45 +84,51 @@ const AddPartner = ({user}) => {
   };
 
   useEffect(() => {
-      const fetchCompanies = async () => {
-        try {
-          const response = await API.companies.getAll();
-          const data = response.data;
-          if (Array.isArray(data)) setCompanies(data);
-          else if (data.companies) setCompanies(data.companies);
-        } catch (err) {
-          setError('Error loading companies');
-          console.error(err);
-        }
-      };
-      fetchCompanies();
-    }, []);
+    const fetchCompanies = async () => {
+      try {
+        const response = await API.companies.getAll();
+        const data = response.data;
+        if (Array.isArray(data)) setCompanies(data);
+        else if (data.companies) setCompanies(data.companies);
+      } catch (err) {
+        setError('Error loading companies');
+        console.error(err);
+      }
+    };
+    fetchCompanies();
+  }, []);
 
   useEffect(() => {
-      const fetchPartnertypes = async () => {
-        try {
-          const response = await API.partnertype.getAll();
-          const data = response.data;
-          if (Array.isArray(data)) setPartnertypes(data);
-          else if (data.partnertypes) setPartnertypes(data.partnertypes);
-        } catch (err) {
-          setError('Error loading partnertypes');
-          console.error(err);
-        }
-      };
-      fetchPartnertypes();
-    }, []);
+    const fetchPartnertypes = async () => {
+      try {
+        const response = await API.partnertype.getAll();
+        const data = response.data;
+        if (Array.isArray(data)) setPartnertypes(data);
+        else if (data.partnertypes) setPartnertypes(data.partnertypes);
+      } catch (err) {
+        setError('Error loading partnertypes');
+        console.error(err);
+      }
+    };
+    fetchPartnertypes();
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    if (name === 'companies') {
-      const companyId = parseInt(value, 10);
+    
+    if (name === 'companies' || name === 'partnertypes') {
+      const id = parseInt(value, 10);
       setFormData((prev) => {
-        const current = Array.isArray(prev.companies) ? prev.companies : [];
-        let next;
-        if (checked) next = Array.from(new Set([...current, companyId]));
-        else next = current.filter((id) => id !== companyId);
-        return { ...prev, companies: next };
+        const current = Array.isArray(prev[name]) ? prev[name] : [];
+        let updated;
+        
+        if (checked) {
+          updated = [...current, id];
+        } else {
+          updated = current.filter(item => item !== id);
+        }
+        
+        return { ...prev, [name]: updated };
       });
     } else {
       setFormData((prev) => ({
@@ -118,84 +136,93 @@ const AddPartner = ({user}) => {
         [name]: type === 'checkbox' ? checked : value
       }));
     }
+    
+    // Clear error for this field when it changes
     setFieldErrors((prev) => ({ ...prev, [name]: '' }));
   };
 
   const handleTabChange = (tab) => {
-    setActiveTab(tab);
-    /*const { errors, errorMessages } = validate(activeTab);
+    const { errors, errorMessages } = validate(activeTab);
+    
     if (errorMessages.length === 0) {
       setActiveTab(tab);
       setGlobalErrors([]);
     } else {
       setFieldErrors(errors);
       setGlobalErrors(errorMessages);
-    }*/
+    }
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setGlobalErrors([]);
-    
-    // Validate all tabs before submitting
-    const { errors: identityErrors, errorMessages: identityMessages } = validate('Identity');
-    const { errors: contactErrors, errorMessages: contactMessages } = validate('Contact');
-    
-    const allErrors = { ...identityErrors, ...contactErrors };
-    const allMessages = [...identityMessages, ...contactMessages];
-    
-    if (allMessages.length > 0) {
-      setFieldErrors(allErrors);
-      setGlobalErrors(allMessages);
-      return;
-    }
+  e.preventDefault();
+  setGlobalErrors([]);
+  
+  // Validate all tabs before submitting
+  const { errors: identityErrors, errorMessages: identityMessages } = validate('Identity');
+  const { errors: contactErrors, errorMessages: contactMessages } = validate('Contact');
+  
+  const allErrors = { ...identityErrors, ...contactErrors };
+  const allMessages = [...identityMessages, ...contactMessages];
+  
+  if (allMessages.length > 0) {
+    setFieldErrors(allErrors);
+    setGlobalErrors(allMessages);
+    return;
+  }
 
-    setLoading(true);
-    try {
-      const partnerData = {
-        companyName: formData.companyName,
-        tradeName: formData.tradeName,
-        uniqueIdentifier: formData.uniqueIdentifier,
-        mailingAddress: formData.mailingAddress,
-        billingAddress: formData.billingAddress,
-        phone1: formData.phone1,
-        phone2: formData.phone2,
-        phone3: formData.phone3,
-        email: formData.email,
-        paymentTerms: formData.paymentTerms,
-        billingTerms: formData.billingTerms,
-        bankAccountNumber: formData.bankAccountNumber,
-        bankName: formData.bankName,
-        notes: formData.notes,
-        isActive: formData.isActive
-      };
+  setLoading(true);
+  try {
+    const partnerData = {
+      company_name: formData.companyName,
+      trade_name: formData.tradeName || null,
+      unique_identifier: formData.uniqueIdentifier,
+      mailing_address: formData.mailingAddress,
+      billing_address: formData.billingAddress || null,
+      phone1: formData.phone1,
+      phone2: formData.phone2 || null,
+      phone3: formData.phone3 || null,
+      email: formData.email,
+      payment_terms: formData.paymentTerms || null,
+      billing_terms: formData.billingTerms || null,
+      bank_account_number: formData.bankAccountNumber || null,
+      bank_name: formData.bankName || null,
+      notes: formData.notes || null,
+      is_active: formData.isActive,
+      companies: formData.companies,
+      partnertypes: formData.partnertypes
+    };
 
-      await API.partner.create(partnerData);
-      setSuccess('Partner created successfully');
-      
-      setTimeout(() => {
-        navigate('/partners');
-      }, 1500);
-    } catch (err) {
-      let errorMsg = 'Error creating partner';
-      const apiErrors = {};
-
-      if (err.response?.data?.msg) {
-        errorMsg = err.response.data.msg;
-        
-        if (err.response.data.errors) {
-          Object.keys(err.response.data.errors).forEach(key => {
-            apiErrors[key] = err.response.data.errors[key];
-          });
-        }
+    await API.partner.create(partnerData);
+    setSuccess('Partner created successfully');
+    
+    setTimeout(() => {
+      navigate('/partners');
+    }, 1500);
+  } catch (err) {
+    let errorMsg = 'Error creating partner';
+    
+    if (err.response) {
+      // Handle transaction errors specifically
+      if (err.response.data.message?.includes('transaction')) {
+        errorMsg = 'Database operation failed. Please try again.';
+      } else {
+        errorMsg = err.response.data.message || err.response.data.msg || errorMsg;
       }
-
-      setFieldErrors(apiErrors);
-      setGlobalErrors([errorMsg]);
-    } finally {
-      setLoading(false);
+      
+      // Handle field-specific errors from API
+      if (err.response.data.errors) {
+        setFieldErrors(err.response.data.errors);
+      }
+    } else if (err.request) {
+      errorMsg = 'Network error. Please check your connection.';
     }
-  };
+
+    setGlobalErrors([errorMsg]);
+    console.error('Partner creation error:', err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="admin-users">
@@ -232,6 +259,7 @@ const AddPartner = ({user}) => {
         </button>
       </div>
 
+      {/* Error and success messages */}
       {success && <div className="alert alert-success">{success}</div>}
       {globalErrors.length > 0 && (
         <div className="alert alert-error">
@@ -245,7 +273,7 @@ const AddPartner = ({user}) => {
         {/* Identity Tab */}
         <div className="tab-panel" style={{ display: activeTab === 'Identity' ? 'block' : 'none' }}>
           <div className="form-group">
-            <label>Company name</label>
+            <label>Company name *</label>
             <input
               type="text"
               name="companyName"
@@ -267,7 +295,7 @@ const AddPartner = ({user}) => {
             />
           </div>
           <div className="form-group">
-            <label>Unique identifier</label>
+            <label>Unique identifier *</label>
             <input
               type="text"
               name="uniqueIdentifier"
@@ -280,7 +308,8 @@ const AddPartner = ({user}) => {
           </div>
 
           <div className="form-group">
-            <label>Entities</label>
+            <label>Entities *</label>
+            {fieldErrors.companies && <div className="field-error">{fieldErrors.companies}</div>}
             <div className="checkbox-list">
               {companies.map((c) => (
                 <label key={c.id} className="checkbox-item">
@@ -297,7 +326,8 @@ const AddPartner = ({user}) => {
             </div>
           </div>
           <div className="form-group">
-            <label>Partner types</label>
+            <label>Partner types *</label>
+            {fieldErrors.partnertypes && <div className="field-error">{fieldErrors.partnertypes}</div>}
             <div className="checkbox-list">
               {partnertypes.map((c) => (
                 <label key={c.id} className="checkbox-item">
@@ -338,7 +368,7 @@ const AddPartner = ({user}) => {
         {/* Contact Tab */}
         <div className="tab-panel" style={{ display: activeTab === 'Contact' ? 'block' : 'none' }}>
           <div className="form-group">
-            <label>Mailing address</label>
+            <label>Mailing address *</label>
             <input
               type="text"
               name="mailingAddress"
@@ -360,7 +390,7 @@ const AddPartner = ({user}) => {
             />
           </div>
           <div className="form-group">
-            <label>Phone 1 (primary)</label>
+            <label>Phone 1 (primary) *</label>
             <input
               type="text"
               name="phone1"
@@ -392,7 +422,7 @@ const AddPartner = ({user}) => {
             />
           </div>
           <div className="form-group">
-            <label>Email</label>
+            <label>Email *</label>
             <input
               type="email"
               name="email"

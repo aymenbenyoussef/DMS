@@ -181,6 +181,50 @@ class DatabaseManager:
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
             """)
+            cursor.execute("""
+            CREATE TABLE IF NOT EXISTS partners (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                company_name VARCHAR(255) NOT NULL,
+                trade_name VARCHAR(255),
+                unique_identifier VARCHAR(100) NOT NULL UNIQUE,
+                mailing_address TEXT NOT NULL,
+                billing_address TEXT,
+                phone1 VARCHAR(20) NOT NULL,
+                phone2 VARCHAR(20),
+                phone3 VARCHAR(20),
+                email VARCHAR(100) NOT NULL UNIQUE,
+                payment_terms VARCHAR(255),
+                billing_terms VARCHAR(255),
+                bank_account_number VARCHAR(50) UNIQUE,
+                bank_name VARCHAR(100),
+                notes TEXT,
+                is_active BOOLEAN DEFAULT TRUE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            )
+            """)
+
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS partner_entities (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    partner_id INT NOT NULL,
+                    company_id INT NOT NULL,
+                    FOREIGN KEY (partner_id) REFERENCES partners(id) ON DELETE CASCADE,
+                    FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
+                    UNIQUE KEY unique_partner_company (partner_id, company_id)
+                )
+            """)
+
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS partner_partnertypes (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    partner_id INT NOT NULL,
+                    partnertype_id INT NOT NULL,
+                    FOREIGN KEY (partner_id) REFERENCES partners(id) ON DELETE CASCADE,
+                    FOREIGN KEY (partnertype_id) REFERENCES partnertypes(id) ON DELETE CASCADE,
+                    UNIQUE KEY unique_partner_type (partner_id, partnertype_id)
+                )
+            """)    
             self.connection.commit()
 
 
@@ -254,7 +298,10 @@ class DatabaseManager:
         query = "SELECT * FROM users WHERE email = %s"
         result = self.execute_query(query, (email,),fetch=True)
         return result[0] if result else None
-
+    def get_user_by_email_except_id(self, email, user_id):
+        query = "SELECT * FROM users WHERE email = %s and id!=%s"
+        result = self.execute_query(query, (email,user_id,),fetch=True)
+        return result[0] if result else None
     def get_user_by_username(self, username):
         query = "SELECT * FROM users WHERE username = %s"
         result = self.execute_query(query, (username,), fetch=True)
@@ -505,6 +552,211 @@ class DatabaseManager:
             return True
         except:
             return False"""
+
+    def check_partner_exists(self, partner_data, exclude_id=None):
+        """Check if a partner with similar unique fields already exists"""
+        queries = []
+        params = []
+        
+        # Check unique_identifier
+        if 'unique_identifier' in partner_data:
+            queries.append("unique_identifier = %s")
+            params.append(partner_data['unique_identifier'])
+        
+        # Check email
+        if 'email' in partner_data:
+            queries.append("email = %s")
+            params.append(partner_data['email'])
+        
+        # Check bank_account_number if provided
+        if 'bank_account_number' in partner_data and partner_data['bank_account_number']:
+            queries.append("bank_account_number = %s")
+            params.append(partner_data['bank_account_number'])
+        
+        # Check phone1 if provided
+        if 'phone1' in partner_data:
+            queries.append("phone1 = %s")
+            params.append(partner_data['phone1'])
+        
+        if not queries:
+            return False
+        
+        query = "SELECT id FROM partners WHERE (" + " OR ".join(queries) + ")"
+        if exclude_id:
+            query += " AND id != %s"
+            params.append(exclude_id)
+        
+        query += " LIMIT 1"
+        result = self.execute_query(query, params, fetch=True)
+        return bool(result)
+
+    def create_partner(self, partner_data):
+        """Create a new partner with associated entities and types"""
+        try:
+            # Check if partner already exists
+            if self.check_partner_exists(partner_data):
+                raise Exception("A partner with similar unique fields already exists")
+            
+            # Insert partner
+            partner_query = """
+                INSERT INTO partners (
+                    company_name, trade_name, unique_identifier, mailing_address, billing_address,
+                    phone1, phone2, phone3, email, payment_terms, billing_terms,
+                    bank_account_number, bank_name, notes, is_active
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """
+            partner_params = (
+                partner_data['company_name'],
+                partner_data.get('trade_name'),
+                partner_data['unique_identifier'],
+                partner_data['mailing_address'],
+                partner_data.get('billing_address'),
+                partner_data['phone1'],
+                partner_data.get('phone2'),
+                partner_data.get('phone3'),
+                partner_data['email'],
+                partner_data.get('payment_terms'),
+                partner_data.get('billing_terms'),
+                partner_data.get('bank_account_number'),
+                partner_data.get('bank_name'),
+                partner_data.get('notes'),
+                partner_data.get('is_active', True)
+            )
+            
+            partner_id = self.execute_query(partner_query, partner_params)
+            
+            # Insert partner-entity associations
+            if 'companies' in partner_data and partner_data['companies']:
+                for company_id in partner_data['companies']:
+                    entity_query = "INSERT INTO partner_entities (partner_id, company_id) VALUES (%s, %s)"
+                    self.execute_query(entity_query, (partner_id, company_id))
+            
+            # Insert partner-type associations
+            if 'partnertypes' in partner_data and partner_data['partnertypes']:
+                for type_id in partner_data['partnertypes']:
+                    type_query = "INSERT INTO partner_partnertypes (partner_id, partnertype_id) VALUES (%s, %s)"
+                    self.execute_query(type_query, (partner_id, type_id))
+            
+            return partner_id
+            
+        except Exception as e:
+            raise Exception(f"Error creating partner: {str(e)}")
+
+    def update_partner(self, partner_id, partner_data):
+        """Update an existing partner and its associations"""
+        try:
+            # Start transaction
+            self.connection.start_transaction()
+            
+            # Check if updated values conflict with other partners
+            if self.check_partner_exists(partner_data, exclude_id=partner_id):
+                raise Exception("A partner with similar unique fields already exists")
+            
+            # Build update query
+            updates = []
+            params = []
+            
+            fields = [
+                'company_name', 'trade_name', 'unique_identifier', 'mailing_address',
+                'billing_address', 'phone1', 'phone2', 'phone3', 'email',
+                'payment_terms', 'billing_terms', 'bank_account_number',
+                'bank_name', 'notes', 'is_active'
+            ]
+            
+            for field in fields:
+                if field in partner_data:
+                    updates.append(f"{field} = %s")
+                    params.append(partner_data[field])
+            
+            if updates:
+                query = f"UPDATE partners SET {', '.join(updates)} WHERE id = %s"
+                params.append(partner_id)
+                self.execute_query(query, params)
+            
+            # Update associations - first delete all existing ones
+            self.execute_query("DELETE FROM partner_entities WHERE partner_id = %s", (partner_id,))
+            self.execute_query("DELETE FROM partner_partnertypes WHERE partner_id = %s", (partner_id,))
+            
+            # Then insert the new ones
+            if 'companies' in partner_data:
+                for company_id in partner_data['companies']:
+                    self.execute_query(
+                        "INSERT INTO partner_entities (partner_id, company_id) VALUES (%s, %s)",
+                        (partner_id, company_id)
+                    )
+            
+            if 'partnertypes' in partner_data:
+                for type_id in partner_data['partnertypes']:
+                    self.execute_query(
+                        "INSERT INTO partner_partnertypes (partner_id, partnertype_id) VALUES (%s, %s)",
+                        (partner_id, type_id)
+                    )
+            
+            # Commit transaction
+            self.connection.commit()
+            return True
+            
+        except Exception as e:
+            self.connection.rollback()
+            raise Exception(f"Error updating partner: {str(e)}")
+
+    def delete_partner(self, partner_id):
+        """Delete a partner and all its associations"""
+        try:
+            # Cascading delete will handle the junction tables
+            query = "DELETE FROM partners WHERE id = %s"
+            self.execute_query(query, (partner_id,))
+            return True
+        except Exception as e:
+            raise Exception(f"Error deleting partner: {str(e)}")
+
+    def get_partner_by_id(self, partner_id):
+        """Get a partner by ID with all associations"""
+        try:
+            # Get partner
+            partner_query = "SELECT * FROM partners WHERE id = %s"
+            partner = self.execute_query(partner_query, (partner_id,), fetch=True)
+            if not partner:
+                return None
+            
+            partner = partner[0]
+            
+            # Get associated companies
+            companies_query = """
+                SELECT c.id, c.name 
+                FROM partner_entities pe
+                JOIN companies c ON pe.company_id = c.id
+                WHERE pe.partner_id = %s
+            """
+            partner['companies'] = self.execute_query(companies_query, (partner_id,), fetch=True)
+            
+            # Get associated partner types
+            types_query = """
+                SELECT pt.id, pt.name 
+                FROM partner_partnertypes ppt
+                JOIN partnertypes pt ON ppt.partnertype_id = pt.id
+                WHERE ppt.partner_id = %s
+            """
+            partner['partnertypes'] = self.execute_query(types_query, (partner_id,), fetch=True)
+            
+            return partner
+            
+        except Exception as e:
+            raise Exception(f"Error fetching partner: {str(e)}")
+
+    def get_all_partners(self):
+        """Get all partners with basic information"""
+        try:
+            query = """
+                SELECT id, company_name, unique_identifier, email, phone1, is_active 
+                FROM partners 
+                ORDER BY company_name
+            """
+            return self.execute_query(query, fetch=True)
+        except Exception as e:
+            raise Exception(f"Error fetching partners: {str(e)}")
+
+
 
     #DocType management
 
@@ -914,7 +1166,29 @@ class DatabaseManager:
         except Exception as e:
             print(f"Error deleting partner type: {e}")
             return False
+
+    def get_companies_by_partner_id(self, partner_id):
+        """Get all companies associated with a specific partner"""
+        query = """
+            SELECT c.id, c.name 
+            FROM partner_entities pe
+            JOIN companies c ON pe.company_id = c.id
+            WHERE pe.partner_id = %s
+        """
+        return self.execute_query(query, (partner_id,), fetch=True)
+
+    def get_partnertypes_by_partner_id(self, partner_id):
+        """Get all partner types associated with a specific partner"""
+        query = """
+            SELECT pt.id, pt.name 
+            FROM partner_partnertypes ppt
+            JOIN partnertypes pt ON ppt.partnertype_id = pt.id
+            WHERE ppt.partner_id = %s
+        """
+        return self.execute_query(query, (partner_id,), fetch=True)
+
 # Create global database instance
 db = DatabaseManager()
 db.init_database()
+
 
