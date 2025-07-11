@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import API from '../../api';
-import './AdminDashboard.css';
+import './AdminUsers.css'; // Changed from AdminDashboard.css
 import { Link } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
 
@@ -33,7 +33,6 @@ const AdminUsers = ({user}) => {
     surname: '',
     email: '',
     role: '',
-    status: '',
     companies:''
   });
 
@@ -133,15 +132,7 @@ const AdminUsers = ({user}) => {
     
     Object.keys(filters).forEach(key => {
       if (filters[key]) {
-        if (key === 'status') {
-          const filterValue = filters[key].toLowerCase();
-          result = result.filter(user => 
-            (filterValue === 'active' && user.is_active) ||
-            (filterValue === 'inactive' && !user.is_active)||
-          (user.is_active ? 'active' : 'inactive').includes(filterValue)
-          );
-        } 
-        else if (key === 'companies') {
+        if (key === 'companies') {
           const filterValue = filters[key].toLowerCase();
           result = result.filter(user => {
             if (!user.companies || user.companies.length === 0) return false;
@@ -335,21 +326,27 @@ const AdminUsers = ({user}) => {
 
       {activeTab === 'list' && (
         <div className="users-list">
-          <div className="users-table">
-            <table>
+          {loading && (
+            <div className="loading-message">
+              Loading users...
+            </div>
+          )}
+          <div className="users-table-container">
+            <table className="users-table-fixed">
               <thead>
                 <tr>
+                  <th></th>
                   <th>ID</th>
                   <th>User Name</th>
                   <th>User Surname</th>
                   <th>Email</th>
                   <th>Role</th>
-                  <th>Status</th>
                   <th>Companies</th>
                   <th>Creation date</th>
                   <th>Actions</th>
                 </tr>
                 <tr className="filter-row">
+                  <td></td>
                   <td>
                     <input
                       type="text"
@@ -398,15 +395,6 @@ const AdminUsers = ({user}) => {
                   <td>
                     <input
                       type="text"
-                      value={filters.status}
-                      onChange={(e) => handleFilterChange(e, 'status')}
-                      placeholder="Filter Status"
-                      className="filter-input"
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="text"
                       value={filters.companies}
                       onChange={(e) => handleFilterChange(e, 'companies')}
                       placeholder="Filter Companies"
@@ -417,16 +405,13 @@ const AdminUsers = ({user}) => {
                   <td></td>
                 </tr>
               </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan="9" className="loading-message">
-                      Loading users...
-                    </td>
-                  </tr>
-                ) : filteredUsers.length > 0 ? (
+              <tbody className="table-body-scrollable">
+                {!loading && filteredUsers.length > 0 ? (
                   filteredUsers.map(user => (
                     <tr key={user.id}>
+                      <td>
+                        <div className={`status-led ${user.is_active ? 'status-led-active' : 'status-led-inactive'}`}></div>
+                      </td>
                       <td>{user.id}</td>
                       <td>{user.username}</td>
                       <td>{user.surname}</td>
@@ -434,11 +419,6 @@ const AdminUsers = ({user}) => {
                       <td>
                         <span className={`role-badge ${user.role}`}>
                           {user.role}
-                        </span>
-                      </td>
-                      <td>
-                        <span className={`status-text ${user.is_active ? 'active' : 'inactive'}`}>
-                          {user.is_active ? 'Active' : 'Inactive'}
                         </span>
                       </td>
                       <td>
@@ -471,13 +451,13 @@ const AdminUsers = ({user}) => {
                       </td>
                     </tr>
                   ))
-                ) : (
+                ) : !loading ? (
                   <tr>
                     <td colSpan="9" className="no-results">
                       {users.length === 0 ? 'No users available' : 'No users found matching your filters'}
                     </td>
                   </tr>
-                )}
+                ) : null}
               </tbody>
             </table>
           </div>
@@ -619,3 +599,6 @@ const AdminUsers = ({user}) => {
 };
 
 export default AdminUsers;
+
+
+

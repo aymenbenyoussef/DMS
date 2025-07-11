@@ -13,22 +13,22 @@ const AdminDoctypes = ({ user }) => {
   const [editingDoctype, setEditingDoctype] = useState(null);
   const [activeTab, setActiveTab] = useState('list');
   const [showModifyTab, setShowModifyTab] = useState(false);
-  const [companies, setCompanies] = useState([]);
   const [fieldErrors, setFieldErrors] = useState({});
   const [globalErrors, setGlobalErrors] = useState([]);
   const [filters, setFilters] = useState({
     id: '',
-    name: '',
-    status: '',
-    companies:''
+    name: ''
   });
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     name: '',
-    status: true,
-    companies: []
+    is_active: true
   });
+
+  useEffect(() => {
+    fetchDoctypes();
+  }, []);
 
   const fetchDoctypes = async () => {
     try {
@@ -44,20 +44,6 @@ const AdminDoctypes = ({ user }) => {
     }
   };
 
-  const fetchCompanies = async () => {
-    try {
-      const response = await API.companies.getAll();
-      setCompanies(response.data);
-    } catch (err) {
-      console.error('Failed to load companies:', err);
-    }
-  };
-
-  useEffect(() => {
-    fetchDoctypes();
-    fetchCompanies();
-  }, []);
-
   useEffect(() => {
     applyFilters();
   }, [filters, doctypes]);
@@ -67,27 +53,9 @@ const AdminDoctypes = ({ user }) => {
     
     Object.keys(filters).forEach(key => {
       if (filters[key]) {
-        if (key === 'status') {
-            const filterValue = filters[key].toLowerCase();
-            result = result.filter(doctype => {
-                const statusStr = doctype.status ? 'active' : 'inactive';
-                return statusStr.includes(filterValue);
-            });
-            }
-        else if (key === 'companies') {
-          const filterValue = filters[key].toLowerCase();
-          result = result.filter(doctype => {
-            if (!doctype.companies || doctype.companies.length === 0) return false;
-            return doctype.companies.some(company => 
-              company.name.toLowerCase().includes(filterValue)
-            );
-          });
-        }
-        else {
-          result = result.filter(doctype => 
-            String(doctype[key]).toLowerCase().includes(filters[key].toLowerCase())
-          );
-        }
+        result = result.filter(doctype => 
+          String(doctype[key]).toLowerCase().includes(filters[key].toLowerCase())
+        );
       }
     });
     
@@ -115,44 +83,24 @@ const AdminDoctypes = ({ user }) => {
     return errorMessages.length === 0;
   };
 
-  const handleEdit = async (doctype) => {
-    try {
-      setLoading(true);
-      const companiesResponse = await API.doctype.getCompanies(doctype.id);
-      setEditingDoctype(doctype);
-      setFormData({
-        name: doctype.name || '',
-        status: doctype.status || true,
-        companies: companiesResponse.data.map(c => c.id) || []
-      });
-      setShowModifyTab(true);
-      setActiveTab('form');
-      setFieldErrors({});
-      setGlobalErrors([]);
-    } catch (err) {
-      setError('Error loading document type companies');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+  const handleEdit = (doctype) => {
+    setEditingDoctype(doctype);
+    setFormData({
+      name: doctype.name || '',
+      is_active: doctype.is_active || true
+    });
+    setShowModifyTab(true);
+    setActiveTab('form');
+    setFieldErrors({});
+    setGlobalErrors([]);
   };
 
   const handleDelete = async (doctypeId) => {
     if (window.confirm('Are you sure you want to delete this document type?')) {
       try {
-        const companiesResponse = await API.doctype.getCompanies(doctypeId);
-        const affectedCompanyIds = companiesResponse.data.map(c => c.id);
-
         await API.doctype.delete(doctypeId);
-
         setSuccess('Document type deleted successfully');
         fetchDoctypes();
-        window.dispatchEvent(new CustomEvent('doctypeDeleted', {
-          detail: {
-            affectedCompanyIds: affectedCompanyIds
-          }
-        }));
-        navigate('/doctypes');
       } catch (err) {
         setError('Error deleting document type');
         console.error('Error deleting document type:', err);
@@ -171,16 +119,6 @@ const AdminDoctypes = ({ user }) => {
     }
   };
 
-  const handleCompanyChange = (e, companyId) => {
-    const { checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      companies: checked
-        ? [...prev.companies, companyId]
-        : prev.companies.filter(id => id !== companyId)
-    }));
-  };
-
   const handleUpdate = async (e) => {
     e.preventDefault();
     setError('');
@@ -197,18 +135,13 @@ const AdminDoctypes = ({ user }) => {
       setShowModifyTab(false);
       setActiveTab('list');
       fetchDoctypes();
-      window.dispatchEvent(new CustomEvent('doctypeUpdated', {
-        detail: {
-          affectedCompanyIds: formData.companies
-        }
-      }));
     } catch (err) {
       const apiError = err.response?.data;
-      const errorMessage = apiError?.msg || apiError?.error || apiError?.message || '';
+      const errorMessage = apiError?.msg || apiError?.error || apiError?.message || 'Error updating document type';
       
       if (errorMessage.toLowerCase().includes('name')) {
-        setFieldErrors({ name: 'Datatype name already exists' });
-        setGlobalErrors(['Datatype name already exists']);
+        setFieldErrors({ name: 'Document type name already exists' });
+        setGlobalErrors(['Document type name already exists']);
       } else {
         setError('Error updating document type');
         console.error('Error updating document type:', err);
@@ -219,7 +152,6 @@ const AdminDoctypes = ({ user }) => {
   return (
     <div className="admin-users">
       <div className="admin-header">
-        
         <div className="admin-tabs">
           <button
             className={`tab-btn ${activeTab === 'list' ? 'active' : ''}`}
@@ -239,29 +171,34 @@ const AdminDoctypes = ({ user }) => {
               Modify Document Type
             </button>
           )}
+          
           <Link to="/AddDoctype" className="btn-primary-2">
             Add Document Type
           </Link>
         </div>
       </div>
 
-      
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
-
+      
       {activeTab === 'list' && (
         <div className="users-list">
-          <div className="users-table">
-            <table>
+          {loading && (
+            <div className="loading-message">
+              Loading document types...
+            </div>
+          )}
+          <div className="users-table-container">
+            <table className="users-table-fixed">
               <thead>
                 <tr>
+                  <th></th>
                   <th>ID</th>
                   <th>Name</th>
-                  <th>Status</th>
-                  <th>Entities</th>
                   <th>Actions</th>
                 </tr>
                 <tr className="filter-row">
+                  <td></td>
                   <td>
                     <input
                       type="text"
@@ -280,51 +217,18 @@ const AdminDoctypes = ({ user }) => {
                       className="filter-input"
                     />
                   </td>
-                  <td>
-                    <input
-                      type="text"
-                      value={filters.status}
-                      onChange={(e) => handleFilterChange(e, 'status')}
-                      placeholder="Filter Status"
-                      className="filter-input"
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="text"
-                      value={filters.companies}
-                      onChange={(e) => handleFilterChange(e, 'companies')}
-                      placeholder="Filter Entities"
-                      className="filter-input"
-                    />
-                  </td>
                   <td></td>
                 </tr>
               </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan="5" className="loading-message">
-                      Loading document types...
-                    </td>
-                  </tr>
-                ) : filteredDoctypes.length > 0 ? (
+              <tbody className="table-body-scrollable">
+                {!loading && filteredDoctypes.length > 0 ? (
                   filteredDoctypes.map(doctype => (
                     <tr key={doctype.id}>
+                      <td>
+                        <div className={`status-led ${doctype.is_active ? 'status-led-active' : 'status-led-inactive'}`}></div>
+                      </td>
                       <td>{doctype.id}</td>
                       <td>{doctype.name}</td>
-                      <td>{doctype.status ? 'Active' : 'Inactive'}</td>
-                      <td>
-                        {doctype.companies && doctype.companies.length > 0 ? (
-                          <ul className="company-tokens">
-                            {doctype.companies.map(company => (
-                              <li key={company.id} className="company-token">{company.name}</li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <span></span>
-                        )}
-                      </td>
                       <td>
                         <div className="action-buttons">
                           <button
@@ -343,13 +247,13 @@ const AdminDoctypes = ({ user }) => {
                       </td>
                     </tr>
                   ))
-                ) : (
+                ) : !loading ? (
                   <tr>
-                    <td colSpan="5" className="no-results">
+                    <td colSpan="4" className="no-results">
                       {doctypes.length === 0 ? 'No document types available' : 'No document types found matching your filters'}
                     </td>
                   </tr>
-                )}
+                ) : null}
               </tbody>
             </table>
           </div>
@@ -373,39 +277,19 @@ const AdminDoctypes = ({ user }) => {
               {fieldErrors.name && <div className="field-error">{fieldErrors.name}</div>}
             </div>
             
-            <div className="form-group">
-              <label>Companies</label>
-              <div className="checkbox-list">
-                {companies.map(company => (
-                  <label key={company.id} className="checkbox-item">
-                    <input
-                      type="checkbox"
-                      name="companies"
-                      value={company.id}
-                      checked={formData.companies.includes(company.id)}
-                      onChange={(e) => handleCompanyChange(e, company.id)}
-                    />
-                    <span className="company-name">{company.name}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
             <div className="form-group checkbox-group">
               <label>
                 <input
                   type="checkbox"
-                  name="status"
-                  checked={formData.status}
+                  name="is_active"
+                  checked={formData.is_active}
                   onChange={handleInputChange}
                 />{' '}
                 Active
               </label>
             </div>
             <div className="form-actions">
-              <button type="submit" className="btn-primary">
-                Update
-              </button>
+              
               <button
                 type="button"
                 className="btn-primary"
@@ -417,6 +301,9 @@ const AdminDoctypes = ({ user }) => {
               >
                 Cancel
               </button>
+              <button type="submit" className="btn-primary">
+                Update
+              </button>
             </div>
           </form>
         </div>
@@ -426,3 +313,6 @@ const AdminDoctypes = ({ user }) => {
 };
 
 export default AdminDoctypes;
+
+
+

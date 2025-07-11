@@ -20,7 +20,6 @@ const AdminPartners = ({ user }) => {
     unique_identifier: '',
     company_name: '',
     email: '',
-    status: '',
     phone: '',
     company: '',
     partnertype: ''
@@ -97,13 +96,7 @@ const AdminPartners = ({ user }) => {
     
     Object.keys(filters).forEach(key => {
       if (filters[key]) {
-        if (key === 'status') {
-          const filterValue = filters[key].toLowerCase();
-          result = result.filter(partner => {
-            const statusStr = partner.is_active ? 'active' : 'inactive';
-            return statusStr.includes(filterValue);
-          });
-        } else if (key === 'phone') {
+        if (key === 'phone') {
           const filterValue = filters[key].toLowerCase();
           result = result.filter(partner => 
             (partner.phone1 && partner.phone1.toLowerCase().includes(filterValue)) ||
@@ -332,159 +325,145 @@ const AdminPartners = ({ user }) => {
 
       {activeTab === 'list' && (
         <div className="users-list">
-          
-            <div className="users-table">
-              <table>
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Unique Identifier</th>
-                    <th>Company Name</th>
-                    <th>Entities</th>
-                    <th>Partner Types</th>
-                    <th>Phone</th>
-                    <th>Email</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                  <tr className="filter-row">
-                    <td>
-                      <input
-                        type="text"
-                        value={filters.id}
-                        onChange={(e) => handleFilterChange(e, 'id')}
-                        placeholder="Filter ID"
-                        className="filter-input"
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        value={filters.unique_identifier}
-                        onChange={(e) => handleFilterChange(e, 'unique_identifier')}
-                        placeholder="Filter Identifier"
-                        className="filter-input"
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        value={filters.company_name}
-                        onChange={(e) => handleFilterChange(e, 'company_name')}
-                        placeholder="Filter Name"
-                        className="filter-input"
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        value={filters.company}
-                        onChange={(e) => handleFilterChange(e, 'company')}
-                        placeholder="Filter Entities"
-                        className="filter-input"
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        value={filters.partnertype}
-                        onChange={(e) => handleFilterChange(e, 'partnertype')}
-                        placeholder="Filter Types"
-                        className="filter-input"
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        value={filters.phone}
-                        onChange={(e) => handleFilterChange(e, 'phone')}
-                        placeholder="Filter Phone"
-                        className="filter-input"
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        value={filters.email}
-                        onChange={(e) => handleFilterChange(e, 'email')}
-                        placeholder="Filter Email"
-                        className="filter-input"
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        value={filters.status}
-                        onChange={(e) => handleFilterChange(e, 'status')}
-                        placeholder="Filter Status"
-                        className="filter-input"
-                      />
-                    </td>
-                    <td></td>
-                  </tr>
-                </thead>
-                <tbody>
-                  {loading ? (
-                  <tr>
-                    <td colSpan="5" className="loading-message">
-                      Loading partners...
-                    </td>
-                  </tr>
-                ) : 
-                  filteredPartners.length > 0 ? (
-                    filteredPartners.map(partner => (
-                      <tr key={partner.id}>
-                        <td>{partner.id}</td>
-                        <td>{partner.unique_identifier}</td>
-                        <td>{partner.company_name}</td>
-                        <td>
-                          <ul className="company-tokens">
+          {loading && (
+            <div className="loading-message">
+              Loading partners...
+            </div>
+          )}
+          <div className="users-table-container">
+            <table className="users-table-fixed">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>ID</th>
+                  <th>Unique Identifier</th>
+                  <th>Company Name</th>
+                  <th>Entities</th>
+                  <th>Partner Types</th>
+                  <th>Phone</th>
+                  <th>Email</th>
+                  <th>Actions</th>
+                </tr>
+                <tr className="filter-row">
+                  <td></td>
+                  <td>
+                    <input
+                      type="text"
+                      value={filters.id}
+                      onChange={(e) => handleFilterChange(e, 'id')}
+                      placeholder="Filter ID"
+                      className="filter-input"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      value={filters.unique_identifier}
+                      onChange={(e) => handleFilterChange(e, 'unique_identifier')}
+                      placeholder="Filter Identifier"
+                      className="filter-input"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      value={filters.company_name}
+                      onChange={(e) => handleFilterChange(e, 'company_name')}
+                      placeholder="Filter Name"
+                      className="filter-input"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      value={filters.company}
+                      onChange={(e) => handleFilterChange(e, 'company')}
+                      placeholder="Filter Entities"
+                      className="filter-input"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      value={filters.partnertype}
+                      onChange={(e) => handleFilterChange(e, 'partnertype')}
+                      placeholder="Filter Types"
+                      className="filter-input"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      value={filters.phone}
+                      onChange={(e) => handleFilterChange(e, 'phone')}
+                      placeholder="Filter Phone"
+                      className="filter-input"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      value={filters.email}
+                      onChange={(e) => handleFilterChange(e, 'email')}
+                      placeholder="Filter Email"
+                      className="filter-input"
+                    />
+                  </td>
+                  <td></td>
+                </tr>
+              </thead>
+              <tbody className="table-body-scrollable">
+                {!loading && filteredPartners.length > 0 ? (
+                  filteredPartners.map(partner => (
+                    <tr key={partner.id}>
+                      <td>
+                        <div className={`status-led ${partner.is_active ? 'status-led-active' : 'status-led-inactive'}`}></div>
+                      </td>
+                      <td>{partner.id}</td>
+                      <td>{partner.unique_identifier}</td>
+                      <td>{partner.company_name}</td>
+                      <td>
+                        <ul className="company-tokens">
 
 
-                          {partner.companies?.map(c => (<li key={c.id} className="company-token">{c.name}</li>))}
-                          </ul>
-                        </td>
-                        <td>
-                          <ul className="company-tokens">
-                          {partner.partnertypes?.map(pt => (<li key={pt.id} className="company-token">{pt.name}</li>))}
-                          </ul>
-                        </td>
-                        <td>{partner.phone1 || 'N/A'}</td>
-                        <td>{partner.email}</td>
-                        <td>
-                          <span className={`status-text ${partner.is_active ? 'status-active' : 'status-inactive'}`}>
-                            {partner.is_active ? 'Active' : 'Inactive'}
-                          </span>
-                        </td>
-                        <td>
-                          <div className="action-buttons">
-                            <button
-                              className="btn-edit"
-                              onClick={() => handleEdit(partner)}
-                            >
-                              Modify
-                            </button>
-                            <button
-                              className="btn-delete"
-                              onClick={() => handleDelete(partner.id)}
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="9" className="no-results">
-                        {partners.length === 0 ? 'No partners available' : 'No partners found matching your filters'}
+                        {partner.companies?.map(c => (<li key={c.id} className="company-token">{c.name}</li>))}
+                        </ul>
+                      </td>
+                      <td>
+                        <ul className="company-tokens">
+                        {partner.partnertypes?.map(pt => (<li key={pt.id} className="company-token">{pt.name}</li>))}
+                        </ul>
+                      </td>
+                      <td>{partner.phone1 || 'N/A'}</td>
+                      <td>{partner.email}</td>
+                      <td>
+                        <div className="action-buttons">
+                          <button
+                            className="btn-edit"
+                            onClick={() => handleEdit(partner)}
+                          >
+                            Modify
+                          </button>
+                          <button
+                            className="btn-delete"
+                            onClick={() => handleDelete(partner.id)}
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </td>
                     </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          
+                  ))
+                ) : !loading ? (
+                  <tr>
+                    <td colSpan="9" className="no-results">
+                      {partners.length === 0 ? 'No partners available' : 'No partners found matching your filters'}
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
@@ -736,3 +715,6 @@ const AdminPartners = ({ user }) => {
 };
 
 export default AdminPartners;
+
+
+

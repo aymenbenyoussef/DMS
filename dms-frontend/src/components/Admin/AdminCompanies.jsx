@@ -4,94 +4,36 @@ import './AdminUsers.css';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 
-const AdminCompanies = () => {
+const AdminCompanies = ({ user }) => {
   const [companies, setCompanies] = useState([]);
   const [filteredCompanies, setFilteredCompanies] = useState([]);
   const [error, setError] = useState('');
-  const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [editingCompany, setEditingCompany] = useState(null);
   const [activeTab, setActiveTab] = useState('list');
   const [showModifyTab, setShowModifyTab] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [globalErrors, setGlobalErrors] = useState([]);
   const [filters, setFilters] = useState({
     id: '',
     name: '',
     address: '',
-    email: '',
-    phone: ''
+    phone: '',
+    email: ''
   });
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     name: '',
     address: '',
-    email: '',
     phone: '',
+    email: '',
+    website: '',
+    description: ''
   });
 
-  const fetchCompanies = async () => {
-    try {
-      setLoading(true);
-      const response = await API.companies.getAll();
-      const data = response.data;
-      if (Array.isArray(data)) {
-        setCompanies(data);
-        setFilteredCompanies(data);
-      }
-      else if (data.companies) {
-        setCompanies(data.companies);
-        setFilteredCompanies(data.companies);
-      }
-    } catch (err) {
-      setError('Error loading entities');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (success || error || Object.keys(fieldErrors).length > 0) {
-        setError('');
-        setSuccess('');
-        
-      }
-    }, 3000);
-
-    return () => clearTimeout(timer);
-  }, [success, error, fieldErrors]);
-  
-  useEffect(() => {
-  const timer2 = setTimeout(() => {
-      if (error || Object.keys(fieldErrors).length > 0) {
-        
-        setFieldErrors({});
-      }
-    }, 9999999999); 
-
-    return () => clearTimeout(timer2);
-  }, [ error, fieldErrors]);
-
-  const handleTabChange = (tab) => {
-    if (tab !== 'list') {
-      setError('');
-      setSuccess('');
-      setFieldErrors({});
-    } else {
-      setError('');
-      setSuccess('');
-      setFieldErrors({});
-    }
-    setActiveTab(tab);
-    if (tab !== 'form') {
-      setShowModifyTab(false);
-      setEditingCompany(null);
-    }
-    setFieldErrors({});
-  };
-
+  // Fetch data on component mount
   useEffect(() => {
     fetchCompanies();
   }, []);
@@ -99,6 +41,20 @@ const AdminCompanies = () => {
   useEffect(() => {
     applyFilters();
   }, [filters, companies]);
+
+  const fetchCompanies = async () => {
+    try {
+      setLoading(true);
+      const response = await API.companies.getAll();
+      setCompanies(response.data);
+      setFilteredCompanies(response.data);
+    } catch (err) {
+      setError('Error loading companies');
+      console.error('Error details:', err.response?.data || err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const applyFilters = () => {
     let result = [...companies];
@@ -121,135 +77,165 @@ const AdminCompanies = () => {
     });
   };
 
+  const validate = () => {
+    const errors = {};
+    const errorMessages = [];
+
+    if (!formData.name.trim()) {
+      errors.name = 'Company name is required';
+      errorMessages.push('Company name is required');
+    }
+    if (!formData.address.trim()) {
+      errors.address = 'Address is required';
+      errorMessages.push('Address is required');
+    }
+    if (!formData.phone.trim()) {
+      errors.phone = 'Phone is required';
+      errorMessages.push('Phone is required');
+    }
+    if (!formData.email.trim()) {
+      errors.email = 'Email is required';
+      errorMessages.push('Email is required');
+    }
+
+    setFieldErrors(errors);
+    setGlobalErrors(errorMessages);
+    return errorMessages.length === 0;
+  };
+
   const handleEdit = (company) => {
     setEditingCompany(company);
     setFormData({
       name: company.name || '',
       address: company.address || '',
-      email: company.email || '',
       phone: company.phone || '',
+      email: company.email || '',
+      website: company.website || '',
+      description: company.description || ''
     });
     setShowModifyTab(true);
     setActiveTab('form');
+    setFieldErrors({});
+    setGlobalErrors([]);
   };
 
   const handleDelete = async (companyId) => {
-    if (window.confirm('Are you sure you want to delete this Entity?')) {
+    if (window.confirm('Are you sure you want to delete this company?')) {
       try {
         await API.companies.delete(companyId);
-        setSuccess('Entity deleted successfully');
+        setSuccess('Company deleted successfully');
         fetchCompanies();
       } catch (err) {
-        setError('Error deleting entity');
-        console.error('Error deleting entity:', err);
-        
-        window.dispatchEvent(new Event('companyDeleted'));
-        navigate('/companies');
+        setError('Error deleting company');
+        console.error('Error deleting company:', err);
       }
+    }
   };
-  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value,
     }));
+    
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
   const handleUpdate = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
+    setGlobalErrors([]);
+    
+    if (!validate()) return;
     if (!editingCompany) return;
-    const errors = {};
-    if (!formData.name.trim()) errors.name = 'Name is required.';
-    if (!formData.address.trim()) errors.address = 'Address is required.';
-    if (!formData.email.trim()) errors.email = 'Email is required.';
-    if (!formData.phone) errors.phone = 'Phone is required.';
-
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
-      setLoading(false);
-      return;
-    }
-
+    
     try {
       await API.companies.update(editingCompany.id, formData);
-      setSuccess('Entity updated successfully');
+      setSuccess('Company updated successfully');
       setEditingCompany(null);
       setShowModifyTab(false);
       setActiveTab('list');
       fetchCompanies();
     } catch (err) {
+      const apiError = err.response?.data;
+      const errorMessage = apiError?.msg || apiError?.error || apiError?.message || 'Error updating company';
       
-      const errorMsg =
-      err.response?.data?.msg ||
-      "Error occurred while updating the entity.";
-
-      if (errorMsg.toLowerCase().includes("name") || errorMsg.toLowerCase().includes("email")) {
-        const duplicateErrors = {};
-        if (errorMsg.toLowerCase().includes("name")) {
-          duplicateErrors.name = "This entity name already exists.";
-        }
-        if (errorMsg.toLowerCase().includes("email")) {
-          duplicateErrors.email = "This email is already in use.";
-        }
-        setFieldErrors(duplicateErrors);
-        }else {
-      setFieldErrors({ global: errorMsg });
-    }
+      if (errorMessage.toLowerCase().includes('name')) {
+        setFieldErrors({ name: 'Company name already exists' });
+        setGlobalErrors(['Company name already exists']);
+      } else if (errorMessage.toLowerCase().includes('email')) {
+        setFieldErrors({ email: 'Email already exists' });
+        setGlobalErrors(['Email already exists']);
+      } else {
+        setError('Error updating company');
+        console.error('Error updating company:', err);
+      }
     }
   };
+
   return (
     <div className="admin-users">
       <div className="admin-header">
-       
         <div className="admin-tabs">
           <button
             className={`tab-btn ${activeTab === 'list' ? 'active' : ''}`}
-            onClick={() => handleTabChange('list')}
+            onClick={() => {
+              setActiveTab('list');
+              setShowModifyTab(false);
+              setEditingCompany(null);
+            }}
           >
-            Entities List
+            Companies List
           </button>
           {showModifyTab && (
             <button
               className={`tab-btn ${activeTab === 'form' ? 'active' : ''}`}
-              onClick={() => handleTabChange('form')}
+              onClick={() => setActiveTab('form')}
             >
-              Modify Entity
+              Modify Company
             </button>
           )}
+          <Link to="/AddCompany" className="btn-primary-2">
+            Add Company 
+          </Link>
         </div>
       </div>
 
-      {fieldErrors.global && (
-        <div className="alert alert-error">{fieldErrors.global}</div>
-      )}
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
+      {globalErrors.length > 0 && (
+        <div className="alert alert-error">
+          {globalErrors.map((err, index) => (
+            <div key={index}>{err}</div>
+          ))}
+        </div>
+      )}
 
       {activeTab === 'list' && (
         <div className="users-list">
-          <div className="filter-controls">
-            
-          
-          <Link to="/AddComp" className="btn-primary-2">
-            Add Entity
-          </Link>
-          </div>
-          <div className="users-table">
-            <table>
+          {loading && (
+            <div className="loading-message">
+              Loading companies...
+            </div>
+          )}
+          <div className="users-table-container">
+            <table className="users-table-fixed">
               <thead>
                 <tr>
+                  <th></th> {/* Placeholder for status LED */}
                   <th>ID</th>
-                  <th>Entity Name</th>
+                  <th>Company Name</th>
                   <th>Address</th>
-                  <th>Email</th>
                   <th>Phone</th>
-                  <th>Creation date</th>
+                  <th>Email</th>
                   <th>Actions</th>
                 </tr>
                 <tr className="filter-row">
+                  <td></td> {/* Placeholder for status LED filter */}
                   <td>
                     <input
                       type="text"
@@ -280,49 +266,39 @@ const AdminCompanies = () => {
                   <td>
                     <input
                       type="text"
-                      value={filters.email}
-                      onChange={(e) => handleFilterChange(e, 'email')}
-                      placeholder="Filter Email"
-                      className="filter-input"
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="text"
                       value={filters.phone}
                       onChange={(e) => handleFilterChange(e, 'phone')}
                       placeholder="Filter Phone"
                       className="filter-input"
                     />
                   </td>
-                  <td></td>
+                  <td>
+                    <input
+                      type="text"
+                      value={filters.email}
+                      onChange={(e) => handleFilterChange(e, 'email')}
+                      placeholder="Filter Email"
+                      className="filter-input"
+                    />
+                  </td>
                   <td></td>
                 </tr>
               </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan="7" className="loading-message">
-                      Loading entities...
-                    </td>
-                  </tr>
-                ) :
-                filteredCompanies.length > 0 ? (
+              <tbody className="table-body-scrollable">
+                {!loading && filteredCompanies.length > 0 ? (
                   filteredCompanies.map(company => (
                     <tr key={company.id}>
+                      <td></td> {/* Placeholder for status LED */}
                       <td>{company.id}</td>
                       <td>{company.name}</td>
                       <td>{company.address}</td>
-                      <td>{company.email}</td>
                       <td>{company.phone}</td>
-                      <td>{company.created_at}</td>
+                      <td>{company.email}</td>
                       <td>
                         <div className="action-buttons">
                           <button
                             className="btn-edit"
-                            onClick={() => {handleEdit(company)
-                              setFieldErrors({});
-                            }}
+                            onClick={() => handleEdit(company)}
                           >
                             Modify
                           </button>
@@ -336,88 +312,107 @@ const AdminCompanies = () => {
                       </td>
                     </tr>
                   ))
-                ) : (
+                ) : !loading ? (
                   <tr>
-                    <td colSpan="7" className="no-results">
-                      {companies.length === 0 ? 'No entities available' : 'No entities found matching your filters'}
+                    <td colSpan="7" className="no-results"> {/* Adjusted colspan */}
+                      {companies.length === 0 ? 'No companies available' : 'No companies found matching your filters'}
                     </td>
                   </tr>
-                )}
+                ) : null}
               </tbody>
             </table>
           </div>
         </div>
       )}
 
-      {activeTab === 'form' && (
+      {activeTab === 'form' && editingCompany && (
         <div className="user-form">
-          <h2>Modify entity</h2>
+          <h2>Modify Company</h2>
           <form onSubmit={handleUpdate}>
             <div className="form-group">
-              <label>Entity Name</label>
+              <label>Company name *</label>
               <input
                 type="text"
                 name="name"
+                placeholder="Enter company name"
                 value={formData.name}
                 onChange={handleInputChange}
-                placeholder="Entity Name"
-                
+                className={fieldErrors.name ? 'input-error' : ''}
               />
-              {fieldErrors.name && (
-              <p className="error-text">{fieldErrors.name}</p>
-            )}
+              {fieldErrors.name && <div className="field-error">{fieldErrors.name}</div>}
             </div>
             <div className="form-group">
-              <label>Address</label>
+              <label>Address *</label>
               <input
                 type="text"
                 name="address"
+                placeholder="Enter address"
                 value={formData.address}
                 onChange={handleInputChange}
-                placeholder="Address"
+                className={fieldErrors.address ? 'input-error' : ''}
               />
-              {fieldErrors.address && (
-              <p className="error-text">{fieldErrors.address}</p>
-            )}
+              {fieldErrors.address && <div className="field-error">{fieldErrors.address}</div>}
             </div>
             <div className="form-group">
-              <label>Email</label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                placeholder="Email"
-              />
-              {fieldErrors.email && (
-              <p className="error-text">{fieldErrors.email}</p>
-            )}
-            </div>
-            <div className="form-group">
-              <label>Phone</label>
+              <label>Phone *</label>
               <input
                 type="text"
                 name="phone"
+                placeholder="Enter phone"
                 value={formData.phone}
                 onChange={handleInputChange}
-                placeholder="Phone"
+                className={fieldErrors.phone ? 'input-error' : ''}
               />
-              {fieldErrors.phone && (
-              <p className="error-text">{fieldErrors.phone}</p>
-            )}
+              {fieldErrors.phone && <div className="field-error">{fieldErrors.phone}</div>}
             </div>
+            <div className="form-group">
+              <label>Email *</label>
+              <input
+                type="email"
+                name="email"
+                placeholder="Enter email"
+                value={formData.email}
+                onChange={handleInputChange}
+                className={fieldErrors.email ? 'input-error' : ''}
+              />
+              {fieldErrors.email && <div className="field-error">{fieldErrors.email}</div>}
+            </div>
+            <div className="form-group">
+              <label>Website</label>
+              <input
+                type="text"
+                name="website"
+                placeholder="Enter website"
+                value={formData.website}
+                onChange={handleInputChange}
+              />
+            </div>
+            <div className="form-group">
+              <label>Description</label>
+              <textarea
+                name="description"
+                placeholder="Enter description"
+                value={formData.description}
+                onChange={handleInputChange}
+                rows="4"
+              />
+            </div>
+
             <div className="form-actions">
               <button
                 type="button"
                 className="btn-primary"
-                onClick={() => handleTabChange('list')}
+                onClick={() => {
+                  setActiveTab('list');
+                  setShowModifyTab(false);
+                  setEditingCompany(null);
+                }}
               >
                 Cancel
               </button>
-              <button type="submit" className="btn-primary"  >
-                Update
+              <button type="submit" className="btn-primary">
+                Update Company
               </button>
-              
             </div>
           </form>
         </div>
@@ -427,3 +422,6 @@ const AdminCompanies = () => {
 };
 
 export default AdminCompanies;
+
+
+

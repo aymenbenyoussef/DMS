@@ -17,8 +17,7 @@ const AdminPartnerTypes = ({ user }) => {
   const [globalErrors, setGlobalErrors] = useState([]);
   const [filters, setFilters] = useState({
     id: '',
-    name: '',
-    status: ''
+    name: ''
   });
   const navigate = useNavigate();
 
@@ -54,17 +53,9 @@ const AdminPartnerTypes = ({ user }) => {
     
     Object.keys(filters).forEach(key => {
       if (filters[key]) {
-        if (key === 'status') {
-          const filterValue = filters[key].toLowerCase();
-          result = result.filter(partnerType => {
-            const statusStr = partnerType.status ? 'active' : 'inactive';
-            return statusStr.includes(filterValue);
-          });
-        } else {
-          result = result.filter(partnerType => 
-            String(partnerType[key]).toLowerCase().includes(filters[key].toLowerCase())
-          );
-        }
+        result = result.filter(partnerType => 
+          String(partnerType[key]).toLowerCase().includes(filters[key].toLowerCase())
+        );
       }
     });
     
@@ -192,94 +183,81 @@ const AdminPartnerTypes = ({ user }) => {
       
       {activeTab === 'list' && (
         <div className="users-list">
-          
-            <div className="users-table">
-              <table>
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                  <tr className="filter-row">
-                    <td>
-                      <input
-                        type="text"
-                        value={filters.id}
-                        onChange={(e) => handleFilterChange(e, 'id')}
-                        placeholder="Filter ID"
-                        className="filter-input"
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        value={filters.name}
-                        onChange={(e) => handleFilterChange(e, 'name')}
-                        placeholder="Filter Name"
-                        className="filter-input"
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        value={filters.status}
-                        onChange={(e) => handleFilterChange(e, 'status')}
-                        placeholder="Filter Status"
-                        className="filter-input"
-                      />
-                    </td>
-                    <td></td>
-                  </tr>
-                </thead>
-                <tbody>
-                  {loading ? (
-                  <tr>
-                    <td colSpan="5" className="loading-message">
-                      Loading partner types...
-                    </td>
-                  </tr>
-                ) : 
-                  filteredPartnerTypes.length > 0 ? (
-                    filteredPartnerTypes.map(partnerType => (
-                      <tr key={partnerType.id}>
-                        <td>{partnerType.id}</td>
-                        <td>{partnerType.name}</td>
-                        <td>
-                          <span className={`status-text ${partnerType.status ? 'status-active' : 'status-inactive'}`}>
-                            {partnerType.status ? 'Active' : 'Inactive'}
-                          </span>
-                        </td>
-                        <td>
-                          <div className="action-buttons">
-                            <button
-                              className="btn-edit"
-                              onClick={() => handleEdit(partnerType)}
-                            >
-                              Modify
-                            </button>
-                            <button
-                              className="btn-delete"
-                              onClick={() => handleDelete(partnerType.id)}
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="4" className="no-results">
-                        {partnerTypes.length === 0 ? 'No partner types available' : 'No partner types found matching your filters'}
+          {loading && (
+            <div className="loading-message">
+              Loading partner types...
+            </div>
+          )}
+          <div className="users-table-container">
+            <table className="users-table-fixed">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Actions</th>
+                </tr>
+                <tr className="filter-row">
+                  <td></td>
+                  <td>
+                    <input
+                      type="text"
+                      value={filters.id}
+                      onChange={(e) => handleFilterChange(e, 'id')}
+                      placeholder="Filter ID"
+                      className="filter-input"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      value={filters.name}
+                      onChange={(e) => handleFilterChange(e, 'name')}
+                      placeholder="Filter Name"
+                      className="filter-input"
+                    />
+                  </td>
+                  <td></td>
+                </tr>
+              </thead>
+              <tbody className="table-body-scrollable">
+                {!loading && filteredPartnerTypes.length > 0 ? (
+                  filteredPartnerTypes.map(partnerType => (
+                    <tr key={partnerType.id}>
+                      <td>
+                        <div className={`status-led ${partnerType.status ? 'status-led-active' : 'status-led-inactive'}`}></div>
+                      </td>
+                      <td>{partnerType.id}</td>
+                      <td>{partnerType.name}</td>
+                      <td>
+                        <div className="action-buttons">
+                          <button
+                            className="btn-edit"
+                            onClick={() => handleEdit(partnerType)}
+                          >
+                            Modify
+                          </button>
+                          <button
+                            className="btn-delete"
+                            onClick={() => handleDelete(partnerType.id)}
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </td>
                     </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                  ))
+                ) : !loading ? (
+                  <tr>
+                    <td colSpan="4" className="no-results">
+                      {partnerTypes.length === 0 ? 'No partner types available' : 'No partner types found matching your filters'}
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
           </div>
+        </div>
       )}
 
       {activeTab === 'form' && (
@@ -335,3 +313,6 @@ const AdminPartnerTypes = ({ user }) => {
 };
 
 export default AdminPartnerTypes;
+
+
+
