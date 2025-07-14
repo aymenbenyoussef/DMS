@@ -748,8 +748,8 @@ def create_partner():
             resource_data={
                 'id': partner_id,
                 'company_name': partner['company_name'],
-                'partner_type': partner['partner_type'],
-                'status': partner['status']
+                'partner_type': ', '.join([pt['name'] for pt in partner.get('partnertypes', [])]) if partner.get('partnertypes') else 'N/A',
+                'status': partner.get('is_active', True)
             }
         )
         return jsonify({

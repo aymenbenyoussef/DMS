@@ -282,6 +282,22 @@ const handleSubmit = async (e) => {
         setFieldErrors({...fieldErrors, email: err.response.data.message});
         errorMsg = err.response.data.message;
       }
+      else if (err.response.data.message?.includes('phone1')) {
+        setFieldErrors({...fieldErrors, phone1: err.response.data.message});
+        errorMsg = err.response.data.message;
+      }
+      else if (err.response.data.message?.includes('mailing address')) {
+        setFieldErrors({...fieldErrors, mailingAddress: err.response.data.message});
+        errorMsg = err.response.data.message;
+      }
+      else if (err.response.data.message?.includes('bank account number')) {
+        setFieldErrors({...fieldErrors, bankAccountNumber: err.response.data.message});
+        errorMsg = err.response.data.message;
+      }
+      else if (err.response.data.message?.includes('company name')) {
+        setFieldErrors({...fieldErrors, companyName: err.response.data.message});
+        errorMsg = err.response.data.message;
+      }
       else {
         errorMsg = err.response.data.message || err.response.data.msg || errorMsg;
       }
@@ -300,7 +316,6 @@ const handleSubmit = async (e) => {
     setLoading(false);
   }
 };
-  
 
 
   return (
@@ -340,7 +355,13 @@ const handleSubmit = async (e) => {
 
       {/* Error and success messages */}
       {success && <div className="alert alert-success">{success}</div>}
-      
+      {globalErrors.length > 0 && (
+        <div className="alert alert-error">
+          {globalErrors.map((err, index) => (
+            <div key={index}>{err}</div>
+          ))}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="user-form">
         {/* Identity Tab */}
