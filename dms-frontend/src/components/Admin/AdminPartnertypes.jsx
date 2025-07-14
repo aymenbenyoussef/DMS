@@ -43,7 +43,14 @@ const AdminPartnerTypes = ({ user }) => {
       setLoading(false);
     }
   };
-
+useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => {
+        setSuccess('');
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
   useEffect(() => {
     applyFilters();
   }, [filters, partnerTypes]);

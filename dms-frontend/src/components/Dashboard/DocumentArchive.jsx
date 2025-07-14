@@ -13,7 +13,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
   const [successMessage, setSuccessMessage] = useState('');
   const [folders, setFolders] = useState([]);
   const [uploadError, setUploadError] = useState('');
-   const { setSelectedDoctype } = useContext(AppContext);
+  const { setSelectedDoctype } = useContext(AppContext);
   const navigate = useNavigate();
   
   // Document type states
@@ -25,6 +25,10 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
   const [newDocTypeName, setNewDocTypeName] = useState('');
   const [newDocTypeStatus, setNewDocTypeStatus] = useState(true);
   
+  // New state for documents
+  const [documents, setDocuments] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => {
     setIsModalOpen(false);
@@ -41,6 +45,24 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
   const closeUploadModal = () => {
     setIsUploadModalOpen(false);
     setUploadError('');
+  };
+
+  // Function to fetch documents from the backend
+  const fetchDocuments = async () => {
+    if (!selectedCompany || !selectedDoctype) return;
+    
+    setIsLoading(true);
+    try {
+      const response = await API.documents.getByCompanyAndType(
+        selectedCompany.name,
+        selectedDoctype.name
+      );
+      setDocuments(response.data.documents || []);
+    } catch (error) {
+      console.error('Error loading documents', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const fetchFolders = async () => {
@@ -76,6 +98,11 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     }
   }, [selectedCompany]);
 
+  // Fetch documents when company or doctype changes
+  useEffect(() => {
+    fetchDocuments();
+  }, [selectedCompany, selectedDoctype]);
+
   const createFolder = async () => {
     if (folderName.trim() === '') {
       setError('Folder name is required.');
@@ -94,20 +121,13 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
       const response = await API.folders.create({
         name: folderName.trim(),
         company_id: selectedCompany.id,
-        // Include selected document types if any
         document_types: selectedDocTypes
       });
       
-      // Update folders state
       setFolders(prev => [...prev, response.data]);
-      
-      // Update company in context to include new folder
       selectedCompany.folders = [...(selectedCompany.folders || []), response.data];
       
       setSuccessMessage('Folder created successfully!');
-      // Dispatch custom event with folder data
-      
-    
       closeModal();
       navigate('/');
     } catch (err) {
@@ -115,26 +135,23 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     }
   };
 
-  // Handle document upload from DragDropUpload
   const handleUploadDocuments = async (documents) => {
     try {
-      // Prepare documents for API with folder ID
       const uploadData = documents.map(doc => ({
         ...doc,
         folder_id: selectedDoctype?.id || null,
         company_id: selectedCompany.id
       }));
       
-      // Send to API
       await API.documents.create(uploadData);
       alert(`${documents.length} files uploaded successfully!`);
       closeUploadModal();
+      fetchDocuments(); // Refresh the documents list
     } catch (error) {
       setUploadError('Upload failed: ' + (error.response?.data?.msg || error.message));
     }
   };
 
-  // Get breadcrumb path
   const getBreadcrumb = () => {
     if (selectedDoctype && selectedCompany) {
       return `${selectedCompany.name} > ${selectedDoctype.name}`;
@@ -145,7 +162,6 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     return 'DMS >';
   };
 
-  // Handle document type checkbox changes
   const handleDocTypeChange = (typeId) => {
     setSelectedDocTypes(prev => {
       if (prev.includes(typeId)) {
@@ -156,7 +172,6 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     });
   };
 
-  // Handle new document type submission
   const handleCreateDocType = async (e) => {
     e.preventDefault();
     setNewDocTypeError('');
@@ -173,19 +188,14 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
         status: newDocTypeStatus
       });
       
-      // Add the new document type to our list
       setDocumentTypes(prev => [...prev, response.data]);
-      
-      // Select the newly created type
       setSelectedDocTypes(prev => [...prev, response.data.id]);
       
       setNewDocTypeSuccess('Document type created successfully!');
       
-      // Reset form
       setNewDocTypeName('');
       setNewDocTypeStatus(true);
       
-      // Hide form after success
       setTimeout(() => {
         setShowNewDocTypeForm(false);
         setNewDocTypeSuccess('');
@@ -193,6 +203,66 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     } catch (error) {
       setNewDocTypeError(error.response?.data?.msg || 'Failed to create document type');
     }
+  };
+
+  // Function to format file size
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+  const getFileIconClass = (filename) => {
+  const extension = filename.split('.').pop().toLowerCase();
+  switch(extension) {
+    case 'pdf':
+      return 'bi-filetype-pdf text-danger';
+    case 'doc':
+    case 'docx':
+      return 'bi-filetype-docx text-primary';
+    case 'xls':
+    case 'xlsx':
+      return 'bi-filetype-xlsx text-success';
+    case 'ppt':
+    case 'pptx':
+      return 'bi-filetype-pptx text-warning';
+    case 'jpg':
+    case 'jpeg':
+    case 'png':
+    case 'gif':
+      return 'bi-file-image text-info';
+    case 'zip':
+    case 'rar':
+      return 'bi-file-zip text-secondary';
+    default:
+      return 'bi-file-earmark-text';
+  }
+};
+const handleDownload = async (doc) => {
+  try {
+    const response = await fetch(doc.path);
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = doc.filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('Download failed:', error);
+    alert('Download failed. Please try again.');
+  }
+};
+  // Function to get file type from filename
+  const getFileType = (filename) => {
+    const parts = filename.split('.');
+    if (parts.length > 1) {
+      return parts[parts.length - 1].toUpperCase();
+    }
+    return 'Unknown';
   };
 
   if (!selectedCompany && !selectedDoctype) {
@@ -205,7 +275,6 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
       {isUploadModalOpen && (
           <div className="modal-dialog modal-lg">
             <div className="modal-content">
-
               <div className="modal-body">
                 <DragDropUpload 
                   onClose={closeUploadModal}
@@ -259,7 +328,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
           </div>
         ))}
       </div>
-
+        
       {/* Search Section */}
       <div className="card mb-4">
         <div className="card-body">
@@ -293,15 +362,68 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
       </div>
 
       {/* Documents Container */}
- 
-        {/* Main Documents */}
-        <div className="col-lg-8">
-          <div className="card h-100">
-            <div className="card-body">
-              <div className="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
-                <h2 className="h5 mb-0">Documents</h2>
-                <span className="text-muted">0 items</span>
+      <div className="col-lg-8">
+        <div className="card h-100">
+          <div className="card-body">
+            <div className="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+              <h2 className="h5 mb-0">Documents</h2>
+              <span className="text-muted">{documents.length} items</span>
+            </div>
+            
+            {/* Replace the current documents list rendering with this */}
+            {isLoading ? (
+              <div className="text-center py-5">
+                <div className="spinner-border text-primary" role="status">
+                  <span className="visually-hidden">Loading...</span>
+                </div>
               </div>
+            ) : documents.length > 0 ? (
+              <div className="document-grid">
+                {documents.map((doc) => (
+                  <div key={doc.id} className="document-card">
+                    <div className="document-thumbnail">
+                      {doc.mimetype && doc.mimetype.startsWith('image/') ? (
+                        <img 
+                          src={doc.path} 
+                          alt={doc.filename} 
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.parentElement.innerHTML = `
+                              <i class="bi bi-file-earmark ${getFileIconClass(doc.filename)}"></i>
+                            `;
+                          }}
+                        />
+                      ) : (
+                        <i className={`bi bi-file-earmark ${getFileIconClass(doc.filename)} file-icon`}></i>
+                      )}
+                    </div>
+                    <div className="document-details">
+                      <div>
+                        <h5 className="document-title">{doc.filename}</h5>
+                        <div className="document-meta">
+                          <div>{getFileType(doc.filename)} • {formatFileSize(doc.size)}</div>
+                          <div>Uploaded: {new Date(doc.created_at).toLocaleDateString()}</div>
+                        </div>
+                      </div>
+                      <div className="document-actions">
+                        <button 
+                          className="btn btn-sm btn-outline-primary"
+                          onClick={() => window.open(doc.path, '_blank')}
+                        >
+                          View
+                        </button>
+                        <button 
+                          className="btn btn-sm btn-outline-secondary"
+                          onClick={() => handleDownload(doc)}
+                        >
+                          Download
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
               <div className="text-center py-5 border rounded">
                 <p className="text-muted mb-3">No documents found</p>
                 <button 
@@ -311,11 +433,10 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                   Upload documents to get started
                 </button>
               </div>
-            </div>
-          </div>
-        </div>
-
-
+            )}       
+             </div>
+      </div>
+      </div>
       {/* Create Folder/Add Data Type Modal */}
       {isModalOpen && (
         <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>

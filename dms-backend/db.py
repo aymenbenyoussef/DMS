@@ -672,7 +672,7 @@ class DatabaseManager:
         """Update an existing partner and its associations"""
         try:
             # Start transaction
-            self.connection.start_transaction()
+            
             
             # Check if updated values conflict with other partners
             if self.check_partner_exists(partner_data, exclude_id=partner_id):
@@ -733,21 +733,38 @@ class DatabaseManager:
                     )
             
             # Commit transaction
-            self.connection.commit()
+            
             return True
             
         except Exception as e:
-            self.connection.rollback()
+            
             raise Exception(f"Error updating partner: {str(e)}")
 
     def delete_partner(self, partner_id):
         """Delete a partner and all its associations"""
         try:
-            # Cascading delete will handle the junction tables
-            query = "DELETE FROM partners WHERE id = %s"
-            self.execute_query(query, (partner_id,))
+            # Start transaction to ensure atomicity
+            #self.connection.start_transaction()
+            
+            # First delete from partner_entities
+            delete_entities_query = "DELETE FROM partner_entities WHERE partner_id = %s"
+            self.execute_query(delete_entities_query, (partner_id,))
+            
+            # Then delete from partner_partnertypes
+            delete_types_query = "DELETE FROM partner_partnertypes WHERE partner_id = %s"
+            self.execute_query(delete_types_query, (partner_id,))
+            
+            # Finally delete the partner
+            delete_partner_query = "DELETE FROM partners WHERE id = %s"
+            self.execute_query(delete_partner_query, (partner_id,))
+            
+            # Commit transaction if all operations succeeded
+            #self.connection.commit()
             return True
+            
         except Exception as e:
+            # Rollback if any error occurs
+            #self.connection.rollback()
             raise Exception(f"Error deleting partner: {str(e)}")
 
     def get_partner_by_id(self, partner_id):

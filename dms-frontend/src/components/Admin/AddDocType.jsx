@@ -88,7 +88,10 @@ const AddDocType = () => {
       }
       
     }));
-      navigate('/doctypes');
+    setTimeout(() => {
+        navigate('/doctypes');
+      }, 1500);
+      
     } catch (err) {
       const msg = err.response?.data?.msg ||
                   'Error occurred while creating the document type.';

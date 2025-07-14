@@ -48,6 +48,15 @@ const AdminPartners = ({ user }) => {
     partnertypes: []
   });
 
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => {
+        setSuccess('');
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
+
   // Fetch data on component mount
   useEffect(() => {
     fetchPartners();
@@ -204,15 +213,22 @@ const AdminPartners = ({ user }) => {
     }
   };
 
-  const handleDelete = async (partnerId) => {
+ const handleDelete = async (partnerId) => {
     if (window.confirm('Are you sure you want to delete this partner?')) {
       try {
+        setLoading(true);
         await API.partner.delete(partnerId);
         setSuccess('Partner deleted successfully');
-        fetchPartners();
+        setError('');
+        fetchPartners(); // Refresh the list after deletion
       } catch (err) {
-        setError('Error deleting partner');
+        const errorMessage = err.response?.data?.msg || 
+                            err.message || 
+                            'Error deleting partner';
+        setError(errorMessage);
         console.error('Error deleting partner:', err);
+      } finally {
+        setLoading(false);
       }
     }
   };
@@ -246,44 +262,74 @@ const AdminPartners = ({ user }) => {
     }
   };
 
-  const handleUpdate = async (e) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-    setGlobalErrors([]);
+ const handleUpdate = async (e) => {
+  e.preventDefault();
+  setError('');
+  setSuccess('');
+  setGlobalErrors([]);
+  
+  if (!validate()) return;
+  if (!editingPartner) return;
+  
+  try {
+    const partnerData = {
+      company_name: formData.company_name,
+      trade_name: formData.trade_name,
+      unique_identifier: formData.unique_identifier,
+      mailing_address: formData.mailing_address,
+      billing_address: formData.billing_address,
+      phone1: formData.phone1,
+      phone2: formData.phone2,
+      phone3: formData.phone3,
+      email: formData.email,
+      payment_terms: formData.payment_terms,
+      billing_terms: formData.billing_terms,
+      bank_account_number: formData.bank_account_number,
+      bank_name: formData.bank_name,
+      notes: formData.notes,
+      is_active: formData.is_active,
+      companies: formData.companies,
+      partnertypes: formData.partnertypes
+    };
     
-    if (!validate()) return;
-    if (!editingPartner) return;
+    const response = await API.partner.update(editingPartner.id, partnerData);
     
-    try {
-      const partnerData = {
-        ...formData,
-        companies: formData.companies,
-        partnertypes: formData.partnertypes
-      };
-      
-      await API.partner.update(editingPartner.id, partnerData);
-      setSuccess('Partner updated successfully');
-      setEditingPartner(null);
-      setShowModifyTab(false);
-      setActiveTab('list');
-      fetchPartners();
-    } catch (err) {
-      const apiError = err.response?.data;
-      const errorMessage = apiError?.msg || apiError?.error || apiError?.message || 'Error updating partner';
-      
-      if (errorMessage.toLowerCase().includes('unique')) {
-        setFieldErrors({ unique_identifier: 'Unique identifier already exists' });
-        setGlobalErrors(['Unique identifier already exists']);
-      } else if (errorMessage.toLowerCase().includes('email')) {
-        setFieldErrors({ email: 'Email already exists' });
-        setGlobalErrors(['Email already exists']);
-      } else {
-        setError('Error updating partner');
-        console.error('Error updating partner:', err);
-      }
+    // Get the updated partner with all associations
+    const updatedPartner = await API.partner.getById(editingPartner.id);
+    
+    setSuccess('Partner updated successfully');
+    setEditingPartner(null);
+    setShowModifyTab(false);
+    setActiveTab('list');
+    fetchPartners();
+  } catch (err) {
+    console.error('Full error object:', err); // Log the full error for debugging
+    const apiError = err.response?.data;
+    const errorMessage = apiError?.msg || apiError?.error || apiError?.message || 'Error updating partner';
+    
+    if (errorMessage.toLowerCase().includes('unique')) {
+      setFieldErrors({ unique_identifier: 'Unique identifier already exists' });
+      setGlobalErrors(['Unique identifier already exists']);
+    } else if (errorMessage.toLowerCase().includes('email')) {
+      setFieldErrors({ email: 'Email already exists' });
+      setGlobalErrors(['Email already exists']);
+    } 
+    else if (errorMessage.toLowerCase().includes('nom')) {
+      setFieldErrors({ company_name: 'Nom de société exist déja' });
+      setGlobalErrors(['Nom de société exist déja']);
+    }else if (errorMessage.toLowerCase().includes('adresse')) {
+      setFieldErrors({ mailing_address: 'adresse postale exist déja' });
+      setGlobalErrors(['adresse postale exist déja']);
+    }else if (errorMessage.toLowerCase().includes('téléphone')) {
+      setFieldErrors({ phone1: 'Numéro de téléphone exist déja' });
+      setGlobalErrors(['Numéro de téléphone exist déja']);
+    }else {
+      setError(errorMessage); // Show the actual error message from the server
+      setGlobalErrors([errorMessage]);
+      console.error('Error updating partner:', err);
     }
-  };
+  }
+};
 
   return (
     <div className="admin-users">
@@ -315,13 +361,7 @@ const AdminPartners = ({ user }) => {
 
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
-      {globalErrors.length > 0 && (
-        <div className="alert alert-error">
-          {globalErrors.map((err, index) => (
-            <div key={index}>{err}</div>
-          ))}
-        </div>
-      )}
+      
 
       {activeTab === 'list' && (
         <div className="users-list">
@@ -690,7 +730,13 @@ const AdminPartners = ({ user }) => {
                 </div>
               </div>
             </div>
-
+            {globalErrors.length > 0 && (
+              <div className="alert alert-error">
+                {globalErrors.map((err, index) => (
+                  <div key={index}>{err}</div>
+                ))}
+              </div>
+            )}
             <div className="form-actions">
               <button
                 type="button"

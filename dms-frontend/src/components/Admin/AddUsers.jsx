@@ -120,6 +120,9 @@ const AddUser = () => {
     setFieldErrors({});
     setGlobalFormError('');
     setActiveTab('profile');
+    setTimeout(() => {
+        navigate('/admin/users');
+      }, 1500);
     //navigate('/admin/users', { state: { successMessage: 'User created successfully' } });
   } catch (err) {
   let errorMsg = 'Error creating user';

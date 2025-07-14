@@ -14,6 +14,7 @@ from ocr_utils import process_uploaded_files, generate_report_pdf, extract_invoi
 import json
 import pytesseract
 from PIL import Image
+import glob
 
 app = Flask(__name__)
 CORS(app, origins="*", supports_credentials=True)
@@ -800,6 +801,9 @@ def update_partner(partner_id):
         success = db.update_partner(partner_id, data)
         
         if success:
+            partner = db.get_partner_by_id(partner_id)
+            if not partner:
+                return jsonify({"msg": "Partner not found"}), 404
             # Log the update
             log_activity(
                 actor=current_user_claims["username"],
@@ -808,8 +812,10 @@ def update_partner(partner_id):
                 resource_data={
                     "id": partner_id,
                     "company_name": partner["company_name"],
-                    "partner_type": partner["partner_type"],
-                    "status": partner["status"]
+                    # Get partner types as comma-separated string or 'N/A'
+                    "partner_type": ', '.join([pt['name'] for pt in partner.get('partnertypes', [])]) 
+                           if partner.get('partnertypes') else 'N/A',
+                    "status": partner.get("is_active", True)
                 }
             )
             return jsonify({"msg": "Partner updated successfully"}), 200
@@ -842,7 +848,7 @@ def delete_partner(partner_id):
                 resource_data={
                     'id': partner_id,
                     'company_name': partner['company_name'],
-                    'partner_type': partner['partner_type'],
+                    'partner_type': ', '.join([pt['name'] for pt in partner.get('partnertypes', [])]) if partner.get('partnertypes') else 'N/A',
                     'status': False  # Mark as inactive when deleted
                 }
             )
@@ -851,7 +857,8 @@ def delete_partner(partner_id):
             return jsonify({"msg": "Partner not found"}), 404
             
     except Exception as e:
-        return jsonify({"msg": str(e)}), 400
+        app.logger.error(f"Error deleting partner {partner_id}: {str(e)}")
+        return jsonify({"msg": f"Error deleting partner: {str(e)}"}), 500
 
 @app.route('/partners/<int:partner_id>', methods=['GET'])
 @jwt_required()
@@ -1137,6 +1144,42 @@ def create_document():
         }), 201
     except Exception as e:
         return jsonify({"msg": str(e)}), 400
+
+@app.route('/documents/company/<company_name>/type/<doctype_name>', methods=['GET'])
+@jwt_required()
+def get_documents_by_company_and_type(company_name, doctype_name):
+    try:
+        # Secure names to avoid path traversal
+        safe_company_name = secure_filename(company_name)
+        safe_doctype_name = secure_filename(doctype_name)
+
+        # Build path: .../dms-data/upload/company/doctype/
+        doctype_folder = os.path.join(app.config['DMS_UPLOAD_FOLDER'], safe_company_name, safe_doctype_name)
+
+        if not os.path.exists(doctype_folder):
+            return jsonify({"documents": [], "msg": "No such folder"}), 404
+        print(os.path)
+        # List all document files (filtering out summaries or text if needed)
+        all_files = glob.glob(os.path.join(doctype_folder, '*.*'))
+
+        # Return metadata for each file
+        documents = []
+        for file_path in all_files:
+            if os.path.isfile(file_path):
+                filename = os.path.basename(file_path)
+                documents.append({
+                    "filename": filename,
+                    "path": file_path,
+                    "size": os.path.getsize(file_path),
+                    "created_at": datetime.fromtimestamp(os.path.getctime(file_path)).strftime("%Y-%m-%d %H:%M:%S")
+                })
+
+        return jsonify({"documents": documents}), 200
+
+    except Exception as e:
+        return jsonify({"msg": f"Error reading files: {str(e)}"}), 500
+
+
 
 # ====== NEW SINGLE FILE UPLOAD ENDPOINT ======
 @app.route('/upload_single', methods=['POST'])

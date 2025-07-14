@@ -62,8 +62,12 @@ const AdminCompanies = ({ user }) => {
       phone: '',
     });
     setFieldErrors({});
+    
     window.dispatchEvent(new Event('companyAdded'));
-    navigate('/companies');
+    setTimeout(() => {
+        navigate('/companies');
+      }, 1500);
+    
   } catch (err) {
     const errorMsg =
       err.response?.data?.msg ||
