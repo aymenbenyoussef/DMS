@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create axios instance with base configuration
 const API = axios.create({
-  baseURL: 'http://localhost:5000', // Corrected base URL to match Flask backend
+  baseURL: 'http://localhost:5000', 
   headers: {
     'Content-Type': 'application/json',
   },
@@ -75,10 +75,7 @@ const doctype = {
     getCompanies: (doctypeId) => API.get(`/doctype/${doctypeId}/companies`),
     update: (id, doctypeData) => API.put(`/doctype/${id}`, doctypeData),
     delete: (id) => API.delete(`/doctype/${id}`),
-    getByCompany: (companyId, parentId = null) => {
-    const params = parentId ? `?company_id=${companyId}&parent_id=${parentId}` : `?company_id=${companyId}`;
-    return API.get(`/doctype${params}`);
-  },
+    getByCompany: (companyId) => API.get(`/doctype/company/${companyId}`),
 }
 const partner = {
   getAll: () => API.get('/partners'),
@@ -114,15 +111,15 @@ const documents = {
   delete: (documentId) => API.delete(`/documents/${documentId}`),
   
   // NEW: Single file upload function with OCR processing
-  uploadSingleFile: (file, company, doctype) => {
+  uploadSingleFile: (file, company_id, doctype_id) => {
     const formData = new FormData();
     
     // Add the single file to FormData
     formData.append("file", file);
     
-    // Add company and doctype information
-    formData.append('company', company);
-    formData.append('doctype', doctype);
+    // Add company and doctype information using IDs
+    formData.append('company_id', company_id);
+    formData.append('doctype_id', doctype_id);
     
     return API.post('/upload_single', formData, {
       headers: { 
@@ -134,20 +131,19 @@ const documents = {
   },
   
   // Enhanced upload function for multiple files with OCR processing
-  uploadMultipleFiles: (files, company, doctype) => {
+  uploadMultipleFiles: (files, company_id, doctype_id) => {
     const formData = new FormData();
     
     // Add each file to FormData
     files.forEach((file) => {formData.append("files", file);});
     
-    // Add company and doctype information
-    formData.append('company', company);
-    formData.append('doctype', doctype);
+    // Add company and doctype information using IDs
+    formData.append('company_id', company_id);
+    formData.append('doctype_id', doctype_id);
     
     return API.post('/upload', formData, {
       headers: { 
         'Content-Type': 'multipart/form-data',
-        // Remove Content-Type to let browser set boundary
       },
       timeout: 60000, // 60 seconds timeout for large files
     });
@@ -230,7 +226,6 @@ export default {
   documents,
   folders,
   ocr
-  
 };
 
-// Export individual modules for easier imports
+

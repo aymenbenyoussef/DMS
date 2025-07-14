@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useContext } from 'react';
 import API from '../../api';
 import { AppContext } from '../context';
+import DocumentConfirmationForm from './DocumentConfirmationForm';
 import './DragDropUpload.css';
 
 const DragDropUpload = ({ onUpload, onClose }) => {
@@ -13,7 +14,6 @@ const DragDropUpload = ({ onUpload, onClose }) => {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [sessionId, setSessionId] = useState(null);
   const [extractedData, setExtractedData] = useState(null);
-  const [confirmedDocument, setConfirmedDocument] = useState(null);
 
   const handleDragEnter = (e) => {
     e.preventDefault();
@@ -107,8 +107,8 @@ const DragDropUpload = ({ onUpload, onClose }) => {
       // Upload single file with OCR processing
       const response = await API.documents.uploadSingleFile(
         file, 
-        selectedCompany.name, 
-        selectedDoctype.name
+        selectedCompany.id, 
+        selectedDoctype.id
       );
       
       clearInterval(progressInterval);
@@ -118,26 +118,6 @@ const DragDropUpload = ({ onUpload, onClose }) => {
       // Store session data for confirmation
       setSessionId(response.data?.session_id);
       setExtractedData(response.data?.extracted_data);
-      
-      // Initialize confirmed document with extracted data
-      const initialConfirmedDoc = {
-        filename: file.name,
-        company: selectedCompany.name,
-        doctype: selectedDoctype.name,
-        is_invoice: response.data?.extracted_data?.is_invoice || false,
-        confirmed_data: {
-          invoice_number: response.data?.extracted_data?.invoice_number || '',
-          date: response.data?.extracted_data?.date || '',
-          vendor: response.data?.extracted_data?.vendor || '',
-          client: response.data?.extracted_data?.client || '',
-          total_ht: response.data?.extracted_data?.total_ht || '',
-          tva: response.data?.extracted_data?.tva || '',
-          total_ttc: response.data?.extracted_data?.total_ttc || '',
-          is_invoice: response.data?.extracted_data?.is_invoice || false
-        }
-      };
-      
-      setConfirmedDocument(initialConfirmedDoc);
       setShowConfirmation(true);
       
     } catch (error) {
@@ -150,8 +130,8 @@ const DragDropUpload = ({ onUpload, onClose }) => {
     }
   }, [file, selectedCompany, selectedDoctype]);
 
-  const handleConfirmDocument = useCallback(async () => {
-    if (!sessionId || !confirmedDocument) return;
+  const handleConfirmDocument = useCallback(async (confirmedDocument) => {
+    if (!sessionId) return;
 
     setIsUploading(true);
     setUploadStatus('confirming');
@@ -184,20 +164,7 @@ const DragDropUpload = ({ onUpload, onClose }) => {
     } finally {
       setIsUploading(false);
     }
-  }, [sessionId, confirmedDocument, onUpload, onClose]);
-
-  const updateConfirmedDocument = (field, value) => {
-    setConfirmedDocument(prev => {
-      const updated = { ...prev };
-      if (field === 'is_invoice') {
-        updated.is_invoice = value;
-        updated.confirmed_data.is_invoice = value;
-      } else {
-        updated.confirmed_data[field] = value;
-      }
-      return updated;
-    });
-  };
+  }, [sessionId, onUpload, onClose]);
 
   const removeFile = () => {
     setFile(null);
@@ -223,7 +190,7 @@ const DragDropUpload = ({ onUpload, onClose }) => {
       default:
         return '';
     }
-};
+  };
 
   if (showConfirmation) {
     return (
@@ -234,142 +201,21 @@ const DragDropUpload = ({ onUpload, onClose }) => {
             <button className="close-btn" onClick={onClose}>×</button>
           </div>
           
-          <div className="confirmation-content">
-            <p className="confirmation-info">
-              Check and modify the extracted information if necessary:
-            </p>
-            
-            <div className="document-form">
-              <h4 className="document-title">{confirmedDocument?.filename}</h4>
-              
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Entity:</label>
-                  <input 
-                    type="text" 
-                    value={confirmedDocument?.company || ''} 
-                    disabled 
-                    className="readonly-input"
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Data Type:</label>
-                  <input 
-                    type="text" 
-                    value={confirmedDocument?.doctype || ''} 
-                    disabled 
-                    className="readonly-input"
-                  />
-                </div>
-              </div>
-              
-              <div className="form-group checkbox-group">
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={confirmedDocument?.is_invoice || false}
-                    onChange={(e) => updateConfirmedDocument('is_invoice', e.target.checked)}
-                  />
-                  this file is an invoice
-                </label>
-              </div>
-              
-              {confirmedDocument?.is_invoice && (
-                <div className="invoice-fields">
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Invoice number:</label>
-                      <input
-                        type="text"
-                        value={confirmedDocument?.confirmed_data?.invoice_number || ''}
-                        onChange={(e) => updateConfirmedDocument('invoice_number', e.target.value)}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Date:</label>
-                      <input
-                        type="date"
-                        value={confirmedDocument?.confirmed_data?.date || ''}
-                        onChange={(e) => updateConfirmedDocument('date', e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Partner:</label>
-                      <input
-                        type="text"
-                        value={confirmedDocument?.confirmed_data?.vendor || ''}
-                        onChange={(e) => updateConfirmedDocument('vendor', e.target.value)}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Partner Id:</label>
-                      <input
-                        type="text"
-                        value={confirmedDocument?.confirmed_data?.client || ''}
-                        onChange={(e) => updateConfirmedDocument('client', e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Total HT (€):</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={confirmedDocument?.confirmed_data?.total_ht || ''}
-                        onChange={(e) => updateConfirmedDocument('total_ht', parseFloat(e.target.value) || 0)}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>TVA (€):</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={confirmedDocument?.confirmed_data?.tva || ''}
-                        onChange={(e) => updateConfirmedDocument('tva', parseFloat(e.target.value) || 0)}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Total TTC (€):</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={confirmedDocument?.confirmed_data?.total_ttc || ''}
-                        onChange={(e) => updateConfirmedDocument('total_ttc', parseFloat(e.target.value) || 0)}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
+          <DocumentConfirmationForm
+            sessionId={sessionId}
+            extractedData={extractedData}
+            filename={file?.name}
+            onConfirm={handleConfirmDocument}
+            onCancel={onClose}
+            initialCompany={selectedCompany}
+            initialDoctype={selectedDoctype}
+          />
+          
+          {uploadStatus && (
+            <div className={`status-message ${uploadStatus}`}>
+              {getStatusMessage()}
             </div>
-            
-            {uploadStatus && (
-              <div className={`status-message ${uploadStatus}`}>
-                {getStatusMessage()}
-              </div>
-            )}
-            
-            <div className="confirmation-actions">
-              <button 
-                className="btn-secondary" 
-                onClick={onClose}
-                disabled={isUploading}
-              >
-                Annuler
-              </button>
-              <button 
-                className="btn-primary" 
-                onClick={handleConfirmDocument}
-                disabled={isUploading}
-              >
-                {isUploading ? 'Confirmation...' : 'Confirmer'}
-              </button>
-            </div>
-          </div>
+          )}
         </div>
       </div>
     );
@@ -481,3 +327,4 @@ const DragDropUpload = ({ onUpload, onClose }) => {
 };
 
 export default DragDropUpload;
+

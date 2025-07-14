@@ -1,304 +1,306 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import API from '../../api';
+import { AppContext } from '../context';
+import PartnerSelector from './PartnerSelector';
 import './DocumentConfirmationForm.css';
 
 const DocumentConfirmationForm = ({ 
-  document, 
-  onUpdate, 
+  sessionId, 
+  extractedData, 
+  filename, 
   onConfirm, 
-  onCancel, 
-  isLoading = false 
-}) => {  const [formData, setFormData] = useState({
-    is_invoice: document?.is_invoice || false,
-    invoice_number: document?.confirmed_data?.invoice_number || "",
-    date: document?.confirmed_data?.date || "",
-    partner: document?.confirmed_data?.partner || "",
-    client: document?.confirmed_data?.client || "",
-    total_ht: document?.confirmed_data?.total_ht || "",
-    tva: document?.confirmed_data?.tva || "",
-    total_ttc: document?.confirmed_data?.total_ttc || ""
-  }); const [errors, setErrors] = useState({});
+  onCancel,
+  initialCompany,
+  initialDoctype
+}) => {
+  const { selectedCompany, selectedDoctype, setSelectedCompany, setSelectedDoctype } = useContext(AppContext);
+  const [companies, setCompanies] = useState([]);
+  const [doctypes, setDoctypes] = useState([]);
+  const [currentCompany, setCurrentCompany] = useState(initialCompany || selectedCompany);
+  const [currentDoctype, setCurrentDoctype] = useState(initialDoctype || selectedDoctype);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
+  const [confirmedDocument, setConfirmedDocument] = useState({
+    filename: filename,
+    company_id: (initialCompany || selectedCompany)?.id,
+    doctype_id: (initialDoctype || selectedDoctype)?.id,
+    is_invoice: extractedData?.is_invoice || false,
+    confirmed_data: {
+      invoice_number: extractedData?.invoice_number || '',
+      date: extractedData?.date || '',
+      partner: extractedData?.partner || '',
+      partner_id: extractedData?.partner_id || '',
+      total_ht: extractedData?.total_ht || '',
+      tva: extractedData?.tva || '',
+      total_ttc: extractedData?.total_ttc || '',
+      is_invoice: extractedData?.is_invoice || false
+    }
+  });
 
-  const handleInputChange = (field, value) => {
-    setFormData(prev => ({
+  // Load companies on component mount
+  useEffect(() => {
+    loadCompanies();
+  }, []);
+
+  // Load doctypes when company changes
+  useEffect(() => {
+    if (currentCompany?.id) {
+      loadDoctypesByCompany(currentCompany.id);
+    }
+  }, [currentCompany]);
+
+  // Check for changes from initial selection
+  useEffect(() => {
+    const companyChanged = currentCompany?.id !== (initialCompany || selectedCompany)?.id;
+    const doctypeChanged = currentDoctype?.id !== (initialDoctype || selectedDoctype)?.id;
+    setHasChanges(companyChanged || doctypeChanged);
+  }, [currentCompany, currentDoctype, initialCompany, initialDoctype, selectedCompany, selectedDoctype]);
+
+  const loadCompanies = async () => {
+    try {
+      const response = await API.companies.getAll();
+      setCompanies(response.data);
+    } catch (error) {
+      console.error('Error loading companies:', error);
+    }
+  };
+
+  const loadDoctypesByCompany = async (companyId) => {
+    try {
+      const response = await API.doctype.getByCompany(companyId);
+      setDoctypes(response.data);
+    } catch (error) {
+      console.error('Error loading doctypes:', error);
+      setDoctypes([]);
+    }
+  };
+
+  const handleCompanyChange = (e) => {
+    const companyId = parseInt(e.target.value);
+    const company = companies.find(c => c.id === companyId);
+    setCurrentCompany(company);
+    setSelectedCompany(company);
+    setConfirmedDocument(prev => ({
       ...prev,
-      [field]: value
+      company_id: companyId
     }));
-
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({
-        ...prev,
-        [field]: null
-      }));
-    }
-
-    // Update parent component
-    onUpdate(field, value);
+    // Reset doctype when company changes
+    setCurrentDoctype(null);
+    setSelectedDoctype(null);
+    setConfirmedDocument(prev => ({
+      ...prev,
+      doctype_id: null
+    }));
   };
 
-  const validateForm = () => {
-    const newErrors = {};
-
-    if (formData.is_invoice) {
-      if (!formData.invoice_number.trim()) {
-        newErrors.invoice_number = 'Le numéro de facture est requis';
-      }
-      if (!formData.date) {
-        newErrors.date = 'La date est requise';
-      }
-      if (!formData.partner.trim()) {
-        newErrors.partner = 'Le partenaire est requis';
-      }
-      if (!formData.total_ttc || formData.total_ttc <= 0) {
-        newErrors.total_ttc = 'Le total TTC doit être supérieur à 0';
-      }
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  const handleDoctypeChange = (e) => {
+    const doctypeId = parseInt(e.target.value);
+    const doctype = doctypes.find(d => d.id === doctypeId);
+    setCurrentDoctype(doctype);
+    setSelectedDoctype(doctype);
+    setConfirmedDocument(prev => ({
+      ...prev,
+      doctype_id: doctypeId
+    }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (validateForm()) {
-      onConfirm();
+  const updateConfirmedDocument = (field, value) => {
+    setConfirmedDocument(prev => {
+      const updated = { ...prev };
+      if (field === 'is_invoice') {
+        updated.is_invoice = value;
+        updated.confirmed_data.is_invoice = value;
+      } else {
+        updated.confirmed_data[field] = value;
+      }
+      return updated;
+    });
+  };
+
+  const handlePartnerChange = (partnerId, partner) => {
+    updateConfirmedDocument('partner_id', partnerId);
+    if (partner) {
+      updateConfirmedDocument('partner', partner.company_name);
     }
   };
 
-  const calculateTotalTTC = () => {
-    const totalHT = parseFloat(formData.total_ht) || 0;
-    const tva = parseFloat(formData.tva) || 0;
-    return (totalHT + tva).toFixed(2);
-  };
+  const handleConfirm = async () => {
+    if (!currentCompany || !currentDoctype) {
+      alert('Veuillez sélectionner une entreprise et un type de document.');
+      return;
+    }
 
-  const handleTotalHTChange = (value) => {
-    const totalHT = parseFloat(value) || 0;
-    const tva = parseFloat(formData.tva) || 0;
-    const calculatedTTC = totalHT + tva;
-    
-    handleInputChange('total_ht', totalHT);
-    handleInputChange('total_ttc', calculatedTTC);
-  };
-
-  const handleTVAChange = (value) => {
-    const tva = parseFloat(value) || 0;
-    const totalHT = parseFloat(formData.total_ht) || 0;
-    const calculatedTTC = totalHT + tva;
-    
-    handleInputChange('tva', tva);
-    handleInputChange('total_ttc', calculatedTTC);
+    setIsLoading(true);
+    try {
+      await onConfirm(confirmedDocument);
+    } catch (error) {
+      console.error('Error confirming document:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="document-confirmation-form">
       <div className="form-header">
-        <h4 className="document-title">
-          <span className="file-icon">📄</span>
-          {document?.filename}
-        </h4>
-        <div className="document-meta">
-          <span className="meta-item">
-            <strong>Entity:</strong> {document?.company}
-          </span>
-          <span className="meta-item">
-            <strong>Document Type:</strong> {document?.doctype}
-          </span>
-        </div>
-      </div>
-
-      <form onSubmit={handleSubmit} className="confirmation-form">
-        {/* Document Type Selection */}
-        <div className="form-section">
-          <div className="checkbox-group">
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={formData.is_invoice}
-                onChange={(e) => handleInputChange('is_invoice', e.target.checked)}
-                disabled={isLoading}
-              />
-              <span className="checkbox-text">
-                <span className="checkbox-icon">📋</span>
-                This Document Is invoice
-              </span>
-            </label>
-          </div>
-        </div>
-
-        {/* Invoice Fields */}
-        {formData.is_invoice && (
-          <div className="form-section invoice-section">
-            <h5 className="section-title">
-              <span className="section-icon">💰</span>
-              Billing information
-            </h5>
-            
-            {/* Basic Invoice Info */}
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="invoice_number">
-                  Invoice number <span className="required">*</span>
-                </label>
-                <input
-                  id="invoice_number"
-                  type="text"
-                  value={formData.invoice_number}
-                  onChange={(e) => handleInputChange('invoice_number', e.target.value)}
-                  className={errors.invoice_number ? 'error' : ''}
-                  placeholder="Ex: FAC-2024-001"
-                  disabled={isLoading}
-                />
-                {errors.invoice_number && (
-                  <span className="error-message">{errors.invoice_number}</span>
-                )}
-              </div>
-              
-              <div className="form-group">
-                <label htmlFor="date">
-                  Invoice date  <span className="required">*</span>
-                </label>
-                <input
-                  id="date"
-                  type="date"
-                  value={formData.date}
-                  onChange={(e) => handleInputChange('date', e.target.value)}
-                  className={errors.date ? 'error' : ''}
-                  disabled={isLoading}
-                />
-                {errors.date && (
-                  <span className="error-message">{errors.date}</span>
-                )}
-              </div>
-            </div>
-
-            {/* Parties */}
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="partner">
-                  Partner <span className="required">*</span>
-                </label>
-                <input
-                  id="partner"
-                  type="text"
-                  value={formData.partner}
-                  onChange={(e) => handleInputChange("partner", e.target.value)}
-                  className={errors.partner ? "error" : ""}
-                  placeholder="Nom du partenaire"
-                  disabled={isLoading}
-                />
-                {errors.partner && (
-                  <span className="error-message">{errors.partner}</span>
-                )}
-              </div>
-              
-              <div className="form-group">
-                <label htmlFor="client">Partner ID</label>
-                <input
-                  id="client"
-                  type="text"
-                  value={formData.client}
-                  onChange={(e) => handleInputChange('client', e.target.value)}
-                  placeholder="Nom du client"
-                  disabled={isLoading}
-                />
-              </div>
-            </div>
-
-            {/* Financial Information */}
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="total_ht">Total HT (€)</label>
-                <input
-                  id="total_ht"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.total_ht}
-                  onChange={(e) => handleTotalHTChange(e.target.value)}
-                  placeholder="0.00"
-                  disabled={isLoading}
-                />
-              </div>
-              
-              <div className="form-group">
-                <label htmlFor="tva">TVA (€)</label>
-                <input
-                  id="tva"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.tva}
-                  onChange={(e) => handleTVAChange(e.target.value)}
-                  placeholder="0.00"
-                  disabled={isLoading}
-                />
-              </div>
-              
-              <div className="form-group">
-                <label htmlFor="total_ttc">
-                  Total TTC (€) <span className="required">*</span>
-                </label>
-                <input
-                  id="total_ttc"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.total_ttc}
-                  onChange={(e) => handleInputChange('total_ttc', parseFloat(e.target.value) || 0)}
-                  className={errors.total_ttc ? 'error' : ''}
-                  placeholder="0.00"
-                  disabled={isLoading}
-                />
-                {errors.total_ttc && (
-                  <span className="error-message">{errors.total_ttc}</span>
-                )}
-              </div>
-            </div>
-
-            {/* Calculation Helper */}
-            {(formData.total_ht || formData.tva) && (
-              <div className="calculation-helper">
-                <span className="calculation-text">
-                  Automatic calculation : {formData.total_ht || 0} + {formData.tva || 0} = {calculateTotalTTC()} €
-                </span>
-              </div>
-            )}
+        <h3>Confirmation du document</h3>
+        <p>Vérifiez et modifiez les informations extraites si nécessaire :</p>
+        {hasChanges && (
+          <div className="changes-notice">
+            ⚠️ Vous avez modifié la société ou le type de document. Le fichier sera stocké dans le nouveau répertoire sélectionné.
           </div>
         )}
-
-        {/* Action Buttons */}
-        <div className="form-actions">
-          <button 
-            type="button" 
-            className="btn-secondary" 
-            onClick={onCancel}
-            disabled={isLoading}
-          >
-            <span className="btn-icon">❌</span>
-            Cancel
-          </button>
-          
-          <button 
-            type="submit" 
-            className="btn-primary"
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <>
-                <span className="btn-icon loading">⏳</span>
-                Confirmation...
-              </>
-            ) : (
-              <>
-                <span className="btn-icon">✅</span>
-                Confirm
-              </>
+      </div>
+      
+      <div className="document-form">
+        <h4 className="document-title">{filename}</h4>
+        
+        <div className="form-row">
+          <div className="form-group">
+            <label>Entité *:</label>
+            <select 
+              value={currentCompany?.id || ''} 
+              onChange={handleCompanyChange}
+              required
+              className={currentCompany?.id !== (initialCompany || selectedCompany)?.id ? 'changed' : ''}
+            >
+              <option value="">Sélectionner une entité</option>
+              {companies.map(company => (
+                <option key={company.id} value={company.id}>
+                  {company.name}
+                </option>
+              ))}
+            </select>
+            {currentCompany?.id !== (initialCompany || selectedCompany)?.id && (
+              <small className="change-indicator">Modifié depuis la sélection initiale</small>
             )}
-          </button>
+          </div>
+          <div className="form-group">
+            <label>Type de document *:</label>
+            <select 
+              value={currentDoctype?.id || ''} 
+              onChange={handleDoctypeChange}
+              disabled={!currentCompany}
+              required
+              className={currentDoctype?.id !== (initialDoctype || selectedDoctype)?.id ? 'changed' : ''}
+            >
+              <option value="">Sélectionner un type</option>
+              {doctypes.map(doctype => (
+                <option key={doctype.id} value={doctype.id}>
+                  {doctype.name}
+                </option>
+              ))}
+            </select>
+            {currentDoctype?.id !== (initialDoctype || selectedDoctype)?.id && (
+              <small className="change-indicator">Modifié depuis la sélection initiale</small>
+            )}
+          </div>
         </div>
-      </form>
+        
+        <div className="form-group checkbox-group">
+          <label>
+            <input
+              type="checkbox"
+              checked={confirmedDocument?.is_invoice || false}
+              onChange={(e) => updateConfirmedDocument('is_invoice', e.target.checked)}
+            />
+            Ce fichier est une facture
+          </label>
+        </div>
+        
+        {confirmedDocument?.is_invoice && (
+          <div className="invoice-fields">
+            <div className="form-row">
+              <div className="form-group">
+                <label>Numéro de facture :</label>
+                <input
+                  type="text"
+                  value={confirmedDocument?.confirmed_data?.invoice_number || ''}
+                  onChange={(e) => updateConfirmedDocument('invoice_number', e.target.value)}
+                />
+              </div>
+              <div className="form-group">
+                <label>Date :</label>
+                <input
+                  type="date"
+                  value={confirmedDocument?.confirmed_data?.date || ''}
+                  onChange={(e) => updateConfirmedDocument('date', e.target.value)}
+                />
+              </div>
+            </div>
+            
+            <div className="form-row">
+              <div className="form-group">
+                <label>Partenaire :</label>
+                <input
+                  type="text"
+                  value={confirmedDocument?.confirmed_data?.partner || ''}
+                  onChange={(e) => updateConfirmedDocument('partner', e.target.value)}
+                  placeholder="Nom du partenaire"
+                />
+              </div>
+              <div className="form-group">
+                <label>Partenaire externe :</label>
+                <PartnerSelector
+                  selectedPartnerId={confirmedDocument?.confirmed_data?.partner_id}
+                  onPartnerChange={handlePartnerChange}
+                  placeholder="Sélectionner un partenaire externe"
+                />
+              </div>
+            </div>
+            
+            <div className="form-row">
+              <div className="form-group">
+                <label>Total HT (€) :</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={confirmedDocument?.confirmed_data?.total_ht || ''}
+                  onChange={(e) => updateConfirmedDocument('total_ht', parseFloat(e.target.value) || 0)}
+                />
+              </div>
+              <div className="form-group">
+                <label>TVA (€) :</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={confirmedDocument?.confirmed_data?.tva || ''}
+                  onChange={(e) => updateConfirmedDocument('tva', parseFloat(e.target.value) || 0)}
+                />
+              </div>
+              <div className="form-group">
+                <label>Total TTC (€) :</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={confirmedDocument?.confirmed_data?.total_ttc || ''}
+                  onChange={(e) => updateConfirmedDocument('total_ttc', parseFloat(e.target.value) || 0)}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+      
+      <div className="confirmation-actions">
+        <button 
+          className="btn-secondary" 
+          onClick={onCancel}
+          disabled={isLoading}
+        >
+          Annuler
+        </button>
+        <button 
+          className="btn-primary" 
+          onClick={handleConfirm}
+          disabled={isLoading || !currentCompany || !currentDoctype}
+        >
+          {isLoading ? 'Confirmation...' : hasChanges ? 'Confirmer avec modifications' : 'Confirmer'}
+        </button>
+      </div>
     </div>
   );
 };
 
 export default DocumentConfirmationForm;
+

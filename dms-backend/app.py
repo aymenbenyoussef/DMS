@@ -8,6 +8,7 @@ from db import db
 from datetime import timedelta, datetime
 from werkzeug.utils import secure_filename
 import os
+import shutil
 from flask_cors import cross_origin
 from pdf2image import convert_from_bytes
 from ocr_utils import process_uploaded_files, generate_report_pdf, extract_invoice_data
@@ -94,15 +95,11 @@ app.config['TEMP_UPLOAD_FOLDER'] = TEMP_UPLOAD_FOLDER
 os.makedirs(DMS_UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(TEMP_UPLOAD_FOLDER, exist_ok=True)
 
-def create_company_doctype_folders(company_name, doctype_name):
-    """Create folder structure for company and document type automatically"""
-    # Sanitize names to prevent path traversal
-    safe_company_name = secure_filename(company_name)
-    safe_doctype_name = secure_filename(doctype_name)
-    
-    # Create the main folder structure: /dms/upload/<company>/<doctype>/
-    company_folder = os.path.join(app.config['DMS_UPLOAD_FOLDER'], safe_company_name)
-    doctype_folder = os.path.join(company_folder, safe_doctype_name)
+def create_company_doctype_folders(company_id, doctype_id):
+    """Create folder structure for company and document type automatically using IDs"""
+    # Create the main folder structure: /dms/upload/<company_id>/<doctype_id>/
+    company_folder = os.path.join(app.config['DMS_UPLOAD_FOLDER'], str(company_id))
+    doctype_folder = os.path.join(company_folder, str(doctype_id))
     summary_folder = os.path.join(doctype_folder, 'summary')
     
     # Create all folders
@@ -115,34 +112,31 @@ def create_company_doctype_folders(company_name, doctype_name):
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def process_single_file_ocr(file, company_name, doctype_name):
-    """Process a single file with OCR and return extracted data"""
+def process_single_file_ocr(file, company_id, doctype_id):
+    """Process a single file with OCR and return extracted data - STORES IN TEMPORARY FOLDER"""
     try:
-        # Create folder structure
-        company_folder, doctype_folder, summary_folder = create_company_doctype_folders(company_name, doctype_name)
-        
-        # Save the original file
+        # Save the file to temporary folder first (NOT final destination)
         filename = secure_filename(file.filename)
         timestamp = int(datetime.now().timestamp())
         unique_filename = f"{timestamp}_{filename}"
-        file_path = os.path.join(doctype_folder, unique_filename)
+        temp_file_path = os.path.join(app.config['TEMP_UPLOAD_FOLDER'], unique_filename)
         
-        file.save(file_path)
+        file.save(temp_file_path)
         
         # Perform OCR based on file type
         text = ""
         if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff')):
-            image = Image.open(file_path).convert("RGB")
+            image = Image.open(temp_file_path).convert("RGB")
             text = pytesseract.image_to_string(image, lang='fra+eng')
         elif filename.lower().endswith('.pdf'):
-            with open(file_path, 'rb') as pdf_file:
+            with open(temp_file_path, 'rb') as pdf_file:
                 images = convert_from_bytes(pdf_file.read())
                 for img in images:
                     text += pytesseract.image_to_string(img, lang='fra+eng') + "\n"
         
-        # Save OCR text
+        # Save OCR text to temporary folder
         text_filename = f"{os.path.splitext(unique_filename)[0]}.txt"
-        text_path = os.path.join(doctype_folder, text_filename)
+        text_path = os.path.join(app.config['TEMP_UPLOAD_FOLDER'], text_filename)
         with open(text_path, 'w', encoding='utf-8') as f:
             f.write(text)
         
@@ -152,13 +146,10 @@ def process_single_file_ocr(file, company_name, doctype_name):
         return {
             "filename": unique_filename,
             "original_filename": filename,
-            "file_path": file_path,
+            "temp_file_path": temp_file_path,  # Temporary path
             "text_path": text_path,
             "ocr_text": text,
-            "extracted_data": extracted_data,
-            "company_folder": company_folder,
-            "doctype_folder": doctype_folder,
-            "summary_folder": summary_folder
+            "extracted_data": extracted_data
         }
         
     except Exception as e:
@@ -964,6 +955,15 @@ def get_doctype_companies(doctype_id):
     except Exception as e:
         return jsonify({"msg": str(e)}), 500
 
+@app.route('/doctype/company/<int:company_id>', methods=['GET'])
+@jwt_required()
+def get_doctypes_by_company(company_id):
+    try:
+        doctypes = db.get_datatypes_by_company(company_id)
+        return jsonify(doctypes), 200
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+
 @app.route('/doctype', methods=['GET'])
 @jwt_required()
 def get_doctypes():
@@ -1145,16 +1145,12 @@ def create_document():
     except Exception as e:
         return jsonify({"msg": str(e)}), 400
 
-@app.route('/documents/company/<company_name>/type/<doctype_name>', methods=['GET'])
+@app.route('/documents/company/<int:company_id>/type/<int:doctype_id>', methods=['GET'])
 @jwt_required()
-def get_documents_by_company_and_type(company_name, doctype_name):
+def get_documents_by_company_and_type(company_id, doctype_id):
     try:
-        # Secure names to avoid path traversal
-        safe_company_name = secure_filename(company_name)
-        safe_doctype_name = secure_filename(doctype_name)
-
-        # Build path: .../dms-data/upload/company/doctype/
-        doctype_folder = os.path.join(app.config['DMS_UPLOAD_FOLDER'], safe_company_name, safe_doctype_name)
+        # Build path: .../dms-data/upload/company_id/doctype_id/
+        doctype_folder = os.path.join(app.config['DMS_UPLOAD_FOLDER'], str(company_id), str(doctype_id))
 
         if not os.path.exists(doctype_folder):
             return jsonify({"documents": [], "msg": "No such folder"}), 404
@@ -1190,11 +1186,11 @@ def upload_single_file():
     current_user = get_jwt_identity()
     current_user_id = current_user_claims.get('id')
     # Get form data
-    company_name = request.form.get('company')
-    doctype_name = request.form.get('doctype')
+    company_id = request.form.get('company_id')
+    doctype_id = request.form.get('doctype_id')
     
-    if not company_name or not doctype_name:
-        return jsonify({"msg": "Company and document type are required"}), 400
+    if not company_id or not doctype_id:
+        return jsonify({"msg": "Company ID and document type ID are required"}), 400
     
     # Get uploaded file
     if 'file' not in request.files:
@@ -1210,7 +1206,7 @@ def upload_single_file():
     
     try:
         # Process the single file with OCR
-        processed_file = process_single_file_ocr(file, company_name, doctype_name)
+        processed_file = process_single_file_ocr(file, company_id, doctype_id)
         
         if 'error' in processed_file:
             return jsonify({"msg": f"Processing error: {processed_file['error']}"}), 500
@@ -1219,8 +1215,8 @@ def upload_single_file():
         session_id = f"{current_user_id}_{int(datetime.now().timestamp())}"
         temp_data = {
             'session_id': session_id,
-            'company': company_name,
-            'doctype': doctype_name,
+            'company_id': company_id,
+            'doctype_id': doctype_id,
             'processed_file': processed_file,
             'user_id': current_user_id
         }
@@ -1231,7 +1227,7 @@ def upload_single_file():
             json.dump(temp_data, f, ensure_ascii=False, indent=2)
         
         return jsonify({
-            "msg": "File processed successfully",
+            "msg": "File processed successfully and stored temporarily. Awaiting confirmation.",
             "session_id": session_id,
             "extracted_data": processed_file['extracted_data']
         }), 200
@@ -1247,11 +1243,11 @@ def upload_files():
     current_user = get_jwt_identity()
     
     # Get form data
-    company_name = request.form.get('company')
-    doctype_name = request.form.get('doctype')
+    company_id = request.form.get('company_id')
+    doctype_id = request.form.get('doctype_id')
     
-    if not company_name or not doctype_name:
-        return jsonify({"msg": "Company and document type are required"}), 400
+    if not company_id or not doctype_id:
+        return jsonify({"msg": "Company ID and document type ID are required"}), 400
     
     # Get uploaded files
     files = request.files.getlist('files')
@@ -1265,17 +1261,17 @@ def upload_files():
     
     try:
         # Create folder structure
-        company_folder, doctype_folder, summary_folder = create_company_doctype_folders(company_name, doctype_name)
+        company_folder, doctype_folder, summary_folder = create_company_doctype_folders(company_id, doctype_id)
         
         # Process files with OCR
-        processed_files = process_uploaded_files(files, app.config['TEMP_UPLOAD_FOLDER'], company_name, doctype_name)
+        processed_files = process_uploaded_files(files, app.config['TEMP_UPLOAD_FOLDER'], company_id, doctype_id)
         
         # Save processing results to temporary storage for confirmation
         session_id = f"{current_user['id']}_{int(datetime.now().timestamp())}"
         temp_data = {
             'session_id': session_id,
-            'company': company_name,
-            'doctype': doctype_name,
+            'company_id': company_id,
+            'doctype_id': doctype_id,
             'processed_files': processed_files,
             'user_id': current_user['id']
         }
@@ -1291,8 +1287,8 @@ def upload_files():
             if 'error' not in processed_file:
                 form_data = {
                     'filename': processed_file['filename'],
-                    'company': company_name,
-                    'doctype': doctype_name,
+                    'company_id': company_id,
+                    'doctype_id': doctype_id,
                     'extracted_data': processed_file['extracted_data']
                 }
                 forms_data.append(form_data)
@@ -1311,6 +1307,7 @@ def upload_files():
 def confirm_document():
     """Confirm and save document information after user validation"""
     current_user = get_jwt_identity()
+    current_user_claims = get_jwt()
     data = request.get_json()
     
     session_id = data.get('session_id')
@@ -1328,18 +1325,23 @@ def confirm_document():
         with open(temp_file_path, 'r', encoding='utf-8') as f:
             temp_data = json.load(f)
         
-        company_name = temp_data['company']
-        doctype_name = temp_data['doctype']
-        
-        # Create folder structure
-        company_folder, doctype_folder, summary_folder = create_company_doctype_folders(company_name, doctype_name)
-        
         saved_documents = []
         
         for doc_data in confirmed_documents:
             filename = doc_data['filename']
+            # Use company_id and doctype_id from the frontend confirmation form (allows changes)
+            company_id = doc_data.get('company_id') or temp_data.get('company_id')
+            doctype_id = doc_data.get('doctype_id') or temp_data.get('doctype_id')
             is_invoice = doc_data.get("is_invoice", False)
             confirmed_info = doc_data.get("confirmed_data", {})
+            
+            if not company_id or not doctype_id:
+                saved_documents.append({
+                    'filename': filename,
+                    'error': 'Company ID and Document Type ID are required'
+                })
+                continue
+            
             # Rename fields from frontend to match backend/database expectations
             if "vendor" in confirmed_info:
                 confirmed_info["partner"] = confirmed_info.pop("vendor")
@@ -1347,50 +1349,129 @@ def confirm_document():
                 confirmed_info["partner_id"] = confirmed_info.pop("client")
             
             try:
-                # Save document to database
+                # Create folder structure for the FINAL destination (using confirmed company_id and doctype_id)
+                company_folder, doctype_folder, summary_folder = create_company_doctype_folders(company_id, doctype_id)
+                
+                # Get the original processed file data from temp_data
+                original_processed_file = None
+                # Check if it's a single file upload or multiple
+                if 'processed_file' in temp_data:
+                    original_processed_file = temp_data['processed_file']
+                elif 'processed_files' in temp_data:
+                    # Find the matching file from the list of processed_files
+                    for pf in temp_data['processed_files']:
+                        if pf['filename'] == filename:
+                            original_processed_file = pf
+                            break
+
+                if not original_processed_file:
+                    saved_documents.append({
+                        'filename': filename,
+                        'error': 'Original file data not found'
+                    })
+                    continue
+
+                temp_file_path = original_processed_file.get('temp_file_path')
+                if not temp_file_path or not os.path.exists(temp_file_path):
+                    saved_documents.append({
+                        'filename': filename,
+                        'error': 'Temporary file not found'
+                    })
+                    continue
+
+                # MOVE FILE FROM TEMPORARY TO FINAL DESTINATION AFTER CONFIRMATION
+                final_filename = original_processed_file.get('original_filename', filename)
+                timestamp = int(datetime.now().timestamp())
+                unique_final_filename = f"{timestamp}_{final_filename}"
+                final_file_path = os.path.join(doctype_folder, unique_final_filename)
+                
+                # Move the file from temporary to final location
+                shutil.move(temp_file_path, final_file_path)
+                
+                # Also move the OCR text file if it exists
+                temp_text_path = original_processed_file.get('text_path')
+                if temp_text_path and os.path.exists(temp_text_path):
+                    final_text_filename = f"{os.path.splitext(unique_final_filename)[0]}.txt"
+                    final_text_path = os.path.join(doctype_folder, final_text_filename)
+                    shutil.move(temp_text_path, final_text_path)
+
+                file_size = os.path.getsize(final_file_path) if os.path.exists(final_file_path) else 0
+
+                # Save document to database with FINAL file path
                 document_id = db.create_document_with_ocr_data(
                     owner_id=current_user['id'],
-                    company_name=company_name,
-                    doctype_name=doctype_name,
-                    filename=filename,
+                    company_id=company_id,  # Use confirmed company_id
+                    doctype_id=doctype_id,  # Use confirmed doctype_id
+                    filename=unique_final_filename,
+                    file_path=final_file_path,  # Final path after move
+                    file_size=file_size,
                     is_invoice=is_invoice,
                     extracted_data=confirmed_info
                 )
                 
                 # Generate report PDF if it's an invoice and save to summary folder
                 if is_invoice and confirmed_info:
-                    report_filename = f"{os.path.splitext(filename)[0]}_report.pdf"
+                    report_filename = f"{os.path.splitext(unique_final_filename)[0]}_report.pdf"
                     report_path = os.path.join(summary_folder, report_filename)
-                    generate_report_pdf(confirmed_info, report_path, filename)
+                    generate_report_pdf(confirmed_info, report_path, unique_final_filename)
                 
                 # Generate JSON summary file with confirmed information
-                json_filename = f"{os.path.splitext(filename)[0]}_summary.json"
+                json_filename = f"{os.path.splitext(unique_final_filename)[0]}_summary.json"
                 json_path = os.path.join(summary_folder, json_filename)
+                
+                # Get company and doctype names for the JSON file
+                company = db.get_company_by_id(company_id)
+                doctype = db.get_doctype_by_id(doctype_id)
+                
                 with open(json_path, 'w', encoding='utf-8') as json_file:
                     json.dump({
-                        'filename': filename,
+                        'filename': unique_final_filename,
+                        'original_filename': final_filename,
                         'processing_date': datetime.now().isoformat(),
+                        'company': {
+                            'id': company_id,
+                            'name': company.get('name') if company else 'Unknown'
+                        },
+                        'document_type': {
+                            'id': doctype_id,
+                            'name': doctype.get('name') if doctype else 'Unknown'
+                        },
                         'is_invoice': is_invoice,
-                        'confirmed_data': confirmed_info
+                        'confirmed_data': confirmed_info,
+                        'file_info': {
+                            'path': final_file_path,
+                            'size': file_size
+                        },
+                        'changes_from_initial': {
+                            'company_changed': company_id != temp_data.get('company_id'),
+                            'doctype_changed': doctype_id != temp_data.get('doctype_id'),
+                            'initial_company_id': temp_data.get('company_id'),
+                            'initial_doctype_id': temp_data.get('doctype_id'),
+                            'final_company_id': company_id,
+                            'final_doctype_id': doctype_id
+                        }
                     }, json_file, ensure_ascii=False, indent=2)
                 
-                # Log document creation
-                current_user_claims = get_jwt()
+                # Log document creation with information about changes
                 log_activity(
                     actor=current_user_claims.get('username', 'Unknown'),
                     action="Create",
                     resource_type="document",
                     resource_data={
                         'id': document_id,
-                        'filename': filename,
-                        'company_id': company_name
+                        'filename': unique_final_filename,
+                        'company_id': company_id
                     }
                 )
                 
                 saved_documents.append({
                     'document_id': document_id,
-                    'filename': filename,
-                    'is_invoice': is_invoice
+                    'filename': unique_final_filename,
+                    'original_filename': final_filename,
+                    'is_invoice': is_invoice,
+                    'final_path': final_file_path,
+                    'company_changed': company_id != temp_data.get('company_id'),
+                    'doctype_changed': doctype_id != temp_data.get('doctype_id')
                 })
                 
             except Exception as e:
@@ -1399,8 +1480,11 @@ def confirm_document():
                     'error': str(e)
                 })
         
-        # Clean up temporary file
-        os.remove(temp_file_path)
+        # Clean up temporary session file
+        try:
+            os.remove(temp_file_path)
+        except:
+            pass  # Don't fail if temp file cleanup fails
         
         return jsonify({
             "msg": "Documents confirmed and saved successfully",

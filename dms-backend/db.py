@@ -128,52 +128,6 @@ class DatabaseManager:
                 )
             """) 
 
-            # Create documents table with enhanced OCR support
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS documents (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    filename VARCHAR(255) NOT NULL,
-                    owner_id INT NOT NULL,
-                    company_name VARCHAR(255) NOT NULL,
-                    doctype_name VARCHAR(255) NOT NULL,
-                    file_path VARCHAR(500),
-                    ocr_text TEXT,
-                    extracted_data JSON,
-                    is_invoice BOOLEAN DEFAULT FALSE,
-                    invoice_number VARCHAR(100),
-                    invoice_date DATE,
-                    vendor VARCHAR(255),
-                    client VARCHAR(255),
-                    total_ht DECIMAL(10,2),
-                    tva DECIMAL(10,2),
-                    total_ttc DECIMAL(10,2),
-                    file_size INT DEFAULT 0,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                    FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
-                )
-            """)
-
-            # Create document_history table
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS document_history (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    document_id INT NOT NULL,
-                    user_id INT NOT NULL,
-                    action VARCHAR(255) NOT NULL,
-                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE CASCADE,
-                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-                )
-            """)
-            cursor.execute("""
-                Create table if not exists Doctype( 
-                           id INT AUTO_INCREMENT PRIMARY KEY,
-                           name VARCHAR(50) NOT NULL UNIQUE,
-                           status BOOLEAN DEFAULT TRUE
-                                    )
-                """)
-            
             cursor.execute("""
             CREATE TABLE IF NOT EXISTS partnertypes (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -226,10 +180,50 @@ class DatabaseManager:
                     UNIQUE KEY unique_partner_type (partner_id, partnertype_id)
                 )
             """)    
+            
+            # Create documents table with enhanced OCR support
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS documents (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    filename VARCHAR(255) NOT NULL,
+                    owner_id INT NOT NULL,
+                    company_id INT,
+                    doctype_id INT,
+                    partner_id INT,
+                    file_path VARCHAR(500),
+                    ocr_text TEXT,
+                    extracted_data JSON,
+                    is_invoice BOOLEAN DEFAULT FALSE,   
+                    invoice_number VARCHAR(100),
+                    invoice_date DATE,
+                    total_ht DECIMAL(10,2),
+                    tva DECIMAL(10,2),
+                    total_ttc DECIMAL(10,2),
+                    file_size INT DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
+                    FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
+                    FOREIGN KEY (doctype_id) REFERENCES doctype(id) ON DELETE CASCADE,
+                    FOREIGN KEY (partner_id) REFERENCES partners(id) ON DELETE CASCADE
+                )""")
+
+            # Create document_history table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS document_history (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    document_id INT NOT NULL,
+                    user_id INT NOT NULL,
+                    action VARCHAR(255) NOT NULL,
+                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE CASCADE,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                )
+            """)
             self.connection.commit()
 
 
-            # Create default users if they don't exist
+            # Create default users if they don\'t exist
             self.create_default_users()
 
             cursor.close()
@@ -1035,58 +1029,58 @@ class DatabaseManager:
             return False
 
 
-    def create_document_with_ocr_data(self, owner_id, company_name, doctype_name, filename, 
+    def create_document_with_ocr_data(self, owner_id, company_id, doctype_id, filename, file_path, file_size,
                                         is_invoice=False, extracted_data=None):
         """Create a document with OCR extracted data"""
         try:
             # Prepare extracted data
             invoice_number = None
             invoice_date = None
-            vendor = None
-            client = None
+            partner = None
+            partner_id = None
             total_ht = None
             tva = None
             total_ttc = None
+            life = None
             
             if extracted_data:
-                invoice_number = extracted_data.get('invoice_number')
-                invoice_date = extracted_data.get('date')
-                vendor = extracted_data.get('vendor')
-                client = extracted_data.get('client')
-                total_ht = extracted_data.get('total_ht')
-                tva = extracted_data.get('tva')
-                total_ttc = extracted_data.get('total_ttc')
+                invoice_number = extracted_data.get("invoice_number")
+                invoice_date = extracted_data.get("date")
+                partner = extracted_data.get("partner")
+                partner_id = extracted_data.get("partner_id")
+                total_ht = extracted_data.get("total_ht")
+                tva = extracted_data.get("tva")
+                total_ttc = extracted_data.get("total_ttc")
+                life = extracted_data.get("life")
             
             query = """
                 INSERT INTO documents (
-                    filename, owner_id, company_name, doctype_name, 
+                    filename, owner_id, company_id, doctype_id, file_path, file_size,
                     extracted_data, is_invoice, invoice_number, invoice_date,
-                    vendor, client, total_ht, tva, total_ttc
+                    partner, partner_id, total_ht, tva, total_ttc, life
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """
             
             params = (
-                filename, owner_id, company_name, doctype_name,
+                filename, owner_id, company_id, doctype_id, file_path, file_size,
                 json.dumps(extracted_data) if extracted_data else None,
                 is_invoice, invoice_number, invoice_date,
-                vendor, client, total_ht, tva, total_ttc
+                partner, partner_id, total_ht, tva, total_ttc, life
             )
-            
             return self.execute_query(query, params)
             
         except Exception as e:
             raise Exception(f"Error creating document: {e}")
 
-    def get_documents_by_company_and_type(self, company_name, doctype_name):
+    def get_documents_by_company_and_type(self, company_id, doctype_id):
         """Get all documents for a specific company and document type"""
         query = """
             SELECT * FROM documents 
-            WHERE company_name = %s AND doctype_name = %s
+            WHERE company_id = %s AND doctype_id = %s
             ORDER BY created_at DESC
         """
-        return self.execute_query(query, (company_name, doctype_name), fetch=True)
-
+        return self.execute_query(query, (company_id, doctype_id), fetch=True)
     def get_document_by_id(self, document_id):
         """Get document by ID"""
         query = "SELECT * FROM documents WHERE id = %s"
@@ -1106,35 +1100,33 @@ class DatabaseManager:
         except Exception as e:
             raise Exception(f"Error updating document OCR data: {e}")
 
-    def get_invoices_by_company(self, company_name):
+    def get_invoices_by_company(self, company_id):
         """Get all invoices for a specific company"""
         query = """
             SELECT * FROM documents 
-            WHERE company_name = %s AND is_invoice = TRUE
+            WHERE company_id = %s AND is_invoice = TRUE
             ORDER BY invoice_date DESC, created_at DESC
         """
-        return self.execute_query(query, (company_name,), fetch=True)
-
-    def search_documents(self, search_term, company_name=None, doctype_name=None):
-        """Search documents by filename, invoice number, or vendor"""
+        return self.execute_query(query, (company_id,), fetch=True)
+    def search_documents(self, search_term, company_id=None, doctype_id=None):
+        """Search documents by filename, invoice number, or partner"""
         query = """
             SELECT * FROM documents 
-            WHERE (filename LIKE %s OR invoice_number LIKE %s OR vendor LIKE %s)
+            WHERE (filename LIKE %s OR invoice_number LIKE %s OR partner LIKE %s)
         """
         params = [f"%{search_term}%", f"%{search_term}%", f"%{search_term}%"]
 
-        if company_name:
-            query += " AND company_name = %s"
-            params.append(company_name)
+        if company_id:
+            query += " AND company_id = %s"
+            params.append(company_id)
             
-        if doctype_name:
-            query += " AND doctype_name = %s"
-            params.append(doctype_name)
+        if doctype_id:
+            query += " AND doctype_id = %s"
+            params.append(doctype_id)
             
         query += " ORDER BY created_at DESC"
 
         return self.execute_query(query, params, fetch=True)
-
     # Document history methods
     def add_document_history(self, document_id, user_id, action):
         query = "INSERT INTO document_history (document_id, user_id, action) VALUES (%s, %s, %s)"

@@ -382,7 +382,7 @@ const handleDownload = async (doc) => {
                 {documents.map((doc) => (
                   <div key={doc.id} className="document-card">
                     <div className="document-thumbnail">
-                      {doc.mimetype && doc.mimetype.startsWith('image/') ? (
+                      {doc.mimetype && doc.mimetype.startsWith ('image/') ? (
                         <img 
                           src={doc.path} 
                           alt={doc.filename} 
