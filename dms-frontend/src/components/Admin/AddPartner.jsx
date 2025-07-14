@@ -340,13 +340,7 @@ const handleSubmit = async (e) => {
 
       {/* Error and success messages */}
       {success && <div className="alert alert-success">{success}</div>}
-      {globalErrors.length > 0 && (
-        <div className="alert alert-error">
-          {globalErrors.map((err, index) => (
-            <div key={index}>{err}</div>
-          ))}
-        </div>
-      )}
+      
 
       <form onSubmit={handleSubmit} className="user-form">
         {/* Identity Tab */}

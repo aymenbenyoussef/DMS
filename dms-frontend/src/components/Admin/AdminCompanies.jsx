@@ -189,18 +189,18 @@ const AdminCompanies = ({ user }) => {
               setEditingCompany(null);
             }}
           >
-            Companies List
+            Entities List
           </button>
           {showModifyTab && (
             <button
               className={`tab-btn ${activeTab === 'form' ? 'active' : ''}`}
               onClick={() => setActiveTab('form')}
             >
-              Modify Company
+              Modify Entity
             </button>
           )}
-          <Link to="/AddCompany" className="btn-primary-2">
-            Add Company 
+          <Link to="/AddComp" className="btn-primary-2">
+            Add Entity 
           </Link>
         </div>
       </div>
