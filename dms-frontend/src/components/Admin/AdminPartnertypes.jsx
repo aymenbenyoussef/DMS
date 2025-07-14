@@ -114,7 +114,14 @@ useEffect(() => {
       }
     }
   };
-
+  useEffect(() => {
+      if (success) {
+        const timer = setTimeout(() => {
+          setSuccess('');
+        }, 3000);
+        return () => clearTimeout(timer);
+      }
+    }, [success]);
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({

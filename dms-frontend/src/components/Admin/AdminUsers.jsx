@@ -337,8 +337,8 @@ const AdminUsers = ({user}) => {
                 <tr>
                   <th></th>
                   <th>ID</th>
-                  <th>User Name</th>
-                  <th>User Surname</th>
+                  <th>Full Name</th>
+                  
                   <th>Email</th>
                   <th>Role</th>
                   <th>Companies</th>
@@ -359,21 +359,13 @@ const AdminUsers = ({user}) => {
                   <td>
                     <input
                       type="text"
-                      value={filters.username}
+                      value={filters.username }
                       onChange={(e) => handleFilterChange(e, 'username')}
                       placeholder="Filter Name"
                       className="filter-input"
                     />
                   </td>
-                  <td>
-                    <input
-                      type="text"
-                      value={filters.surname}
-                      onChange={(e) => handleFilterChange(e, 'surname')}
-                      placeholder="Filter Surname"
-                      className="filter-input"
-                    />
-                  </td>
+                  
                   <td>
                     <input
                       type="text"
@@ -413,8 +405,8 @@ const AdminUsers = ({user}) => {
                         <div className={`status-led ${user.is_active ? 'status-led-active' : 'status-led-inactive'}`}></div>
                       </td>
                       <td>{user.id}</td>
-                      <td>{user.username}</td>
-                      <td>{user.surname}</td>
+                      <td>{`${user.username} ${user.surname}`}</td>
+                      
                       <td>{user.email}</td>
                       <td>
                         <span className={`role-badge ${user.role}`}>
