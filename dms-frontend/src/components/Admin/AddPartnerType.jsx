@@ -114,12 +114,12 @@ const AddPartnerType = () => {
 
           {/* submit */}
           <div className="form-actions">
-            <Link to="/partners" className="btn btn-primary">
+            <Link to="/partners" className="btn btn-cancel">
               Cancel
             </Link>
             <button 
               type="submit" 
-              className="btn btn-primary" 
+              className="btn btn" 
               disabled={loading}>
               {loading ? 'Creating...' : 'Create Partner Type'}
             </button>

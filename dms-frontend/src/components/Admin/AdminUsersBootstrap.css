@@ -62,11 +62,11 @@
 .admin-users-nav-tabs .nav-link.active {
   color: #0f172a;
   background: #fff;
-  border-bottom: 3px solid #3b82f6;
+  border-bottom: 3px solid darkgreen;
 }
 
 .admin-users-nav-tabs .nav-link:hover:not(.active) {
-  color: #3b82f6;
+  color: darkgreen;
   background: #f1f5f9;
 }
 
@@ -199,7 +199,7 @@
 }
 
 .form-control:focus, .form-select:focus {
-  border-color: #3b82f6;
+  border-color: darkgreen;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
@@ -220,8 +220,8 @@
 }
 
 .form-check-input:checked {
-  background-color: #3b82f6;
-  border-color: #3b82f6;
+  background-color: darkgreen;
+  border-color: darkgreen;
 }
 
 .form-check-label {
@@ -241,13 +241,13 @@
 }
 
 .btn-primary {
-  background-color: #3b82f6;
-  border-color: #3b82f6;
+  background-color: darkgreen;
+  border-color: darkgreen;
 }
 
 .btn-primary:hover {
-  background-color: #2563eb;
-  border-color: #2563eb;
+  background-color: darkgreen;
+  border-color: darkgreen;
 }
 
 .btn-outline-secondary {

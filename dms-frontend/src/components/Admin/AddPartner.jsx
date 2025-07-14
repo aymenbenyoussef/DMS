@@ -355,13 +355,7 @@ const handleSubmit = async (e) => {
 
       {/* Error and success messages */}
       {success && <div className="alert alert-success">{success}</div>}
-      {globalErrors.length > 0 && (
-        <div className="alert alert-error">
-          {globalErrors.map((err, index) => (
-            <div key={index}>{err}</div>
-          ))}
-        </div>
-      )}
+      
 
       <form onSubmit={handleSubmit} className="user-form">
         {/* Identity Tab */}
@@ -461,7 +455,7 @@ const handleSubmit = async (e) => {
           <div className="form-actions">
             <button
               type="button"
-              className="btn-primary"
+              className="btn"
               onClick={() => handleTabChange('Contact')}
             >
               Next
@@ -555,14 +549,14 @@ const handleSubmit = async (e) => {
           <div className="form-actions">
             <button
               type="button"
-              className="btn-primary"
+              className="btn"
               onClick={() => handleTabChange('Identity')}
             >
               Previous
             </button>
             <button
               type="button"
-              className="btn-primary"
+              className="btn"
               onClick={() => handleTabChange('Billing and payments')}
             >
               Next
@@ -620,14 +614,14 @@ const handleSubmit = async (e) => {
           <div className="form-actions">
             <button
               type="button"
-              className="btn-primary"
+              className="btn"
               onClick={() => handleTabChange('Contact')}
             >
               Previous
             </button>
             <button
               type="button"
-              className="btn-primary"
+              className="btn"
               onClick={() => handleTabChange('Notes')}
             >
               Next
@@ -651,15 +645,15 @@ const handleSubmit = async (e) => {
           <div className="form-actions">
             <button
               type="button"
-              className="btn-primary"
+              className="btn"
               onClick={() => handleTabChange('Billing and payments')}
             >
               Previous
             </button>
-            <Link to="/partners" className="btn-primary">
+            <Link to="/partners" className="btn-cancel">
               Cancel
             </Link>
-            <button type="submit" disabled={loading} className="btn-primary">
+            <button type="submit" disabled={loading} className="btn">
               {loading ? 'Creating...' : 'Create Partner'}
             </button>
           </div>

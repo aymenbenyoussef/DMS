@@ -166,10 +166,10 @@ const AddDocType = () => {
 
           {/* submit */}
           <div className="form-actions">
-            <Link to="/doctypes" className="btn-primary">
+            <Link to="/doctypes" className="btn-cancel">
                 Cancel
             </Link>
-            <button type="submit" className="btn-primary" disabled={loading}>
+            <button type="submit" className="btn" disabled={loading}>
               {loading ? 'En cours...' : 'Create Document Type'}
             </button>
           </div>

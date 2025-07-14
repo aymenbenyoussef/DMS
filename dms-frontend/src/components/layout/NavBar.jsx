@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { AppContext } from '../context';
 import './NavBar.css';
+import { BsFileEarmarkText } from 'react-icons/bs';
 import { 
   BiFolder, 
   BiSearch, 
@@ -78,12 +79,12 @@ const NavBar = ({ user, onLogout }) => {
         <div className="navbar-brand" onClick={resetSelection}>
           <Link to="/" className="logo-link">
             <div className="logo">
-              <span className="logo-icon"><BiFolder size={32} /></span>
+              <span className="logo-icon"><BsFileEarmarkText size={32} /></span>
               <div className="logo-text">
                 <span className="logo-main">DocuManager</span>
                 <span className="logo-sub">AI-powered document processing</span>
               </div>
-            </div>
+            </div> 
           </Link>
         </div>
 

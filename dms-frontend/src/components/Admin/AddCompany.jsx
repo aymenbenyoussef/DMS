@@ -169,13 +169,13 @@ const AdminCompanies = ({ user }) => {
           </div>
 
           <div className="form-actions">
-            <Link to="/companies" className="btn-primary">
+            <Link to="/companies" className="btn-cancel">
             Cancel
           </Link>
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary"
+              className="btn"
             >
               {loading ? 'loading...' : 'Create entity'}
             </button>
