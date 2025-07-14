@@ -225,12 +225,13 @@ const AdminDoctypes = ({ user }) => {
                   filteredDoctypes.map(doctype => (
                     <tr key={doctype.id}>
                       <td>
-                        <div className={`status-led ${doctype.is_active ? 'status-led-active' : 'status-led-inactive'}`}></div>
+                        <div className={`status-led ${doctype.status ? 'status-led-active' : 'status-led-inactive'}`}></div>
                       </td>
                       <td>{doctype.id}</td>
                       <td>{doctype.name}</td>
                       <td>
                         <div className="action-buttons">
+                         
                           <button
                             className="btn-edit"
                             onClick={() => handleEdit(doctype)}
