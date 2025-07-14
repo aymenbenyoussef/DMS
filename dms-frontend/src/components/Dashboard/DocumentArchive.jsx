@@ -54,8 +54,8 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     setIsLoading(true);
     try {
       const response = await API.documents.getByCompanyAndType(
-        selectedCompany.name,
-        selectedDoctype.name
+        selectedCompany.id,
+        selectedDoctype.id
       );
       setDocuments(response.data.documents || []);
     } catch (error) {
