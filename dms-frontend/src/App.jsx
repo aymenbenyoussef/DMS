@@ -108,7 +108,8 @@ function App() {
         const decoded = jwtDecode(token);
         const userInfo = {
           id: decoded.id,
-          username: decoded.sub,
+          username: decoded.username,
+          email: decoded.sub,
           role: decoded.role
         };
         setUser(userInfo);
@@ -130,7 +131,8 @@ function App() {
         const decoded = jwtDecode(token);
         const userInfo = {
           id: decoded.id,
-          username: decoded.sub,
+          username: decoded.username,
+          email: decoded.sub,
           role: decoded.role
         };
         setUser(userInfo);

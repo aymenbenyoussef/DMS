@@ -48,6 +48,9 @@ const AdminPartners = ({ user }) => {
     partnertypes: []
   });
 
+  const [showNotification, setShowNotification] = useState(false);
+  const [notificationMessage, setNotificationMessage] = useState('');
+
   useEffect(() => {
     if (success) {
       const timer = setTimeout(() => {
@@ -67,6 +70,24 @@ const AdminPartners = ({ user }) => {
   useEffect(() => {
     applyFilters();
   }, [filters, partners]);
+
+  // New useEffect to handle notification display
+  useEffect(() => {
+    if (!loading && filteredPartners.length === 0) {
+      const message = partners.length === 0 ? 'No partners available' : 'No partners found matching your filters';
+      setNotificationMessage(message);
+      setShowNotification(true);
+      
+      // Auto-hide notification after 5 seconds
+      const timer = setTimeout(() => {
+        setShowNotification(false);
+      }, 5000);
+      
+      return () => clearTimeout(timer);
+    } else {
+      setShowNotification(false);
+    }
+  }, [loading, filteredPartners, partners]);
 
   const fetchPartners = async () => {
     try {
@@ -331,6 +352,10 @@ const AdminPartners = ({ user }) => {
   }
 };
 
+  const dismissNotification = () => {
+    setShowNotification(false);
+  };
+
   return (
     <div className="admin-users">
       <div className="admin-header">
@@ -370,6 +395,45 @@ const AdminPartners = ({ user }) => {
               Loading partners...
             </div>
           )}
+
+          {/* Notification using existing alert classes with inline styles for positioning */}
+          {showNotification && (
+            <div 
+              className="alert alert-error" 
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                backgroundColor: '#e3f2fd',
+                color: '#1565c0',
+                border: '1px solid #2196f3',
+                marginBottom: '20px'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '16px' }}>ℹ️</span>
+                <span>{notificationMessage}</span>
+              </div>
+              <button 
+                onClick={dismissNotification}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#1976d2',
+                  fontSize: '18px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  padding: '4px 8px',
+                  borderRadius: '4px'
+                }}
+                onMouseOver={(e) => e.target.style.backgroundColor = 'rgba(33, 150, 243, 0.1)'}
+                onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
+              >
+                ×
+              </button>
+            </div>
+          )}
+
           <div className="users-table-container">
             <table className="users-table-fixed">
               <thead>
@@ -453,7 +517,7 @@ const AdminPartners = ({ user }) => {
                 </tr>
               </thead>
               <tbody className="table-body-scrollable">
-                {!loading && filteredPartners.length > 0 ? (
+                {!loading && filteredPartners.length > 0 && (
                   filteredPartners.map(partner => (
                     <tr key={partner.id}>
                       <td>
@@ -494,13 +558,7 @@ const AdminPartners = ({ user }) => {
                       </td>
                     </tr>
                   ))
-                ) : !loading ? (
-                  <tr>
-                    <td colSpan="9" className="no-results">
-                      {partners.length === 0 ? 'No partners available' : 'No partners found matching your filters'}
-                    </td>
-                  </tr>
-                ) : null}
+                )}
               </tbody>
             </table>
           </div>
@@ -761,6 +819,8 @@ const AdminPartners = ({ user }) => {
 };
 
 export default AdminPartners;
+
+
 
 
 

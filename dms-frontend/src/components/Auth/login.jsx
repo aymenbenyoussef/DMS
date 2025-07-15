@@ -3,17 +3,17 @@ import React, { useState } from 'react';
 import './login.css';
 
 const Login = ({ onLogin, error }) => {
-  const [formData, setFormData] = useState({ username: '', password: '' });
-  const [fieldErrors, setFieldErrors] = useState({ username: '', password: '' });
+  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [fieldErrors, setFieldErrors] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setFieldErrors({ username: '', password: '' });
+    setFieldErrors({ email: '', password: '' });
 
     const errors = {};
-    if (!formData.username.trim()) {
-      errors.username = "Le nom d'utilisateur est requis";
+    if (!formData.email.trim()) {
+      errors.email = "L'e-mail est requis";
     }
     if (!formData.password) {
       errors.password = 'Le mot de passe est requis';
@@ -54,17 +54,17 @@ const Login = ({ onLogin, error }) => {
 
         <form onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
-            <label className="form-label">Nom d'utilisateur</label>
+            <label className="form-label">E-mail</label>
             <input
-              type="text"
-              name="username"
-              value={formData.username}
+              type="email"
+              name="email"
+              value={formData.email}
               onChange={handleChange}
               className="form-input"
-              placeholder="Entrez votre nom d'utilisateur"
+              placeholder="Entrez votre e-mail"
             />
-            {fieldErrors.username && (
-              <div className="field-error">{fieldErrors.username}</div>
+            {fieldErrors.email && (
+              <div className="field-error">{fieldErrors.email}</div>
             )}
           </div>
 
@@ -95,10 +95,10 @@ const Login = ({ onLogin, error }) => {
         <div className="test-accounts">
           <p>Comptes de test :</p>
           <div className="test-account-item">
-            <span className="test-account-label">Administrateur:</span> admin / admin123
+            <span className="test-account-label">Administrateur:</span> admin@dms.local / admin123
           </div>
           <div className="test-account-item">
-            <span className="test-account-label">Utilisateur:</span> user / user123
+            <span className="test-account-label">Utilisateur:</span> user@dms.local / user123
           </div>
         </div>
       </div>

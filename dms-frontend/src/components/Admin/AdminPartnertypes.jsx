@@ -26,6 +26,9 @@ const AdminPartnerTypes = ({ user }) => {
     status: true
   });
 
+  const [showNotification, setShowNotification] = useState(false);
+  const [notificationMessage, setNotificationMessage] = useState('');
+
   useEffect(() => {
     fetchPartnerTypes();
   }, []);
@@ -43,7 +46,8 @@ const AdminPartnerTypes = ({ user }) => {
       setLoading(false);
     }
   };
-useEffect(() => {
+
+  useEffect(() => {
     if (success) {
       const timer = setTimeout(() => {
         setSuccess('');
@@ -51,9 +55,28 @@ useEffect(() => {
       return () => clearTimeout(timer);
     }
   }, [success]);
+
   useEffect(() => {
     applyFilters();
   }, [filters, partnerTypes]);
+
+  // New useEffect to handle notification display
+  useEffect(() => {
+    if (!loading && filteredPartnerTypes.length === 0) {
+      const message = partnerTypes.length === 0 ? 'No partner types available' : 'No partner types found matching your filters';
+      setNotificationMessage(message);
+      setShowNotification(true);
+      
+      // Auto-hide notification after 5 seconds
+      const timer = setTimeout(() => {
+        setShowNotification(false);
+      }, 5000);
+      
+      return () => clearTimeout(timer);
+    } else {
+      setShowNotification(false);
+    }
+  }, [loading, filteredPartnerTypes, partnerTypes]);
 
   const applyFilters = () => {
     let result = [...partnerTypes];
@@ -114,14 +137,7 @@ useEffect(() => {
       }
     }
   };
-  useEffect(() => {
-      if (success) {
-        const timer = setTimeout(() => {
-          setSuccess('');
-        }, 3000);
-        return () => clearTimeout(timer);
-      }
-    }, [success]);
+
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
@@ -163,6 +179,10 @@ useEffect(() => {
     }
   };
 
+  const dismissNotification = () => {
+    setShowNotification(false);
+  };
+
   return (
     <div className="admin-users">
       <div className="admin-header">
@@ -202,6 +222,45 @@ useEffect(() => {
               Loading partner types...
             </div>
           )}
+
+          {/* Notification using existing alert classes with inline styles for positioning */}
+          {showNotification && (
+            <div 
+              className="alert alert-error" 
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                backgroundColor: '#e3f2fd',
+                color: '#1565c0',
+                border: '1px solid #2196f3',
+                marginBottom: '20px'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '16px' }}>ℹ️</span>
+                <span>{notificationMessage}</span>
+              </div>
+              <button 
+                onClick={dismissNotification}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#1976d2',
+                  fontSize: '18px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  padding: '4px 8px',
+                  borderRadius: '4px'
+                }}
+                onMouseOver={(e) => e.target.style.backgroundColor = 'rgba(33, 150, 243, 0.1)'}
+                onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
+              >
+                ×
+              </button>
+            </div>
+          )}
+
           <div className="users-table-container">
             <table className="users-table-fixed">
               <thead>
@@ -235,7 +294,7 @@ useEffect(() => {
                 </tr>
               </thead>
               <tbody className="table-body-scrollable">
-                {!loading && filteredPartnerTypes.length > 0 ? (
+                {!loading && filteredPartnerTypes.length > 0 && (
                   filteredPartnerTypes.map(partnerType => (
                     <tr key={partnerType.id}>
                       <td>
@@ -261,13 +320,7 @@ useEffect(() => {
                       </td>
                     </tr>
                   ))
-                ) : !loading ? (
-                  <tr>
-                    <td colSpan="4" className="no-results">
-                      {partnerTypes.length === 0 ? 'No partner types available' : 'No partner types found matching your filters'}
-                    </td>
-                  </tr>
-                ) : null}
+                )}
               </tbody>
             </table>
           </div>
@@ -327,6 +380,4 @@ useEffect(() => {
 };
 
 export default AdminPartnerTypes;
-
-
 

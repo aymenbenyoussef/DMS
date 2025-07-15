@@ -35,6 +35,8 @@ const AdminUsers = ({user}) => {
     role: '',
     companies:''
   });
+  const [showNotification, setShowNotification] = useState(false);
+  const [notificationMessage, setNotificationMessage] = useState('');
 
   useEffect(() => {
     const fetchCompanies = async () => {
@@ -126,6 +128,24 @@ const AdminUsers = ({user}) => {
   useEffect(() => {
     applyFilters();
   }, [filters, users]);
+
+  // New useEffect to handle notification display
+  useEffect(() => {
+    if (!loading && filteredUsers.length === 0) {
+      const message = users.length === 0 ? 'No users available' : 'No users found matching your filters';
+      setNotificationMessage(message);
+      setShowNotification(true);
+      
+      // Auto-hide notification after 5 seconds
+      const timer = setTimeout(() => {
+        setShowNotification(false);
+      }, 5000);
+      
+      return () => clearTimeout(timer);
+    } else {
+      setShowNotification(false);
+    }
+  }, [loading, filteredUsers, users]);
 
   const applyFilters = () => {
     let result = [...users];
@@ -284,6 +304,10 @@ const AdminUsers = ({user}) => {
     }
   };
 
+  const dismissNotification = () => {
+    setShowNotification(false);
+  };
+
   return (
     <div className="admin-users">
       <div className="admin-header">
@@ -331,6 +355,45 @@ const AdminUsers = ({user}) => {
               Loading users...
             </div>
           )}
+          
+          {/* Notification using existing alert classes with inline styles for positioning */}
+          {showNotification && (
+            <div 
+              className="alert alert-error" 
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                backgroundColor: '#e3f2fd',
+                color: '#1565c0',
+                border: '1px solid #2196f3',
+                marginBottom: '20px'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '16px' }}>ℹ️</span>
+                <span>{notificationMessage}</span>
+              </div>
+              <button 
+                onClick={dismissNotification}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#1976d2',
+                  fontSize: '18px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  padding: '4px 8px',
+                  borderRadius: '4px'
+                }}
+                onMouseOver={(e) => e.target.style.backgroundColor = 'rgba(33, 150, 243, 0.1)'}
+                onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
+              >
+                ×
+              </button>
+            </div>
+          )}
+          
           <div className="users-table-container">
             <table className="users-table-fixed">
               <thead>
@@ -398,7 +461,7 @@ const AdminUsers = ({user}) => {
                 </tr>
               </thead>
               <tbody className="table-body-scrollable">
-                {!loading && filteredUsers.length > 0 ? (
+                {!loading && filteredUsers.length > 0 && (
                   filteredUsers.map(user => (
                     <tr key={user.id}>
                       <td>
@@ -426,6 +489,7 @@ const AdminUsers = ({user}) => {
                       </td>
                       <td>{new Date(user.created_at).toLocaleDateString()}</td>
                       <td>
+                       {user.role === 'user' && ( 
                         <div className="action-buttons">
                           <button
                             className="btn-edit"
@@ -439,17 +503,11 @@ const AdminUsers = ({user}) => {
                           >
                             Delete
                           </button>
-                        </div>
+                        </div>)}
                       </td>
                     </tr>
                   ))
-                ) : !loading ? (
-                  <tr>
-                    <td colSpan="9" className="no-results">
-                      {users.length === 0 ? 'No users available' : 'No users found matching your filters'}
-                    </td>
-                  </tr>
-                ) : null}
+                )}
               </tbody>
             </table>
           </div>
@@ -591,6 +649,4 @@ const AdminUsers = ({user}) => {
 };
 
 export default AdminUsers;
-
-
 

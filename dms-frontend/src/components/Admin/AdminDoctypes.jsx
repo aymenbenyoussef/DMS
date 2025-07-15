@@ -26,6 +26,9 @@ const AdminDoctypes = ({ user }) => {
     is_active: true
   });
 
+  const [showNotification, setShowNotification] = useState(false);
+  const [notificationMessage, setNotificationMessage] = useState('');
+
   useEffect(() => {
     fetchDoctypes();
   }, []);
@@ -47,6 +50,24 @@ const AdminDoctypes = ({ user }) => {
   useEffect(() => {
     applyFilters();
   }, [filters, doctypes]);
+
+  // New useEffect to handle notification display
+  useEffect(() => {
+    if (!loading && filteredDoctypes.length === 0) {
+      const message = doctypes.length === 0 ? 'No document types available' : 'No document types found matching your filters';
+      setNotificationMessage(message);
+      setShowNotification(true);
+      
+      // Auto-hide notification after 5 seconds
+      const timer = setTimeout(() => {
+        setShowNotification(false);
+      }, 5000);
+      
+      return () => clearTimeout(timer);
+    } else {
+      setShowNotification(false);
+    }
+  }, [loading, filteredDoctypes, doctypes]);
 
   const applyFilters = () => {
     let result = [...doctypes];
@@ -149,6 +170,10 @@ const AdminDoctypes = ({ user }) => {
     }
   };
 
+  const dismissNotification = () => {
+    setShowNotification(false);
+  };
+
   return (
     <div className="admin-users">
       <div className="admin-header">
@@ -188,6 +213,45 @@ const AdminDoctypes = ({ user }) => {
               Loading document types...
             </div>
           )}
+
+          {/* Notification using existing alert classes with inline styles for positioning */}
+          {showNotification && (
+            <div 
+              className="alert alert-error" 
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                backgroundColor: '#e3f2fd',
+                color: '#1565c0',
+                border: '1px solid #2196f3',
+                marginBottom: '20px'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '16px' }}>ℹ️</span>
+                <span>{notificationMessage}</span>
+              </div>
+              <button 
+                onClick={dismissNotification}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#1976d2',
+                  fontSize: '18px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  padding: '4px 8px',
+                  borderRadius: '4px'
+                }}
+                onMouseOver={(e) => e.target.style.backgroundColor = 'rgba(33, 150, 243, 0.1)'}
+                onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
+              >
+                ×
+              </button>
+            </div>
+          )}
+
           <div className="users-table-container">
             <table className="users-table-fixed">
               <thead>
@@ -221,7 +285,7 @@ const AdminDoctypes = ({ user }) => {
                 </tr>
               </thead>
               <tbody className="table-body-scrollable">
-                {!loading && filteredDoctypes.length > 0 ? (
+                {!loading && filteredDoctypes.length > 0 && (
                   filteredDoctypes.map(doctype => (
                     <tr key={doctype.id}>
                       <td>
@@ -248,13 +312,7 @@ const AdminDoctypes = ({ user }) => {
                       </td>
                     </tr>
                   ))
-                ) : !loading ? (
-                  <tr>
-                    <td colSpan="4" className="no-results">
-                      {doctypes.length === 0 ? 'No document types available' : 'No document types found matching your filters'}
-                    </td>
-                  </tr>
-                ) : null}
+                )}
               </tbody>
             </table>
           </div>
@@ -314,6 +372,4 @@ const AdminDoctypes = ({ user }) => {
 };
 
 export default AdminDoctypes;
-
-
 

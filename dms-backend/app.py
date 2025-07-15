@@ -187,20 +187,21 @@ def register():
 @app.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
-    if not data or 'username' not in data or 'password' not in data:
-        return jsonify({"msg": "Missing username or password"}), 400
+    if not data or "email" not in data or "password" not in data:
+        return jsonify({"msg": "Missing email or password"}), 400
 
-    user = db.get_user_by_username(data['username'])
-    if not user or not db.verify_password(user['password_hash'], data['password']):
+    user = db.get_user_by_email(data["email"])
+    if not user or not db.verify_password(user["password_hash"], data["password"]):
         return jsonify({"msg": "Invalid credentials"}), 401
 
-    if not user['is_active']:
+    if not user["is_active"]:
         return jsonify({"msg": "Account is deactivated"}), 401
 
-    access_token = create_access_token(identity=user['username'], additional_claims={
-        "id": user['id'],
-        "role": user['role'],
-        "username": user['username']
+    access_token = create_access_token(identity=user["email"], additional_claims={
+        "id": user["id"],
+        "role": user["role"],
+        "username": user["username"],
+        "email": user["email"]
     })
     return jsonify(access_token=access_token), 200
 

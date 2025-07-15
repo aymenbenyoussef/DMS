@@ -33,6 +33,9 @@ const AdminCompanies = ({ user }) => {
     description: ''
   });
 
+  const [showNotification, setShowNotification] = useState(false);
+  const [notificationMessage, setNotificationMessage] = useState('');
+
   // Fetch data on component mount
   useEffect(() => {
     fetchCompanies();
@@ -55,6 +58,24 @@ const AdminCompanies = ({ user }) => {
       setLoading(false);
     }
   };
+
+  // New useEffect to handle notification display
+  useEffect(() => {
+    if (!loading && filteredCompanies.length === 0) {
+      const message = companies.length === 0 ? 'No companies available' : 'No companies found matching your filters';
+      setNotificationMessage(message);
+      setShowNotification(true);
+      
+      // Auto-hide notification after 5 seconds
+      const timer = setTimeout(() => {
+        setShowNotification(false);
+      }, 5000);
+      
+      return () => clearTimeout(timer);
+    } else {
+      setShowNotification(false);
+    }
+  }, [loading, filteredCompanies, companies]);
 
   const applyFilters = () => {
     let result = [...companies];
@@ -177,6 +198,10 @@ const AdminCompanies = ({ user }) => {
     }
   };
 
+  const dismissNotification = () => {
+    setShowNotification(false);
+  };
+
   return (
     <div className="admin-users">
       <div className="admin-header">
@@ -222,6 +247,45 @@ const AdminCompanies = ({ user }) => {
               Loading companies...
             </div>
           )}
+
+          {/* Notification using existing alert classes with inline styles for positioning */}
+          {showNotification && (
+            <div 
+              className="alert alert-error" 
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                backgroundColor: '#e3f2fd',
+                color: '#1565c0',
+                border: '1px solid #2196f3',
+                marginBottom: '20px'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '16px' }}>ℹ️</span>
+                <span>{notificationMessage}</span>
+              </div>
+              <button 
+                onClick={dismissNotification}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#1976d2',
+                  fontSize: '18px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  padding: '4px 8px',
+                  borderRadius: '4px'
+                }}
+                onMouseOver={(e) => e.target.style.backgroundColor = 'rgba(33, 150, 243, 0.1)'}
+                onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
+              >
+                ×
+              </button>
+            </div>
+          )}
+
           <div className="users-table-container">
             <table className="users-table-fixed">
               <thead>
@@ -285,7 +349,7 @@ const AdminCompanies = ({ user }) => {
                 </tr>
               </thead>
               <tbody className="table-body-scrollable">
-                {!loading && filteredCompanies.length > 0 ? (
+                {!loading && filteredCompanies.length > 0 && (
                   filteredCompanies.map(company => (
                     <tr key={company.id}>
                       <td></td> {/* Placeholder for status LED */}
@@ -312,13 +376,7 @@ const AdminCompanies = ({ user }) => {
                       </td>
                     </tr>
                   ))
-                ) : !loading ? (
-                  <tr>
-                    <td colSpan="7" className="no-results"> {/* Adjusted colspan */}
-                      {companies.length === 0 ? 'No companies available' : 'No companies found matching your filters'}
-                    </td>
-                  </tr>
-                ) : null}
+                )}
               </tbody>
             </table>
           </div>
@@ -422,6 +480,8 @@ const AdminCompanies = ({ user }) => {
 };
 
 export default AdminCompanies;
+
+
 
 
 
