@@ -137,7 +137,15 @@ const DragDropUpload = ({ onUpload, onClose }) => {
     setUploadStatus('confirming');
 
     try {
-      const response = await API.documents.confirmDocuments(sessionId, [confirmedDocument]);
+      const documentToConfirm = {
+      ...confirmedDocument,
+      confirmed_data: {
+        ...confirmedDocument.confirmed_data,
+        // Ensure partner_id is included (it should already be there from DocumentConfirmationForm)
+        partner_id: confirmedDocument.confirmed_data.partner_id || null
+      }
+    };
+      const response = await API.documents.confirmDocuments(sessionId, [documentToConfirm]);
       
       setUploadStatus('completed');
       
@@ -149,7 +157,8 @@ const DragDropUpload = ({ onUpload, onClose }) => {
           filename: savedDoc.filename,
           is_invoice: savedDoc.is_invoice,
           created_at: new Date().toISOString(),
-          status: 'confirmed'
+          status: 'confirmed',
+          partner_id: savedDoc.partner_id
         });
       }
 

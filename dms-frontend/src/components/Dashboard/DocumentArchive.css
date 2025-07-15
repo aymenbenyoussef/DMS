@@ -4,10 +4,24 @@
   font-family: 'Inter', Arial, sans-serif;
   background-color: #f8f9fa;
   min-height: 100vh;
-  position: fixed;
-  top: 0;
+  
+}
+.document-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
 }
 
+.document-card {
+  display: flex;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+  background-color: white;
+  height: 100%;
+}
 .archive-header {
   display: flex;
   justify-content: space-between;
