@@ -126,7 +126,7 @@ const AdminDoctypes = ({ user }) => {
         setError('Error deleting document type');
         console.error('Error deleting document type:', err);
       }
-    }
+    }window.dispatchEvent(new CustomEvent('DoctypeDeleted'));
   };
 
   const handleInputChange = (e) => {

@@ -177,3 +177,45 @@
 .folder-name {
   font-size: 0.9rem;
 }
+.loading-container {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  color: #666;
+}
+
+.loading-container.small {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+}
+
+.loading-spinner {
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-right: 0.5rem;
+  border: 3px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top-color: #666;
+  animation: spin 1s ease-in-out infinite;
+}
+
+.loading-container.small .loading-spinner {
+  width: 1rem;
+  height: 1rem;
+  border-width: 2px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.no-results {
+  padding: 1rem;
+  color: #666;
+  font-style: italic;
+}
+
+.no-results.small {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+}

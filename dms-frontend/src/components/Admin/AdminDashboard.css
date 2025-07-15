@@ -342,3 +342,16 @@
     padding: 8px 10px;
   }
 }
+.btn-cancel{
+  padding: 12px 24px;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background-color :rgb(140, 149, 140);
+  color : white;
+  text-decoration :none;
+}
+

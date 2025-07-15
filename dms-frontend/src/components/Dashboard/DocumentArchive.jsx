@@ -427,7 +427,7 @@ const handleDownload = async (doc) => {
               <div className="text-center py-5 border rounded">
                 <p className="text-muted mb-3">No documents found</p>
                 <button 
-                  className="btn btn-link text-primary p-0"
+                  className=" btn-link text-primary p-0"
                   onClick={openUploadModal}
                 >
                   Upload documents to get started

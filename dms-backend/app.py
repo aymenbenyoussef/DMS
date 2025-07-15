@@ -525,8 +525,8 @@ def create_company():
         return jsonify({"msg": "Company name is required"}), 400
     
     conflicts = db.check_company_exist(
-    data.get('name').strip(),
-    data.get('email', '').strip()
+        data.get('name').strip(),
+        data.get('email', '').strip()
     )
 
     if conflicts["name_exists"] or conflicts["email_exists"]:
@@ -540,10 +540,9 @@ def create_company():
         company_id = db.create_company(data)
         company = db.get_company_by_id(company_id)
         
-        # Create company folder in DMS structure when company is created
+        # Create company folder in DMS structure using company ID
         if company:
-            safe_company_name = secure_filename(company['name'])
-            company_folder = os.path.join(app.config['DMS_UPLOAD_FOLDER'], safe_company_name)
+            company_folder = os.path.join(app.config['DMS_UPLOAD_FOLDER'], str(company_id))
             os.makedirs(company_folder, exist_ok=True)
         
         # Log company creation
@@ -563,7 +562,6 @@ def create_company():
         }), 201
     except Exception as e:
         return jsonify({"msg": f"Error creating company: {str(e)}"}), 400
-    
     
 # Update company
 @app.route('/companies/<int:company_id>', methods=['PUT'])
@@ -1058,10 +1056,9 @@ def get_datatypes():
     company_id = request.args.get('company_id')    
     try:
         if company_id:
-            folders = db.get_datatypes_by_company(
-                company_id 
-                
-            )
+            folders = db.get_datatypes_by_company(company_id)
+        else:
+            return jsonify({"msg": "company_id is required"}), 400
         
         return jsonify(folders), 200
     except Exception as e:

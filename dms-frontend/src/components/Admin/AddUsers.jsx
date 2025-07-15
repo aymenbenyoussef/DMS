@@ -218,7 +218,7 @@ const AddUser = () => {
           <div className="form-actions">
             <button
               type="button"
-              className="btn"
+              className="btn-green"
               onClick={() => setActiveTab('security')}
             >
               Next
@@ -253,14 +253,14 @@ const AddUser = () => {
           <div className="form-actions">
             <button
               type="button"
-              className="btn"
+              className="btn-green"
               onClick={() => setActiveTab('profile')}
             >
               Previous
             </button>
             <button
               type="button"
-              className="btn"
+              className="btn-green"
               onClick={() => setActiveTab('access')}
             >
               Next
@@ -313,7 +313,7 @@ const AddUser = () => {
           <div className="form-actions">
           <button
               type="button"
-              className="btn"
+              className="btn-green"
               onClick={() => setActiveTab('security')}
             >
               Previous
@@ -321,7 +321,7 @@ const AddUser = () => {
             <Link to="/admin/users" className="btn-cancel">
               Cancel
             </Link>
-            <button type="submit" disabled={loading} className="btn">
+            <button type="submit" disabled={loading} className="btn-green">
               {loading ? 'Creating...' : 'Create User'}
             </button>
           </div>

@@ -151,6 +151,7 @@ const AdminCompanies = ({ user }) => {
         console.error('Error deleting company:', err);
       }
     }
+    window.dispatchEvent(new CustomEvent('companyDeleted'));
   };
 
   const handleInputChange = (e) => {

@@ -493,31 +493,7 @@
   margin-right: 8px;
 }
 
-.form-actions {
-  display: flex;
-  gap: 12px;
-  margin-top: 20px;
-}
 
-.form-actions button {
-  flex: 1;
-  padding: 10px;
-  border-radius: 6px;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.form-actions button:first-child {
-  background-color: #3b82f6;
-  color: white;
-  border: none;
-}
-
-.form-actions button:last-child {
-  background-color: #f3f4f6;
-  color: #4b5563;
-  border: 1px solid #e5e7eb;
-}
 
 .input-error {
   border-color: #ef4444 !important;
