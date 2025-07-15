@@ -4,7 +4,7 @@ import API from '../../api';
 import { AppContext } from '../context';
 import WelcomePanel from './WelcomePanel';
 import { useNavigate } from 'react-router-dom';
-
+import './DocumentArchive.css';
 const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);

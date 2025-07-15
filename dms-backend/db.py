@@ -1030,43 +1030,47 @@ class DatabaseManager:
 
 
     def create_document_with_ocr_data(self, owner_id, company_id, doctype_id, filename, file_path, file_size,
-                                        is_invoice=False, extracted_data=None):
+                                is_invoice=False, extracted_data=None, partner_id=None):
         """Create a document with OCR extracted data"""
         try:
             # Prepare extracted data
             invoice_number = None
             invoice_date = None
-            partner = None
-            partner_id = None
             total_ht = None
             tva = None
             total_ttc = None
-            life = None
             
             if extracted_data:
                 invoice_number = extracted_data.get("invoice_number")
                 invoice_date = extracted_data.get("date")
-                partner = extracted_data.get("partner")
-                partner_id = extracted_data.get("partner_id")
                 total_ht = extracted_data.get("total_ht")
                 tva = extracted_data.get("tva")
                 total_ttc = extracted_data.get("total_ttc")
-                life = extracted_data.get("life")
             
             query = """
                 INSERT INTO documents (
                     filename, owner_id, company_id, doctype_id, file_path, file_size,
                     extracted_data, is_invoice, invoice_number, invoice_date,
-                    partner, partner_id, total_ht, tva, total_ttc, life
+                    partner_id, total_ht, tva, total_ttc
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """
             
             params = (
-                filename, owner_id, company_id, doctype_id, file_path, file_size,
+                filename, 
+                owner_id, 
+                company_id, 
+                doctype_id, 
+                file_path, 
+                file_size,
                 json.dumps(extracted_data) if extracted_data else None,
-                is_invoice, invoice_number, invoice_date,
-                partner, partner_id, total_ht, tva, total_ttc, life
+                is_invoice, 
+                invoice_number, 
+                invoice_date,
+                partner_id,  # This will properly insert into partner_id column
+                total_ht, 
+                tva, 
+                total_ttc
             )
             return self.execute_query(query, params)
             

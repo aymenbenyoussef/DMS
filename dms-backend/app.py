@@ -1154,28 +1154,34 @@ def get_documents_by_company_and_type(company_id, doctype_id):
 
         if not os.path.exists(doctype_folder):
             return jsonify({"documents": [], "msg": "No such folder"}), 404
-        print(os.path)
-        # List all document files (filtering out summaries or text if needed)
+
+        # List all document files excluding .txt files
         all_files = glob.glob(os.path.join(doctype_folder, '*.*'))
+        
+        # Filter out .txt files
+        filtered_files = [f for f in all_files 
+                        if os.path.isfile(f) 
+                        and not f.lower().endswith('.txt')]
 
         # Return metadata for each file
         documents = []
-        for file_path in all_files:
-            if os.path.isfile(file_path):
-                filename = os.path.basename(file_path)
-                documents.append({
-                    "filename": filename,
-                    "path": file_path,
-                    "size": os.path.getsize(file_path),
-                    "created_at": datetime.fromtimestamp(os.path.getctime(file_path)).strftime("%Y-%m-%d %H:%M:%S")
-                })
+        for file_path in filtered_files:
+            filename = os.path.basename(file_path)
+            documents.append({
+                "filename": filename,
+                "path": file_path,
+                "size": os.path.getsize(file_path),
+                "created_at": datetime.fromtimestamp(os.path.getctime(file_path)).strftime("%Y-%m-%d %H:%M:%S"),
+                "file_type": os.path.splitext(filename)[1][1:].upper()  # Add file extension type
+            })
 
-        return jsonify({"documents": documents}), 200
+        return jsonify({
+            "documents": documents,
+            "count": len(documents)
+        }), 200
 
     except Exception as e:
         return jsonify({"msg": f"Error reading files: {str(e)}"}), 500
-
-
 
 # ====== NEW SINGLE FILE UPLOAD ENDPOINT ======
 @app.route('/upload_single', methods=['POST'])
@@ -1306,8 +1312,8 @@ def upload_files():
 @jwt_required()
 def confirm_document():
     """Confirm and save document information after user validation"""
-    current_user = get_jwt_identity()
     current_user_claims = get_jwt()
+    current_user_id = current_user_claims.get('id')
     data = request.get_json()
     
     session_id = data.get('session_id')
@@ -1329,11 +1335,11 @@ def confirm_document():
         
         for doc_data in confirmed_documents:
             filename = doc_data['filename']
-            # Use company_id and doctype_id from the frontend confirmation form (allows changes)
             company_id = doc_data.get('company_id') or temp_data.get('company_id')
             doctype_id = doc_data.get('doctype_id') or temp_data.get('doctype_id')
             is_invoice = doc_data.get("is_invoice", False)
             confirmed_info = doc_data.get("confirmed_data", {})
+            partner_id = doc_data.get("partner_id")  # Get partner_id from form data
             
             if not company_id or not doctype_id:
                 saved_documents.append({
@@ -1342,23 +1348,15 @@ def confirm_document():
                 })
                 continue
             
-            # Rename fields from frontend to match backend/database expectations
-            if "vendor" in confirmed_info:
-                confirmed_info["partner"] = confirmed_info.pop("vendor")
-            if "client" in confirmed_info:
-                confirmed_info["partner_id"] = confirmed_info.pop("client")
-            
             try:
-                # Create folder structure for the FINAL destination (using confirmed company_id and doctype_id)
+                # Create folder structure
                 company_folder, doctype_folder, summary_folder = create_company_doctype_folders(company_id, doctype_id)
                 
-                # Get the original processed file data from temp_data
+                # Get the original processed file data
                 original_processed_file = None
-                # Check if it's a single file upload or multiple
                 if 'processed_file' in temp_data:
                     original_processed_file = temp_data['processed_file']
                 elif 'processed_files' in temp_data:
-                    # Find the matching file from the list of processed_files
                     for pf in temp_data['processed_files']:
                         if pf['filename'] == filename:
                             original_processed_file = pf
@@ -1379,16 +1377,14 @@ def confirm_document():
                     })
                     continue
 
-                # MOVE FILE FROM TEMPORARY TO FINAL DESTINATION AFTER CONFIRMATION
+                # Move file to final location
                 final_filename = original_processed_file.get('original_filename', filename)
                 timestamp = int(datetime.now().timestamp())
                 unique_final_filename = f"{timestamp}_{final_filename}"
                 final_file_path = os.path.join(doctype_folder, unique_final_filename)
-                
-                # Move the file from temporary to final location
                 shutil.move(temp_file_path, final_file_path)
-                
-                # Also move the OCR text file if it exists
+
+                # Move OCR text file if exists
                 temp_text_path = original_processed_file.get('text_path')
                 if temp_text_path and os.path.exists(temp_text_path):
                     final_text_filename = f"{os.path.splitext(unique_final_filename)[0]}.txt"
@@ -1397,29 +1393,36 @@ def confirm_document():
 
                 file_size = os.path.getsize(final_file_path) if os.path.exists(final_file_path) else 0
 
-                # Save document to database with FINAL file path
+                # Add partner_id to confirmed_info if provided
+                if partner_id:
+                    confirmed_info['partner_id'] = partner_id
+
+                # Save document to database
                 document_id = db.create_document_with_ocr_data(
-                    owner_id=current_user['id'],
-                    company_id=company_id,  # Use confirmed company_id
-                    doctype_id=doctype_id,  # Use confirmed doctype_id
+                    owner_id=current_user_id,
+                    company_id=company_id,
+                    doctype_id=doctype_id,
                     filename=unique_final_filename,
-                    file_path=final_file_path,  # Final path after move
+                    file_path=final_file_path,
                     file_size=file_size,
                     is_invoice=is_invoice,
-                    extracted_data=confirmed_info
+                    extracted_data=confirmed_info,
+                    partner_id=partner_id 
                 )
                 
-                # Generate report PDF if it's an invoice and save to summary folder
+                if not document_id:
+                    raise Exception("Failed to create document in database")
+                
+                # Generate report PDF for invoices
                 if is_invoice and confirmed_info:
                     report_filename = f"{os.path.splitext(unique_final_filename)[0]}_report.pdf"
                     report_path = os.path.join(summary_folder, report_filename)
                     generate_report_pdf(confirmed_info, report_path, unique_final_filename)
                 
-                # Generate JSON summary file with confirmed information
+                # Generate JSON summary
                 json_filename = f"{os.path.splitext(unique_final_filename)[0]}_summary.json"
                 json_path = os.path.join(summary_folder, json_filename)
                 
-                # Get company and doctype names for the JSON file
                 company = db.get_company_by_id(company_id)
                 doctype = db.get_doctype_by_id(doctype_id)
                 
@@ -1437,22 +1440,15 @@ def confirm_document():
                             'name': doctype.get('name') if doctype else 'Unknown'
                         },
                         'is_invoice': is_invoice,
+                        'partner_id': partner_id,
                         'confirmed_data': confirmed_info,
                         'file_info': {
                             'path': final_file_path,
                             'size': file_size
-                        },
-                        'changes_from_initial': {
-                            'company_changed': company_id != temp_data.get('company_id'),
-                            'doctype_changed': doctype_id != temp_data.get('doctype_id'),
-                            'initial_company_id': temp_data.get('company_id'),
-                            'initial_doctype_id': temp_data.get('doctype_id'),
-                            'final_company_id': company_id,
-                            'final_doctype_id': doctype_id
                         }
                     }, json_file, ensure_ascii=False, indent=2)
                 
-                # Log document creation with information about changes
+                # Log document creation
                 log_activity(
                     actor=current_user_claims.get('username', 'Unknown'),
                     action="Create",
@@ -1460,7 +1456,11 @@ def confirm_document():
                     resource_data={
                         'id': document_id,
                         'filename': unique_final_filename,
-                        'company_id': company_id
+                        'company_id': company_id,
+                        'doctype_id': doctype_id,
+                        'is_invoice': is_invoice,
+                        'partner_id': partner_id,
+                        'invoice_number': confirmed_info.get('invoice_number') if is_invoice else None
                     }
                 )
                 
@@ -1469,9 +1469,8 @@ def confirm_document():
                     'filename': unique_final_filename,
                     'original_filename': final_filename,
                     'is_invoice': is_invoice,
-                    'final_path': final_file_path,
-                    'company_changed': company_id != temp_data.get('company_id'),
-                    'doctype_changed': doctype_id != temp_data.get('doctype_id')
+                    'partner_id': partner_id,
+                    'final_path': final_file_path
                 })
                 
             except Exception as e:
@@ -1484,7 +1483,7 @@ def confirm_document():
         try:
             os.remove(temp_file_path)
         except:
-            pass  # Don't fail if temp file cleanup fails
+            pass
         
         return jsonify({
             "msg": "Documents confirmed and saved successfully",
@@ -1493,7 +1492,6 @@ def confirm_document():
         
     except Exception as e:
         return jsonify({"msg": f"Confirmation error: {str(e)}"}), 500
-
 
 @app.route('/folders', methods=['POST'])
 @jwt_required()
