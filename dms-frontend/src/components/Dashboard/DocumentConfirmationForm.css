@@ -237,4 +237,52 @@
   margin-top: 4px;
   font-style: italic;
 }
+/* Add to DragDropUpload.css */
+.files-list {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-bottom: 10px;
+}
 
+.file-preview {
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  background: #f5f5f5;
+  border-radius: 4px;
+  margin-bottom: 5px;
+}
+
+.remove-all-btn {
+  background: none;
+  border: none;
+  color: #dc3545;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.remove-all-btn:hover {
+  text-decoration: underline;
+}
+
+.file-navigation {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 15px;
+  overflow-x: auto;
+}
+
+.file-tab {
+  padding: 5px 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.file-tab.active {
+  border-color: #0d6efd;
+  background: #e7f1ff;
+  color: #0d6efd;
+}

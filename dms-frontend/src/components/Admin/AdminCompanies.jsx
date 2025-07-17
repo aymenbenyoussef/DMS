@@ -49,11 +49,14 @@ const AdminCompanies = ({ user }) => {
     try {
       setLoading(true);
       const response = await API.companies.getAll();
-      setCompanies(response.data);
-      setFilteredCompanies(response.data);
+      const companiesData = Array.isArray(response?.data) ? response.data : [];
+      setCompanies(companiesData);
+      setFilteredCompanies(companiesData);
     } catch (err) {
       setError('Error loading companies');
       console.error('Error details:', err.response?.data || err.message);
+      setCompanies([]);
+      setFilteredCompanies([]);
     } finally {
       setLoading(false);
     }
@@ -78,12 +81,13 @@ const AdminCompanies = ({ user }) => {
   }, [loading, filteredCompanies, companies]);
 
   const applyFilters = () => {
-    let result = [...companies];
+    const companiesArray = Array.isArray(companies) ? companies : [];
+    let result = [...companiesArray];
     
     Object.keys(filters).forEach(key => {
       if (filters[key]) {
         result = result.filter(company => 
-          String(company[key]).toLowerCase().includes(filters[key].toLowerCase())
+          company && String(company[key]).toLowerCase().includes(filters[key].toLowerCase())
         );
       }
     });
@@ -481,8 +485,3 @@ const AdminCompanies = ({ user }) => {
 };
 
 export default AdminCompanies;
-
-
-
-
-

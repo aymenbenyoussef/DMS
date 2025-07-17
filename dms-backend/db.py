@@ -1,5 +1,5 @@
 import mysql.connector
-from mysql.connector import Error
+from mysql.connector import Error, pooling
 import bcrypt
 from datetime import datetime
 import json
@@ -10,51 +10,41 @@ DB_CONFIG = {
     'database': 'dms_db',
     'user': 'root',
     'password': '',  # Set your MySQL password
+    # 'pool_name' and 'pool_size' removed from here
 }
 
 class DatabaseManager:
     def __init__(self):
-        self.connection = None
-
-    def connect(self):
-        try:
-            self.connection = mysql.connector.connect(**DB_CONFIG)
-            return self.connection
-        except Error as e:
-            print(f"Error connecting to MySQL: {e}")
-            return None
-
-    def disconnect(self):
-        if self.connection and self.connection.is_connected():
-            self.connection.close()
+        self.pool = pooling.MySQLConnectionPool(pool_name='mypool', pool_size=10, **DB_CONFIG)
 
     def execute_query(self, query, params=None, fetch=False):
+        conn = None
+        cursor = None
         try:
-            if not self.connection or not self.connection.is_connected():
-                self.connect()
-            
-            cursor = self.connection.cursor(dictionary=True)
+            conn = self.pool.get_connection()
+            cursor = conn.cursor(dictionary=True)
             cursor.execute(query, params or ())
-            
             if fetch:
                 result = cursor.fetchall()
-                cursor.close()
                 return result
             else:
-                self.connection.commit()
-                last_id = cursor.lastrowid
-                cursor.close()
-                return last_id
+                conn.commit()
+                return cursor.lastrowid
         except Error as e:
             print(f"Database error: {e}")
-            if self.connection:
-                self.connection.rollback()
+            if conn:
+                conn.rollback()
             raise e
+        finally:
+            if cursor:
+                cursor.close()
+            if conn:
+                conn.close()
 
     def init_database(self):
         try:
-            self.connect()
-            cursor = self.connection.cursor()
+            conn = self.pool.get_connection()
+            cursor = conn.cursor()
 
             # Create database if not exists
             cursor.execute("CREATE DATABASE IF NOT EXISTS dms_db")
@@ -220,7 +210,7 @@ class DatabaseManager:
                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                 )
             """)
-            self.connection.commit()
+            conn.commit()
 
 
             # Create default users if they don\'t exist
@@ -380,11 +370,12 @@ class DatabaseManager:
         if companies is not None:
             try:
                 # Start transaction
-                self.connection.start_transaction()
+                conn = self.pool.get_connection()
+                conn.start_transaction()
             
                 # First remove all existing company associations
                 delete_query = "DELETE FROM user_companies WHERE user_id = %s"
-                cursor = self.connection.cursor()
+                cursor = conn.cursor()
                 cursor.execute(delete_query, (user_id,))
             
                 # Insert new company associations (each in a separate row)
@@ -396,12 +387,12 @@ class DatabaseManager:
                     cursor.executemany(insert_query, company_params)
             
                 # Commit transaction
-                self.connection.commit()
+                conn.commit()
                 cursor.close()
             
             except Exception as e:
                 # Rollback on error
-                self.connection.rollback()
+                conn.rollback()
                 print(f"Error updating user companies: {e}")
                 return False
     
@@ -519,13 +510,15 @@ class DatabaseManager:
         
         try:
             result = self.execute_query(query, param, fetch=True)
+            print("Raw companies result:", result)  # Debugging line
             # Vérification du résultat
             if not result:
                 return []
             return result
         except Exception as e:
-            print(f"Database error: {e}")
-            raise
+            import traceback
+            print("Database error in get_all_companies:", traceback.format_exc())
+            return []
 
     def get_user_companies(self, user_id):
         query = """
@@ -925,11 +918,12 @@ class DatabaseManager:
         if companies is not None:
             try:
                 # Start transaction
-                self.connection.start_transaction()
+                conn = self.pool.get_connection()
+                conn.start_transaction()
                 
                 # First remove all existing company associations
                 delete_query = "DELETE FROM datatype_companies WHERE datatype_id = %s"
-                cursor = self.connection.cursor()
+                cursor = conn.cursor()
                 cursor.execute(delete_query, (doctype_id,))
                 
                 # Insert new company associations
@@ -939,12 +933,12 @@ class DatabaseManager:
                     cursor.executemany(insert_query, company_params)
                 
                 # Commit transaction
-                self.connection.commit()
+                conn.commit()
                 cursor.close()
                 
             except Exception as e:
                 # Rollback on error
-                self.connection.rollback()
+                conn.rollback()
                 print(f"Error updating doctype companies: {e}")
                 return False
         

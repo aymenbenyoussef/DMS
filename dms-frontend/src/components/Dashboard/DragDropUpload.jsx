@@ -336,4 +336,3 @@ const DragDropUpload = ({ onUpload, onClose }) => {
 };
 
 export default DragDropUpload;
-

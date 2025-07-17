@@ -4,7 +4,7 @@ import './Sidebar.css';
 import { useNavigate } from 'react-router-dom'; 
 import { AppContext } from '../context';
 
-const Sidebar = ({ user }) => {
+const Sidebar = ({ user, loadingUser }) => {
   const [companies, setCompanies] = useState([]);
   const [folders, setFolders] = useState({});
   const [error, setError] = useState('');
@@ -12,61 +12,63 @@ const Sidebar = ({ user }) => {
     companies: false,
     folders: {}
   });
+  const [timeoutError, setTimeoutError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const navigate = useNavigate(); 
-  const { 
-    selectedCompany, 
-    setSelectedCompany, 
-    selectedDoctype, 
+  const {
+    selectedCompany,
+    setSelectedCompany,
+    selectedDoctype,
     setSelectedDoctype,
-    resetSelection 
+    resetSelection
   } = useContext(AppContext);
   const [expandedCompany, setExpandedCompany] = useState(null);
 
   useEffect(() => {
+    if (loadingUser || !user?.id) return;
+
     let isMounted = true;
-    
+    let timeoutId;
+
     const fetchCompanies = async () => {
       try {
         setLoadingStates(prev => ({ ...prev, companies: true }));
         setError('');
-        
+        setTimeoutError(false);
+        timeoutId = setTimeout(() => {
+          if (isMounted) setTimeoutError(true);
+        }, 8000); // 8 seconds
+
         const response = await API.companies.getAll();
         if (!isMounted) return;
-        
-        console.log("Companies data:", response.data);
-        const data = response.data;
-
-        if (Array.isArray(data)) {
-          setCompanies(data);
-        }
-        else if (data && Array.isArray(data.companies)) {
-          setCompanies(data.companies);
-        }
-        else {
+        clearTimeout(timeoutId);
+        setTimeoutError(false);
+        const rawData = response?.data;
+        let companiesArray = [];
+        if (Array.isArray(rawData)) {
+          companiesArray = rawData;
+        } else if (rawData && Array.isArray(rawData.companies)) {
+          companiesArray = rawData.companies;
+        } else {
           throw new Error("Format inattendu des données reçues");
         }
+        setCompanies(companiesArray);
       } catch (err) {
         if (!isMounted) return;
-        console.error('Failed to load companies:', err.response?.data || err.message);
+        clearTimeout(timeoutId);
         setError(`Erreur de chargement: ${err.response?.data?.msg || err.message}`);
       } finally {
-        if (isMounted) setLoadingStates(prev => ({ ...prev, companies: false }));
+        if (isMounted) {
+          clearTimeout(timeoutId);
+          setLoadingStates(prev => ({ ...prev, companies: false }));
+        }
       }
     };
 
-    if (user?.id) {
-      fetchCompanies();
-    }
-    
-    // Event handlers
-    const folderHandler = (e) => {
-      const { companyId, folder } = e.detail;
-      setExpandedCompany(companyId);
-      setFolders(prev => ({
-        ...prev,
-        [companyId]: [...(prev[companyId] || []), folder]
-      }));
-    };
+    fetchCompanies();
+
+    // Event listeners
+    const companyHandler = () => fetchCompanies();
 
     const doctypeHandler = (e) => {
       const companyIds = e.detail.affectedCompanyIds || [];
@@ -76,17 +78,13 @@ const Sidebar = ({ user }) => {
         }
       });
     };
-    
-    const companyHandler = () => fetchCompanies();
 
-    // Add event listeners
     window.addEventListener('companyAdded', companyHandler);
     window.addEventListener('companyDeleted', companyHandler);
     window.addEventListener('doctypeAdded', doctypeHandler);
     window.addEventListener('doctypeDeleted', doctypeHandler);
     window.addEventListener('doctypeUpdated', doctypeHandler);
-    
-    // Cleanup
+
     return () => {
       window.removeEventListener('companyAdded', companyHandler);
       window.removeEventListener('companyDeleted', companyHandler);
@@ -94,8 +92,9 @@ const Sidebar = ({ user }) => {
       window.removeEventListener('doctypeDeleted', doctypeHandler);
       window.removeEventListener('doctypeUpdated', doctypeHandler);
       isMounted = false;
+      clearTimeout(timeoutId);
     };
-  }, [user, folders]);
+  }, [user, folders, loadingUser, retryCount]);
 
   useEffect(() => {
     if (!selectedCompany) {
@@ -104,26 +103,29 @@ const Sidebar = ({ user }) => {
   }, [selectedCompany]);
 
   const fetchFoldersForCompany = async (companyId) => {
+    if (loadingUser || !user?.id) return;
+
+    let isMounted = true;
+
     try {
       setLoadingStates(prev => ({
         ...prev,
         folders: { ...prev.folders, [companyId]: true }
       }));
-      
+
       const response = await API.folders.getByCompany(companyId);
-      console.log("Folders data:", response.data);
-      
-      const data = response.data;
+      if (!isMounted) return;
+
+      console.log("Folders data:", response);
+      const data = response?.data || response;
       let foldersData = [];
 
       if (Array.isArray(data)) {
         foldersData = data;
-      }
-      else if (data && Array.isArray(data.folders)) {
+      } else if (data && Array.isArray(data.folders)) {
         foldersData = data.folders;
-      }
-      else {
-        throw new Error("Format inattendu des données reçues");
+      } else {
+        throw new Error("Format inattendu des dossiers reçus");
       }
 
       setFolders(prev => ({
@@ -131,14 +133,21 @@ const Sidebar = ({ user }) => {
         [companyId]: foldersData
       }));
     } catch (err) {
-      console.error('Failed to load folders:', err.response?.data || err.message);
-      setError(`Erreur de chargement des dossiers: ${err.response?.data?.msg || err.message}`);
+      if (!isMounted) return;
+      console.error('Failed to load folders:', err);
+      setError(`Erreur de chargement des dossiers: ${err.message}`);
     } finally {
-      setLoadingStates(prev => ({
-        ...prev,
-        folders: { ...prev.folders, [companyId]: false }
-      }));
+      if (isMounted) {
+        setLoadingStates(prev => ({
+          ...prev,
+          folders: { ...prev.folders, [companyId]: false }
+        }));
+      }
     }
+
+    return () => {
+      isMounted = false;
+    };
   };
 
   const handleCompanyClick = (company) => {
@@ -160,6 +169,13 @@ const Sidebar = ({ user }) => {
     setExpandedCompany(null);
   };
 
+  // Retry handler
+  const handleRetry = () => {
+    setRetryCount(c => c + 1);
+    setError('');
+    setTimeoutError(false);
+  };
+
   return (
     <aside className="sidebar">
       <header className="sidebar-header" onClick={handleHeaderClick}>
@@ -169,17 +185,22 @@ const Sidebar = ({ user }) => {
         <h2>Entités</h2>
       </header>
 
-      {error && <div className="error-message">{error}</div>}
+      {(error || timeoutError) && (
+        <div className="error-message" style={{display:'flex',flexDirection:'column',alignItems:'center',gap:'8px'}}>
+          {error || (timeoutError && 'Le chargement prend trop de temps.')}<br/>
+          <button className="btn btn-primary" onClick={handleRetry} style={{marginTop:'8px'}}>Réessayer</button>
+        </div>
+      )}
 
       <ul className="folder-list" role="list">
-        {loadingStates.companies ? (
+        {loadingStates.companies && !timeoutError ? (
           <div className="loading-container">
             <div className="loading-spinner"></div>
             <span>Chargement des entreprises...</span>
           </div>
-        ) : companies.length === 0 ? (
+        ) : (!error && !timeoutError && companies.length === 0) ? (
           <div className="no-results">Aucune entreprise trouvée</div>
-        ) : (
+        ) : (!error && !timeoutError && companies.map) ? (
           companies.map(company => (
             <React.Fragment key={company.id}>
               <li
@@ -190,16 +211,15 @@ const Sidebar = ({ user }) => {
                   <path d="M3 21v-2h18v2H3zm2-3V3h6v15H5zm8 0V7h6v11h-6z" />
                 </svg>
                 <span className="company-name">{company.name}</span>
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  className={`expand-icon ${expandedCompany === company.id ? 'expanded' : ''}`} 
-                  viewBox="0 0 24 24" 
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className={`expand-icon ${expandedCompany === company.id ? 'expanded' : ''}`}
+                  viewBox="0 0 24 24"
                   fill="currentColor"
                 >
                   <path d="M7 10l5 5 5-5z" />
                 </svg>
               </li>
-              
               {expandedCompany === company.id && (
                 <div className="folder-subitems">
                   {loadingStates.folders[company.id] ? (
@@ -229,7 +249,7 @@ const Sidebar = ({ user }) => {
               )}
             </React.Fragment>
           ))
-        )}
+        ) : null}
       </ul>
     </aside>
   );

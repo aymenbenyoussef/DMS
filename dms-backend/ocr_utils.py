@@ -39,8 +39,7 @@ def extract_invoice_data(text):
         r'(?:num[eé]ro\s*de\s*facture)\s*[:#]?\s*(\w+[-\d]+)',
         r'(?:n°\s*facture)\s*[:#]?\s*(\w+[-\d]+)',
         r'(?:facture)\s*[:#]?\s*(\d+)'
-        """r'FACTURE\s*N°\s*(\d+)\b',  
-        r'(?<!\d\/)\b\d{3,}\b(?!\/\d)'"""
+        
     ]
     
     for pattern in inv_patterns:

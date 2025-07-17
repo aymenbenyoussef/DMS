@@ -1,47 +1,22 @@
-
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt
 from db import db
-from utils import log_activity
-import os
-from werkzeug.utils import secure_filename
+from app_utils import log_activity, DMS_UPLOAD_FOLDER, os
 
-company_bp = Blueprint("company_bp", __name__)
+entity_bp = Blueprint("entity_bp", __name__)
 
-# Helper function for creating company/doctype folders (moved from app.py)
-def create_company_doctype_folders(company_name, doctype_name):
-    # Sanitize names to prevent path traversal
-    safe_company_name = secure_filename(company_name)
-    safe_doctype_name = secure_filename(doctype_name)
-    
-    # Create the main folder structure: /dms/upload/<company>/<doctype>/
-    # Assuming DMS_UPLOAD_FOLDER is accessible via app.config or passed as an argument
-    # For now, hardcode or pass it from app.py
-    DMS_UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../dms-data/upload'))
-    
-    company_folder = os.path.join(DMS_UPLOAD_FOLDER, safe_company_name)
-    doctype_folder = os.path.join(company_folder, safe_doctype_name)
-    summary_folder = os.path.join(doctype_folder, 'summary')
-    
-    # Create all folders
-    os.makedirs(company_folder, exist_ok=True)
-    os.makedirs(doctype_folder, exist_ok=True)
-    os.makedirs(summary_folder, exist_ok=True)
-    
-    return company_folder, doctype_folder, summary_folder
-
-@company_bp.route("/companies", methods=["POST"])
+@entity_bp.route("/companies", methods=["POST"])
 @jwt_required()
 def create_company():
     current_user_claims = get_jwt()
     data = request.get_json()
 
-    if not data or 'name' not in data or not data['name'].strip():
+    if not data or "name" not in data or not data["name"].strip():
         return jsonify({"msg": "Company name is required"}), 400
     
     conflicts = db.check_company_exist(
-        data.get('name').strip(),
-        data.get('email', '').strip()
+        data.get("name").strip(),
+        data.get("email", "").strip()
     )
 
     if conflicts["name_exists"] or conflicts["email_exists"]:
@@ -56,20 +31,16 @@ def create_company():
         company = db.get_company_by_id(company_id)
         
         if company:
-            # DMS_UPLOAD_FOLDER needs to be passed or accessed globally
-            # For now, re-define it or ensure it's accessible
-            DMS_UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../dms-data/upload'))
-            safe_company_name = secure_filename(company['name'])
-            company_folder = os.path.join(DMS_UPLOAD_FOLDER, safe_company_name)
+            company_folder = os.path.join(DMS_UPLOAD_FOLDER, str(company_id))
             os.makedirs(company_folder, exist_ok=True)
         
         log_activity(
-            actor=current_user_claims['username'],
+            actor=current_user_claims["username"],
             action="Create",
             resource_type="company",
             resource_data={
-                'id': company_id,
-                'name': data.get('name')
+                "id": company_id,
+                "name": data.get("name")
             }
         )
           
@@ -80,11 +51,11 @@ def create_company():
     except Exception as e:
         return jsonify({"msg": f"Error creating company: {str(e)}"}), 400
     
-@company_bp.route("/companies/<int:company_id>", methods=["PUT"])
+@entity_bp.route("/companies/<int:company_id>", methods=["PUT"])
 @jwt_required()
 def update_company(company_id):
     current_user_claims = get_jwt()
-    if current_user_claims.get('role') != 'admin':
+    if current_user_claims.get("role") != "admin":
         return jsonify({"msg": "Admin access required"}), 403
 
     data = request.get_json()
@@ -92,9 +63,9 @@ def update_company(company_id):
         return jsonify({"msg": "Missing company data"}), 400
     
     conflicts = db.check_company_exist_id(
-        data.get('name').strip(),
-        data.get('email', '').strip(),
-        company_id
+    data.get("name").strip(),
+    data.get("email", "").strip(),
+    company_id
     )
 
     if conflicts["name_exists"] or conflicts["email_exists"]:
@@ -107,10 +78,10 @@ def update_company(company_id):
     try:
         success = db.update_company(
             company_id,
-            name=data.get('name'),
-            address=data.get('address'),
-            email=data.get('email'),
-            phone=data.get('phone')
+            name=data.get("name"),
+            address=data.get("address"),
+            email=data.get("email"),
+            phone=data.get("phone")
         )
         
         company = db.get_company_by_id(company_id)
@@ -118,12 +89,12 @@ def update_company(company_id):
             return jsonify({"msg": "Company not found"}), 404
             
         log_activity(
-            actor=current_user_claims['username'],
+            actor=current_user_claims["username"],
             action="Update",
             resource_type="company",
             resource_data={
-                'id': company_id,
-                'name': company['name']
+                "id": company_id,
+                "name": company["name"]
             }
         )
         
@@ -131,11 +102,11 @@ def update_company(company_id):
     except Exception as e:
         return jsonify({"msg": str(e)}), 500
 
-@company_bp.route("/companies/<int:company_id>", methods=["DELETE"])
+@entity_bp.route("/companies/<int:company_id>", methods=["DELETE"])
 @jwt_required()
 def delete_company(company_id):
     current_user_claims = get_jwt()
-    if current_user_claims.get('role') != 'admin':
+    if current_user_claims.get("role") != "admin":
         return jsonify({"msg": "Admin access required"}), 403
     
     try:
@@ -146,12 +117,12 @@ def delete_company(company_id):
         success = db.delete_company(company_id)
         if success:
             log_activity(
-                actor=current_user_claims['username'],
+                actor=current_user_claims["username"],
                 action="Delete",
                 resource_type="company",
                 resource_data={
-                    'id': company_id,
-                    'name': company['name']
+                    "id": company_id,
+                    "name": company["name"]
                 }
             )
             
@@ -161,7 +132,7 @@ def delete_company(company_id):
     except Exception as e:
         return jsonify({"msg": str(e)}), 400
 
-@company_bp.route("/companies", methods=["GET"])
+@entity_bp.route("/companies", methods=["GET"])
 @jwt_required()
 def get_companies():
     try:
@@ -172,24 +143,26 @@ def get_companies():
         if not current_user_id:
             return jsonify({"error": "User ID not found in token"}), 400
 
-        if user_role == 'admin':
+        if user_role == "admin":
             companies = db.get_all_companies()
         else:
             companies = db.get_user_companies(current_user_id)
 
-        return jsonify(companies), 200
+        return jsonify({"companies": companies}), 200  # Wrap in consistent structure
 
     except Exception as e:
-        # app.logger.error(f"Error in /companies: {str(e)}")
-        return jsonify({"error": "Internal server error"}), 500
+        print(f"Error in /companies: {str(e)}")  # Add logging
+        return jsonify({"error": str(e)}), 500
     
-@company_bp.route("/companies/<int:user_id>", methods=["get"])
+@entity_bp.route("/companies/<int:user_id>", methods=["get"])
 def get_companies_by_user(user_id):
     try:
         companies = db.get_user_companies(user_id)
         return jsonify(companies), 200
     except Exception as e:
-        # app.logger.error(f"Error in /companies: {str(e)}")
+        # app.logger.error(f"Error in /companies: {str(e)}") # app not available here
         return jsonify({"error": "Internal server error"}), 500
+
+
 
 

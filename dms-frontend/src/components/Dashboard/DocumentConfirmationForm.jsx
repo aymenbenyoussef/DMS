@@ -303,4 +303,3 @@ const DocumentConfirmationForm = ({
 };
 
 export default DocumentConfirmationForm;
-

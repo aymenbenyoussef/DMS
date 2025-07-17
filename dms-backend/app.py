@@ -1057,12 +1057,16 @@ def get_datatypes():
     try:
         if company_id:
             folders = db.get_datatypes_by_company(company_id)
+            if folders is None:
+                folders = []
         else:
             return jsonify({"msg": "company_id is required"}), 400
-        
         return jsonify(folders), 200
     except Exception as e:
-        return jsonify({"msg": str(e)}), 500
+        import traceback
+        print('Error in /folders:', traceback.format_exc())
+        # Always return a list, even on error
+        return jsonify([]), 200
     
 # Document management routes
 @app.route('/documents', methods=['GET'])
@@ -1622,5 +1626,3 @@ def check_multiple_partner_fields():
         }), 200
     except Exception as e:
         return jsonify({"msg": str(e)}), 500
-
-

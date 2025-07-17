@@ -4,7 +4,7 @@ import './AdminUsers.css'; // Changed from AdminDashboard.css
 import { Link } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
 
-const AdminUsers = ({user}) => {
+const AdminUsers = ({user ,loadingUser}) => {
   const [users, setUsers] = useState([]);
   const [activeTab, setActiveTab] = useState('list');
   const [formData, setFormData] = useState({
@@ -37,56 +37,68 @@ const AdminUsers = ({user}) => {
   });
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
+  const [timeoutError, setTimeoutError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  // New: separate loading/error state for users and companies
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [companiesLoading, setCompaniesLoading] = useState(false);
+  const [usersError, setUsersError] = useState('');
+  const [companiesError, setCompaniesError] = useState('');
+  const [usersTimeout, setUsersTimeout] = useState(false);
+  const [companiesTimeout, setCompaniesTimeout] = useState(false);
 
   useEffect(() => {
-    const fetchCompanies = async () => {
-      try {
-        const response = await API.companies.getAll();
-        console.log("Companies data:", response.data);
-        
-        const data = response.data;
+    if (loadingUser || !user?.id) return;
+    let isMounted = true;
+    let timeoutId;
 
-        if (Array.isArray(data)) {
-          setCompanies(data);
-        }
-        else if (data && Array.isArray(data.companies)) {
-          setCompanies(data.companies);
-        }
-        else {
-          throw new Error("Format inattendu des données reçues");
-        }
+    const loadData = async () => {
+      setLoading(true);
+      setError('');
+      setTimeoutError(false);
+      timeoutId = setTimeout(() => {
+        if (isMounted) setTimeoutError(true);
+      }, 8000);
+      try {
+        const [companiesRes, usersRes] = await Promise.all([
+          API.companies.getAll(),
+          API.admin.getUsers()
+        ]);
+        if (!isMounted) return;
+        clearTimeout(timeoutId);
+        setTimeoutError(false);
+        // Defensive: log and check data
+        console.log('Companies API response:', companiesRes);
+        console.log('Users API response:', usersRes);
+        let companiesArray = Array.isArray(companiesRes?.data) ? companiesRes.data : companiesRes?.data?.companies;
+        if (!Array.isArray(companiesArray)) companiesArray = [];
+        setCompanies(companiesArray);
+        const usersWithCompanies = Array.isArray(usersRes?.data)
+          ? usersRes.data.map(u => ({ ...u, companies: u.companies || [] }))
+          : [];
+        setUsers(usersWithCompanies);
+        setFilteredUsers(usersWithCompanies);
+        const companiesMap = {};
+        usersWithCompanies.forEach(u => {
+          companiesMap[u.id] = u.companies;
+        });
+        setUserCompanies(companiesMap);
       } catch (err) {
-        console.error('Failed to load companies:', err.response?.data || err.message);
-        setError(`Erreur de chargement: ${err.response?.data?.msg || err.message}`);
+        if (!isMounted) return;
+        clearTimeout(timeoutId);
+        setError('Erreur lors du chargement des données: ' + (err?.message || err));
+        console.error('AdminUsers loadData error:', err);
+      } finally {
+        if (isMounted) setLoading(false);
       }
     };
 
-    fetchCompanies();
-    fetchUsers();
-  }, []);
-
-  const fetchUsers = async () => {
-    try {
-      setLoading(true);
-      const response = await API.admin.getUsers();
-      const usersWithCompanies = response.data.map(user => ({
-        ...user,
-        companies: user.companies || []
-      }));
-      setUsers(usersWithCompanies);
-      setFilteredUsers(usersWithCompanies);
-      const companiesMap = {};
-      usersWithCompanies.forEach(user => {
-        companiesMap[user.id] = user.companies;
-      });
-      setUserCompanies(companiesMap);
-    } catch (err) {
-      setError('Erreur lors du chargement des utilisateurs');
-      console.error('Error fetching users:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    loadData();
+    return () => {
+      isMounted = false;
+      clearTimeout(timeoutId);
+    };
+  }, [loadingUser, user, retryCount]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -253,7 +265,7 @@ const AdminUsers = ({user}) => {
         });
         setEditingUser(null);
         setActiveTab('list');
-        fetchUsers();
+        //fetchUsers();
       }
     } catch (err) {
       const errorMsg = err.response?.data?.msg || "Error occurred while creating the entity.";
@@ -296,7 +308,7 @@ const AdminUsers = ({user}) => {
       try {
         await API.admin.deleteUser(userId);
         setSuccess('Utilisateur supprimé avec succès');
-        fetchUsers();
+        //fetchUsers();
       } catch (err) {
         setError('Erreur lors de la suppression');
         console.error('Error deleting user:', err);
@@ -307,6 +319,22 @@ const AdminUsers = ({user}) => {
   const dismissNotification = () => {
     setShowNotification(false);
   };
+
+  // Retry handler: retry both
+  const handleRetry = () => {
+    setRetryCount(c => c + 1);
+    setError('');
+    setTimeoutError(false);
+  };
+
+  // Determine loading/error state for both
+  const isLoading = loading && !timeoutError;
+  const isTimeout = timeoutError;
+  const isError = !!error || timeoutError;
+  const showSpinner = isLoading && !isTimeout;
+  const showError = isError || isTimeout;
+  const errorMsg = error || (timeoutError && 'Le chargement prend trop de temps.');
+  const canShowList = !loading && !timeoutError && !error;
 
   return (
     <div className="admin-users">
@@ -345,172 +373,181 @@ const AdminUsers = ({user}) => {
         </div>
       </div>
 
-      {error && <div className="alert alert-error">{error}</div>}
-      {success && <div className="alert alert-success">{success}</div>}
+      {showError && (
+        <div className="alert alert-error" style={{display:'flex',flexDirection:'column',alignItems:'center',gap:'8px'}}>
+          {errorMsg}<br/>
+          <button className="btn btn-primary" onClick={handleRetry} style={{marginTop:'8px'}}>Réessayer</button>
+        </div>
+      )}
 
       {activeTab === 'list' && (
         <div className="users-list">
-          {loading && (
+          {showSpinner ? (
             <div className="loading-message">
-              Loading users...
+              <div className="loading-spinner" style={{marginRight:'8px',display:'inline-block',verticalAlign:'middle'}}></div>
+              Loading users & companies...
             </div>
-          )}
-          
-          {/* Notification using existing alert classes with inline styles for positioning */}
-          {showNotification && (
-            <div 
-              className="alert alert-error" 
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                backgroundColor: '#e3f2fd',
-                color: '#1565c0',
-                border: '1px solid #2196f3',
-                marginBottom: '20px'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '16px' }}>ℹ️</span>
-                <span>{notificationMessage}</span>
-              </div>
-              <button 
-                onClick={dismissNotification}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#1976d2',
-                  fontSize: '18px',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  padding: '4px 8px',
-                  borderRadius: '4px'
-                }}
-                onMouseOver={(e) => e.target.style.backgroundColor = 'rgba(33, 150, 243, 0.1)'}
-                onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
-              >
-                ×
-              </button>
-            </div>
-          )}
-          
-          <div className="users-table-container">
-            <table className="users-table-fixed">
-              <thead>
-                <tr>
-                  <th></th>
-                  <th>ID</th>
-                  <th>Full Name</th>
-                  
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th>Companies</th>
-                  <th>Creation date</th>
-                  <th>Actions</th>
-                </tr>
-                <tr className="filter-row">
-                  <td></td>
-                  <td>
-                    <input
-                      type="text"
-                      value={filters.id}
-                      onChange={(e) => handleFilterChange(e, 'id')}
-                      placeholder="Filter ID"
-                      className="filter-input"
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="text"
-                      value={filters.username }
-                      onChange={(e) => handleFilterChange(e, 'username')}
-                      placeholder="Filter Name"
-                      className="filter-input"
-                    />
-                  </td>
-                  
-                  <td>
-                    <input
-                      type="text"
-                      value={filters.email}
-                      onChange={(e) => handleFilterChange(e, 'email')}
-                      placeholder="Filter Email"
-                      className="filter-input"
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="text"
-                      value={filters.role}
-                      onChange={(e) => handleFilterChange(e, 'role')}
-                      placeholder="Filter Role"
-                      className="filter-input"
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="text"
-                      value={filters.companies}
-                      onChange={(e) => handleFilterChange(e, 'companies')}
-                      placeholder="Filter Companies"
-                      className="filter-input"
-                    />
-                  </td>
-                  <td></td>
-                  <td></td>
-                </tr>
-              </thead>
-              <tbody className="table-body-scrollable">
-                {!loading && filteredUsers.length > 0 && (
-                  filteredUsers.map(user => (
-                    <tr key={user.id}>
-                      <td>
-                        <div className={`status-led ${user.is_active ? 'status-led-active' : 'status-led-inactive'}`}></div>
-                      </td>
-                      <td>{user.id}</td>
-                      <td>{`${user.username} ${user.surname}`}</td>
+          ) : canShowList && filteredUsers.length === 0 ? (
+            <div className="no-results">No users found</div>
+          ) : canShowList ? (
+            <>
+              {/* Notification using existing alert classes with inline styles for positioning */}
+              {showNotification && (
+                <div 
+                  className="alert alert-error" 
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    backgroundColor: '#e3f2fd',
+                    color: '#1565c0',
+                    border: '1px solid #2196f3',
+                    marginBottom: '20px'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '16px' }}>ℹ️</span>
+                    <span>{notificationMessage}</span>
+                  </div>
+                  <button 
+                    onClick={dismissNotification}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#1976d2',
+                      fontSize: '18px',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      padding: '4px 8px',
+                      borderRadius: '4px'
+                    }}
+                    onMouseOver={(e) => e.target.style.backgroundColor = 'rgba(33, 150, 243, 0.1)'}
+                    onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+              
+              <div className="users-table-container">
+                <table className="users-table-fixed">
+                  <thead>
+                    <tr>
+                      <th></th>
+                      <th>ID</th>
+                      <th>Full Name</th>
                       
-                      <td>{user.email}</td>
-                      <td>
-                        <span className={`role-badge ${user.role}`}>
-                          {user.role}
-                        </span>
-                      </td>
-                      <td>
-                        {user.companies && user.companies.length > 0 ? (
-                          <ul className="company-tokens">
-                            {user.companies.map(company => (
-                              <li key={company.id} className="company-token">{company.name}</li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <span></span>
-                        )}
-                      </td>
-                      <td>{new Date(user.created_at).toLocaleDateString()}</td>
-                      <td>
-                       {user.role === 'user' && ( 
-                        <div className="action-buttons">
-                          <button
-                            className="btn-edit"
-                            onClick={() => handleEdit(user)}
-                          >
-                            Modify
-                          </button>
-                          <button
-                            className="btn-delete"
-                            onClick={() => handleDelete(user.id)}
-                          >
-                            Delete
-                          </button>
-                        </div>)}
-                      </td>
+                      <th>Email</th>
+                      <th>Role</th>
+                      <th>Companies</th>
+                      <th>Creation date</th>
+                      <th>Actions</th>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                    <tr className="filter-row">
+                      <td></td>
+                      <td>
+                        <input
+                          type="text"
+                          value={filters.id}
+                          onChange={(e) => handleFilterChange(e, 'id')}
+                          placeholder="Filter ID"
+                          className="filter-input"
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          value={filters.username }
+                          onChange={(e) => handleFilterChange(e, 'username')}
+                          placeholder="Filter Name"
+                          className="filter-input"
+                        />
+                      </td>
+                      
+                      <td>
+                        <input
+                          type="text"
+                          value={filters.email}
+                          onChange={(e) => handleFilterChange(e, 'email')}
+                          placeholder="Filter Email"
+                          className="filter-input"
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          value={filters.role}
+                          onChange={(e) => handleFilterChange(e, 'role')}
+                          placeholder="Filter Role"
+                          className="filter-input"
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          value={filters.companies}
+                          onChange={(e) => handleFilterChange(e, 'companies')}
+                          placeholder="Filter Companies"
+                          className="filter-input"
+                        />
+                      </td>
+                      <td></td>
+                      <td></td>
+                    </tr>
+                  </thead>
+                  <tbody className="table-body-scrollable">
+                    {!loading && filteredUsers.length > 0 && (
+                      filteredUsers.map(user => (
+                        <tr key={user.id}>
+                          <td>
+                            <div className={`status-led ${user.is_active ? 'status-led-active' : 'status-led-inactive'}`}></div>
+                          </td>
+                          <td>{user.id}</td>
+                          <td>{`${user.username} ${user.surname}`}</td>
+                          
+                          <td>{user.email}</td>
+                          <td>
+                            <span className={`role-badge ${user.role}`}>
+                              {user.role}
+                            </span>
+                          </td>
+                          <td>
+                            {user.companies && user.companies.length > 0 ? (
+                              <ul className="company-tokens">
+                                {user.companies.map(company => (
+                                  <li key={company.id} className="company-token">{company.name}</li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <span></span>
+                            )}
+                          </td>
+                          <td>{new Date(user.created_at).toLocaleDateString()}</td>
+                          <td>
+                           {user.role === 'user' && ( 
+                            <div className="action-buttons">
+                              <button
+                                className="btn-edit"
+                                onClick={() => handleEdit(user)}
+                              >
+                                Modify
+                              </button>
+                              <button
+                                className="btn-delete"
+                                onClick={() => handleDelete(user.id)}
+                              >
+                                Delete
+                              </button>
+                            </div>)}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          ) : null}
         </div>
       )}
 

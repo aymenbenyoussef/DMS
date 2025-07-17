@@ -27,6 +27,9 @@ import './App.css';
 const API_BASE = 'http://localhost:5000';
 
 const api = {
+
+
+  
   login: async (credentials) => {
     const response = await fetch(`${API_BASE}/login`, {
       method: 'POST',
@@ -150,8 +153,28 @@ function App() {
     setUser(null);
     setAuthError('');
   };
+  const [loadingUser, setLoadingUser] = useState(true);
 
-  if (loading) {
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        const userInfo = {
+          id: decoded.id,
+          username: decoded.username,
+          email: decoded.sub,
+          role: decoded.role
+        };
+        setUser(userInfo);
+      } catch (e) {
+        localStorage.removeItem('token');
+        setAuthError('Session expirée. Veuillez vous reconnecter.');
+      }
+    }
+    setLoadingUser(false);
+  }, []);
+  if (loadingUser) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="text-xl">Loading...</div>
@@ -166,26 +189,26 @@ function App() {
   return (
     <AppProvider>  {/* Using the correct AppProvider from context */}
       <Router>
-        <Layout user={user} onLogout={handleLogout}>
+        <Layout user={user} loadingUser={loading} onLogout={handleLogout}>
           <Routes>
             <Route path="/" element={<Dashboard user={user} />} />
   
             {user.role === 'admin' && (
               <>
-                <Route path="/admin/users" element={<AdminUsers />} />
+                <Route path="/admin/users" element={<AdminUsers user={user} loadingUser={loading} />} />
                 {/* Updated to ActivityLogs component */}
-                <Route path="/admin/activity_logs" element={<ActivityLogs />} />
-                <Route path="/companies" element={<AdminCompanies />} />
-                <Route path="/doctypes" element={<AdminDoctypes />} />
-                <Route path="/partnertypes" element={<AdminPartnertypes />} />
-                <Route path="/partners" element={<AdminPartners />} />
+                <Route path="/admin/activity_logs" element={<ActivityLogs user={user} loadingUser={loading} />} />
+                <Route path="/companies" element={<AdminCompanies user={user} loadingUser={loading} />} />
+                <Route path="/doctypes" element={<AdminDoctypes user={user} loadingUser={loading} />} />
+                <Route path="/partnertypes" element={<AdminPartnertypes user={user} loadingUser={loading} />} />
+                <Route path="/partners" element={<AdminPartners user={user} loadingUser={loading} />} />
               </>
             )}
             <Route path="*" element={<Navigate to="/" replace />} />
             <Route 
-              path="/admin/tools" element={<AdminTools /> }/>
+              path="/admin/tools" element={<AdminTools user={user} loadingUser={loading} />} />
             <Route 
-              path="/User/tools" element={<UserTools/>} />  
+              path="/User/tools" element={<UserTools user={user} loadingUser={loading} />} />  
             <Route 
               path="/profile" element={<Profile user={user}/>} /> 
             <Route 
@@ -208,3 +231,4 @@ function App() {
 }
 
 export default App;
+
