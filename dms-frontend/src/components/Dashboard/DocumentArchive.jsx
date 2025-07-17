@@ -319,9 +319,26 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     }
   };
 
+  // Helper to build the file URL for viewing/downloading
+  const getFileUrl = (doc) => {
+    if (doc.company_id && doc.doctype_id && doc.filename) {
+      return `${process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000'}/files/${doc.company_id}/${doc.doctype_id}/${doc.filename}`;
+    }
+    // fallback: try to parse from doc.path if possible (optional, for legacy data)
+    if (doc.path) {
+      const match = doc.path.match(/([\\/])(\d+)[\\/](\d+)[\\/]([^\\/]+)$/);
+      if (match) {
+        const [, , company_id, doctype_id, filename] = match;
+        return `${process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000'}/files/${company_id}/${doctype_id}/${filename}`;
+      }
+    }
+    return '#';
+  };
+
   const handleDownload = async (doc) => {
     try {
-      const response = await fetch(doc.path);
+      const response = await fetch(getFileUrl(doc));
+      if (!response.ok) throw new Error('Network response was not ok');
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -338,7 +355,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
   };
 
   const handleViewDocument = (doc) => {
-    window.open(doc.path, '_blank');
+    window.open(getFileUrl(doc), '_blank');
   };
 
   // Function to render extracted data in a visual format
@@ -576,18 +593,21 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                       </td>
                       <td>
                         <div className="btn-group" role="group">
-                          <button 
+                          <a
                             className="btn btn-sm btn-outline-primary"
-                            onClick={() => handleViewDocument(doc)}
+                            href={getFileUrl(doc)}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             title="Voir le document"
+                            style={{ textDecoration: 'none' }}
                           >
-                            <i className="bi bi-eye"></i>
-                          </button>
+                            Voir <i className="bi bi-eye"></i>
+                          </a>
                           <button 
                             className="btn btn-sm btn-outline-secondary"
                             onClick={() => handleDownload(doc)}
                             title="Télécharger"
-                          >
+                          >Télécharger
                             <i className="bi bi-download"></i>
                           </button>
                         </div>

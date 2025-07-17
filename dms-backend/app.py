@@ -1,5 +1,5 @@
 # backend/app.py
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from flask_jwt_extended import (
     JWTManager, create_access_token, jwt_required, get_jwt_identity, get_jwt
@@ -1798,3 +1798,16 @@ def check_multiple_partner_fields():
         }), 200
     except Exception as e:
         return jsonify({"msg": str(e)}), 500
+
+@app.route('/files/<int:company_id>/<int:doctype_id>/<filename>')
+def serve_file(company_id, doctype_id, filename):
+    directory = os.path.join(app.config['DMS_UPLOAD_FOLDER'], str(company_id), str(doctype_id))
+    file_path = os.path.join(directory, filename)
+    print(f"[DEBUG] Serving file from: {directory}")
+    print(f"[DEBUG] Filename: {filename}")
+    print(f"[DEBUG] Full file path: {file_path}")
+    if not os.path.exists(file_path):
+        print("[DEBUG] File not found!")
+    else:
+        print("[DEBUG] File exists and will be served.")
+    return send_from_directory(directory, filename, as_attachment=True)
