@@ -1553,6 +1553,178 @@ def delete_folder(folder_id):
     except Exception as e:
         return jsonify({"msg": str(e)}), 400
 
+@app.route('/documents/company/<int:company_id>/filtered', methods=['GET'])
+@jwt_required()
+def get_documents_by_company_filtered(company_id):
+    """Get documents for a company with optional filters"""
+    try:
+        # Get query parameters
+        doctype_id = request.args.get('doctype_id', type=int)
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        
+        # Validate date format if provided
+        if start_date:
+            try:
+                datetime.strptime(start_date, '%Y-%m-%d')
+            except ValueError:
+                return jsonify({"msg": "Invalid start_date format. Use YYYY-MM-DD"}), 400
+        
+        if end_date:
+            try:
+                datetime.strptime(end_date, '%Y-%m-%d')
+            except ValueError:
+                return jsonify({"msg": "Invalid end_date format. Use YYYY-MM-DD"}), 400
+        
+        # Get documents with filters
+        documents = db.get_documents_by_company_with_filters(
+            company_id=company_id,
+            doctype_id=doctype_id,
+            start_date=start_date,
+            end_date=end_date
+        )
+        
+        # Process documents to add file paths and metadata
+        processed_documents = []
+        for doc in documents:
+            # Add file path for viewing/downloading
+            if doc.get('file_path') and os.path.exists(doc['file_path']):
+                doc['path'] = doc['file_path']
+                doc['size'] = os.path.getsize(doc['file_path'])
+                
+                # Determine MIME type
+                filename = doc.get('filename', '')
+                if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
+                    doc['mimetype'] = 'image/' + filename.split('.')[-1].lower()
+                elif filename.lower().endswith('.pdf'):
+                    doc['mimetype'] = 'application/pdf'
+                else:
+                    doc['mimetype'] = 'application/octet-stream'
+            
+            # Parse extracted_data if it's a JSON string
+            if doc.get('extracted_data') and isinstance(doc['extracted_data'], str):
+                try:
+                    doc['extracted_data'] = json.loads(doc['extracted_data'])
+                except:
+                    pass
+            
+            processed_documents.append(doc)
+        
+        return jsonify({
+            "documents": processed_documents,
+            "count": len(processed_documents),
+            "filters": {
+                "company_id": company_id,
+                "doctype_id": doctype_id,
+                "start_date": start_date,
+                "end_date": end_date
+            }
+        }), 200
+        
+    except Exception as e:
+        return jsonify({"msg": f"Error fetching documents: {str(e)}"}), 500
+
+@app.route('/documents/company/<int:company_id>/last-month', methods=['GET'])
+@jwt_required()
+def get_documents_last_month(company_id):
+    """Get documents from the last month for a company"""
+    try:
+        doctype_id = request.args.get('doctype_id', type=int)
+        
+        documents = db.get_documents_last_month_by_company(
+            company_id=company_id,
+            doctype_id=doctype_id
+        )
+        
+        # Process documents similar to the filtered endpoint
+        processed_documents = []
+        for doc in documents:
+            if doc.get('file_path') and os.path.exists(doc['file_path']):
+                doc['path'] = doc['file_path']
+                doc['size'] = os.path.getsize(doc['file_path'])
+                
+                filename = doc.get('filename', '')
+                if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
+                    doc['mimetype'] = 'image/' + filename.split('.')[-1].lower()
+                elif filename.lower().endswith('.pdf'):
+                    doc['mimetype'] = 'application/pdf'
+                else:
+                    doc['mimetype'] = 'application/octet-stream'
+            
+            if doc.get('extracted_data') and isinstance(doc['extracted_data'], str):
+                try:
+                    doc['extracted_data'] = json.loads(doc['extracted_data'])
+                except:
+                    pass
+            
+            processed_documents.append(doc)
+        
+        return jsonify({
+            "documents": processed_documents,
+            "count": len(processed_documents)
+        }), 200
+        
+    except Exception as e:
+        return jsonify({"msg": f"Error fetching documents: {str(e)}"}), 500
+
+@app.route('/documents/company/<int:company_id>/all', methods=['GET'])
+@jwt_required()
+def get_all_documents_by_company(company_id):
+    """Get all documents for a company regardless of document type"""
+    try:
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        
+        # Validate date format if provided
+        if start_date:
+            try:
+                datetime.strptime(start_date, '%Y-%m-%d')
+            except ValueError:
+                return jsonify({"msg": "Invalid start_date format. Use YYYY-MM-DD"}), 400
+        
+        if end_date:
+            try:
+                datetime.strptime(end_date, '%Y-%m-%d')
+            except ValueError:
+                return jsonify({"msg": "Invalid end_date format. Use YYYY-MM-DD"}), 400
+        
+        documents = db.get_documents_by_company_all_types(
+            company_id=company_id,
+            start_date=start_date,
+            end_date=end_date
+        )
+        
+        # Process documents
+        processed_documents = []
+        for doc in documents:
+            if doc.get('file_path') and os.path.exists(doc['file_path']):
+                doc['path'] = doc['file_path']
+                doc['size'] = os.path.getsize(doc['file_path'])
+                
+                filename = doc.get('filename', '')
+                if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
+                    doc['mimetype'] = 'image/' + filename.split('.')[-1].lower()
+                elif filename.lower().endswith('.pdf'):
+                    doc['mimetype'] = 'application/pdf'
+                else:
+                    doc['mimetype'] = 'application/octet-stream'
+            
+            if doc.get('extracted_data') and isinstance(doc['extracted_data'], str):
+                try:
+                    doc['extracted_data'] = json.loads(doc['extracted_data'])
+                except:
+                    pass
+            
+            processed_documents.append(doc)
+        
+        return jsonify({
+            "documents": processed_documents,
+            "count": len(processed_documents)
+        }), 200
+        
+    except Exception as e:
+        return jsonify({"msg": f"Error fetching documents: {str(e)}"}), 500
+
 if __name__ == '__main__':
     # Ensure log directory exists when app starts
     ensure_log_dir()

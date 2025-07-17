@@ -191,6 +191,56 @@ const documents = {
   // Get invoices by company
   getInvoicesByCompany: (companyName) => {
     return API.get(`/documents/invoices/${companyName}`);
+  },
+
+  // Get documents with filters
+  getByCompanyFiltered: (companyId, filters = {}) => {
+    const params = new URLSearchParams();
+    
+    if (filters.doctypeId) {
+      params.append('doctype_id', filters.doctypeId);
+    }
+    if (filters.startDate) {
+      params.append('start_date', filters.startDate);
+    }
+    if (filters.endDate) {
+      params.append('end_date', filters.endDate);
+    }
+    
+    const queryString = params.toString();
+    const url = `/documents/company/${companyId}/filtered${queryString ? '?' + queryString : ''}`;
+    
+    return API.get(url);
+  },
+
+  // Get documents from last month
+  getLastMonthByCompany: (companyId, doctypeId = null) => {
+    const params = new URLSearchParams();
+    if (doctypeId) {
+      params.append('doctype_id', doctypeId);
+    }
+    
+    const queryString = params.toString();
+    const url = `/documents/company/${companyId}/last-month${queryString ? '?' + queryString : ''}`;
+    
+    return API.get(url);
+  },
+
+  // Get all documents for a company
+  getAllByCompany: (companyId, filters = {}) => {
+    const params = new URLSearchParams();
+    
+    if (filters.startDate) {
+      params.append('start_date', filters.startDate);
+    }
+    if (filters.endDate) {
+      params.append('end_date', filters.endDate);
+    }
+    
+    const queryString = params.toString();
+    const url = `/documents/company/${companyId}/all${queryString ? '?' + queryString : ''}`;
+    
+    return API.get(url);
   }
 };
 

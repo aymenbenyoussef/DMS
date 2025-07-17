@@ -5,6 +5,7 @@ import { AppContext } from '../context';
 import WelcomePanel from './WelcomePanel';
 import { useNavigate } from 'react-router-dom';
 import './DocumentArchive.css';
+
 const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -25,9 +26,17 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
   const [newDocTypeName, setNewDocTypeName] = useState('');
   const [newDocTypeStatus, setNewDocTypeStatus] = useState(true);
   
-  // New state for documents
+  // New state for documents and filters
   const [documents, setDocuments] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [filteredDocuments, setFilteredDocuments] = useState([]);
+  
+  // Filter states
+  const [selectedDoctypeFilters, setSelectedDoctypeFilters] = useState([]);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [availableDoctypes, setAvailableDoctypes] = useState([]);
 
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => {
@@ -47,21 +56,50 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     setUploadError('');
   };
 
-  // Function to fetch documents from the backend
+  // Function to fetch documents from the backend with filters
   const fetchDocuments = async () => {
-    if (!selectedCompany || !selectedDoctype) return;
+    if (!selectedCompany) return;
     
     setIsLoading(true);
     try {
-      const response = await API.documents.getByCompanyAndType(
-        selectedCompany.id,
-        selectedDoctype.id
-      );
+      let response;
+      
+      if (selectedDoctype) {
+        // If a specific doctype is selected, use the existing API
+        response = await API.documents.getByCompanyAndType(
+          selectedCompany.id,
+          selectedDoctype.id
+        );
+      } else {
+        // If no specific doctype, get all documents for the company
+        const filters = {};
+        if (startDate) filters.startDate = startDate;
+        if (endDate) filters.endDate = endDate;
+        
+        response = await API.documents.getAllByCompany(selectedCompany.id, filters);
+      }
+      
       setDocuments(response.data.documents || []);
+      setFilteredDocuments(response.data.documents || []);
     } catch (error) {
       console.error('Error loading documents', error);
+      setDocuments([]);
+      setFilteredDocuments([]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Function to fetch available document types for the company
+  const fetchAvailableDoctypes = async () => {
+    if (!selectedCompany) return;
+    
+    try {
+      const response = await API.doctype.getByCompany(selectedCompany.id);
+      setAvailableDoctypes(response.data || []);
+    } catch (error) {
+      console.error('Error loading document types', error);
+      setAvailableDoctypes([]);
     }
   };
 
@@ -95,13 +133,43 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
   useEffect(() => { 
     if (selectedCompany) {
       fetchFolders();
+      fetchAvailableDoctypes();
+      
+      // Set default date range to last month
+      const lastMonth = new Date();
+      lastMonth.setMonth(lastMonth.getMonth() - 1);
+      setStartDate(lastMonth.toISOString().split('T')[0]);
+      setEndDate(new Date().toISOString().split('T')[0]);
     }
   }, [selectedCompany]);
 
-  // Fetch documents when company or doctype changes
+  // Fetch documents when company, doctype, or date filters change
   useEffect(() => {
     fetchDocuments();
-  }, [selectedCompany, selectedDoctype]);
+  }, [selectedCompany, selectedDoctype, startDate, endDate]);
+
+  // Filter documents based on search term and selected doctypes
+  useEffect(() => {
+    let filtered = [...documents];
+    
+    // Filter by search term
+    if (searchTerm) {
+      filtered = filtered.filter(doc => 
+        doc.filename?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        doc.invoice_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        doc.ocr_text?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    // Filter by selected document types (only when no specific doctype is selected)
+    if (!selectedDoctype && selectedDoctypeFilters.length > 0) {
+      filtered = filtered.filter(doc => 
+        selectedDoctypeFilters.includes(doc.doctype_id)
+      );
+    }
+    
+    setFilteredDocuments(filtered);
+  }, [documents, searchTerm, selectedDoctypeFilters, selectedDoctype]);
 
   const createFolder = async () => {
     if (folderName.trim() === '') {
@@ -172,6 +240,16 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     });
   };
 
+  const handleDoctypeFilterChange = (doctypeId) => {
+    setSelectedDoctypeFilters(prev => {
+      if (prev.includes(doctypeId)) {
+        return prev.filter(id => id !== doctypeId);
+      } else {
+        return [...prev, doctypeId];
+      }
+    });
+  };
+
   const handleCreateDocType = async (e) => {
     e.preventDefault();
     setNewDocTypeError('');
@@ -213,49 +291,86 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
+
   const getFileIconClass = (filename) => {
-  const extension = filename.split('.').pop().toLowerCase();
-  switch(extension) {
-    case 'pdf':
-      return 'bi-filetype-pdf text-danger';
-    case 'doc':
-    case 'docx':
-      return 'bi-filetype-docx text-primary';
-    case 'xls':
-    case 'xlsx':
-      return 'bi-filetype-xlsx text-success';
-    case 'ppt':
-    case 'pptx':
-      return 'bi-filetype-pptx text-warning';
-    case 'jpg':
-    case 'jpeg':
-    case 'png':
-    case 'gif':
-      return 'bi-file-image text-info';
-    case 'zip':
-    case 'rar':
-      return 'bi-file-zip text-secondary';
-    default:
-      return 'bi-file-earmark-text';
-  }
-};
-const handleDownload = async (doc) => {
-  try {
-    const response = await fetch(doc.path);
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = doc.filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-  } catch (error) {
-    console.error('Download failed:', error);
-    alert('Download failed. Please try again.');
-  }
-};
+    const extension = filename.split('.').pop().toLowerCase();
+    switch(extension) {
+      case 'pdf':
+        return 'bi-filetype-pdf text-danger';
+      case 'doc':
+      case 'docx':
+        return 'bi-filetype-docx text-primary';
+      case 'xls':
+      case 'xlsx':
+        return 'bi-filetype-xlsx text-success';
+      case 'ppt':
+      case 'pptx':
+        return 'bi-filetype-pptx text-warning';
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+      case 'gif':
+        return 'bi-file-image text-info';
+      case 'zip':
+      case 'rar':
+        return 'bi-file-zip text-secondary';
+      default:
+        return 'bi-file-earmark-text';
+    }
+  };
+
+  const handleDownload = async (doc) => {
+    try {
+      const response = await fetch(doc.path);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = doc.filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download failed:', error);
+      alert('Download failed. Please try again.');
+    }
+  };
+
+  const handleViewDocument = (doc) => {
+    window.open(doc.path, '_blank');
+  };
+
+  // Function to render extracted data in a visual format
+  const renderExtractedData = (extractedData) => {
+    if (!extractedData) return <span className="text-muted">Aucune donnée</span>;
+    
+    if (typeof extractedData === 'string') {
+      try {
+        extractedData = JSON.parse(extractedData);
+      } catch {
+        return <span className="text-muted">Données non valides</span>;
+      }
+    }
+    
+    return (
+      <div className="extracted-data-preview">
+        {extractedData.invoice_number && (
+          <div><strong>N°:</strong> {extractedData.invoice_number}</div>
+        )}
+        {extractedData.date && (
+          <div><strong>Date:</strong> {extractedData.date}</div>
+        )}
+        {extractedData.total_ttc && (
+          <div><strong>Total:</strong> {extractedData.total_ttc}€</div>
+        )}
+        {extractedData.partner && (
+          <div><strong>Partenaire:</strong> {extractedData.partner}</div>
+        )}
+      </div>
+    );
+  };
+
   // Function to get file type from filename
   const getFileType = (filename) => {
     const parts = filename.split('.');
@@ -301,7 +416,7 @@ const handleDownload = async (doc) => {
           </ol>
         </nav>
         
-        {selectedDoctype && (
+        {(selectedDoctype || selectedCompany) && (
           <button 
             className="btn btn-primary d-flex align-items-center ms-auto"
             onClick={openUploadModal}
@@ -322,121 +437,180 @@ const handleDownload = async (doc) => {
             <div className="card h-100">
               <div className="card-body">
                 <h3 className="card-title fs-6 text-muted">{title}</h3>
-                <p className="card-text fs-4 fw-bold">0 Active</p>
+                <p className="card-text fs-4 fw-bold">
+                  {index === 0 ? filteredDocuments.length : 0} Active
+                </p>
               </div>
             </div>
           </div>
         ))}
       </div>
         
-      {/* Search Section */}
+      {/* Search and Filter Section */}
       <div className="card mb-4">
         <div className="card-body">
           <h2 className="h5 mb-3">Search & Filter</h2>
+          
+          {/* Search Input */}
           <div className="input-group mb-3">
             <input 
               type="text" 
               placeholder="Search documents..." 
               className="form-control"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
             <button className="btn btn-primary">Search</button>
           </div>
-          <div className="d-flex flex-wrap gap-3">
-            {['Invoice', 'Receive', 'Record', 'Pending', 'Active'].map((item) => (
-              <div key={item} className="form-check">
-                <input 
-                  type="checkbox" 
-                  className="form-check-input" 
-                  id={`filter-${item}`}
-                />
-                <label 
-                  className="form-check-label text-muted" 
-                  htmlFor={`filter-${item}`}
-                >
-                  {item}
-                </label>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Documents Container */}
-      <div className="col-lg-8">
-        <div className="card h-100">
-          <div className="card-body">
-            <div className="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
-              <h2 className="h5 mb-0">Documents</h2>
-              <span className="text-muted">{documents.length} items</span>
+          
+          {/* Date Range Filters */}
+          <div className="row mb-3">
+            <div className="col-md-6">
+              <label className="form-label">Date de début</label>
+              <input 
+                type="date" 
+                className="form-control"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
             </div>
-            
-            {/* Replace the current documents list rendering with this */}
-            {isLoading ? (
-              <div className="text-center py-5">
-                <div className="spinner-border text-primary" role="status">
-                  <span className="visually-hidden">Loading...</span>
-                </div>
-              </div>
-            ) : documents.length > 0 ? (
-              <div className="document-grid">
-                {documents.map((doc) => (
-                  <div key={doc.id} className="document-card">
-                    <div className="document-thumbnail">
-                      {doc.mimetype && doc.mimetype.startsWith ('image/') ? (
-                        <img 
-                          src={doc.path} 
-                          alt={doc.filename} 
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.parentElement.innerHTML = `
-                              <i class="bi bi-file-earmark ${getFileIconClass(doc.filename)}"></i>
-                            `;
-                          }}
-                        />
-                      ) : (
-                        <i className={`bi bi-file-earmark ${getFileIconClass(doc.filename)} file-icon`}></i>
-                      )}
-                    </div>
-                    <div className="document-details">
-                      <div>
-                        <h5 className="document-title">{doc.filename}</h5>
-                        <div className="document-meta">
-                          <div>{getFileType(doc.filename)} • {formatFileSize(doc.size)}</div>
-                          <div>Uploaded: {new Date(doc.created_at).toLocaleDateString()}</div>
-                        </div>
-                      </div>
-                      <div className="document-actions">
-                        <button 
-                          className="btn btn-sm btn-outline-primary"
-                          onClick={() => window.open(doc.path, '_blank')}
-                        >
-                          View
-                        </button>
-                        <button 
-                          className="btn btn-sm btn-outline-secondary"
-                          onClick={() => handleDownload(doc)}
-                        >
-                          Download
-                        </button>
-                      </div>
-                    </div>
+            <div className="col-md-6">
+              <label className="form-label">Date de fin</label>
+              <input 
+                type="date" 
+                className="form-control"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
+            </div>
+          </div>
+          
+          {/* Document Type Filters - Only show when no specific doctype is selected */}
+          {!selectedDoctype && availableDoctypes.length > 0 && (
+            <div>
+              <h6 className="mb-2">Types de documents</h6>
+              <div className="d-flex flex-wrap gap-3">
+                {availableDoctypes.map((doctype) => (
+                  <div key={doctype.id} className="form-check">
+                    <input 
+                      type="checkbox" 
+                      className="form-check-input" 
+                      id={`filter-doctype-${doctype.id}`}
+                      checked={selectedDoctypeFilters.includes(doctype.id)}
+                      onChange={() => handleDoctypeFilterChange(doctype.id)}
+                    />
+                    <label 
+                      className="form-check-label text-muted" 
+                      htmlFor={`filter-doctype-${doctype.id}`}
+                    >
+                      {doctype.name}
+                    </label>
                   </div>
                 ))}
               </div>
-            ) : (
-              <div className="text-center py-5 border rounded">
-                <p className="text-muted mb-3">No documents found</p>
-                <button 
-                  className=" btn-link text-primary p-0"
-                  onClick={openUploadModal}
-                >
-                  Upload documents to get started
-                </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Documents Table */}
+      <div className="card">
+        <div className="card-body">
+          <div className="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+            <h2 className="h5 mb-0">Documents</h2>
+            <span className="text-muted">{filteredDocuments.length} items</span>
+          </div>
+          
+          {isLoading ? (
+            <div className="text-center py-5">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading...</span>
               </div>
-            )}       
-             </div>
+            </div>
+          ) : filteredDocuments.length > 0 ? (
+            <div className="table-responsive">
+              <table className="table table-hover">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Document</th>
+                    <th>Données extraites</th>
+                    <th>OCR extrait</th>
+                    <th>Date d'upload</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredDocuments.map((doc) => (
+                    <tr key={doc.id}>
+                      <td>{doc.id}</td>
+                      <td>
+                        <div className="d-flex align-items-center">
+                          <i className={`bi ${getFileIconClass(doc.filename)} me-2`}></i>
+                          <div>
+                            <div className="fw-medium">{doc.filename}</div>
+                            <small className="text-muted">
+                              {getFileType(doc.filename)} • {formatFileSize(doc.size || 0)}
+                            </small>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="extracted-data-cell">
+                          {renderExtractedData(doc.extracted_data)}
+                        </div>
+                      </td>
+                      <td>
+                        <div className="ocr-text-cell">
+                          {doc.ocr_text ? (
+                            <span className="text-truncate d-inline-block" style={{maxWidth: '200px'}} title={doc.ocr_text}>
+                              {doc.ocr_text.substring(0, 100)}...
+                            </span>
+                          ) : (
+                            <span className="text-muted">Aucun texte OCR</span>
+                          )}
+                        </div>
+                      </td>
+                      <td>
+                        {new Date(doc.created_at).toLocaleDateString('fr-FR')}
+                      </td>
+                      <td>
+                        <div className="btn-group" role="group">
+                          <button 
+                            className="btn btn-sm btn-outline-primary"
+                            onClick={() => handleViewDocument(doc)}
+                            title="Voir le document"
+                          >
+                            <i className="bi bi-eye"></i>
+                          </button>
+                          <button 
+                            className="btn btn-sm btn-outline-secondary"
+                            onClick={() => handleDownload(doc)}
+                            title="Télécharger"
+                          >
+                            <i className="bi bi-download"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-center py-5 border rounded">
+              <p className="text-muted mb-3">No documents found</p>
+              <button 
+                className="btn-link text-primary p-0"
+                onClick={openUploadModal}
+              >
+                Upload documents to get started
+              </button>
+            </div>
+          )}       
+        </div>
       </div>
-      </div>
+
       {/* Create Folder/Add Data Type Modal */}
       {isModalOpen && (
         <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
@@ -468,7 +642,7 @@ const handleDownload = async (doc) => {
                     
                     <div className="mb-3">
                       <h6>Document Types</h6>
-                      <div className="border rounded p-2 mb-2" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                      <div className="border rounded p-2 mb-2" style={{ /* maxHeight: '200px', */ overflowY: 'auto' }}>
                         {documentTypes.length > 0 ? (
                           documentTypes.map((type) => (
                             <div key={type.id} className="form-check">

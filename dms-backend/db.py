@@ -1245,6 +1245,76 @@ class DatabaseManager:
         """
         return self.execute_query(query, (partner_id,), fetch=True)
 
+    def get_documents_by_company_with_filters(self, company_id, doctype_id=None, start_date=None, end_date=None):
+        """Get documents for a company with optional filters for document type and date range"""
+        query = """
+            SELECT d.*, dt.name as doctype_name
+            FROM documents d
+            LEFT JOIN doctype dt ON d.doctype_id = dt.id
+            WHERE d.company_id = %s
+        """
+        params = [company_id]
+        
+        # Add document type filter if provided
+        if doctype_id:
+            query += " AND d.doctype_id = %s"
+            params.append(doctype_id)
+        
+        # Add date range filters if provided
+        if start_date:
+            query += " AND DATE(d.created_at) >= %s"
+            params.append(start_date)
+        
+        if end_date:
+            query += " AND DATE(d.created_at) <= %s"
+            params.append(end_date)
+        
+        query += " ORDER BY d.created_at DESC"
+        
+        return self.execute_query(query, params, fetch=True)
+
+    def get_documents_by_company_all_types(self, company_id, start_date=None, end_date=None):
+        """Get all documents for a company regardless of document type, with optional date filtering"""
+        query = """
+            SELECT d.*, dt.name as doctype_name
+            FROM documents d
+            LEFT JOIN doctype dt ON d.doctype_id = dt.id
+            WHERE d.company_id = %s
+        """
+        params = [company_id]
+        
+        # Add date range filters if provided
+        if start_date:
+            query += " AND DATE(d.created_at) >= %s"
+            params.append(start_date)
+        
+        if end_date:
+            query += " AND DATE(d.created_at) <= %s"
+            params.append(end_date)
+        
+        query += " ORDER BY d.created_at DESC"
+        
+        return self.execute_query(query, params, fetch=True)
+
+    def get_documents_last_month_by_company(self, company_id, doctype_id=None):
+        """Get documents from the last month for a company"""
+        query = """
+            SELECT d.*, dt.name as doctype_name
+            FROM documents d
+            LEFT JOIN doctype dt ON d.doctype_id = dt.id
+            WHERE d.company_id = %s 
+            AND d.created_at >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH)
+        """
+        params = [company_id]
+        
+        if doctype_id:
+            query += " AND d.doctype_id = %s"
+            params.append(doctype_id)
+        
+        query += " ORDER BY d.created_at DESC"
+        
+        return self.execute_query(query, params, fetch=True)
+
 # Create global database instance
 db = DatabaseManager()
 db.init_database()
