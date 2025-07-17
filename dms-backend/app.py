@@ -16,6 +16,8 @@ import json
 import pytesseract
 from PIL import Image
 import glob
+from io import BytesIO
+from flask import send_file
 
 app = Flask(__name__)
 CORS(app, origins="*", supports_credentials=True)
@@ -1151,39 +1153,26 @@ def create_document():
 @jwt_required()
 def get_documents_by_company_and_type(company_id, doctype_id):
     try:
-        # Build path: .../dms-data/upload/company_id/doctype_id/
-        doctype_folder = os.path.join(app.config['DMS_UPLOAD_FOLDER'], str(company_id), str(doctype_id))
-
-        if not os.path.exists(doctype_folder):
-            return jsonify({"documents": [], "msg": "No such folder"}), 404
-
-        # List all document files excluding .txt files
-        all_files = glob.glob(os.path.join(doctype_folder, '*.*'))
-        
-        # Filter out .txt files
-        filtered_files = [f for f in all_files 
-                        if os.path.isfile(f) 
-                        and not f.lower().endswith('.txt')]
-
-        # Return metadata for each file
-        documents = []
-        for file_path in filtered_files:
-            filename = os.path.basename(file_path)
-            documents.append({
-                "filename": filename,
-                "path": file_path,
-                "size": os.path.getsize(file_path),
-                "created_at": datetime.fromtimestamp(os.path.getctime(file_path)).strftime("%Y-%m-%d %H:%M:%S"),
-                "file_type": os.path.splitext(filename)[1][1:].upper()  # Add file extension type
-            })
-
+        documents = db.get_documents_by_company_and_type(company_id, doctype_id)
+        # Remove rapport (BLOB) from each document before returning
+        for doc in documents:
+            if 'rapport' in doc:
+                del doc['rapport']
+            if doc.get('extracted_data') and isinstance(doc['extracted_data'], str):
+                try:
+                    doc['extracted_data'] = json.loads(doc['extracted_data'])
+                except Exception as parse_err:
+                    print('Error parsing extracted_data:', parse_err, doc.get('extracted_data'))
+                    pass
         return jsonify({
             "documents": documents,
             "count": len(documents)
         }), 200
-
     except Exception as e:
-        return jsonify({"msg": f"Error reading files: {str(e)}"}), 500
+        import traceback
+        print('Error in get_documents_by_company_and_type:', e)
+        traceback.print_exc()
+        return jsonify({"msg": f"Error fetching documents: {str(e)}"}), 500
 
 # ====== NEW SINGLE FILE UPLOAD ENDPOINT ======
 @app.route('/upload_single', methods=['POST'])
@@ -1399,6 +1388,20 @@ def confirm_document():
                 if partner_id:
                     confirmed_info['partner_id'] = partner_id
 
+                # Generate report PDF for invoices
+                if is_invoice and confirmed_info:
+                    report_filename = f"{os.path.splitext(unique_final_filename)[0]}_report.pdf"
+                    report_path = os.path.join(summary_folder, report_filename)
+                    generate_report_pdf(confirmed_info, report_path, unique_final_filename)
+                    with open(report_path, 'rb') as f:
+                        rapport_bytes = f.read()
+                else:
+                    rapport_bytes = None
+                
+                # Generate JSON summary
+                json_filename = f"{os.path.splitext(unique_final_filename)[0]}_summary.json"
+                json_path = os.path.join(summary_folder, json_filename)
+                
                 # Save document to database
                 document_id = db.create_document_with_ocr_data(
                     owner_id=current_user_id,
@@ -1409,21 +1412,14 @@ def confirm_document():
                     file_size=file_size,
                     is_invoice=is_invoice,
                     extracted_data=confirmed_info,
+                    rapport=rapport_bytes,
                     partner_id=partner_id 
                 )
                 
                 if not document_id:
                     raise Exception("Failed to create document in database")
                 
-                # Generate report PDF for invoices
-                if is_invoice and confirmed_info:
-                    report_filename = f"{os.path.splitext(unique_final_filename)[0]}_report.pdf"
-                    report_path = os.path.join(summary_folder, report_filename)
-                    generate_report_pdf(confirmed_info, report_path, unique_final_filename)
                 
-                # Generate JSON summary
-                json_filename = f"{os.path.splitext(unique_final_filename)[0]}_summary.json"
-                json_path = os.path.join(summary_folder, json_filename)
                 
                 company = db.get_company_by_id(company_id)
                 doctype = db.get_doctype_by_id(doctype_id)
@@ -1601,7 +1597,7 @@ def get_documents_by_company_filtered(company_id):
                 else:
                     doc['mimetype'] = 'application/octet-stream'
             
-            # Parse extracted_data if it's a JSON string
+            # Parse extracted_data if it's a string
             if doc.get('extracted_data') and isinstance(doc['extracted_data'], str):
                 try:
                     doc['extracted_data'] = json.loads(doc['extracted_data'])
@@ -1811,3 +1807,20 @@ def serve_file(company_id, doctype_id, filename):
     else:
         print("[DEBUG] File exists and will be served.")
     return send_from_directory(directory, filename, as_attachment=True)
+
+@app.route('/documents/<int:doc_id>/rapport_pdf', methods=['GET'])
+def get_rapport_pdf(doc_id):
+    # Fetch rapport (PDF bytes) and filename from the database
+    rapport_bytes = db.get_rapport_pdf(doc_id)
+    doc = db.get_document_by_id(doc_id)
+    if not rapport_bytes or not doc:
+        return 'Not found', 404
+    # Use the original filename, but ensure .pdf extension
+    base_filename = os.path.splitext(doc['filename'])[0]
+    pdf_filename = f"{base_filename}.pdf"
+    return send_file(
+        BytesIO(rapport_bytes),
+        mimetype='application/pdf',
+        as_attachment=True,
+        download_name=pdf_filename
+    )

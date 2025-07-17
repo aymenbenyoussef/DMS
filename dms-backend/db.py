@@ -183,6 +183,7 @@ class DatabaseManager:
                     file_path VARCHAR(500),
                     ocr_text TEXT,
                     extracted_data JSON,
+                    rapport varchar(500),
                     is_invoice BOOLEAN DEFAULT FALSE,   
                     invoice_number VARCHAR(100),
                     invoice_date DATE,
@@ -1024,7 +1025,7 @@ class DatabaseManager:
 
 
     def create_document_with_ocr_data(self, owner_id, company_id, doctype_id, filename, file_path, file_size,
-                                is_invoice=False, extracted_data=None, partner_id=None):
+                                is_invoice=False, extracted_data=None, partner_id=None, rapport=None):
         """Create a document with OCR extracted data"""
         try:
             # Prepare extracted data
@@ -1044,10 +1045,10 @@ class DatabaseManager:
             query = """
                 INSERT INTO documents (
                     filename, owner_id, company_id, doctype_id, file_path, file_size,
-                    extracted_data, is_invoice, invoice_number, invoice_date,
+                    extracted_data, rapport ,is_invoice, invoice_number, invoice_date,
                     partner_id, total_ht, tva, total_ttc
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) 
             """
             
             params = (
@@ -1058,6 +1059,7 @@ class DatabaseManager:
                 file_path, 
                 file_size,
                 json.dumps(extracted_data) if extracted_data else None,
+                rapport,
                 is_invoice, 
                 invoice_number, 
                 invoice_date,
@@ -1071,14 +1073,6 @@ class DatabaseManager:
         except Exception as e:
             raise Exception(f"Error creating document: {e}")
 
-    def get_documents_by_company_and_type(self, company_id, doctype_id):
-        """Get all documents for a specific company and document type"""
-        query = """
-            SELECT * FROM documents 
-            WHERE company_id = %s AND doctype_id = %s
-            ORDER BY created_at DESC
-        """
-        return self.execute_query(query, (company_id, doctype_id), fetch=True)
     def get_document_by_id(self, document_id):
         """Get document by ID"""
         query = "SELECT * FROM documents WHERE id = %s"
@@ -1248,9 +1242,10 @@ class DatabaseManager:
     def get_documents_by_company_with_filters(self, company_id, doctype_id=None, start_date=None, end_date=None):
         """Get documents for a company with optional filters for document type and date range"""
         query = """
-            SELECT d.*, dt.name as doctype_name
+            SELECT d.*, dt.name as doctype_name, p.company_name as partner_name
             FROM documents d
             LEFT JOIN doctype dt ON d.doctype_id = dt.id
+            LEFT JOIN partners p ON d.partner_id = p.id
             WHERE d.company_id = %s
         """
         params = [company_id]
@@ -1315,6 +1310,20 @@ class DatabaseManager:
         
         return self.execute_query(query, params, fetch=True)
 
+    def get_documents_by_company_and_type(self, company_id, doctype_id):
+        """Get only the columns needed for the document archive table, including company_id and doctype_id for file URL construction"""
+        query = """
+            SELECT d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size , d.is_invoice, p.company_name as partner_name
+            FROM documents d
+            LEFT JOIN partners p ON d.partner_id = p.id
+            WHERE d.company_id = %s AND d.doctype_id = %s
+            ORDER BY d.created_at DESC
+        """
+        return self.execute_query(query, (company_id, doctype_id), fetch=True)
+    def get_rapport_pdf(self, document_id):
+        query = "SELECT rapport FROM documents WHERE id = %s"
+        result = self.execute_query(query, (document_id,), fetch=True)
+        return result[0]['rapport'] if result and result[0]['rapport'] else None
 # Create global database instance
 db = DatabaseManager()
 db.init_database()

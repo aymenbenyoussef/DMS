@@ -138,13 +138,12 @@ const DragDropUpload = ({ onUpload, onClose }) => {
 
     try {
       const documentToConfirm = {
-      ...confirmedDocument,
-      confirmed_data: {
-        ...confirmedDocument.confirmed_data,
-        // Ensure partner_id is included (it should already be there from DocumentConfirmationForm)
-        partner_id: confirmedDocument.confirmed_data.partner_id || null
-      }
-    };
+        ...confirmedDocument,
+        partner_id: confirmedDocument.confirmed_data.partner_id || null, // <-- FIX: set at top level
+        confirmed_data: {
+          ...confirmedDocument.confirmed_data
+        }
+      };
       const response = await API.documents.confirmDocuments(sessionId, [documentToConfirm]);
       
       setUploadStatus('completed');

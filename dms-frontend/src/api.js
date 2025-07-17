@@ -174,8 +174,8 @@ const documents = {
     API.post(`/documents/${documentId}/confirm`, confirmedData),
     
   // Get documents by company and document type
-  getByCompanyAndType: (companyName, doctypeName) => {
-    return API.get(`/documents/company/${companyName}/type/${doctypeName}`);
+  getByCompanyAndType: (company_id, doctype_id) => {
+    return API.get(`/documents/company/${company_id}/type/${doctype_id}`);
   },
   
   // Search documents

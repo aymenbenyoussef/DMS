@@ -551,6 +551,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                   <tr>
                     <th>ID</th>
                     <th>Document</th>
+                    <th>Partner</th>
                     <th>Données extraites</th>
                     <th>OCR extrait</th>
                     <th>Date d'upload</th>
@@ -567,14 +568,24 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                           <div>
                             <div className="fw-medium">{doc.filename}</div>
                             <small className="text-muted">
-                              {getFileType(doc.filename)} • {formatFileSize(doc.size || 0)}
+                              {getFileType(doc.filename)} • {formatFileSize(doc.file_size || doc.size || 0)}
                             </small>
                           </div>
                         </div>
                       </td>
+                      <td>{doc.partner_name || '-'}</td>
                       <td>
                         <div className="extracted-data-cell">
-                          {renderExtractedData(doc.extracted_data)}
+                          {doc.id ? (
+                            <a
+                              href={`${process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000'}/documents/${doc.id}/rapport_pdf`}
+                              download
+                            >
+                              Download PDF Report
+                            </a>
+                          ) : (
+                            <span className="text-muted">-</span>
+                          )}
                         </div>
                       </td>
                       <td>
@@ -589,7 +600,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                         </div>
                       </td>
                       <td>
-                        {new Date(doc.created_at).toLocaleDateString('fr-FR')}
+                        {doc.created_at ? new Date(doc.created_at).toLocaleDateString('fr-FR') : '-'}
                       </td>
                       <td>
                         <div className="btn-group" role="group">
