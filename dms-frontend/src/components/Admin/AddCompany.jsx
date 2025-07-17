@@ -36,10 +36,10 @@ const AdminCompanies = ({ user }) => {
   setLoading(true);
 
   const errors = {};
-  if (!formData.name.trim()) errors.name = 'Name is required.';
-  if (!formData.address.trim()) errors.address = 'Address is required.';
-  if (!formData.email.trim()) errors.email = 'Email is required.';
-  if (!formData.phone.trim()) errors.phone = 'Phone is required.';
+  if (!formData.name.trim()) errors.name = 'Le nom est requis.';
+  if (!formData.address.trim()) errors.address = 'L\'adresse est requise.';
+  if (!formData.email.trim()) errors.email = 'L\'email est requis.';
+  if (!formData.phone.trim()) errors.phone = 'Le téléphone est requis.';
 
   if (Object.keys(errors).length > 0) {
     setFieldErrors(errors);
@@ -54,7 +54,7 @@ const AdminCompanies = ({ user }) => {
     };
     await API.companies.create(dataToSend);
 
-    setSuccess('Entity created successfully!');
+    setSuccess('Entité créée avec succès !');
     setFormData({
       name: '',
       address: '',
@@ -77,10 +77,10 @@ const AdminCompanies = ({ user }) => {
     if (errorMsg.toLowerCase().includes("name") || errorMsg.toLowerCase().includes("email")) {
         const duplicateErrors = {};
       if (errorMsg.toLowerCase().includes("name")) {
-        duplicateErrors.name = "This entity name already exists.";
+        duplicateErrors.name = "Ce nom d'entité existe déjà.";
       }
       if (errorMsg.toLowerCase().includes("email")) {
-        duplicateErrors.email = "This email is already in use.";
+        duplicateErrors.email = "Cet email est déjà utilisé.";
       }
       setFieldErrors(duplicateErrors);
     } else {
@@ -105,14 +105,14 @@ const AdminCompanies = ({ user }) => {
       <div className="user-form">
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="name">Name of the entity</label>
+            <label htmlFor="name">Nom de l'entité</label>
             <input
               type="text"
               id="name"
               name="name"
               value={formData.name}
               onChange={handleInputChange}
-              placeholder="Enter the name"
+              placeholder="Entrez le nom de l'entité"
               className={fieldErrors.name ? 'input-error' : ''}
             />
             {fieldErrors.name && (
@@ -121,14 +121,14 @@ const AdminCompanies = ({ user }) => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="address">Address</label>
+            <label htmlFor="address">Adresse</label>
             <input
               type="text"
               id="address"
               name="address"
               value={formData.address}
               onChange={handleInputChange}
-              placeholder="Enter the address"
+              placeholder="Entrez l'adresse"
               className={fieldErrors.address ? 'input-error' : ''}
             />
             {fieldErrors.address && (
@@ -137,14 +137,14 @@ const AdminCompanies = ({ user }) => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="email">Email address</label>
+            <label htmlFor="email">Email</label>
             <input
               type="email"
               id="email"
               name="email"
               value={formData.email}
               onChange={handleInputChange}
-              placeholder="Enter the email address"
+              placeholder="Entrez l'adresse e-mail"
               className={fieldErrors.email ? 'input-error' : ''}
             />
             {fieldErrors.email && (
@@ -153,14 +153,14 @@ const AdminCompanies = ({ user }) => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="phone">Phone number</label>
+            <label htmlFor="phone">Téléphone</label>
             <input
               type="text"
               id="phone"
               name="phone"
               value={formData.phone}
               onChange={handleInputChange}
-              placeholder="Enter the phone number"
+              placeholder="Entrez le numéro de téléphone"
               className={fieldErrors.phone ? 'input-error' : ''}
             />
             {fieldErrors.phone && (
@@ -170,14 +170,14 @@ const AdminCompanies = ({ user }) => {
 
           <div className="form-actions">
             <Link to="/companies" className="btn-cancel">
-            Cancel
-          </Link>
+              Annuler
+            </Link>
             <button
               type="submit"
               disabled={loading}
               className="btn"
             >
-              {loading ? 'loading...' : 'Create entity'}
+              {loading ? 'Chargement...' : 'Créer l\'entité'}
             </button>
           </div>
         </form>

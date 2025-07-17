@@ -32,7 +32,7 @@ const AddPartnerType = () => {
     setLoading(true);
 
     const errors = {};
-    if (!formData.name.trim()) errors.name = 'Partner type name is required.';
+    if (!formData.name.trim()) errors.name = 'Le nom du type de partenaire est requis.';
 
     if (Object.keys(errors).length) {
       setFieldErrors(errors);
@@ -46,7 +46,7 @@ const AddPartnerType = () => {
     try {
       await API.partnertype.create(dataToSend);
 
-      setSuccess('Partner type created successfully!');
+      setSuccess('Type de partenaire créé avec succès!');
       setFormData({ name: '', status: true });
       setFieldErrors({});
       setError('');
@@ -64,7 +64,7 @@ const AddPartnerType = () => {
       
       // Check for specific name conflict error
       if ((msg.toLowerCase().includes('name already exists') || msg.toLowerCase().includes('name')) && msg.toLowerCase().includes('exists')) {
-        setFieldErrors({ name: 'A partner type with this name already exists.' });
+        setFieldErrors({ name: 'Un type de partenaire avec ce nom existe déjà.' });
         setError('');
       } else {
         setError(msg);
@@ -86,14 +86,14 @@ const AddPartnerType = () => {
         <form onSubmit={handleSubmit}>
           {/* name */}
           <div className="form-group">
-            <label htmlFor="name">Partner Type Name</label>
+            <label htmlFor="name">Nom du type de partenaire</label>
             <input
               type="text"
               id="name"
               name="name"
               value={formData.name}
               onChange={handleInputChange}
-              placeholder="Enter partner type name"
+              placeholder="Saisissez le nom du type de partenaire"
               className={fieldErrors.name ? 'input-error' : ''}
             />
             {fieldErrors.name && <p className="error-text">{fieldErrors.name}</p>}
@@ -115,13 +115,13 @@ const AddPartnerType = () => {
           {/* submit */}
           <div className="form-actions">
             <Link to="/partners" className="btn btn-cancel">
-              Cancel
+              Annuler
             </Link>
             <button 
               type="submit" 
               className="btn btn" 
               disabled={loading}>
-              {loading ? 'Creating...' : 'Create Partner Type'}
+              {loading ? 'Création...' : 'Créer un type de partenaire'}
             </button>
           </div>
         </form>

@@ -53,7 +53,7 @@ const AdminCompanies = ({ user }) => {
       setCompanies(companiesData);
       setFilteredCompanies(companiesData);
     } catch (err) {
-      setError('Error loading companies');
+      setError('Erreur lors du chargement des entreprises');
       console.error('Error details:', err.response?.data || err.message);
       setCompanies([]);
       setFilteredCompanies([]);
@@ -65,7 +65,7 @@ const AdminCompanies = ({ user }) => {
   // New useEffect to handle notification display
   useEffect(() => {
     if (!loading && filteredCompanies.length === 0) {
-      const message = companies.length === 0 ? 'No companies available' : 'No companies found matching your filters';
+      const message = companies.length === 0 ? 'Aucune entreprise disponible' : 'Aucune entreprise ne correspond à vos filtres';
       setNotificationMessage(message);
       setShowNotification(true);
       
@@ -107,20 +107,20 @@ const AdminCompanies = ({ user }) => {
     const errorMessages = [];
 
     if (!formData.name.trim()) {
-      errors.name = 'Company name is required';
-      errorMessages.push('Company name is required');
+      errors.name = 'Le nom de l\'entreprise est requis';
+      errorMessages.push('Le nom de l\'entreprise est requis');
     }
     if (!formData.address.trim()) {
-      errors.address = 'Address is required';
-      errorMessages.push('Address is required');
+      errors.address = 'L\'adresse est requise';
+      errorMessages.push('L\'adresse est requise');
     }
     if (!formData.phone.trim()) {
-      errors.phone = 'Phone is required';
-      errorMessages.push('Phone is required');
+      errors.phone = 'Le numéro de téléphone est requis';
+      errorMessages.push('Le numéro de téléphone est requis');
     }
     if (!formData.email.trim()) {
-      errors.email = 'Email is required';
-      errorMessages.push('Email is required');
+      errors.email = 'L\'email est requis';
+      errorMessages.push('L\'email est requis');
     }
 
     setFieldErrors(errors);
@@ -145,13 +145,13 @@ const AdminCompanies = ({ user }) => {
   };
 
   const handleDelete = async (companyId) => {
-    if (window.confirm('Are you sure you want to delete this company?')) {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer cette entreprise ?')) {
       try {
         await API.companies.delete(companyId);
-        setSuccess('Company deleted successfully');
+        setSuccess('Entreprise supprimée avec succès');
         fetchCompanies();
       } catch (err) {
-        setError('Error deleting company');
+        setError('Erreur lors de la suppression de l\'entreprise');
         console.error('Error deleting company:', err);
       }
     }
@@ -181,7 +181,7 @@ const AdminCompanies = ({ user }) => {
     
     try {
       await API.companies.update(editingCompany.id, formData);
-      setSuccess('Company updated successfully');
+      setSuccess('Entreprise mise à jour avec succès');
       setEditingCompany(null);
       setShowModifyTab(false);
       setActiveTab('list');
@@ -191,13 +191,13 @@ const AdminCompanies = ({ user }) => {
       const errorMessage = apiError?.msg || apiError?.error || apiError?.message || 'Error updating company';
       
       if (errorMessage.toLowerCase().includes('name')) {
-        setFieldErrors({ name: 'Company name already exists' });
-        setGlobalErrors(['Company name already exists']);
+        setFieldErrors({ name: 'Le nom de l\'entreprise existe déjà' });
+        setGlobalErrors(['Le nom de l\'entreprise existe déjà']);
       } else if (errorMessage.toLowerCase().includes('email')) {
-        setFieldErrors({ email: 'Email already exists' });
-        setGlobalErrors(['Email already exists']);
+        setFieldErrors({ email: 'L\'email existe déjà' });
+        setGlobalErrors(['L\'email existe déjà']);
       } else {
-        setError('Error updating company');
+        setError('Erreur lors de la mise à jour de l\'entreprise');
         console.error('Error updating company:', err);
       }
     }
@@ -219,18 +219,18 @@ const AdminCompanies = ({ user }) => {
               setEditingCompany(null);
             }}
           >
-            Entities List
+            Liste des entités
           </button>
           {showModifyTab && (
             <button
               className={`tab-btn ${activeTab === 'form' ? 'active' : ''}`}
               onClick={() => setActiveTab('form')}
             >
-              Modify Entity
+              Modifier l'entité
             </button>
           )}
           <Link to="/AddComp" className="btn-primary-2">
-            Add Entity 
+            Ajouter une entité
           </Link>
         </div>
       </div>
@@ -249,7 +249,7 @@ const AdminCompanies = ({ user }) => {
         <div className="users-list">
           {loading && (
             <div className="loading-message">
-              Loading companies...
+              Chargement des entités...
             </div>
           )}
 
@@ -297,9 +297,9 @@ const AdminCompanies = ({ user }) => {
                 <tr>
                   <th></th> {/* Placeholder for status LED */}
                   <th>ID</th>
-                  <th>Company Name</th>
-                  <th>Address</th>
-                  <th>Phone</th>
+                  <th>Nom de l'entité</th>
+                  <th>Adresse</th>
+                  <th>Téléphone</th>
                   <th>Email</th>
                   <th>Actions</th>
                 </tr>
@@ -310,7 +310,7 @@ const AdminCompanies = ({ user }) => {
                       type="text"
                       value={filters.id}
                       onChange={(e) => handleFilterChange(e, 'id')}
-                      placeholder="Filter ID"
+                      placeholder="Filtrer par ID"
                       className="filter-input"
                     />
                   </td>
@@ -319,7 +319,7 @@ const AdminCompanies = ({ user }) => {
                       type="text"
                       value={filters.name}
                       onChange={(e) => handleFilterChange(e, 'name')}
-                      placeholder="Filter Name"
+                      placeholder="Filtrer par nom"
                       className="filter-input"
                     />
                   </td>
@@ -328,7 +328,7 @@ const AdminCompanies = ({ user }) => {
                       type="text"
                       value={filters.address}
                       onChange={(e) => handleFilterChange(e, 'address')}
-                      placeholder="Filter Address"
+                      placeholder="Filtrer par adresse"
                       className="filter-input"
                     />
                   </td>
@@ -337,7 +337,7 @@ const AdminCompanies = ({ user }) => {
                       type="text"
                       value={filters.phone}
                       onChange={(e) => handleFilterChange(e, 'phone')}
-                      placeholder="Filter Phone"
+                      placeholder="Filtrer par téléphone"
                       className="filter-input"
                     />
                   </td>
@@ -346,7 +346,7 @@ const AdminCompanies = ({ user }) => {
                       type="text"
                       value={filters.email}
                       onChange={(e) => handleFilterChange(e, 'email')}
-                      placeholder="Filter Email"
+                      placeholder="Filtrer par email"
                       className="filter-input"
                     />
                   </td>
@@ -369,13 +369,13 @@ const AdminCompanies = ({ user }) => {
                             className="btn-edit"
                             onClick={() => handleEdit(company)}
                           >
-                            Modify
+                            Modifier
                           </button>
                           <button
                             className="btn-delete"
                             onClick={() => handleDelete(company.id)}
                           >
-                            Delete
+                            Supprimer
                           </button>
                         </div>
                       </td>
@@ -390,14 +390,14 @@ const AdminCompanies = ({ user }) => {
 
       {activeTab === 'form' && editingCompany && (
         <div className="user-form">
-          <h2>Modify Company</h2>
+          <h2>Modifier l'entité</h2>
           <form onSubmit={handleUpdate}>
             <div className="form-group">
-              <label>Company name *</label>
+              <label>Nom de l'entité *</label>
               <input
                 type="text"
                 name="name"
-                placeholder="Enter company name"
+                placeholder="Entrez le nom de l'entité"
                 value={formData.name}
                 onChange={handleInputChange}
                 className={fieldErrors.name ? 'input-error' : ''}
@@ -405,11 +405,11 @@ const AdminCompanies = ({ user }) => {
               {fieldErrors.name && <div className="field-error">{fieldErrors.name}</div>}
             </div>
             <div className="form-group">
-              <label>Address *</label>
+              <label>Adresse *</label>
               <input
                 type="text"
                 name="address"
-                placeholder="Enter address"
+                placeholder="Entrez l'adresse"
                 value={formData.address}
                 onChange={handleInputChange}
                 className={fieldErrors.address ? 'input-error' : ''}
@@ -417,11 +417,11 @@ const AdminCompanies = ({ user }) => {
               {fieldErrors.address && <div className="field-error">{fieldErrors.address}</div>}
             </div>
             <div className="form-group">
-              <label>Phone *</label>
+              <label>Téléphone *</label>
               <input
                 type="text"
                 name="phone"
-                placeholder="Enter phone"
+                placeholder="Entrez le téléphone"
                 value={formData.phone}
                 onChange={handleInputChange}
                 className={fieldErrors.phone ? 'input-error' : ''}
@@ -433,7 +433,7 @@ const AdminCompanies = ({ user }) => {
               <input
                 type="email"
                 name="email"
-                placeholder="Enter email"
+                placeholder="Entrez l'email"
                 value={formData.email}
                 onChange={handleInputChange}
                 className={fieldErrors.email ? 'input-error' : ''}
@@ -441,11 +441,11 @@ const AdminCompanies = ({ user }) => {
               {fieldErrors.email && <div className="field-error">{fieldErrors.email}</div>}
             </div>
             <div className="form-group">
-              <label>Website</label>
+              <label>Site Web</label>
               <input
                 type="text"
                 name="website"
-                placeholder="Enter website"
+                placeholder="Entrez le site web"
                 value={formData.website}
                 onChange={handleInputChange}
               />
@@ -454,7 +454,7 @@ const AdminCompanies = ({ user }) => {
               <label>Description</label>
               <textarea
                 name="description"
-                placeholder="Enter description"
+                placeholder="Entrez le description"
                 value={formData.description}
                 onChange={handleInputChange}
                 rows="4"
@@ -471,10 +471,10 @@ const AdminCompanies = ({ user }) => {
                   setEditingCompany(null);
                 }}
               >
-                Cancel
+                Annuler
               </button>
               <button type="submit" className="btn-primary">
-                Update Company
+                Mettre à jour l'entité
               </button>
             </div>
           </form>

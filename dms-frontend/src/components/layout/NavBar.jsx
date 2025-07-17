@@ -29,20 +29,20 @@ const NavBar = ({ user, onLogout }) => {
   // Admin tools links grouped by category
   const adminToolsCategories = {
     systemConfig: {
-      title: 'System Configuration',
+      title: 'Système de configuration',
       icon: <BiServer size={16} />,
       items: [
-        { icon: <BiGroup size={16} />, label: 'Users', link: '/admin/users' },
-        { icon: <BiBuildings size={16} />, label: 'Entities', link: '/companies' },
-        { icon: <BiCollection size={16} />, label: 'Data types', link: '/doctypes' },
-        { icon: <BiFolder size={16} />, label: 'Partner types', link: '/partnertypes' },
-        { icon: <BiBarChart size={16} />, label: 'Partners', link: '/partners' },
+        { icon: <BiGroup size={16} />, label: 'Utilisateurs', link: '/admin/users' },
+        { icon: <BiBuildings size={16} />, label: 'Entités', link: '/companies' },
+        { icon: <BiCollection size={16} />, label: 'Types de données', link: '/doctypes' },
+        { icon: <BiFolder size={16} />, label: 'Types de partenaires', link: '/partnertypes' },
+        { icon: <BiBarChart size={16} />, label: 'Partenaires', link: '/partners' },
         { icon: <BiFile size={16} />, label: 'Logs', link: '/admin/activity_logs' },
-        { icon: <BiCog size={16} />, label: 'Settings', link: '/settings' }
+        { icon: <BiCog size={16} />, label: 'Paramètres', link: '/settings' }
       ]
     },
     businessData: {
-      title: 'Business Data',
+      title: 'Données commerciales',
       icon: <BiData size={16} />,
       items: [] // Empty for now as requested
     }
@@ -82,7 +82,7 @@ const NavBar = ({ user, onLogout }) => {
               <span className="logo-icon"><BsFileEarmarkText size={32} /></span>
               <div className="logo-text">
                 <span className="logo-main">DocuManager</span>
-                <span className="logo-sub">AI-powered document processing</span>
+                <span className="logo-sub">Traitement de documents alimenté par l'IA</span>
               </div>
             </div> 
           </Link>
@@ -94,7 +94,7 @@ const NavBar = ({ user, onLogout }) => {
             <span className="search-icon"><BiSearch size={18} /></span>
             <input 
               type="text" 
-              placeholder="Search documents..." 
+              placeholder="Recherche..." 
               className="search-input"
             />
           </div>
@@ -109,7 +109,7 @@ const NavBar = ({ user, onLogout }) => {
             onClick={resetSelection}
           >
             <span className="nav-icon"><BiBarChart size={20} /></span>
-            <span>Dashboard</span>
+            <span>Tableau de bord</span>
           </Link>
           
           {/* Admin Tools Dropdown */}
@@ -120,7 +120,7 @@ const NavBar = ({ user, onLogout }) => {
                 onClick={() => setShowAdminTools(!showAdminTools)}
               >
                 <span className="nav-icon"><BiGroup size={20} /></span>
-                <span>Admin Tools</span>
+                <span>Outils</span>
                 <span className={`dropdown-icon ${showAdminTools ? 'open' : ''}`}>
                   <BiChevronDown size={14} />
                 </span>
@@ -171,7 +171,7 @@ const NavBar = ({ user, onLogout }) => {
                           ))}
                         </div>
                       ) : (
-                        <div className="empty-category">No items available</div>
+                        <div className="empty-category">Aucun élément disponible</div>
                       )}
                     </div>
                   </div>
@@ -185,7 +185,7 @@ const NavBar = ({ user, onLogout }) => {
                       className="logout-button"
                     >
                       <BiLogOut size={16} />
-                      <span>Logout</span>
+                      <span>Déconnexion</span>
                     </button>
                   </div>
                 </div>
@@ -197,7 +197,7 @@ const NavBar = ({ user, onLogout }) => {
           {(!user || user.role !== 'admin') && (
             <Link to="/settings" className={`nav-link ${isActive('/settings')}`}>
               <span className="nav-icon"><BiCog size={20} /></span>
-              <span>Settings</span>
+              <span>Paramètres</span>
             </Link>
           )}
           
@@ -230,14 +230,14 @@ const NavBar = ({ user, onLogout }) => {
                     onClick={() => setShowProfileMenu(false)}
                   >
                     <span className="menu-icon"><BiUser size={18} /></span>
-                    <span>Profile</span>
+                    <span>Profil</span>
                   </Link>
                   <button
                     onClick={onLogout}
                     className="profile-menu-item logout-item"
                   >
                     <span className="menu-icon"><BiLogOut size={18} /></span>
-                    <span>Logout</span>
+                    <span>Déconnexion</span>
                   </button>
                 </div>
               )}

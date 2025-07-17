@@ -42,9 +42,9 @@ const WelcomePanel = ({ user }) => {
   return (
     <div className="welcome-panel">
       <div className="welcome-header text-center mb-5">
-        <h1 className="welcome-title display-4 fw-bold">Welcome to the DMS</h1>
+        <h1 className="welcome-title display-4 fw-bold">Bienvenue au DMS</h1>
         <p className="welcome-subtitle lead text-muted">
-          Get started by managing your documents and settings
+          Commencez par gérer vos documents et paramètres
         </p>
       </div>
 
@@ -54,10 +54,10 @@ const WelcomePanel = ({ user }) => {
           <div className="col-md-4">
             <div className="card h-100 action-card">
               <div className="card-body text-center">
-                <h3 className="card-title fs-6 text-muted">Total Users</h3>
+                <h3 className="card-title fs-6 text-muted">Nombre total d'utilisateurs</h3>
                 {loading ? (
                   <div className="spinner-border text-primary" role="status">
-                    <span className="visually-hidden">Loading...</span>
+                    <span className="visually-hidden">Chargement...</span>
                   </div>
                 ) : (
                   <p className="card-text fs-4 fw-bold">{stats.users}</p>
@@ -70,10 +70,10 @@ const WelcomePanel = ({ user }) => {
           <div className="col-md-4">
             <div className="card h-100 action-card">
               <div className="card-body text-center">
-                <h3 className="card-title fs-6 text-muted">Total Entities</h3>
+                <h3 className="card-title fs-6 text-muted">Nombre total d'entités</h3>
                 {loading ? (
                   <div className="spinner-border text-primary" role="status">
-                    <span className="visually-hidden">Loading...</span>
+                    <span className="visually-hidden">Chargement...</span>
                   </div>
                 ) : (
                   <p className="card-text fs-4 fw-bold">{stats.companies}</p>
@@ -86,10 +86,10 @@ const WelcomePanel = ({ user }) => {
           <div className="col-md-4">
             <div className="card h-100 action-card">
               <div className="card-body text-center">
-                <h3 className="card-title fs-6 text-muted">Total Partners</h3>
+                <h3 className="card-title fs-6 text-muted">Nombre total de partenaires</h3>
                 {loading ? (
                   <div className="spinner-border text-primary" role="status">
-                    <span className="visually-hidden">Loading...</span>
+                    <span className="visually-hidden">Chargement...</span>
                   </div>
                 ) : (
                   <p className="card-text fs-4 fw-bold">{stats.partners}</p>

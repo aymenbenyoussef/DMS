@@ -344,7 +344,7 @@ const AdminUsers = ({user ,loadingUser}) => {
             className={`tab-btn ${activeTab === 'list' ? 'active' : ''}`}
             onClick={() => handleTabChange('list')}
           >
-            Users List
+            Liste des utilisateurs
           </button>
           {showModifyTab && (
             <button 
@@ -364,11 +364,11 @@ const AdminUsers = ({user ,loadingUser}) => {
                 });
               }}
             >
-              Modify User 
+              Modifier l'utilisateur
             </button>
           )}
           <Link to="/AddUsers" className="btn-primary-2">
-            Add User
+            Ajouter un utilisateur
           </Link>
         </div>
       </div>
@@ -385,10 +385,10 @@ const AdminUsers = ({user ,loadingUser}) => {
           {showSpinner ? (
             <div className="loading-message">
               <div className="loading-spinner" style={{marginRight:'8px',display:'inline-block',verticalAlign:'middle'}}></div>
-              Loading users & companies...
+              Chargement des utilisateurs...
             </div>
           ) : canShowList && filteredUsers.length === 0 ? (
-            <div className="no-results">No users found</div>
+            <div className="no-results">Aucun utilisateur trouvé</div>
           ) : canShowList ? (
             <>
               {/* Notification using existing alert classes with inline styles for positioning */}
@@ -435,12 +435,12 @@ const AdminUsers = ({user ,loadingUser}) => {
                     <tr>
                       <th></th>
                       <th>ID</th>
-                      <th>Full Name</th>
-                      
+                      <th>Nom complet</th>
+
                       <th>Email</th>
-                      <th>Role</th>
-                      <th>Companies</th>
-                      <th>Creation date</th>
+                      <th>Rôle</th>
+                      <th>Entités</th>
+                      <th>Date de création</th>
                       <th>Actions</th>
                     </tr>
                     <tr className="filter-row">
@@ -530,13 +530,13 @@ const AdminUsers = ({user ,loadingUser}) => {
                                 className="btn-edit"
                                 onClick={() => handleEdit(user)}
                               >
-                                Modify
+                                Modifier
                               </button>
                               <button
                                 className="btn-delete"
                                 onClick={() => handleDelete(user.id)}
                               >
-                                Delete
+                                Supprimer
                               </button>
                             </div>)}
                           </td>
@@ -553,30 +553,30 @@ const AdminUsers = ({user ,loadingUser}) => {
 
       {activeTab === 'form' && (
         <div className="user-form">
-          <h2> Modify User </h2>
+          <h2> Modifier l'utilisateur</h2>
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label htmlFor="username">User Name</label>
+              <label htmlFor="username">Nom d'utilisateur</label>
               <input
                 type="text"
                 id="username"
                 name="username"
                 value={formData.username}
                 onChange={handleInputChange}
-                placeholder="Enter User Name"
+                placeholder="Entrez le nom d'utilisateur"
               />
               {fieldErrors.username && <div className="field-error">{fieldErrors.username}</div>}
             </div>
 
             <div className="form-group">
-              <label htmlFor="surname">User Surname</label>
+              <label htmlFor="surname">Entrez le nom d'utilisateur</label>
               <input
                 type="text"
                 id="surname"
                 name="surname"
                 value={formData.surname}
                 onChange={handleInputChange}
-                placeholder="Enter User Surname"
+                placeholder="Entrez le nom d'utilisateur"
               />
               {fieldErrors.surname && <div className="field-error">{fieldErrors.surname}</div>}
             </div>
@@ -590,7 +590,7 @@ const AdminUsers = ({user ,loadingUser}) => {
                 value={formData.email}
                 onChange={handleInputChange}
                 className={fieldErrors.email ? 'error-input' : ''}
-                placeholder="Enter Email"
+                placeholder="Entrez l'e-mail"
               />
               {fieldErrors.email && (
                 <div className="field-error">
@@ -601,7 +601,7 @@ const AdminUsers = ({user ,loadingUser}) => {
 
             <div className="form-group">
               <label htmlFor="password">
-                New password 
+                Nouveau mot de passe
               </label>
               <input
                 type="password"
@@ -610,16 +610,16 @@ const AdminUsers = ({user ,loadingUser}) => {
                 value={formData.password}
                 onChange={handleInputChange}
                 required={!editingUser}
-                placeholder="Enter Password"
+                placeholder="Entrez le mot de passe"
               />
               {fieldErrors.password && <div className="field-error">{fieldErrors.password}</div>}
             </div>
             <div className="form-group">
-              <label>Confirm Password</label>
+              <label>Confirmer le mot de passe</label>
               <input
                 type="password"
                 name="passwordConfirm"
-                placeholder="Confirm password"
+                placeholder="Confirmer le mot de passe"
                 value={formData.passwordConfirm}
                 onChange={handleInputChange}
                 required={!editingUser}
@@ -628,7 +628,7 @@ const AdminUsers = ({user ,loadingUser}) => {
             </div>
 
             <div className="form-group">
-              <label>Companies</label>
+              <label>Entités</label>
               <div className="checkbox-list">
                 {companies.map((c) => (
                   <label key={c.id} className="checkbox-item">
@@ -662,7 +662,7 @@ const AdminUsers = ({user ,loadingUser}) => {
                   checked={formData.is_active}
                   onChange={handleInputChange}
                 />
-                Active user
+                Utilisateur actif
               </label>
             </div>
 
@@ -672,10 +672,10 @@ const AdminUsers = ({user ,loadingUser}) => {
                 onClick={() => handleTabChange('list')}
                 className="btn-primary"
               >
-                Cancel
+                Annuler
               </button>
               <button type="submit" disabled={loading} className="btn-primary">
-                {loading ? 'Loading...' : (editingUser ? 'Update' : 'Create')}
+                {loading ? 'Chargement...' : (editingUser ? 'Mettre à jour' : 'Créer')}
               </button>
             </div>
           </form>

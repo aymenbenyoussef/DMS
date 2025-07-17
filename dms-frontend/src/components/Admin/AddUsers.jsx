@@ -44,30 +44,30 @@ const AddUser = () => {
   const errorMessages = [];
 
   if (!formData.username.trim()) {
-    errors.username = 'Username is required';
-    errorMessages.push('Username is required');
+    errors.username = 'Le nom d\'utilisateur est requis';
+    errorMessages.push('Le nom d\'utilisateur est requis');
   }
   if (!formData.surname.trim()) {
-    errors.surname = 'Surname is required';
-    errorMessages.push('Surname is required');
+    errors.surname = 'Le prénom est requis';
+    errorMessages.push('Le prénom est requis');
   }
   if (!formData.email.trim()) {
-    errors.email = 'Email is required';
-    errorMessages.push('Email is required');
+    errors.email = 'L\'email est requis';
+    errorMessages.push('L\'email est requis');
   } else if (!formData.email.includes('@')) {
-    errors.email = 'Email is invalid';
-    errorMessages.push('Email is invalid');
+    errors.email = 'L\'email est invalide';
+    errorMessages.push('L\'email est invalide');
   }
   if (!formData.password) {
-    errors.password = 'Password is required';
-    errorMessages.push('Password is required');
+    errors.password = 'Le mot de passe est requis';
+    errorMessages.push('Le mot de passe est requis');
   }
   if (!formData.passwordConfirm) {
-    errors.passwordConfirm = 'Please confirm password';
-    errorMessages.push('Please confirm password');
+    errors.passwordConfirm = 'Veuillez confirmer le mot de passe';
+    errorMessages.push('Veuillez confirmer le mot de passe');
   } else if (formData.password !== formData.passwordConfirm) {
-    errors.passwordConfirm = 'Passwords do not match';
-    errorMessages.push('Passwords do not match');
+    errors.passwordConfirm = 'Les mots de passe ne correspondent pas';
+    errorMessages.push('Les mots de passe ne correspondent pas');
   }
 
   setFieldErrors(errors);
@@ -106,7 +106,7 @@ const AddUser = () => {
   setLoading(true);
   try {
     await API.admin.createUser(formData);
-    setSuccess('User created successfully');
+    setSuccess('Utilisateur créé avec succès');
     setFormData({
       username: '',
       surname: '',
@@ -123,15 +123,15 @@ const AddUser = () => {
     setTimeout(() => {
         navigate('/admin/users');
       }, 1500);
-    //navigate('/admin/users', { state: { successMessage: 'User created successfully' } });
+    //navigate('/admin/users', { state: { successMessage: 'Utilisateur créé avec succès' } });
   } catch (err) {
-  let errorMsg = 'Error creating user';
+  let errorMsg = 'Erreur lors de la création de l\'utilisateur';
   const errors = {};
 
   // Check if it's an email duplicate error
   if (err.response?.data?.msg?.toLowerCase().includes('email')) {
-    errorMsg = 'Email already exists';
-    errors.email = 'Email already exists';
+    errorMsg = 'L\'email existe déjà';
+    errors.email = 'L\'email existe déjà';
   }
 
   setFieldErrors((prev) => ({
@@ -157,21 +157,21 @@ const AddUser = () => {
           className={`tab-btn ${activeTab === 'profile' ? 'active' : ''}`}
           //onClick={() => setActiveTab('profile')}
         >
-          Profile
+          Profil
         </button>
         <button
           type="button"
           className={`tab-btn ${activeTab === 'security' ? 'active' : ''}`}
           //onClick={() => setActiveTab('security')}
         >
-          Security
+          Sécurité
         </button>
         <button
           type="button"
           className={`tab-btn ${activeTab === 'access' ? 'active' : ''}`}
           //onClick={() => setActiveTab('access')}
         >
-          Entities & Status
+          Entités & Statut
         </button>
       </div>
 
@@ -182,22 +182,22 @@ const AddUser = () => {
         {/* Profile Tab */}
         <div className="tab-panel" style={{ display: activeTab === 'profile' ? 'block' : 'none' }}>
           <div className="form-group">
-            <label>Username</label>
+            <label>Nom d'utilisateur</label>
             <input
               type="text"
               name="username"
-              placeholder="Enter username"
+              placeholder="Entrez le nom d'utilisateur"
               value={formData.username}
               onChange={handleInputChange}
             />
             {fieldErrors.username && <div className="field-error">{fieldErrors.username}</div>}
           </div>
           <div className="form-group">
-            <label>First Name</label>
+            <label>Prénom</label>
             <input
               type="text"
               name="surname"
-              placeholder="Enter surname"
+              placeholder="Entrez le prénom"
               value={formData.surname}
               onChange={handleInputChange}
             />
@@ -208,10 +208,9 @@ const AddUser = () => {
             <input
               type="email"
               name="email"
-              placeholder="Enter email"
+              placeholder="Entrez l'email"
               value={formData.email}
               onChange={handleInputChange}
-               
             />
             {fieldErrors.email && <div className="field-error">{fieldErrors.email}</div>}
           </div>
@@ -221,7 +220,7 @@ const AddUser = () => {
               className="btn-green"
               onClick={() => setActiveTab('security')}
             >
-              Next
+              Suivant
             </button>
           </div>
         </div>
@@ -229,22 +228,22 @@ const AddUser = () => {
         {/* Security Tab */}
         <div className="tab-panel" style={{ display: activeTab === 'security' ? 'block' : 'none' }}>
           <div className="form-group">
-            <label>Password</label>
+            <label>Mot de passe</label>
             <input
               type="password"
               name="password"
-              placeholder="Enter password"
+              placeholder="Entrez le mot de passe"
               value={formData.password}
               onChange={handleInputChange}
             />
             {fieldErrors.password && <div className="field-error">{fieldErrors.password}</div>}
           </div>
           <div className="form-group">
-            <label>Confirm Password</label>
+            <label>Confirmer le mot de passe</label>
             <input
               type="password"
               name="passwordConfirm"
-              placeholder="Confirm password"
+              placeholder="Confirmer le mot de passe"
               value={formData.passwordConfirm}
               onChange={handleInputChange}
             />
@@ -256,14 +255,14 @@ const AddUser = () => {
               className="btn-green"
               onClick={() => setActiveTab('profile')}
             >
-              Previous
+              Précédent
             </button>
             <button
               type="button"
               className="btn-green"
               onClick={() => setActiveTab('access')}
             >
-              Next
+              Suivant
             </button>
           </div>
         </div>
@@ -271,7 +270,7 @@ const AddUser = () => {
         {/* Access & Companies Tab */}
         <div className="tab-panel" style={{ display: activeTab === 'access' ? 'block' : 'none' }}>
           <div className="form-group">
-            <label>Companies</label>
+            <label>Entités</label>
             <div className="checkbox-list">
               {companies.map((c) => (
                 <label key={c.id} className="checkbox-item">
@@ -296,7 +295,7 @@ const AddUser = () => {
                 checked={formData.is_active}
                 onChange={handleInputChange}
               />{' '}
-              Active User
+              Utilisateur actif
             </label>
           </div>
           {globalErrors.length > 0 && (
@@ -316,13 +315,13 @@ const AddUser = () => {
               className="btn-green"
               onClick={() => setActiveTab('security')}
             >
-              Previous
+              Précédent
             </button>
             <Link to="/admin/users" className="btn-cancel">
-              Cancel
+              Annuler
             </Link>
             <button type="submit" disabled={loading} className="btn-green">
-              {loading ? 'Creating...' : 'Create User'}
+              {loading ? 'Création...' : 'Créer un utilisateur'}
             </button>
           </div>
         </div>

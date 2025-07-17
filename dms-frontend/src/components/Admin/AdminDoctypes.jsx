@@ -40,7 +40,7 @@ const AdminDoctypes = ({ user }) => {
       setDoctypes(response.data);
       setFilteredDoctypes(response.data);
     } catch (err) {
-      setError('Error loading document types');
+      setError('Erreur lors du chargement des types de documents');
       console.error('Error details:', err.response?.data || err.message);
     } finally {
       setLoading(false);
@@ -54,7 +54,7 @@ const AdminDoctypes = ({ user }) => {
   // New useEffect to handle notification display
   useEffect(() => {
     if (!loading && filteredDoctypes.length === 0) {
-      const message = doctypes.length === 0 ? 'No document types available' : 'No document types found matching your filters';
+      const message = doctypes.length === 0 ? 'Aucun type de document disponible' : 'Aucun type de document ne correspond à vos filtres';
       setNotificationMessage(message);
       setShowNotification(true);
       
@@ -95,8 +95,8 @@ const AdminDoctypes = ({ user }) => {
     const errorMessages = [];
 
     if (!formData.name.trim()) {
-      errors.name = 'Name is required';
-      errorMessages.push('Name is required');
+      errors.name = 'Le nom est requis';
+      errorMessages.push('Le nom est requis');
     }
 
     setFieldErrors(errors);
@@ -117,13 +117,13 @@ const AdminDoctypes = ({ user }) => {
   };
 
   const handleDelete = async (doctypeId) => {
-    if (window.confirm('Are you sure you want to delete this document type?')) {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer ce type de document ?')) {
       try {
         await API.doctype.delete(doctypeId);
-        setSuccess('Document type deleted successfully');
+        setSuccess('Type de document supprimé avec succès');
         fetchDoctypes();
       } catch (err) {
-        setError('Error deleting document type');
+        setError('Erreur lors de la suppression du type de document');
         console.error('Error deleting document type:', err);
       }
     }window.dispatchEvent(new CustomEvent('DoctypeDeleted'));
@@ -151,7 +151,7 @@ const AdminDoctypes = ({ user }) => {
     
     try {
       await API.doctype.update(editingDoctype.id, formData);
-      setSuccess('Document type updated successfully');
+      setSuccess('Type de document mis à jour avec succès');
       setEditingDoctype(null);
       setShowModifyTab(false);
       setActiveTab('list');
@@ -161,10 +161,10 @@ const AdminDoctypes = ({ user }) => {
       const errorMessage = apiError?.msg || apiError?.error || apiError?.message || 'Error updating document type';
       
       if (errorMessage.toLowerCase().includes('name')) {
-        setFieldErrors({ name: 'Document type name already exists' });
-        setGlobalErrors(['Document type name already exists']);
+        setFieldErrors({ name: 'Le nom du type de document existe déjà' });
+        setGlobalErrors(['Le nom du type de document existe déjà']);
       } else {
-        setError('Error updating document type');
+        setError('Erreur lors de la mise à jour du type de document');
         console.error('Error updating document type:', err);
       }
     }
@@ -186,19 +186,19 @@ const AdminDoctypes = ({ user }) => {
               setEditingDoctype(null);
             }}
           >
-            Document Types List
+            Liste des types de documents
           </button>
           {showModifyTab && (
             <button
               className={`tab-btn ${activeTab === 'form' ? 'active' : ''}`}
               onClick={() => setActiveTab('form')}
             >
-              Modify Document Type
+              Modifier le type de document
             </button>
           )}
           
           <Link to="/AddDoctype" className="btn-primary-2">
-            Add Document Type
+            Ajouter un type de document
           </Link>
         </div>
       </div>
@@ -210,7 +210,7 @@ const AdminDoctypes = ({ user }) => {
         <div className="users-list">
           {loading && (
             <div className="loading-message">
-              Loading document types...
+              Chargement des types de documents...
             </div>
           )}
 
@@ -258,7 +258,7 @@ const AdminDoctypes = ({ user }) => {
                 <tr>
                   <th></th>
                   <th>ID</th>
-                  <th>Name</th>
+                  <th>Nom</th>
                   <th>Actions</th>
                 </tr>
                 <tr className="filter-row">
@@ -268,7 +268,7 @@ const AdminDoctypes = ({ user }) => {
                       type="text"
                       value={filters.id}
                       onChange={(e) => handleFilterChange(e, 'id')}
-                      placeholder="Filter ID"
+                      placeholder="Filtrer par ID"
                       className="filter-input"
                     />
                   </td>
@@ -277,7 +277,7 @@ const AdminDoctypes = ({ user }) => {
                       type="text"
                       value={filters.name}
                       onChange={(e) => handleFilterChange(e, 'name')}
-                      placeholder="Filter Name"
+                      placeholder="Filtrer par nom"
                       className="filter-input"
                     />
                   </td>
@@ -300,13 +300,13 @@ const AdminDoctypes = ({ user }) => {
                             className="btn-edit"
                             onClick={() => handleEdit(doctype)}
                           >
-                            Modify
+                            Modifier
                           </button>
                           <button
                             className="btn-delete"
                             onClick={() => handleDelete(doctype.id)}
                           >
-                            Delete
+                            Supprimer
                           </button>
                         </div>
                       </td>
@@ -321,16 +321,16 @@ const AdminDoctypes = ({ user }) => {
 
       {activeTab === 'form' && (
         <div className="user-form">
-          <h2>Modify Document Type</h2>
+          <h2>Modifier le type de document</h2>
           <form onSubmit={handleUpdate}>
             <div className="form-group">
-              <label>Name</label>
+              <label>Nom du type de document</label>
               <input
                 type="text"
                 name="name"
                 value={formData.name}
                 onChange={handleInputChange}
-                placeholder="Document type name"
+                placeholder="Nom du type de document"
                 className={fieldErrors.name ? 'error-input' : ''}
               />
               {fieldErrors.name && <div className="field-error">{fieldErrors.name}</div>}
@@ -344,7 +344,7 @@ const AdminDoctypes = ({ user }) => {
                   checked={formData.is_active}
                   onChange={handleInputChange}
                 />{' '}
-                Active
+                Actif
               </label>
             </div>
             <div className="form-actions">
@@ -358,10 +358,10 @@ const AdminDoctypes = ({ user }) => {
                   setEditingDoctype(null);
                 }}
               >
-                Cancel
+                Annuler
               </button>
               <button type="submit" className="btn-primary">
-                Update
+                Mettre à jour
               </button>
             </div>
           </form>
