@@ -20,6 +20,7 @@ const DocumentConfirmationForm = ({
   const [currentDoctype, setCurrentDoctype] = useState(initialDoctype || selectedDoctype);
   const [isLoading, setIsLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [errors, setErrors] = useState({});
   const [confirmedDocument, setConfirmedDocument] = useState({
     filename: filename,
     company_id: (initialCompany || selectedCompany)?.id,
@@ -139,6 +140,15 @@ const DocumentConfirmationForm = ({
       }
       return updated;
     });
+    
+    // Clear error when field is changed
+    if (errors[field]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
   };
 
   const handlePartnerChange = (e) => {
@@ -151,14 +161,63 @@ const DocumentConfirmationForm = ({
     } else {
       updateConfirmedDocument('partner', '');
     }
+
+    // Clear partner error
+    if (errors.partner_id) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.partner_id;
+        return newErrors;
+      });
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!currentCompany) {
+      newErrors.company_id = 'Veuillez sélectionner une entité';
+    }
+    
+    if (!currentDoctype) {
+      newErrors.doctype_id = 'Veuillez sélectionner un type de document';
+    }
+    
+    if (confirmedDocument.is_invoice) {
+      const invData = confirmedDocument.confirmed_data;
+      
+      if (!invData.invoice_number) {
+        newErrors.invoice_number = 'Le numéro de facture est requis';
+      }
+      
+      if (!invData.date) {
+        newErrors.date = 'La date est requise';
+      }
+      
+      if (!invData.partner_id) {
+        newErrors.partner_id = 'Veuillez sélectionner un partenaire';
+      }
+      
+      if (invData.total_ht === '' || isNaN(invData.total_ht) || invData.total_ht <= 0) {
+        newErrors.total_ht = 'Total HT doit être un nombre supérieur à 0';
+      }
+      
+      if (invData.tva === '' || isNaN(invData.tva) || invData.tva < 0) {
+        newErrors.tva = 'TVA doit être un nombre positif ou nul';
+      }
+      
+      if (invData.total_ttc === '' || isNaN(invData.total_ttc) || invData.total_ttc <= 0) {
+        newErrors.total_ttc = 'Total TTC doit être un nombre supérieur à 0';
+      }
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleConfirm = async () => {
-    if (!currentCompany || !currentDoctype) {
-      alert('Veuillez sélectionner une entreprise et un type de document.');
-      
-      return;
-    }
+    const isValid = validateForm();
+    if (!isValid) return;
 
     setIsLoading(true);
     try {
@@ -191,8 +250,7 @@ const DocumentConfirmationForm = ({
             <select 
               value={currentCompany?.id || ''} 
               onChange={handleCompanyChange}
-              required
-              className={currentCompany?.id !== (initialCompany || selectedCompany)?.id ? 'changed' : ''}
+              className={`${currentCompany?.id !== (initialCompany || selectedCompany)?.id ? 'changed' : ''} ${errors.company_id ? 'error' : ''}`}
             >
               <option value="">Sélectionner une entité</option>
               {companies.map(company => (
@@ -204,6 +262,7 @@ const DocumentConfirmationForm = ({
             {currentCompany?.id !== (initialCompany || selectedCompany)?.id && (
               <small className="change-indicator">Modifié depuis la sélection initiale</small>
             )}
+            {errors.company_id && <div className="error-message">{errors.company_id}</div>}
           </div>
           <div className="form-group">
             <label>Type de document *:</label>
@@ -211,8 +270,7 @@ const DocumentConfirmationForm = ({
               value={currentDoctype?.id || ''} 
               onChange={handleDoctypeChange}
               disabled={!currentCompany}
-              required
-              className={currentDoctype?.id !== (initialDoctype || selectedDoctype)?.id ? 'changed' : ''}
+              className={`${currentDoctype?.id !== (initialDoctype || selectedDoctype)?.id ? 'changed' : ''} ${errors.doctype_id ? 'error' : ''}`}
             >
               <option value="">Sélectionner un type</option>
               {doctypes.map(doctype => (
@@ -224,6 +282,7 @@ const DocumentConfirmationForm = ({
             {currentDoctype?.id !== (initialDoctype || selectedDoctype)?.id && (
               <small className="change-indicator">Modifié depuis la sélection initiale</small>
             )}
+            {errors.doctype_id && <div className="error-message">{errors.doctype_id}</div>}
           </div>
         </div>
         
@@ -242,29 +301,34 @@ const DocumentConfirmationForm = ({
           <div className="invoice-fields">
             <div className="form-row">
               <div className="form-group">
-                <label>Numéro de facture :</label>
+                <label>Numéro de facture *:</label>
                 <input
                   type="text"
                   value={confirmedDocument?.confirmed_data?.invoice_number || ''}
                   onChange={(e) => updateConfirmedDocument('invoice_number', e.target.value)}
+                  className={errors.invoice_number ? 'error' : ''}
                 />
+                {errors.invoice_number && <div className="error-message">{errors.invoice_number}</div>}
               </div>
               <div className="form-group">
-                <label>Date :</label>
+                <label>Date *:</label>
                 <input
                   type="date"
                   value={confirmedDocument?.confirmed_data?.date || ''}
                   onChange={(e) => updateConfirmedDocument('date', e.target.value)}
+                  className={errors.date ? 'error' : ''}
                 />
+                {errors.date && <div className="error-message">{errors.date}</div>}
               </div>
             </div>
             
             <div className="form-row">
               <div className="form-group">
-                <label>Partenaire externe :</label>
+                <label>Partenaire externe *:</label>
                 <select
                   value={confirmedDocument?.confirmed_data?.partner_id || ''}
                   onChange={handlePartnerChange}
+                  className={errors.partner_id ? 'error' : ''}
                 >
                   <option value="">Sélectionner un partenaire externe</option>
                   {partners.map(partner => (
@@ -273,36 +337,46 @@ const DocumentConfirmationForm = ({
                     </option>
                   ))}
                 </select>
+                {errors.partner_id && <div className="error-message">{errors.partner_id}</div>}
               </div>
             </div>
             
             <div className="form-row">
               <div className="form-group">
-                <label>Total HT (€) :</label>
+                <label>Total HT (€) *:</label>
                 <input
                   type="number"
                   step="0.01"
+                  min="0.01"
                   value={confirmedDocument?.confirmed_data?.total_ht || ''}
-                  onChange={(e) => updateConfirmedDocument('total_ht', parseFloat(e.target.value) || 0)}
+                  onChange={(e) => updateConfirmedDocument('total_ht', parseFloat(e.target.value) || '')}
+                  className={errors.total_ht ? 'error' : ''}
                 />
+                {errors.total_ht && <div className="error-message">{errors.total_ht}</div>}
               </div>
               <div className="form-group">
-                <label>TVA (€) :</label>
+                <label>TVA (€) *:</label>
                 <input
                   type="number"
                   step="0.01"
+                  min="0"
                   value={confirmedDocument?.confirmed_data?.tva || ''}
-                  onChange={(e) => updateConfirmedDocument('tva', parseFloat(e.target.value) || 0)}
+                  onChange={(e) => updateConfirmedDocument('tva', parseFloat(e.target.value) || '')}
+                  className={errors.tva ? 'error' : ''}
                 />
+                {errors.tva && <div className="error-message">{errors.tva}</div>}
               </div>
               <div className="form-group">
-                <label>Total TTC (€) :</label>
+                <label>Total TTC (€) *:</label>
                 <input
                   type="number"
                   step="0.01"
+                  min="0.01"
                   value={confirmedDocument?.confirmed_data?.total_ttc || ''}
-                  onChange={(e) => updateConfirmedDocument('total_ttc', parseFloat(e.target.value) || 0)}
+                  onChange={(e) => updateConfirmedDocument('total_ttc', parseFloat(e.target.value) || '')}
+                  className={errors.total_ttc ? 'error' : ''}
                 />
+                {errors.total_ttc && <div className="error-message">{errors.total_ttc}</div>}
               </div>
             </div>
           </div>
@@ -320,7 +394,7 @@ const DocumentConfirmationForm = ({
         <button 
           className="btn-primary" 
           onClick={handleConfirm}
-          disabled={isLoading || !currentCompany || !currentDoctype}
+          disabled={isLoading}
         >
           {isLoading ? 'Confirmation...' : hasChanges ? 'Confirmer avec modifications' : 'Confirmer'}
         </button>

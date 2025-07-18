@@ -286,3 +286,15 @@
   background: #e7f1ff;
   color: #0d6efd;
 }
+
+
+.error {
+  border: 1px solid #ff4d4d !important;
+}
+
+.error-message {
+  color: #ff4d4d;
+  font-size: 0.8rem;
+  margin-top: 5px;
+  font-weight: 500;
+}
