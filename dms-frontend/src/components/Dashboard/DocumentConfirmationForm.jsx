@@ -175,6 +175,7 @@ const DocumentConfirmationForm = ({
   const validateForm = () => {
     const newErrors = {};
     
+    // Required fields validation
     if (!currentCompany) {
       newErrors.company_id = 'Veuillez sélectionner une entité';
     }
@@ -183,6 +184,12 @@ const DocumentConfirmationForm = ({
       newErrors.doctype_id = 'Veuillez sélectionner un type de document';
     }
     
+    // Partner is now always required
+    if (!confirmedDocument.confirmed_data.partner_id) {
+      newErrors.partner_id = 'Veuillez sélectionner un partenaire';
+    }
+    
+    // Invoice-specific validation
     if (confirmedDocument.is_invoice) {
       const invData = confirmedDocument.confirmed_data;
       
@@ -192,10 +199,6 @@ const DocumentConfirmationForm = ({
       
       if (!invData.date) {
         newErrors.date = 'La date est requise';
-      }
-      
-      if (!invData.partner_id) {
-        newErrors.partner_id = 'Veuillez sélectionner un partenaire';
       }
       
       if (invData.total_ht === '' || isNaN(invData.total_ht) || invData.total_ht <= 0) {
@@ -232,8 +235,6 @@ const DocumentConfirmationForm = ({
   return (
     <div className="document-confirmation-form">
       <div className="form-header">
-        <h3>Confirmation du document</h3>
-        <p>Vérifiez et modifiez les informations extraites si nécessaire :</p>
         {hasChanges && (
           <div className="changes-notice">
             ⚠️ Vous avez modifié la société ou le type de document. Le fichier sera stocké dans le nouveau répertoire sélectionné.
@@ -244,6 +245,7 @@ const DocumentConfirmationForm = ({
       <div className="document-form">
         <h4 className="document-title">{filename}</h4>
         
+        {/* First row: Entity and Document Type */}
         <div className="form-row">
           <div className="form-group">
             <label>Entité *:</label>
@@ -286,6 +288,26 @@ const DocumentConfirmationForm = ({
           </div>
         </div>
         
+        {/* Second row: Partner Selection (full width) */}
+        <div className="form-row">
+          <div className="form-group" style={{ gridColumn: '1 / span 2' }}>
+            <label>Partenaire externe *:</label>
+            <select
+              value={confirmedDocument?.confirmed_data?.partner_id || ''}
+              onChange={handlePartnerChange}
+              className={errors.partner_id ? 'error' : ''}
+            >
+              <option value="">Sélectionner un partenaire externe</option>
+              {partners.map(partner => (
+                <option key={partner.id} value={partner.id}>
+                  {partner.company_name} ({partner.partnertypes.map(pt => pt.name).join(', ')})
+                </option>
+              ))}
+            </select>
+            {errors.partner_id && <div className="error-message">{errors.partner_id}</div>}
+          </div>
+        </div>
+        
         <div className="form-group checkbox-group">
           <label>
             <input
@@ -322,24 +344,6 @@ const DocumentConfirmationForm = ({
               </div>
             </div>
             
-            <div className="form-row">
-              <div className="form-group">
-                <label>Partenaire externe *:</label>
-                <select
-                  value={confirmedDocument?.confirmed_data?.partner_id || ''}
-                  onChange={handlePartnerChange}
-                  className={errors.partner_id ? 'error' : ''}
-                >
-                  <option value="">Sélectionner un partenaire externe</option>
-                  {partners.map(partner => (
-                    <option key={partner.id} value={partner.id}>
-                      {partner.company_name} ({partner.email})
-                    </option>
-                  ))}
-                </select>
-                {errors.partner_id && <div className="error-message">{errors.partner_id}</div>}
-              </div>
-            </div>
             
             <div className="form-row">
               <div className="form-group">

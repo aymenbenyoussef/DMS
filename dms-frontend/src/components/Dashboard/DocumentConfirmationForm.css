@@ -298,3 +298,15 @@
   margin-top: 5px;
   font-weight: 500;
 }
+
+/* Add this to your CSS */
+.full-width-field {
+  grid-column: 1 / span 2;
+}
+
+/* Update the media query for mobile */
+@media (max-width: 768px) {
+  .full-width-field {
+    grid-column: 1;
+  }
+}
