@@ -241,6 +241,22 @@ const documents = {
     const url = `/documents/company/${companyId}/all${queryString ? '?' + queryString : ''}`;
     
     return API.get(url);
+  },
+
+  // Download rapport PDF for a document by ID
+  getRapport: (docId) => {
+    return API.get(`/documents/${docId}/rapport_pdf`, {
+      responseType: 'blob',
+      validateStatus: (status) => true // allow handling 404 in frontend
+    });
+  },
+
+  // Download document file by companyId, doctypeId, and filename
+  getFile: (companyId, doctypeId, filename) => {
+    return API.get(`/files/${companyId}/${doctypeId}/${filename}`, {
+      responseType: 'blob',
+      validateStatus: (status) => true // allow handling 404 in frontend
+    });
   }
 };
 

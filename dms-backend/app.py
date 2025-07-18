@@ -1827,8 +1827,10 @@ def check_multiple_partner_fields():
 
 @app.route('/files/<int:company_id>/<int:doctype_id>/<filename>')
 def serve_file(company_id, doctype_id, filename):
+    print(filename)
     directory = os.path.join(app.config['DMS_UPLOAD_FOLDER'], str(company_id), str(doctype_id))
     file_path = os.path.join(directory, filename)
+    
     print(f"[DEBUG] Serving file from: {directory}")
     print(f"[DEBUG] Filename: {filename}")
     print(f"[DEBUG] Full file path: {file_path}")
@@ -1854,3 +1856,32 @@ def get_rapport_pdf(doc_id):
         as_attachment=True,
         download_name=pdf_filename
     )
+
+@app.route('/admin/backfill_rapports', methods=['POST'])
+@jwt_required()
+def backfill_missing_rapports():
+    # Only allow admin users (add your own admin check logic here)
+    current_user = get_jwt_identity()
+    # Example: if not is_admin(current_user): return jsonify({'msg': 'Unauthorized'}), 403
+
+    from ocr_utils import generate_report_pdf
+    import tempfile
+    updated = 0
+    failed = []
+    # Find all invoice documents missing rapport
+    docs = db.execute_query("SELECT id, filename, extracted_data FROM documents WHERE is_invoice=1 AND (rapport IS NULL OR rapport='')", fetch=True)
+    for doc in docs:
+        try:
+            extracted_data = doc['extracted_data']
+            if isinstance(extracted_data, str):
+                import json
+                extracted_data = json.loads(extracted_data)
+            with tempfile.NamedTemporaryFile(suffix='.pdf') as tmp:
+                generate_report_pdf(extracted_data, tmp.name, doc['filename'])
+                with open(tmp.name, 'rb') as f:
+                    rapport_bytes = f.read()
+            db.execute_query("UPDATE documents SET rapport=%s WHERE id=%s", (rapport_bytes, doc['id']))
+            updated += 1
+        except Exception as e:
+            failed.append({'id': doc['id'], 'error': str(e)})
+    return jsonify({'updated': updated, 'failed': failed})
