@@ -322,36 +322,27 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
   // Helper to build the file URL for viewing/downloading
   const getFileUrl = (doc) => {
     if (doc.company_id && doc.doctype_id && doc.filename) {
-      return `'http://localhost:5000'/files/${doc.company_id}/${doc.doctype_id}/${doc.filename}`;
+      return  `http://localhost:5000/files/${doc.company_id}/${doc.doctype_id}/${doc.filename}`;
     }
     // fallback: try to parse from doc.path if possible (optional, for legacy data)
     if (doc.path) {
       const match = doc.path.match(/([\\/])(\d+)[\\/](\d+)[\\/]([^\\/]+)$/);
       if (match) {
         const [, , company_id, doctype_id, filename] = match;
-        return `'http://localhost:5000'/files/${company_id}/${doctype_id}/${filename}`;
+        return `http://localhost:5000/files/${company_id}/${doctype_id}/${filename}`;
       }
     }
     return '#';
   };
 
-  const handleDownload = async (doc) => {
-    try {
-      const response = await API.documents.getFile(doc.company_id, doc.doctype_id, doc.filename);
-      if (response.status !== 200) throw new Error('Network response was not ok');
-      const blob = response.data;
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = doc.filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Download failed:', error);
-      alert('Download failed. Please try again.');
-    }
+  const handleDownload = (doc) => {
+    const url = getFileUrl(doc);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = doc.filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
 
   const handleViewDocument = (doc) => {
@@ -397,29 +388,14 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     return 'Unknown';
   };
 
-  const handleRapportDownload = async (doc) => {
-    try {
-      const response = await API.documents.getRapport(doc.id);
-      if (response.status !== 200) {
-        if (response.status === 404) {
-          alert('Rapport non disponible pour ce document.');
-          return;
-        }
-        throw new Error('Network response was not ok');
-      }
-      const blob = response.data;
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = doc.filename.replace(/\.[^/.]+$/, "") + "_rapport.pdf";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Download failed:', error);
-      alert('Échec du téléchargement. Veuillez réessayer.');
-    }
+  const handleRapportDownload = (doc) => {
+    const url = `http://localhost:5000/documents/${doc.id}/rapport_pdf`;
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${doc.filename.replace(/\.[^/.]+$/, "")}_rapport.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
 
   if (!selectedCompany && !selectedDoctype) {
@@ -601,17 +577,11 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                       <td>{doc.partner_name || '-'}</td>
                       <td>
                         <div className="extracted-data-cell">
-                          {doc.id ? (
-                            <button
-                              className="btn btn-link p-0"
-                              onClick={() => handleRapportDownload(doc)}
-                              style={{textDecoration: 'underline', color: '#0d6efd', background: 'none', border: 'none', cursor: 'pointer'}}
-                            >
-                              Télécharger le rapport PDF
-                            </button>
-                          ) : (
-                            <span className="text-muted">-</span>
-                          )}
+                        {doc.is_invoice && (
+                          <button onClick={() => handleRapportDownload(doc)}>
+                            Télécharger le rapport PDF
+                          </button>
+                        )}
                         </div>
                       </td>
                       <td>

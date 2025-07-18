@@ -21,7 +21,9 @@ from flask import send_file
 
 app = Flask(__name__)
 CORS(app, origins="*", supports_credentials=True)
-
+@app.route('/')
+def home():
+    return 'Hello from Flask'
 # ====== Logging Configuration ======
 LOG_DIR = "../../logs"
 ACTIVITY_LOG = os.path.join(LOG_DIR, "activity.log")
@@ -1796,6 +1798,7 @@ def check_multiple_partner_fields():
         return jsonify({"msg": str(e)}), 500
 
 @app.route('/files/<int:company_id>/<int:doctype_id>/<filename>')
+@jwt_required()
 def serve_file(company_id, doctype_id, filename):
     print(filename)
     directory = os.path.join(app.config['DMS_UPLOAD_FOLDER'], str(company_id), str(doctype_id))
@@ -1811,6 +1814,7 @@ def serve_file(company_id, doctype_id, filename):
     return send_from_directory(directory, filename, as_attachment=True)
 
 @app.route('/documents/<int:doc_id>/rapport_pdf', methods=['GET'])
+
 def get_rapport_pdf(doc_id):
     # Fetch rapport (PDF bytes) and filename from the database
     rapport_bytes = db.get_rapport_pdf(doc_id)
