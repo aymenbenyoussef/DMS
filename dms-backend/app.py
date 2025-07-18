@@ -1,4 +1,3 @@
-# backend/app.py
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from flask_jwt_extended import (
@@ -19,9 +18,18 @@ import glob
 from io import BytesIO
 from flask import send_file
 
+import logging
+
 app = Flask(__name__)
 CORS(app, origins="*", supports_credentials=True)
 
+# Configure logging
+app.logger.setLevel(logging.DEBUG)
+handler = logging.StreamHandler()
+handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+handler.setFormatter(formatter)
+app.logger.addHandler(handler)
 # ====== Logging Configuration ======
 LOG_DIR = "../../logs"
 ACTIVITY_LOG = os.path.join(LOG_DIR, "activity.log")
@@ -1865,22 +1873,26 @@ def check_multiple_partner_fields():
 def serve_file(company_id, doctype_id, filename):
     directory = os.path.join(app.config['DMS_UPLOAD_FOLDER'], str(company_id), str(doctype_id))
     file_path = os.path.join(directory, filename)
-    print(f"[DEBUG] Serving file from: {directory}")
-    print(f"[DEBUG] Filename: {filename}")
-    print(f"[DEBUG] Full file path: {file_path}")
+    app.logger.debug(f"[DEBUG] Serving file from: {directory}")
+    app.logger.debug(f"[DEBUG] Filename: {filename}")
+    app.logger.debug(f"[DEBUG] Full file path: {file_path}")
     if not os.path.exists(file_path):
-        print("[DEBUG] File not found!")
+        app.logger.debug("[DEBUG] File not found!")
+        return "File not found", 404
     else:
-        print("[DEBUG] File exists and will be served.")
-    return send_from_directory(directory, filename, as_attachment=True)
-
-@app.route('/documents/<int:doc_id>/rapport_pdf', methods=['GET'])
+        file_size = os.path.getsize(file_path)
+        app.logger.debug(f"[DEBUG] File exists. Size: {file_size} bytes.")
+    return send_from_directory(directory, filename, as_attachment=True)@app.route('/documents/<int:doc_id>/rapport_pdf', methods=['GET'])
 def get_rapport_pdf(doc_id):
+    print("back")
     # Fetch rapport (PDF bytes) and filename from the database
     rapport_bytes = db.get_rapport_pdf(doc_id)
     doc = db.get_document_by_id(doc_id)
     if not rapport_bytes or not doc:
+        app.logger.debug(f"[DEBUG] Rapport or document not found for doc_id: {doc_id}")
         return 'Not found', 404
+    else:
+        app.logger.debug(f"[DEBUG] Rapport PDF size: {len(rapport_bytes)} bytes.")
     # Use the original filename, but ensure .pdf extension
     base_filename = os.path.splitext(doc['filename'])[0]
     pdf_filename = f"{base_filename}.pdf"

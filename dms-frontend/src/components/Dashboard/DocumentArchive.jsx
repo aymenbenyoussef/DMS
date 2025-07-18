@@ -88,6 +88,12 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     } finally {
       setIsLoading(false);
     }
+    const documentHandler = () => fetchDocuments();
+    window.addEventListener('FilesUploaded', documentHandler);
+
+    return () => {
+      window.removeEventListener('FilesUploaded', documentHandler);
+    };
   };
 
   // Function to fetch available document types for the company
@@ -322,24 +328,16 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
   // Helper to build the file URL for viewing/downloading
   const getFileUrl = (doc) => {
     if (doc.company_id && doc.doctype_id && doc.filename) {
-      return `'http://localhost:5000'/files/${doc.company_id}/${doc.doctype_id}/${doc.filename}`;
-    }
-    // fallback: try to parse from doc.path if possible (optional, for legacy data)
-    if (doc.path) {
-      const match = doc.path.match(/([\\/])(\d+)[\\/](\d+)[\\/]([^\\/]+)$/);
-      if (match) {
-        const [, , company_id, doctype_id, filename] = match;
-        return `'http://localhost:5000'/files/${company_id}/${doctype_id}/${filename}`;
-      }
+      return `/files/${doc.company_id}/${doc.doctype_id}/${doc.filename}`;
     }
     return '#';
   };
 
   const handleDownload = async (doc) => {
     try {
-      const response = await API.documents.getFile(doc.company_id, doc.doctype_id, doc.filename);
-      if (response.status !== 200) throw new Error('Network response was not ok');
-      const blob = response.data;
+      const response = await fetch(getFileUrl(doc));
+      if (!response.ok) throw new Error("Network response was not ok");
+      const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -411,7 +409,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = doc.filename.replace(/\.[^/.]+$/, "") + "_rapport.pdf";
+      a.download = doc.filename.replace(/\.[^/.]+$/, "") + "_rapport.bin";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
