@@ -887,7 +887,37 @@ def get_partnertypes_by_partner(partner_id):
 @jwt_required()
 def get_partners():
     try:
-        partners = db.get_all_partners()
+        # Récupère les claims du JWT
+        claims = get_jwt()
+        current_user_id = claims.get("id")
+        user_role = claims.get("role", "user")  # 'admin' ou 'user'
+
+        if not current_user_id:
+            return jsonify({"error": "User ID not found in token"}), 400
+
+        # Sélection de la méthode selon le rôle
+        if user_role == 'admin':
+            # Admin : tous les partenaires
+            partners = db.get_all_partners()
+        else:
+            # Utilisateur normal : uniquement les partenaires liés à ses companies
+            user_companies = db.get_user_companies(current_user_id)
+            if not user_companies:
+                return jsonify([]), 200  # Aucune company associée = aucun partenaire
+            
+            # Récupérer les partenaires pour toutes les companies de l'utilisateur
+            all_partners = []
+            partner_ids_seen = set()  # Pour éviter les doublons
+            
+            for company in user_companies:
+                company_partners = db.get_partners_by_company(company['id'])
+                for partner in company_partners:
+                    if partner['id'] not in partner_ids_seen:
+                        all_partners.append(partner)
+                        partner_ids_seen.add(partner['id'])
+            
+            partners = all_partners
+
         # For each partner, get associated companies and partner types
         result = []
         for partner in partners:

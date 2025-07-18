@@ -801,6 +801,20 @@ class DatabaseManager:
         except Exception as e:
             raise Exception(f"Error fetching partners: {str(e)}")
 
+    def get_partners_by_company(self, company_id):
+        """Get partners that have a relationship with a specific company via partner_entities table"""
+        try:
+            query = """
+                SELECT DISTINCT p.id, p.company_name, p.unique_identifier, p.email, p.phone1, p.is_active 
+                FROM partners p
+                INNER JOIN partner_entities pe ON p.id = pe.partner_id
+                WHERE pe.company_id = %s
+                ORDER BY p.company_name
+            """
+            return self.execute_query(query, (company_id,), fetch=True)
+        except Exception as e:
+            raise Exception(f"Error fetching partners by company: {str(e)}")
+
     def check_partner_field_exists(self, field_name, field_value, exclude_id=None):
         """Check if a specific field value exists for any partner, excluding a given ID"""
         if not field_value:
@@ -1327,7 +1341,6 @@ class DatabaseManager:
 # Create global database instance
 db = DatabaseManager()
 db.init_database()
-
 
 
 
