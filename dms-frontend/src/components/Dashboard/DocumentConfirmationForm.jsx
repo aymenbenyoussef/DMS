@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import API from '../../api';
 import { AppContext } from '../context';
-import PartnerSelector from './PartnerSelector';
 import './DocumentConfirmationForm.css';
 
 const DocumentConfirmationForm = ({ 
@@ -16,6 +15,7 @@ const DocumentConfirmationForm = ({
   const { selectedCompany, selectedDoctype, setSelectedCompany, setSelectedDoctype } = useContext(AppContext);
   const [companies, setCompanies] = useState([]);
   const [doctypes, setDoctypes] = useState([]);
+  const [partners, setPartners] = useState([]);
   const [currentCompany, setCurrentCompany] = useState(initialCompany || selectedCompany);
   const [currentDoctype, setCurrentDoctype] = useState(initialDoctype || selectedDoctype);
   const [isLoading, setIsLoading] = useState(false);
@@ -40,12 +40,20 @@ const DocumentConfirmationForm = ({
   // Load companies on component mount
   useEffect(() => {
     loadCompanies();
+    // Load partners only if we have an initial company
+    if (currentCompany?.id) {
+      loadPartners(currentCompany.id);
+    }
   }, []);
 
-  // Load doctypes when company changes
+  // Load doctypes and partners when company changes
   useEffect(() => {
     if (currentCompany?.id) {
       loadDoctypesByCompany(currentCompany.id);
+      loadPartners(currentCompany.id); // Reload partners for the selected company
+    } else {
+      // Clear partners if no company is selected
+      setPartners([]);
     }
   }, [currentCompany]);
 
@@ -75,6 +83,16 @@ const DocumentConfirmationForm = ({
     }
   };
 
+  const loadPartners = async (companyId) => {
+    try {
+      const response = await API.partner.getByCompany(companyId);
+      setPartners(response.data);
+    } catch (error) {
+      console.error('Error loading partners:', error);
+      setPartners([]);
+    }
+  };
+
   const handleCompanyChange = (e) => {
     const companyId = parseInt(e.target.value);
     const company = companies.find(c => c.id === companyId);
@@ -89,7 +107,13 @@ const DocumentConfirmationForm = ({
     setSelectedDoctype(null);
     setConfirmedDocument(prev => ({
       ...prev,
-      doctype_id: null
+      doctype_id: null,
+      // Also reset partner selection when company changes
+      confirmed_data: {
+        ...prev.confirmed_data,
+        partner_id: '',
+        partner: ''
+      }
     }));
   };
 
@@ -117,10 +141,15 @@ const DocumentConfirmationForm = ({
     });
   };
 
-  const handlePartnerChange = (partnerId, partner) => {
+  const handlePartnerChange = (e) => {
+    const partnerId = e.target.value;
+    const partner = partners.find(p => p.id === parseInt(partnerId));
+    
     updateConfirmedDocument('partner_id', partnerId);
     if (partner) {
       updateConfirmedDocument('partner', partner.company_name);
+    } else {
+      updateConfirmedDocument('partner', '');
     }
   };
 
@@ -231,21 +260,18 @@ const DocumentConfirmationForm = ({
             
             <div className="form-row">
               <div className="form-group">
-                <label>Partenaire :</label>
-                <input
-                  type="text"
-                  value={confirmedDocument?.confirmed_data?.partner || ''}
-                  onChange={(e) => updateConfirmedDocument('partner', e.target.value)}
-                  placeholder="Nom du partenaire"
-                />
-              </div>
-              <div className="form-group">
                 <label>Partenaire externe :</label>
-                <PartnerSelector
-                  selectedPartnerId={confirmedDocument?.confirmed_data?.partner_id}
-                  onPartnerChange={handlePartnerChange}
-                  placeholder="Sélectionner un partenaire externe"
-                />
+                <select
+                  value={confirmedDocument?.confirmed_data?.partner_id || ''}
+                  onChange={handlePartnerChange}
+                >
+                  <option value="">Sélectionner un partenaire externe</option>
+                  {partners.map(partner => (
+                    <option key={partner.id} value={partner.id}>
+                      {partner.company_name} ({partner.email})
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
             

@@ -790,16 +790,50 @@ class DatabaseManager:
             raise Exception(f"Error fetching partner: {str(e)}")
 
     def get_all_partners(self):
-        """Get all partners with basic information"""
+        """Get all partners with basic information including partner types"""
         try:
             query = """
-                SELECT id, company_name, unique_identifier, email, phone1, is_active 
-                FROM partners 
-                ORDER BY company_name
+                SELECT 
+                    p.id, 
+                    p.company_name, 
+                    p.unique_identifier, 
+                    p.email, 
+                    p.phone1, 
+                    p.is_active,
+                    GROUP_CONCAT(pt.name SEPARATOR ', ') as partner_types
+                FROM partners p
+                LEFT JOIN partner_partnertypes ppt ON p.id = ppt.partner_id
+                LEFT JOIN partnertypes pt ON ppt.partnertype_id = pt.id
+                GROUP BY p.id, p.company_name, p.unique_identifier, p.email, p.phone1, p.is_active
+                ORDER BY p.company_name
             """
             return self.execute_query(query, fetch=True)
         except Exception as e:
             raise Exception(f"Error fetching partners: {str(e)}")
+
+    def get_partners_by_company(self, company_id):
+        """Get partners that have a relationship with a specific company via partner_entities table, including partner types"""
+        try:
+            query = """
+                SELECT DISTINCT 
+                    p.id, 
+                    p.company_name, 
+                    p.unique_identifier, 
+                    p.email, 
+                    p.phone1, 
+                    p.is_active,
+                    GROUP_CONCAT(pt.name SEPARATOR ', ') as partner_types
+                FROM partners p
+                INNER JOIN partner_entities pe ON p.id = pe.partner_id
+                LEFT JOIN partner_partnertypes ppt ON p.id = ppt.partner_id
+                LEFT JOIN partnertypes pt ON ppt.partnertype_id = pt.id
+                WHERE pe.company_id = %s
+                GROUP BY p.id, p.company_name, p.unique_identifier, p.email, p.phone1, p.is_active
+                ORDER BY p.company_name
+            """
+            return self.execute_query(query, (company_id,), fetch=True)
+        except Exception as e:
+            raise Exception(f"Error fetching partners by company: {str(e)}")
 
     def check_partner_field_exists(self, field_name, field_value, exclude_id=None):
         """Check if a specific field value exists for any partner, excluding a given ID"""
@@ -1327,7 +1361,6 @@ class DatabaseManager:
 # Create global database instance
 db = DatabaseManager()
 db.init_database()
-
 
 
 
