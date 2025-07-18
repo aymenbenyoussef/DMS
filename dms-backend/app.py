@@ -930,6 +930,42 @@ def get_partners():
     except Exception as e:
         return jsonify({"msg": str(e)}), 400
 
+@app.route("/partners/company/<int:company_id>", methods=["GET"])
+@jwt_required()
+def get_partners_by_company_route(company_id):
+    """Get partners associated with a specific company"""
+    try:
+        # Récupère les claims du JWT pour vérifier les permissions
+        claims = get_jwt()
+        current_user_id = claims.get("id")
+        user_role = claims.get("role", "user")
+
+        if not current_user_id:
+            return jsonify({"error": "User ID not found in token"}), 400
+
+        # Vérifier si l'utilisateur a accès à cette company (sauf pour les admins)
+        if user_role != 'admin':
+            user_companies = db.get_user_companies(current_user_id)
+            user_company_ids = [company['id'] for company in user_companies]
+            
+            if company_id not in user_company_ids:
+                return jsonify({"error": "Access denied to this company"}), 403
+
+        # Récupérer les partenaires pour cette company
+        partners = db.get_partners_by_company(company_id)
+        
+        # For each partner, get associated companies and partner types
+        result = []
+        for partner in partners:
+            partner_companies = db.get_companies_by_partner_id(partner["id"])
+            partner_partnertypes = db.get_partnertypes_by_partner_id(partner["id"])
+            partner["companies"] = partner_companies
+            partner["partnertypes"] = partner_partnertypes
+            result.append(partner)
+            
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 400
 
 
 @app.route('/doctype', methods=['POST'])
@@ -1827,10 +1863,8 @@ def check_multiple_partner_fields():
 
 @app.route('/files/<int:company_id>/<int:doctype_id>/<filename>')
 def serve_file(company_id, doctype_id, filename):
-    print(filename)
     directory = os.path.join(app.config['DMS_UPLOAD_FOLDER'], str(company_id), str(doctype_id))
     file_path = os.path.join(directory, filename)
-    
     print(f"[DEBUG] Serving file from: {directory}")
     print(f"[DEBUG] Filename: {filename}")
     print(f"[DEBUG] Full file path: {file_path}")
@@ -1856,32 +1890,3 @@ def get_rapport_pdf(doc_id):
         as_attachment=True,
         download_name=pdf_filename
     )
-
-@app.route('/admin/backfill_rapports', methods=['POST'])
-@jwt_required()
-def backfill_missing_rapports():
-    # Only allow admin users (add your own admin check logic here)
-    current_user = get_jwt_identity()
-    # Example: if not is_admin(current_user): return jsonify({'msg': 'Unauthorized'}), 403
-
-    from ocr_utils import generate_report_pdf
-    import tempfile
-    updated = 0
-    failed = []
-    # Find all invoice documents missing rapport
-    docs = db.execute_query("SELECT id, filename, extracted_data FROM documents WHERE is_invoice=1 AND (rapport IS NULL OR rapport='')", fetch=True)
-    for doc in docs:
-        try:
-            extracted_data = doc['extracted_data']
-            if isinstance(extracted_data, str):
-                import json
-                extracted_data = json.loads(extracted_data)
-            with tempfile.NamedTemporaryFile(suffix='.pdf') as tmp:
-                generate_report_pdf(extracted_data, tmp.name, doc['filename'])
-                with open(tmp.name, 'rb') as f:
-                    rapport_bytes = f.read()
-            db.execute_query("UPDATE documents SET rapport=%s WHERE id=%s", (rapport_bytes, doc['id']))
-            updated += 1
-        except Exception as e:
-            failed.append({'id': doc['id'], 'error': str(e)})
-    return jsonify({'updated': updated, 'failed': failed})

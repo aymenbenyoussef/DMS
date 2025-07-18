@@ -40,14 +40,20 @@ const DocumentConfirmationForm = ({
   // Load companies on component mount
   useEffect(() => {
     loadCompanies();
-    loadPartners(); // Load partners on mount
+    // Load partners only if we have an initial company
+    if (currentCompany?.id) {
+      loadPartners(currentCompany.id);
+    }
   }, []);
 
-  // Load doctypes when company changes
+  // Load doctypes and partners when company changes
   useEffect(() => {
     if (currentCompany?.id) {
       loadDoctypesByCompany(currentCompany.id);
-      loadPartners(); // Reload partners when company changes
+      loadPartners(currentCompany.id); // Reload partners for the selected company
+    } else {
+      // Clear partners if no company is selected
+      setPartners([]);
     }
   }, [currentCompany]);
 
@@ -77,9 +83,9 @@ const DocumentConfirmationForm = ({
     }
   };
 
-  const loadPartners = async () => {
+  const loadPartners = async (companyId) => {
     try {
-      const response = await API.partner.getAll();
+      const response = await API.partner.getByCompany(companyId);
       setPartners(response.data);
     } catch (error) {
       console.error('Error loading partners:', error);
@@ -101,7 +107,13 @@ const DocumentConfirmationForm = ({
     setSelectedDoctype(null);
     setConfirmedDocument(prev => ({
       ...prev,
-      doctype_id: null
+      doctype_id: null,
+      // Also reset partner selection when company changes
+      confirmed_data: {
+        ...prev.confirmed_data,
+        partner_id: '',
+        partner: ''
+      }
     }));
   };
 
