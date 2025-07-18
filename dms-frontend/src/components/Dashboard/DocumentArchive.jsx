@@ -472,9 +472,9 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
         <div className="alert alert-success">{successMessage}</div>
       )}
       
-      {/* Stats Cards */}
+      {/* Stats Cards 
       <div className="row g-3 mb-4">
-        {['Total Documents', 'Invoices', 'Processed'].map((title, index) => (
+        {['Documents totaux', 'Facturable', 'Non Facturable'].map((title, index) => (
           <div key={index} className="col-md-4">
             <div className="card h-100">
               <div className="card-body">
@@ -486,8 +486,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
             </div>
           </div>
         ))}
-      </div>
-        
+      </div>*/}
       {/* Search and Filter Section */}
       <div className="card mb-4">
         <div className="card-body">

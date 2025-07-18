@@ -21,7 +21,7 @@ def extract_invoice_data(text):
         "invoice_number": None,
         "date": None,
         "total": None,
-        "partner": None,
+        #"partner": None,
         "partner_id": None,
         "tva": None,
         "total_ht": None,
