@@ -183,7 +183,7 @@ class DatabaseManager:
                     file_path VARCHAR(500),
                     ocr_text TEXT,
                     extracted_data JSON,
-                    rapport varchar(500),
+                    rapport LONGBLOB,
                     is_invoice BOOLEAN DEFAULT FALSE,   
                     invoice_number VARCHAR(100),
                     invoice_date DATE,

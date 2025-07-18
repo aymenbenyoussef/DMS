@@ -156,6 +156,7 @@ const DocumentConfirmationForm = ({
   const handleConfirm = async () => {
     if (!currentCompany || !currentDoctype) {
       alert('Veuillez sélectionner une entreprise et un type de document.');
+      
       return;
     }
 

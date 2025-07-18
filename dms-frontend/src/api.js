@@ -162,6 +162,7 @@ const documents = {
       session_id: sessionId,
       documents: documentsData
     });
+    window.dispatchEvent(new Event('FilesUploaded'));
   },
   
   // Legacy single file upload (keep for backward compatibility)
@@ -241,22 +242,6 @@ const documents = {
     const url = `/documents/company/${companyId}/all${queryString ? '?' + queryString : ''}`;
     
     return API.get(url);
-  },
-
-  // Download rapport PDF for a document by ID
-  getRapport: (docId) => {
-    return API.get(`/documents/${docId}/rapport_pdf`, {
-      responseType: 'blob',
-      validateStatus: (status) => true // allow handling 404 in frontend
-    });
-  },
-
-  // Download document file by companyId, doctypeId, and filename
-  getFile: (companyId, doctypeId, filename) => {
-    return API.get(`/files/${companyId}/${doctypeId}/${filename}`, {
-      responseType: 'blob',
-      validateStatus: (status) => true // allow handling 404 in frontend
-    });
   }
 };
 

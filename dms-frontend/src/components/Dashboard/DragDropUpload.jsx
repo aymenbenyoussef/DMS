@@ -160,7 +160,9 @@ const DragDropUpload = ({ onUpload, onClose }) => {
           partner_id: savedDoc.partner_id
         });
       }
-
+      // Always dispatch FilesUploaded event after successful confirmation
+      window.dispatchEvent(new Event('FilesUploaded'));
+      
       setTimeout(() => {
         onClose();
       }, 2000);
