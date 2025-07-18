@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, send_from_directory
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin
 from flask_jwt_extended import (
     JWTManager, create_access_token, jwt_required, get_jwt_identity, get_jwt
 )
@@ -1902,3 +1902,10 @@ def get_rapport_pdf(doc_id):
         as_attachment=True,
         download_name=pdf_filename
     )
+
+@app.route('/companies/by_datatype/<int:datatype_id>', methods=['GET'])
+
+@jwt_required()
+def get_companies_by_datatype_route(datatype_id):
+    companies = db.get_companies_by_datatype(datatype_id)
+    return jsonify(companies), 200

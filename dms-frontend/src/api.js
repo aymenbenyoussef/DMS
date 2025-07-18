@@ -71,8 +71,8 @@ const companies = {
   create: (companyData) => API.post('/companies', companyData),
   delete:(company_id) => API.delete(`/companies/${company_id}`),
   getByUser:(user_id) => API.get(`/companies/${user_id}`),
-  update: (company_id, companyData) => API.put(`/companies/${company_id}`, companyData)
-  
+  update: (company_id, companyData) => API.put(`/companies/${company_id}`, companyData),
+  getByDatatype: (datatypeId) => API.get(`/companies/by_datatype/${datatypeId}`),
 };
 
 // Document type management

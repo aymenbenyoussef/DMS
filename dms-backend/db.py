@@ -15,7 +15,7 @@ DB_CONFIG = {
 
 class DatabaseManager:
     def __init__(self):
-        self.pool = pooling.MySQLConnectionPool(pool_name='mypool', pool_size=10, **DB_CONFIG)
+        self.pool = pooling.MySQLConnectionPool(pool_name='mypool', pool_size=20, **DB_CONFIG)
 
     def execute_query(self, query, params=None, fetch=False):
         conn = None
