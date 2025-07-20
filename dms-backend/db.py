@@ -183,9 +183,9 @@ class DatabaseManager:
                     doctype_id INT,
                     partner_id INT,
                     file_path VARCHAR(500),
-                    ocr_text TEXT,
+                    ocr_text varchar(500),
                     extracted_data JSON,
-                    rapport LONGBLOB,
+                    rapport varchar(500),
                     is_invoice BOOLEAN DEFAULT FALSE,   
                     invoice_number VARCHAR(100),
                     invoice_date DATE,
@@ -1082,7 +1082,7 @@ class DatabaseManager:
 
 
     def create_document_with_ocr_data(self, owner_id, company_id, doctype_id, filename, file_path, file_size,
-                                is_invoice=False, extracted_data=None, partner_id=None, rapport=None):
+                                is_invoice=False, extracted_data=None, partner_id=None, rapport=None, ocr_text=None):
         """Create a document with OCR extracted data"""
         try:
             # Prepare extracted data
@@ -1103,9 +1103,9 @@ class DatabaseManager:
                 INSERT INTO documents (
                     filename, owner_id, company_id, doctype_id, file_path, file_size,
                     extracted_data, rapport ,is_invoice, invoice_number, invoice_date,
-                    partner_id, total_ht, tva, total_ttc
+                    partner_id, total_ht, tva, total_ttc, ocr_text
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) 
             """
             
             params = (
@@ -1123,7 +1123,8 @@ class DatabaseManager:
                 partner_id,  # This will properly insert into partner_id column
                 total_ht, 
                 tva, 
-                total_ttc
+                total_ttc,
+                ocr_text
             )
             return self.execute_query(query, params)
             

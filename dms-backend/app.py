@@ -1,7 +1,7 @@
-from flask import Flask, request, jsonify, send_from_directory, send_file, make_response
+from flask import Flask, request, jsonify, send_from_directory, send_file, make_response, abort
 from flask_cors import CORS, cross_origin
 from flask_jwt_extended import (
-    JWTManager, create_access_token, jwt_required, get_jwt_identity, get_jwt
+    JWTManager, create_access_token, jwt_required, get_jwt_identity, get_jwt, verify_jwt_in_request
 )
 from db import db
 from datetime import timedelta, datetime
@@ -22,7 +22,7 @@ import logging
 
 app = Flask(__name__)
 CORS(app, origins="*", supports_credentials=True)
-
+print("THIS IS THE CORRECT APP.PY")
 # Configure logging
 app.logger.setLevel(logging.DEBUG)
 handler = logging.StreamHandler()
@@ -1501,7 +1501,8 @@ def confirm_document():
                     file_size=file_size,
                     is_invoice=is_invoice,
                     extracted_data=confirmed_info,
-                    rapport=rapport_bytes,
+                    ocr_text=final_text_path,
+                    rapport=report_path,
                     partner_id=partner_id 
                 )
                 
@@ -1810,6 +1811,16 @@ def get_all_documents_by_company(company_id):
     except Exception as e:
         return jsonify({"msg": f"Error fetching documents: {str(e)}"}), 500
 
+@app.route('/files/<int:company_id>/<int:doctype_id>/<filename>', methods=['GET'])
+@jwt_required()
+def download_file(company_id, doctype_id, filename):
+    """Serve a file for download from the upload directory"""
+    upload_folder = os.path.join(app.config['DMS_UPLOAD_FOLDER'], str(company_id), str(doctype_id))
+    file_path = os.path.join(upload_folder, filename)
+    if not os.path.exists(file_path):
+        abort(404, description="File not found")
+    return send_from_directory(upload_folder, filename, as_attachment=True)
+
 if __name__ == '__main__':
     # Ensure log directory exists when app starts
     ensure_log_dir()
@@ -1885,8 +1896,7 @@ def check_multiple_partner_fields():
         return jsonify({"msg": str(e)}), 500
 
 @app.route('/documents/<int:document_id>/file', methods=['GET', 'OPTIONS'])
-@jwt_required()
-@cross_origin(origins="*", methods=['GET', 'OPTIONS'], allow_headers=['Content-Type', 'Authorization'])
+@cross_origin()
 def download_document_file(document_id):
     if request.method == 'OPTIONS':
         # Handle preflight request
@@ -1894,25 +1904,55 @@ def download_document_file(document_id):
         response.headers.add("Access-Control-Allow-Origin", "*")
         response.headers.add('Access-Control-Allow-Headers', "Content-Type,Authorization")
         response.headers.add('Access-Control-Allow-Methods', "GET,OPTIONS")
-        return response
-    
+        return response, 200  # Always return 200 OK for preflight
+
+    # For GET requests, verify JWT
+    try:
+        verify_jwt_in_request()
+    except Exception as e:
+        response = jsonify({"msg": "Authentication required"})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add('Access-Control-Allow-Headers', "Content-Type,Authorization")
+        response.headers.add('Access-Control-Allow-Methods', "GET,OPTIONS")
+        return response, 401
+
     try:
         document = db.get_document_by_id(document_id)
         if not document or not document.get('file_path'):
-            return jsonify({"msg": "Document not found"}), 404
-        
+            response = jsonify({"msg": "Document not found"})
+            response.headers.add("Access-Control-Allow-Origin", "*")
+            response.headers.add('Access-Control-Allow-Headers', "Content-Type,Authorization")
+            response.headers.add('Access-Control-Allow-Methods', "GET,OPTIONS")
+            return response, 404
+
         if not os.path.exists(document['file_path']):
-            return jsonify({"msg": "File not found on server"}), 404
-            
-        return send_file(
+            response = jsonify({"msg": "File not found on server"})
+            response.headers.add("Access-Control-Allow-Origin", "*")
+            response.headers.add('Access-Control-Allow-Headers', "Content-Type,Authorization")
+            response.headers.add('Access-Control-Allow-Methods', "GET,OPTIONS")
+            return response, 404
+
+        response = send_file(
             document['file_path'],
             as_attachment=True,
             download_name=document['filename']
         )
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add('Access-Control-Allow-Headers', "Content-Type,Authorization")
+        response.headers.add('Access-Control-Allow-Methods', "GET,OPTIONS")
+        return response
+
     except Exception as e:
         app.logger.error(f"Download error: {str(e)}")
-        return jsonify({"msg": "Error downloading file"}), 500
-        
+        response = jsonify({"msg": "Error downloading file"})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add('Access-Control-Allow-Headers', "Content-Type,Authorization")
+        response.headers.add('Access-Control-Allow-Methods', "GET,OPTIONS")
+        return response, 500
+@app.route('/cors-test', methods=['GET', 'OPTIONS'])
+@cross_origin()
+def cors_test():
+    return "CORS OK"
 def get_rapport_pdf(doc_id):
     print("back")
     # Fetch rapport (PDF bytes) and filename from the database
