@@ -1,7 +1,9 @@
 import axios from 'axios';
 
 // Create axios instance with base configuration
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+const API_BASE_URL = window.location.hostname === 'localhost' 
+  ? 'http://localhost:5000' 
+  : 'http://192.168.1.28:5000';
 
 const API = axios.create({
   baseURL: API_BASE_URL,
@@ -169,7 +171,18 @@ const documents = {
   uploadFiles: (formData) => API.post('/upload', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
-  
+
+  download: (documentId) => {
+    return API.get(`/documents/${documentId}/file`, {
+      responseType: 'blob'
+    });
+  },
+
+  getRapport: (documentId) => {
+    return API.get(`/documents/${documentId}/rapport`, {
+      responseType: 'blob'
+    });
+  },
   // Legacy confirm function (keep for backward compatibility)
   confirmDocument: (documentId, confirmedData) => 
     API.post(`/documents/${documentId}/confirm`, confirmedData),

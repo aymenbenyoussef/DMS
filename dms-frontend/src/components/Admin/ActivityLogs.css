@@ -135,6 +135,29 @@
 .logs-table table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.logs-table thead {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background-color: #f0f0f0;
+}
+
+.logs-table tbody {
+  display: block;
+  width: 100%;
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+.logs-table th, .logs-table td {
+  width: 20%;
+  box-sizing: border-box;
 }
 
 .logs-table th {
@@ -148,6 +171,12 @@
 .logs-table td {
   padding: 10px;
   border-bottom: 1px solid #ddd;
+}
+
+.logs-table tr {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
 }
 
 .logs-table tr:hover {

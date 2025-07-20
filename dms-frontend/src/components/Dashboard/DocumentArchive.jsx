@@ -327,28 +327,31 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
 
   // Helper to build the file URL for viewing/downloading
   const getFileUrl = (doc) => {
-    if (doc.company_id && doc.doctype_id && doc.filename) {
-      return `/files/${doc.company_id}/${doc.doctype_id}/${doc.filename}`;
+    if (doc.id) {
+      return `/api/documents/${doc.id}/file`;  // Use document ID to fetch file
     }
     return '#';
   };
 
   const handleDownload = async (doc) => {
     try {
-      const response = await fetch(getFileUrl(doc));
-      if (!response.ok) throw new Error("Network response was not ok");
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = doc.filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      const response = await API.get(`/documents/${doc.id}/file`, {
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', doc.filename || 'document');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      
+      // Clean up the URL object
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Download failed:', error);
-      alert('Download failed. Please try again.');
+      alert(`Download failed: ${error.response?.data?.error || error.message}`);
     }
   };
 
