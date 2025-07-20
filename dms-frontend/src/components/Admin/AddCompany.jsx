@@ -99,7 +99,13 @@ const AdminCompanies = ({ user }) => {
 
   return (
     <div className="admin-users">
-      
+      {/* Return arrow */}
+      <div className="return-arrow-container">
+        <Link to="/companies" className="return-arrow" title="Retour aux entités">
+          <span className="return-arrow-icon">←</span>
+          <span className="return-arrow-text">Retour aux entités</span>
+        </Link>
+      </div>
 
       {fieldErrors.global && (
         <div className="alert alert-error">{fieldErrors.global}</div>

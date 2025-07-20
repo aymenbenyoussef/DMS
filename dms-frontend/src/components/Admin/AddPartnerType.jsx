@@ -77,7 +77,13 @@ const AddPartnerType = () => {
 
   return (
     <div className="admin-users">
-      
+      {/* Return arrow */}
+      <div className="return-arrow-container">
+        <Link to="/partnerTypes" className="return-arrow" title="Retour aux types de partenaires">
+          <span className="return-arrow-icon">←</span>
+          <span className="return-arrow-text">Retour aux types de partenaires</span>
+        </Link>
+      </div>
       
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}

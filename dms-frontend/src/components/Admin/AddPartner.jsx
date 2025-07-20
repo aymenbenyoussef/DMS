@@ -320,7 +320,13 @@ const handleSubmit = async (e) => {
 
   return (
     <div className="admin-users">
-     
+      {/* Return arrow */}
+      <div className="return-arrow-container">
+        <Link to="/partners" className="return-arrow" title="Retour aux partenaires">
+          <span className="return-arrow-icon">←</span>
+          <span className="return-arrow-text">Retour aux partenaires</span>
+        </Link>
+      </div>
 
       <div className="admin-tabs">
         <button

@@ -44,7 +44,7 @@ const Login = ({ onLogin, error }) => {
     <div className="login-container">
       <div className="login-card">
         <h2 className="login-title">Connexion DMS</h2>
-        <p className="login-subtitle">Accédez à votre espace personnel</p>
+        <p className="login-subtitle">Service fourni par RAN ESMERALD</p>
 
         {error && (
           <div className="login-error">
@@ -88,7 +88,7 @@ const Login = ({ onLogin, error }) => {
             disabled={loading}
             className="login-button"
           >
-            {loading ? 'Connexion en cours...' : 'Se connecter'}
+            {loading ? 'Connexion en cours...' : 'Connecter'}
           </button>
         </form>
 

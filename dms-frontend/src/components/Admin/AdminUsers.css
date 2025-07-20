@@ -630,3 +630,171 @@
   color: white;
   text-decoration: none;
 }
+
+/* Styles élégants pour les flèches de retour */
+.return-arrow-container {
+  margin-bottom: 10px;
+  margin-top: -20px;
+  padding: 16px 0;
+  position: relative;
+}
+
+.return-arrow {
+  display: inline-flex;
+  align-items: center;
+  color: #14931c;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 12px 20px;
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 2px solid #e2e8f0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  position: relative;
+  overflow: hidden;
+  min-width: 180px;
+  justify-content: flex-start;
+}
+
+.return-arrow::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transition: left 0.5s;
+}
+
+.return-arrow:hover::before {
+  left: 100%;
+}
+
+.return-arrow:hover {
+  color: darkgreen;
+  background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+  border-color: #c7d2fe;
+  box-shadow: 0 8px 25px rgba(79, 70, 229, 0.15);
+  transform: translateY(-2px);
+  text-decoration: none;
+}
+
+.return-arrow:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.1);
+}
+
+.return-arrow:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+}
+
+/* Icône de flèche stylée */
+.return-arrow-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-right: 12px;
+  background: darkgreen;
+  border-radius: 50%;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
+}
+
+.return-arrow:hover .return-arrow-icon {
+  background: linear-gradient(135deg, #14931c 0%, darkgreen 100%);
+  transform: translateX(-2px);
+  box-shadow: 0 4px 8px rgba(79, 70, 229, 0.3);
+}
+
+/* Texte avec animation */
+.return-arrow-text {
+  position: relative;
+  z-index: 1;
+}
+
+/* Version compacte pour mobile */
+@media (max-width: 768px) {
+  .return-arrow {
+    font-size: 13px;
+    padding: 10px 16px;
+    min-width: 150px;
+  }
+  
+  .return-arrow-icon {
+    width: 20px;
+    height: 20px;
+    margin-right: 10px;
+    font-size: 10px;
+  }
+}
+
+/* Animation d'apparition */
+@keyframes slideInFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.return-arrow-container {
+  animation: slideInFromLeft 0.5s ease-out;
+}
+
+/* Style alternatif avec bordure dégradée */
+.return-arrow-gradient {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+}
+
+.return-arrow-gradient:hover {
+  background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+  color: white;
+}
+
+.return-arrow-gradient .return-arrow-icon {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.return-arrow-gradient:hover .return-arrow-icon {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Style minimaliste */
+.return-arrow-minimal {
+  background: transparent;
+  border: 1px solid #d1d5db;
+  color: #6b7280;
+  padding: 8px 16px;
+  border-radius: 8px;
+}
+
+.return-arrow-minimal:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  color: #374151;
+}
+
+.return-arrow-minimal .return-arrow-icon {
+  background: #e5e7eb;
+  color: #6b7280;
+}
+
+.return-arrow-minimal:hover .return-arrow-icon {
+  background: #d1d5db;
+  color: #374151;
+}

@@ -109,7 +109,13 @@ const AddDocType = () => {
   /* ---------- render ---------- */
   return (
     <div className="admin-users">
-      
+      {/* Return arrow */}
+      <div className="return-arrow-container">
+        <Link to="/doctypes" className="return-arrow" title="Retour aux types de documents">
+          <span className="return-arrow-icon">←</span>
+          <span className="return-arrow-text">Retour aux types de documents</span>
+        </Link>
+      </div>
 
       {fieldErrors.global && <div className="alert alert-error">{fieldErrors.global}</div>}
       {success && <div className="alert alert-success">{success}</div>}
