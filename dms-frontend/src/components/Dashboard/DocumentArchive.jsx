@@ -355,8 +355,69 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     }
   };
 
-  const handleViewDocument = (doc) => {
-    window.open(getFileUrl(doc), '_blank');
+  const handleViewDocument = async (doc) => {
+    try {
+      const response = await API.documents.download(doc.id);
+      
+      if (response.status !== 200) {
+        if (response.status === 404) {
+          alert('Document non disponible.');
+          return;
+        }
+        throw new Error('Network response was not ok');
+      }
+      
+      const blob = response.data;
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      // Note: We don't revoke the URL immediately as the new window needs it
+      // It will be cleaned up when the window is closed
+    } catch (error) {
+      console.error('View failed:', error);
+      alert('Échec de l\'ouverture. Veuillez réessayer.');
+    }
+  };
+
+  const handleViewRapport = async (doc) => {
+    try {
+      const response = await API.documents.getRapport(doc.id);
+      if (response.status !== 200) {
+        if (response.status === 404) {
+          alert('Rapport non disponible pour ce document.');
+          return;
+        }
+        throw new Error('Network response was not ok');
+      }
+      const blob = response.data;
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      // Note: We don't revoke the URL immediately as the new window needs it
+      // It will be cleaned up when the window is closed
+    } catch (error) {
+      console.error('View failed:', error);
+      alert('Échec de l\'ouverture. Veuillez réessayer.');
+    }
+  };
+
+  const handleViewOcrText = async (doc) => {
+    try {
+      const response = await API.documents.getOcrText(doc.id);
+      if (response.status !== 200) {
+        if (response.status === 404) {
+          alert('Texte OCR non disponible pour ce document.');
+          return;
+        }
+        throw new Error('Network response was not ok');
+      }
+      const blob = response.data;
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      // Note: We don't revoke the URL immediately as the new window needs it
+      // It will be cleaned up when the window is closed
+    } catch (error) {
+      console.error('View failed:', error);
+      alert('Échec de l\'ouverture. Veuillez réessayer.');
+    }
   };
 
   // Function to render extracted data in a visual format
@@ -412,7 +473,32 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = doc.filename.replace(/\.[^/.]+$/, "") + "_rapport.bin";
+      a.download = doc.filename.replace(/\.[^/.]+$/, "") + "_rapport.pdf";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download failed:', error);
+      alert('Échec du téléchargement. Veuillez réessayer.');
+    }
+  };
+
+  const handleOcrTextDownload = async (doc) => {
+    try {
+      const response = await API.documents.getOcrText(doc.id);
+      if (response.status !== 200) {
+        if (response.status === 404) {
+          alert('Texte OCR non disponible pour ce document.');
+          return;
+        }
+        throw new Error('Network response was not ok');
+      }
+      const blob = response.data;
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = doc.filename.replace(/\.[^/.]+$/, "") + "_ocr.txt";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -601,14 +687,23 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                       <td>{doc.partner_name || '-'}</td>
                       <td>
                         <div className="extracted-data-cell">
-                          {doc.id ? (
-                            <button
-                              className="btn btn-link p-0"
-                              onClick={() => handleRapportDownload(doc)}
-                              style={{textDecoration: 'underline', color: '#0d6efd', background: 'none', border: 'none', cursor: 'pointer'}}
-                            >
-                              Télécharger le rapport PDF
-                            </button>
+                          {doc.rapport ? (
+                            <div className="btn-group" role="group">
+                              <button
+                                className="btn btn-sm btn-outline-primary"
+                                onClick={() => handleViewRapport(doc)}
+                                title="Voir le rapport PDF"
+                              >
+                                Voir
+                              </button>
+                              <button
+                                className="btn btn-sm btn-outline-secondary"
+                                onClick={() => handleRapportDownload(doc)}
+                                title="Télécharger le rapport PDF"
+                              >
+                                Télécharger
+                              </button>
+                            </div>
                           ) : (
                             <span className="text-muted">-</span>
                           )}
@@ -617,9 +712,22 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                       <td>
                         <div className="ocr-text-cell">
                           {doc.ocr_text ? (
-                            <span className="text-truncate d-inline-block" style={{maxWidth: '200px'}} title={doc.ocr_text}>
-                              {doc.ocr_text.substring(0, 100)}...
-                            </span>
+                            <div className="btn-group" role="group">
+                              <button
+                                className="btn btn-sm btn-outline-primary"
+                                onClick={() => handleViewOcrText(doc)}
+                                title="Voir le texte OCR"
+                              >
+                                Voir
+                              </button>
+                              <button
+                                className="btn btn-sm btn-outline-secondary"
+                                onClick={() => handleOcrTextDownload(doc)}
+                                title="Télécharger le texte OCR"
+                              >
+                                Télécharger
+                              </button>
+                            </div>
                           ) : (
                             <span className="text-muted">Aucun texte OCR</span>
                           )}

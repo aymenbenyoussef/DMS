@@ -1371,7 +1371,7 @@ class DatabaseManager:
     def get_documents_by_company_and_type(self, company_id, doctype_id):
         """Get only the columns needed for the document archive table, including company_id and doctype_id for file URL construction"""
         query = """
-            SELECT d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size ,d.file_path, d.is_invoice, p.company_name as partner_name
+            SELECT d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size, d.file_path, d.is_invoice, d.ocr_text, d.rapport, p.company_name as partner_name
             FROM documents d
             LEFT JOIN partners p ON d.partner_id = p.id
             WHERE d.company_id = %s AND d.doctype_id = %s

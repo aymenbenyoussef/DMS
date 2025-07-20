@@ -1243,10 +1243,10 @@ def create_document():
 def get_documents_by_company_and_type(company_id, doctype_id):
     try:
         documents = db.get_documents_by_company_and_type(company_id, doctype_id)
-        # Remove rapport (BLOB) from each document before returning
+        # Keep rapport field but remove the actual BLOB data to avoid sending large data
         for doc in documents:
-            if 'rapport' in doc:
-                del doc['rapport']
+            if 'rapport' in doc and doc['rapport'] is not None:
+                doc['rapport'] = True  # Just indicate that rapport exists
             if doc.get('extracted_data') and isinstance(doc['extracted_data'], str):
                 try:
                     doc['extracted_data'] = json.loads(doc['extracted_data'])
@@ -1821,12 +1821,6 @@ def download_file(company_id, doctype_id, filename):
         abort(404, description="File not found")
     return send_from_directory(upload_folder, filename, as_attachment=True)
 
-if __name__ == '__main__':
-    # Ensure log directory exists when app starts
-    ensure_log_dir()
-    app.run(host='0.0.0.0', debug=True)
-
-
 # Partner field verification endpoints
 @app.route('/partners/check-field', methods=['POST'])
 @jwt_required()
@@ -1899,60 +1893,126 @@ def check_multiple_partner_fields():
 @cross_origin()
 def download_document_file(document_id):
     if request.method == 'OPTIONS':
-        # Handle preflight request
-        response = make_response()
-        response.headers.add("Access-Control-Allow-Origin", "*")
-        response.headers.add('Access-Control-Allow-Headers', "Content-Type,Authorization")
-        response.headers.add('Access-Control-Allow-Methods', "GET,OPTIONS")
-        return response, 200  # Always return 200 OK for preflight
+        # Handle preflight request - Flask-CORS will handle the headers
+        return "", 200
 
     # For GET requests, verify JWT
     try:
         verify_jwt_in_request()
     except Exception as e:
-        response = jsonify({"msg": "Authentication required"})
-        response.headers.add("Access-Control-Allow-Origin", "*")
-        response.headers.add('Access-Control-Allow-Headers', "Content-Type,Authorization")
-        response.headers.add('Access-Control-Allow-Methods', "GET,OPTIONS")
-        return response, 401
+        return jsonify({"msg": "Authentication required"}), 401
 
     try:
         document = db.get_document_by_id(document_id)
         if not document or not document.get('file_path'):
-            response = jsonify({"msg": "Document not found"})
-            response.headers.add("Access-Control-Allow-Origin", "*")
-            response.headers.add('Access-Control-Allow-Headers', "Content-Type,Authorization")
-            response.headers.add('Access-Control-Allow-Methods', "GET,OPTIONS")
-            return response, 404
+            return jsonify({"msg": "Document not found"}), 404
 
         if not os.path.exists(document['file_path']):
-            response = jsonify({"msg": "File not found on server"})
-            response.headers.add("Access-Control-Allow-Origin", "*")
-            response.headers.add('Access-Control-Allow-Headers', "Content-Type,Authorization")
-            response.headers.add('Access-Control-Allow-Methods', "GET,OPTIONS")
-            return response, 404
+            return jsonify({"msg": "File not found on server"}), 404
 
-        response = send_file(
+        return send_file(
             document['file_path'],
             as_attachment=True,
             download_name=document['filename']
         )
-        response.headers.add("Access-Control-Allow-Origin", "*")
-        response.headers.add('Access-Control-Allow-Headers', "Content-Type,Authorization")
-        response.headers.add('Access-Control-Allow-Methods', "GET,OPTIONS")
-        return response
 
     except Exception as e:
         app.logger.error(f"Download error: {str(e)}")
-        response = jsonify({"msg": "Error downloading file"})
-        response.headers.add("Access-Control-Allow-Origin", "*")
-        response.headers.add('Access-Control-Allow-Headers', "Content-Type,Authorization")
-        response.headers.add('Access-Control-Allow-Methods', "GET,OPTIONS")
-        return response, 500
+        return jsonify({"msg": "Error downloading file"}), 500
+
+@app.route('/documents/<int:document_id>/rapport', methods=['GET', 'OPTIONS'])
+@cross_origin()
+def download_document_rapport(document_id):
+    if request.method == 'OPTIONS':
+        # Handle preflight request - Flask-CORS will handle the headers
+        return "", 200
+
+    # For GET requests, verify JWT
+    try:
+        verify_jwt_in_request()
+    except Exception as e:
+        return jsonify({"msg": "Authentication required"}), 401
+
+    try:
+        # Get document and rapport path from the database
+        doc = db.get_document_by_id(document_id)
+        
+        if not doc:
+            return jsonify({"msg": "Document not found"}), 404
+        
+        rapport_path = doc.get('rapport')
+        if not rapport_path:
+            return jsonify({"msg": "Rapport not found for this document"}), 404
+        
+        # Check if the rapport file exists
+        if not os.path.exists(rapport_path):
+            app.logger.error(f"Rapport file not found at path: {rapport_path}")
+            return jsonify({"msg": "Rapport file not found on server"}), 404
+        
+        # Use the original filename, but ensure .pdf extension
+        base_filename = os.path.splitext(doc['filename'])[0]
+        pdf_filename = f"{base_filename}_rapport.pdf"
+        
+        return send_file(
+            rapport_path,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=pdf_filename
+        )
+
+    except Exception as e:
+        app.logger.error(f"Rapport download error: {str(e)}")
+        return jsonify({"msg": "Error downloading rapport"}), 500
+
+@app.route('/documents/<int:document_id>/ocr-text', methods=['GET', 'OPTIONS'])
+@cross_origin()
+def download_document_ocr_text(document_id):
+    if request.method == 'OPTIONS':
+        # Handle preflight request - Flask-CORS will handle the headers
+        return "", 200
+
+    # For GET requests, verify JWT
+    try:
+        verify_jwt_in_request()
+    except Exception as e:
+        return jsonify({"msg": "Authentication required"}), 401
+
+    try:
+        # Get document and OCR text path from the database
+        doc = db.get_document_by_id(document_id)
+        
+        if not doc:
+            return jsonify({"msg": "Document not found"}), 404
+        
+        ocr_text_path = doc.get('ocr_text')
+        if not ocr_text_path:
+            return jsonify({"msg": "OCR text not found for this document"}), 404
+        
+        # Check if the OCR text file exists
+        if not os.path.exists(ocr_text_path):
+            app.logger.error(f"OCR text file not found at path: {ocr_text_path}")
+            return jsonify({"msg": "OCR text file not found on server"}), 404
+        
+        # Use the original filename, but ensure .txt extension
+        base_filename = os.path.splitext(doc['filename'])[0]
+        txt_filename = f"{base_filename}_ocr.txt"
+        
+        return send_file(
+            ocr_text_path,
+            mimetype='text/plain',
+            as_attachment=True,
+            download_name=txt_filename
+        )
+
+    except Exception as e:
+        app.logger.error(f"OCR text download error: {str(e)}")
+        return jsonify({"msg": "Error downloading OCR text"}), 500
+
 @app.route('/cors-test', methods=['GET', 'OPTIONS'])
 @cross_origin()
 def cors_test():
     return "CORS OK"
+
 def get_rapport_pdf(doc_id):
     print("back")
     # Fetch rapport (PDF bytes) and filename from the database
@@ -1979,3 +2039,14 @@ def get_rapport_pdf(doc_id):
 def get_companies_by_datatype_route(datatype_id):
     companies = db.get_companies_by_datatype(datatype_id)
     return jsonify(companies), 200
+
+if __name__ == '__main__':
+    # Ensure log directory exists when app starts
+    ensure_log_dir()
+    
+    # Print all registered routes for debugging
+    print("Registered routes:")
+    for rule in app.url_map.iter_rules():
+        print(f"  {rule.rule} -> {rule.endpoint}")
+    
+    app.run(host='0.0.0.0', debug=True)

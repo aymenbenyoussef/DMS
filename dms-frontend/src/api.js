@@ -181,6 +181,12 @@ const documents = {
       responseType: 'blob'
     });
   },
+
+  getOcrText: (documentId) => {
+    return API.get(`/documents/${documentId}/ocr-text`, {
+      responseType: 'blob'
+    });
+  },
   // Legacy confirm function (keep for backward compatibility)
   confirmDocument: (documentId, confirmedData) => 
     API.post(`/documents/${documentId}/confirm`, confirmedData),
