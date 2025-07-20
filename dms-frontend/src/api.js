@@ -169,7 +169,18 @@ const documents = {
   uploadFiles: (formData) => API.post('/upload', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
-  
+
+  download: (documentId) => {
+    return API.get(`/documents/${documentId}/file`, {
+      responseType: 'blob'
+    });
+  },
+
+  getRapport: (documentId) => {
+    return API.get(`/documents/${documentId}/rapport`, {
+      responseType: 'blob'
+    });
+  },
   // Legacy confirm function (keep for backward compatibility)
   confirmDocument: (documentId, confirmedData) => 
     API.post(`/documents/${documentId}/confirm`, confirmedData),

@@ -2,30 +2,27 @@ import React, { useState, useRef, useEffect, useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { AppContext } from '../context';
 import './NavBar.css';
-// J'ai retiré BsFileEarmarkText car nous utilisons BiData pour le logo
+import { BiServer } from 'react-icons/bi';
 import { 
   BiFolder, 
   BiSearch, 
   BiBarChart, 
   BiGroup, 
   BiCog, 
-  BiUser, 
   BiLogOut,
   BiChevronDown,
   BiBuildings,
   BiCollection,
   BiFile,
-  BiServer,
-  BiData // Icône utilisée pour le nouveau logo
+  BiData
 } from 'react-icons/bi';
 
 const NavBar = ({ user, onLogout }) => {
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showAdminTools, setShowAdminTools] = useState(false);
   const location = useLocation();
-  const profileRef = useRef(null);
   const adminToolsRef = useRef(null);
   
+  // Admin tools links grouped by category
   const adminToolsCategories = {
     systemConfig: {
       title: 'Système de configuration',
@@ -48,17 +45,16 @@ const NavBar = ({ user, onLogout }) => {
     }
   };
 
+  // Get resetSelection function from context
   const { resetSelection } = useContext(AppContext);
   
   const isActive = (path) => {
     return location.pathname === path ? 'active' : '';
   };
 
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (profileRef.current && !profileRef.current.contains(event.target)) {
-        setShowProfileMenu(false);
-      }
       if (adminToolsRef.current && !adminToolsRef.current.contains(event.target)) {
         setShowAdminTools(false);
       }
@@ -77,11 +73,10 @@ const NavBar = ({ user, onLogout }) => {
         <div className="navbar-brand" onClick={resetSelection}>
           <Link to="/" className="logo-link">
             <div className="logo">
-              {/* CHANGEMENT: Remplacement de l'icône pour mieux correspondre au thème */}
-              <span className="logo-icon"><BiData size={36} /></span>
+              <span className="logo-icon"><BiData size={32} /></span>
               <div className="logo-text">
-                <span className="logo-main">DataServ</span>
-                <span className="logo-sub">Data Management Server</span>
+                <span className="logo-main">DocuManager</span>
+                <span className="logo-sub">Système avancé de gestion des données</span>
               </div>
             </div> 
           </Link>
@@ -93,7 +88,7 @@ const NavBar = ({ user, onLogout }) => {
             <span className="search-icon"><BiSearch size={18} /></span>
             <input 
               type="text" 
-              placeholder="Rechercher..." 
+              placeholder="Recherche..." 
               className="search-input"
             />
           </div>
@@ -101,6 +96,7 @@ const NavBar = ({ user, onLogout }) => {
 
         {/* Navigation Links */}
         <div className="navbar-links">
+          {/* Dashboard link */}
           <Link 
             to="/" 
             className={`nav-link ${isActive('/')}`}
@@ -110,22 +106,24 @@ const NavBar = ({ user, onLogout }) => {
             <span>Tableau de bord</span>
           </Link>
           
+          {/* Admin Tools Dropdown */}
           {user && user.role === 'admin' && (
             <div className="admin-tools-container" ref={adminToolsRef}>
               <button 
                 className={`nav-link ${isActive('/admin/tools')}`}
                 onClick={() => setShowAdminTools(!showAdminTools)}
               >
-                <span className="nav-icon"><BiCog size={20} /></span>
-                <span>Outils Admin</span>
+                <span className="nav-icon"><BiGroup size={20} /></span>
+                <span>Outils</span>
                 <span className={`dropdown-icon ${showAdminTools ? 'open' : ''}`}>
-                  <BiChevronDown size={16} />
+                  <BiChevronDown size={14} />
                 </span>
               </button>
               
               {showAdminTools && (
                 <div className="admin-tools-dropdown">
                   <div className="dropdown-columns">
+                    {/* System Configuration Column */}
                     <div className="dropdown-column">
                       <div className="category-header">
                         <span className="category-icon">{adminToolsCategories.systemConfig.icon}</span>
@@ -146,6 +144,7 @@ const NavBar = ({ user, onLogout }) => {
                       </div>
                     </div>
                     
+                    {/* Business Data Column */}
                     <div className="dropdown-column">
                       <div className="category-header">
                         <span className="category-icon">{adminToolsCategories.businessData.icon}</span>
@@ -166,57 +165,45 @@ const NavBar = ({ user, onLogout }) => {
                           ))}
                         </div>
                       ) : (
-                        <div className="empty-category">Aucun élément</div>
+                        <div className="empty-category">Aucun élément disponible</div>
                       )}
                     </div>
+                  </div>
+                  
+                  <div className="dropdown-footer">
+                    <button
+                      onClick={() => {
+                        setShowAdminTools(false);
+                        onLogout();
+                      }}
+                      className="logout-button"
+                    >
+                      <BiLogOut size={16} />
+                      <span>Déconnexion</span>
+                    </button>
                   </div>
                 </div>
               )}
             </div>
           )}
           
-          {/* User Profile Dropdown */}
-          {user && (
-            <div className="profile-container" ref={profileRef}>
-              <button 
-                className="profile-button"
-                onClick={() => setShowProfileMenu(!showProfileMenu)}
-              >
-                <div className="user-info">
-                  <div className="user-avatar">
-                    {user.username.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="user-details">
-                    <span className="username">{user.username}</span>
-                    <span className="user-role">{user.role}</span>
-                  </div>
-                  <span className={`dropdown-icon ${showProfileMenu ? 'open' : ''}`}>
-                    <BiChevronDown size={16} />
-                  </span>
-                </div>
-              </button>
-              
-              {showProfileMenu && (
-                <div className="profile-menu">
-                  <Link 
-                    to="/profile" 
-                    className="profile-menu-item"
-                    onClick={() => setShowProfileMenu(false)}
-                  >
-                    <span className="menu-icon"><BiUser size={18} /></span>
-                    <span>Mon Profil</span>
-                  </Link>
-                  <div className="profile-menu-divider" />
-                  <button
-                    onClick={onLogout}
-                    className="profile-menu-item logout-item"
-                  >
-                    <span className="menu-icon"><BiLogOut size={18} /></span>
-                    <span>Déconnexion</span>
-                  </button>
-                </div>
-              )}
-            </div>
+          {/* Settings link - Show for non-admin users */}
+          {(!user || user.role !== 'admin') && (
+            <Link to="/settings" className={`nav-link ${isActive('/settings')}`}>
+              <span className="nav-icon"><BiCog size={20} /></span>
+              <span>Paramètres</span>
+            </Link>
+          )}
+
+          {/* Logout button for non-admin users */}
+          {user && user.role !== 'admin' && (
+            <button
+              onClick={onLogout}
+              className="nav-link logout-nav-button"
+            >
+              <span className="nav-icon"><BiLogOut size={20} /></span>
+              <span>Déconnexion</span>
+            </button>
           )}
         </div>
       </div>
@@ -225,3 +212,4 @@ const NavBar = ({ user, onLogout }) => {
 };
 
 export default NavBar;
+

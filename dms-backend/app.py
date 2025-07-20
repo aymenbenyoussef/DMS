@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, send_file, make_response
 from flask_cors import CORS, cross_origin
 from flask_jwt_extended import (
     JWTManager, create_access_token, jwt_required, get_jwt_identity, get_jwt
@@ -33,6 +33,12 @@ app.logger.addHandler(handler)
 # ====== Logging Configuration ======
 LOG_DIR = "../../logs"
 ACTIVITY_LOG = os.path.join(LOG_DIR, "activity.log")
+
+
+
+
+
+
 
 def ensure_log_dir():
     """Create logs directory if it doesn't exist"""
@@ -1878,20 +1884,35 @@ def check_multiple_partner_fields():
     except Exception as e:
         return jsonify({"msg": str(e)}), 500
 
-@app.route('/files/<int:company_id>/<int:doctype_id>/<filename>')
-def serve_file(company_id, doctype_id, filename):
-    directory = os.path.join(app.config['DMS_UPLOAD_FOLDER'], str(company_id), str(doctype_id))
-    file_path = os.path.join(directory, filename)
-    app.logger.debug(f"[DEBUG] Serving file from: {directory}")
-    app.logger.debug(f"[DEBUG] Filename: {filename}")
-    app.logger.debug(f"[DEBUG] Full file path: {file_path}")
-    if not os.path.exists(file_path):
-        app.logger.debug("[DEBUG] File not found!")
-        return "File not found", 404
-    else:
-        file_size = os.path.getsize(file_path)
-        app.logger.debug(f"[DEBUG] File exists. Size: {file_size} bytes.")
-    return send_from_directory(directory, filename, as_attachment=True)@app.route('/documents/<int:doc_id>/rapport_pdf', methods=['GET'])
+@app.route('/documents/<int:document_id>/file', methods=['GET', 'OPTIONS'])
+@jwt_required()
+@cross_origin(origins="*", methods=['GET', 'OPTIONS'], allow_headers=['Content-Type', 'Authorization'])
+def download_document_file(document_id):
+    if request.method == 'OPTIONS':
+        # Handle preflight request
+        response = make_response()
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add('Access-Control-Allow-Headers', "Content-Type,Authorization")
+        response.headers.add('Access-Control-Allow-Methods', "GET,OPTIONS")
+        return response
+    
+    try:
+        document = db.get_document_by_id(document_id)
+        if not document or not document.get('file_path'):
+            return jsonify({"msg": "Document not found"}), 404
+        
+        if not os.path.exists(document['file_path']):
+            return jsonify({"msg": "File not found on server"}), 404
+            
+        return send_file(
+            document['file_path'],
+            as_attachment=True,
+            download_name=document['filename']
+        )
+    except Exception as e:
+        app.logger.error(f"Download error: {str(e)}")
+        return jsonify({"msg": "Error downloading file"}), 500
+        
 def get_rapport_pdf(doc_id):
     print("back")
     # Fetch rapport (PDF bytes) and filename from the database
