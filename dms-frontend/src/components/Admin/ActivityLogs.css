@@ -123,9 +123,13 @@
 .logs-table {
   width: 100%;
   overflow-x: auto;
+  overflow-y: auto;
   margin-top: 20px;
   border: 1px solid #ddd;
   border-radius: 4px;
+  max-height: 400px;
+  /* Allow the table to shrink if there are few rows */
+  height: auto;
 }
 
 .logs-table table {
@@ -179,6 +183,10 @@
 
 .details {
   word-break: break-word;
+}
+
+body {
+  overflow: hidden;
 }
 
 @media (max-width: 768px) {

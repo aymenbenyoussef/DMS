@@ -57,7 +57,9 @@ class DatabaseManager:
                     name VARCHAR(255) NOT NULL UNIQUE,
                     address VARCHAR(100) NOT NULL ,
                     email VARCHAR(100) NOT NULL UNIQUE,
-                    phone int(20) NOT NULL,            
+                    phone int(20) NOT NULL,
+                    is_active BOOLEAN DEFAULT TRUE,
+                    description TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
@@ -418,27 +420,31 @@ class DatabaseManager:
     def create_company(self, company_data):
         try:   
             query = """
-                INSERT INTO companies (name, address, email, phone)
-                VALUES (%s, %s, %s, %s)
+                INSERT INTO companies (name, address, email, phone, is_active, description)
+                VALUES (%s, %s, %s, %s, %s, %s)
             """
             params = (
                 company_data["name"],
                 company_data.get("address", ""),
                 company_data.get("email", ""),
                 company_data.get("phone", ""),
-                
-                
+                company_data.get("is_active", True),
+                company_data.get("description", "")
             )
             
             return self.execute_query(query, params)
-        except Exception as e:
-        # Re-raise the exception with a more specific message
-            if "Duplicate entry" in str(e):
-                if "name" in str(e).lower():
+        except Error as e:  # Specifically catch mysql.connector.Error
+            error_message = str(e)
+            # Check for duplicate entry errors
+            if "Duplicate entry" in error_message:
+                if "name" in error_message.lower():
                     raise Exception("Company name already exists")
-                elif "email" in str(e).lower():
+                elif "email" in error_message.lower():
                     raise Exception("Company email already exists")
-        raise e
+            # Re-raise other database errors
+            raise Exception(f"Database error: {error_message}")
+        except Exception as e:  # Catch any other unexpected exceptions
+            raise Exception(f"Error creating company: {str(e)}")
     #/////////
     def delete_company(self, company_id):
         
@@ -456,19 +462,36 @@ class DatabaseManager:
             print(f"Error deleting company: {e}")
             return False
 
-    def update_company(self, company_id, name, address, email, phone):
-        query = """
-        UPDATE companies
-        SET name = %s,
-            address = %s,
-            email = %s,
-            phone = %s
-        WHERE id = %s
-        """
-        params = (name, address, email, phone, company_id)
+    def update_company(self, company_id, name=None, address=None, email=None, phone=None, is_active=None, description=None):
+        updates = []
+        params = []
+        
+        if name is not None:
+            updates.append("name = %s")
+            params.append(name)
+        if address is not None:
+            updates.append("address = %s")
+            params.append(address)
+        if email is not None:
+            updates.append("email = %s")
+            params.append(email)
+        if phone is not None:
+            updates.append("phone = %s")
+            params.append(phone)
+        if is_active is not None:  # Added is_active
+            updates.append("is_active = %s")
+            params.append(is_active)
+        if description is not None:  # Added description
+            updates.append("description = %s")
+            params.append(description)
+        
+        if not updates:
+            return False
+        
+        params.append(company_id)
+        query = f"UPDATE companies SET {', '.join(updates)} WHERE id = %s"
         try:
-            affected_rows = self.execute_query(query, params)
-            # Return True if the query executed successfully, regardless of whether rows were changed
+            self.execute_query(query, params)
             return True
         except Exception as e:
             print(f"Error updating company: {e}")

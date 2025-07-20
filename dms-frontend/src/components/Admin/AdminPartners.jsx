@@ -439,27 +439,19 @@ const AdminPartners = ({ user }) => {
               <thead>
                 <tr>
                   <th></th>
-                  <th>ID</th>
-                  <th>Unique Identifier</th>
-                  <th>Company Name</th>
-                  <th>Entities</th>
-                  <th>Partner Types</th>
-                  <th>Phone</th>
-                  <th>Email</th>
-                  <th>Actions</th>
+                  
+                  <th style={{ width: '150px' }}>Unique Identifier</th>
+                  <th style={{ width: '200px' }}>Company Name</th>
+                  <th style={{ width: '200px' }}>Entities</th>
+                  <th style={{ width: '150px' }}>Partner Types</th>
+                  <th style={{ width: '80px' }}>Phone</th>
+                  <th style={{ width: '250px' }}>Email</th>
+                  <th style={{ width: '100px' }}>Actions</th>
                 </tr>
                 <tr className="filter-row">
                   <td></td>
-                  <td>
-                    <input
-                      type="text"
-                      value={filters.id}
-                      onChange={(e) => handleFilterChange(e, 'id')}
-                      placeholder="Filter ID"
-                      className="filter-input"
-                    />
-                  </td>
-                  <td>
+                  
+                  <td style={{ width: '150px' }}>
                     <input
                       type="text"
                       value={filters.unique_identifier}
@@ -468,7 +460,7 @@ const AdminPartners = ({ user }) => {
                       className="filter-input"
                     />
                   </td>
-                  <td>
+                  <td style={{ width: '200px' }}>
                     <input
                       type="text"
                       value={filters.company_name}
@@ -477,7 +469,7 @@ const AdminPartners = ({ user }) => {
                       className="filter-input"
                     />
                   </td>
-                  <td>
+                  <td style={{ width: '150px' }}>
                     <input
                       type="text"
                       value={filters.company}
@@ -486,7 +478,7 @@ const AdminPartners = ({ user }) => {
                       className="filter-input"
                     />
                   </td>
-                  <td>
+                  <td style={{ width: '150px' }}>
                     <input
                       type="text"
                       value={filters.partnertype}
@@ -495,7 +487,7 @@ const AdminPartners = ({ user }) => {
                       className="filter-input"
                     />
                   </td>
-                  <td>
+                  <td style={{ width: '80px' }}>
                     <input
                       type="text"
                       value={filters.phone}
@@ -504,7 +496,7 @@ const AdminPartners = ({ user }) => {
                       className="filter-input"
                     />
                   </td>
-                  <td>
+                  <td style={{ width: '250px' }}>
                     <input
                       type="text"
                       value={filters.email}
@@ -523,24 +515,24 @@ const AdminPartners = ({ user }) => {
                       <td>
                         <div className={`status-led ${partner.is_active ? 'status-led-active' : 'status-led-inactive'}`}></div>
                       </td>
-                      <td>{partner.id}</td>
-                      <td>{partner.unique_identifier}</td>
-                      <td>{partner.company_name}</td>
-                      <td>
-                        <ul className="company-tokens">
+                      
+                      <td style={{ width: '150px' }}>{partner.unique_identifier}</td>
+                      <td style={{ width: '200px' }}>{partner.company_name}</td>
+                      <td style={{ width: '200px' }}>
+                        <ul className="company-tokens" style={{flexWrap: 'wrap', display: 'flex'}}>
 
 
                         {partner.companies?.map(c => (<li key={c.id} className="company-token">{c.name}</li>))}
                         </ul>
                       </td>
-                      <td>
+                      <td style={{ width: '150px' }}>
                         <ul className="company-tokens">
                         {partner.partnertypes?.map(pt => (<li key={pt.id} className="company-token">{pt.name}</li>))}
                         </ul>
                       </td>
-                      <td>{partner.phone1 || 'N/A'}</td>
-                      <td>{partner.email}</td>
-                      <td>
+                      <td style={{ width: '80px' }}>{partner.phone1 || 'N/A'}</td>
+                      <td style={{ width: '250px' }}>{partner.email}</td>
+                      <td style={{ width: '100px' }}>
                         <div className="action-buttons">
                           <button
                             className="btn-edit"
@@ -798,17 +790,17 @@ const AdminPartners = ({ user }) => {
             <div className="form-actions">
               <button
                 type="button"
-                className="btn-primary"
+                className="btn-cancel"
                 onClick={() => {
                   setActiveTab('list');
                   setShowModifyTab(false);
                   setEditingPartner(null);
                 }}
               >
-                Cancel
+                Annuler
               </button>
-              <button type="submit" className="btn-primary">
-                Update Partner
+              <button type="submit" className="btn">
+                Mettre à jour le partenaire
               </button>
             </div>
           </form>

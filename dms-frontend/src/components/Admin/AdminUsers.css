@@ -2,15 +2,17 @@
   padding-top: 20px;
   max-width: 100%;
   margin: 0 auto;
-  height: 100%;
-  overflow: hidden;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
 .admin-header {
-  margin-bottom: 30px;
+  margin-bottom: 20px;
   flex-shrink: 0;
+  overflow: hidden;
+  max-height: 120px;
 }
 
 .admin-header h1 {
@@ -24,6 +26,8 @@
   display: flex;
   gap: 10px;
   border-bottom: 2px solid #e9ecef;
+  width: 100%;
+  margin-right: 100px;
 }
 
 .tab-btn {
@@ -69,14 +73,12 @@
 }
 
 .users-list {
-  flex: 1;
   overflow: hidden;
   display: flex;
   flex-direction: column;
 }
 
 .users-table-container {
-  flex: 1;
   overflow: hidden;
   background: white;
   border-radius: 8px;
@@ -118,9 +120,10 @@
   background-color: #f8f9fa;
   font-weight: 600;
   color: #495057;
-  font-size: 0.8rem;
-  text-transform: uppercase;
+  font-size: 1rem;
+  text-transform: capitalize;
   letter-spacing: 0.5px;
+  text-align: left;
 }
 
 .users-table-fixed .filter-row td {
@@ -129,8 +132,8 @@
 }
 
 .table-body-scrollable {
-  flex: 1;
   overflow-y: auto;
+  max-height: 60vh;
 }
 
 .users-table-fixed tr:hover {
@@ -492,26 +495,11 @@
     padding: 8px 10px;
   }
 }
-.company-tokens {
-  display: flex;
-  padding-left: 0;
-  align-items: left;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 4px 0;
-}
+
 .pt{
   width: 300px;
 }
-.company-token {
-  display: inline-block;
-  background-color: #e9ecef;
-  border-radius: 12px;
-  padding: 2px 8px;
-  font-size: 1rem;
-  color: #495057;
-  white-space: nowrap;
-}
+
 .btnthird{
   padding: 12px 24px;
   border: none;
@@ -555,8 +543,8 @@
 }
 
 /* Update the column width definitions at the bottom of the file */
-.users-table-fixed th:nth-child(1), .users-table-fixed td:nth-child(1) { flex: 0.1; max-width: 30px; } /* Status LED */
-.users-table-fixed th:nth-child(2), .users-table-fixed td:nth-child(2) { flex: 0.5; max-width: 80px; } /* ID */
+.users-table-fixed th:nth-child(1), .users-table-fixed td:nth-child(1) { flex: 0.1 } /* Status LED */
+
 .users-table-fixed th:nth-child(3), .users-table-fixed td:nth-child(3) { flex: 1; } /* Unique Identifier */
 .users-table-fixed th:nth-child(4), .users-table-fixed td:nth-child(4) { flex: 1; } /* Company Name */
 .users-table-fixed th:nth-child(5), .users-table-fixed td:nth-child(5) { flex: 1.4; } /* Entities */

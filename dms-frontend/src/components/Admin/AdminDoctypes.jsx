@@ -448,7 +448,7 @@ const AdminDoctypes = ({ user }) => {
             <div className="form-actions">
               <button
                 type="button"
-                className="btn-primary"
+                className="btn-cancel"
                 onClick={() => {
                   setActiveTab('list');
                   setShowModifyTab(false);
@@ -457,7 +457,7 @@ const AdminDoctypes = ({ user }) => {
               >
                 Annuler
               </button>
-              <button type="submit" className="btn-primary">
+              <button type="submit" className="btn">
                 Mettre à jour
               </button>
             </div>

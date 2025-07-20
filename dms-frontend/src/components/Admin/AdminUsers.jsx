@@ -387,8 +387,7 @@ const AdminUsers = ({user ,loadingUser}) => {
               <div className="loading-spinner" style={{marginRight:'8px',display:'inline-block',verticalAlign:'middle'}}></div>
               Chargement des utilisateurs...
             </div>
-          ) : canShowList && filteredUsers.length === 0 ? (
-            <div className="no-results">Aucun utilisateur trouvé</div>
+          
           ) : canShowList ? (
             <>
               {/* Notification using existing alert classes with inline styles for positioning */}
@@ -434,7 +433,7 @@ const AdminUsers = ({user ,loadingUser}) => {
                   <thead>
                     <tr>
                       <th></th>
-                      <th>ID</th>
+                      <th>Id</th>
                       <th>Nom complet</th>
 
                       <th>Email</th>
@@ -496,6 +495,7 @@ const AdminUsers = ({user ,loadingUser}) => {
                     </tr>
                   </thead>
                   <tbody className="table-body-scrollable">
+                    
                     {!loading && filteredUsers.length > 0 && (
                       filteredUsers.map(user => (
                         <tr key={user.id}>
@@ -507,16 +507,16 @@ const AdminUsers = ({user ,loadingUser}) => {
                           
                           <td>{user.email}</td>
                           <td>
-                            <span className={`role-badge ${user.role}`}>
-                              {user.role}
+                            <span >
+                              {user.role === 'user' ? 'utilisateur' : user.role}
                             </span>
                           </td>
                           <td>
                             {user.companies && user.companies.length > 0 ? (
                               <ul className="company-tokens">
-                                {user.companies.map(company => (
-                                  <li key={company.id} className="company-token">{company.name}</li>
-                                ))}
+                                  {user.companies.map(company => (
+                                    <li key={company.id} className="company-token">{company.name}</li>
+                                  ))}
                               </ul>
                             ) : (
                               <span></span>
@@ -532,12 +532,7 @@ const AdminUsers = ({user ,loadingUser}) => {
                               >
                                 Modifier
                               </button>
-                              <button
-                                className="btn-delete"
-                                onClick={() => handleDelete(user.id)}
-                              >
-                                Supprimer
-                              </button>
+                              
                             </div>)}
                           </td>
                         </tr>
@@ -670,12 +665,12 @@ const AdminUsers = ({user ,loadingUser}) => {
               <button 
                 type="button" 
                 onClick={() => handleTabChange('list')}
-                className="btn-primary"
+                className="btn-cancel"
               >
                 Annuler
               </button>
-              <button type="submit" disabled={loading} className="btn-primary">
-                {loading ? 'Chargement...' : (editingUser ? 'Mettre à jour' : 'Créer')}
+              <button type="submit" disabled={loading} className="btn">
+                {loading ? 'Chargement...' : 'Mettre à jour'}
               </button>
             </div>
           </form>

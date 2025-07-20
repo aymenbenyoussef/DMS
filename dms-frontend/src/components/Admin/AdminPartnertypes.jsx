@@ -359,17 +359,17 @@ const AdminPartnerTypes = ({ user }) => {
               
               <button
                 type="button"
-                className="btn-primary"
+                className="btn-cancel"
                 onClick={() => {
                   setActiveTab('list');
                   setShowModifyTab(false);
                   setEditingPartnerType(null);
                 }}
               >
-                Cancel
+                Annuler
               </button>
-              <button type="submit" className="btn-primary">
-                Update
+              <button type="submit" className="btn">
+                Mettre à jour 
               </button>
             </div>
           </form>

@@ -1,3 +1,16 @@
+/* Global styles to prevent page scrolling */
+html, body {
+  height: 100%;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+#root {
+  height: 100vh;
+  overflow: hidden;
+}
+
 /* Sidebar styling */
 .sidebar {
   width: 250px;

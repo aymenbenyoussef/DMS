@@ -833,13 +833,13 @@
 
 /* Upload button */
 .btn-primary {
-  background-color: #0d6efd;
-  border-color: #0d6efd;
+  background-color: darkgreen;
+  border-color: darkgreen;
 }
 
 .btn-primary:hover {
-  background-color: #0b5ed7;
-  border-color: #0a58ca;
+  background-color: darkgreen;
+  border-color: darkgreen;
 }
 
 /* Success message */

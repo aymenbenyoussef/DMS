@@ -33,10 +33,10 @@ const NavBar = ({ user, onLogout }) => {
       icon: <BiServer size={16} />,
       items: [
         { icon: <BiGroup size={16} />, label: 'Utilisateurs', link: '/admin/users' },
-        { icon: <BiBuildings size={16} />, label: 'Entités', link: '/companies' },
+        
         { icon: <BiCollection size={16} />, label: 'Types de données', link: '/doctypes' },
         { icon: <BiFolder size={16} />, label: 'Types de partenaires', link: '/partnertypes' },
-        { icon: <BiBarChart size={16} />, label: 'Partenaires', link: '/partners' },
+        
         { icon: <BiFile size={16} />, label: 'Logs', link: '/admin/activity_logs' },
         { icon: <BiCog size={16} />, label: 'Paramètres', link: '/settings' }
       ]
@@ -44,7 +44,10 @@ const NavBar = ({ user, onLogout }) => {
     businessData: {
       title: 'Données commerciales',
       icon: <BiData size={16} />,
-      items: [] // Empty for now as requested
+      items: [
+        { icon: <BiBuildings size={16} />, label: 'Entités', link: '/companies' },
+        { icon: <BiBarChart size={16} />, label: 'Partenaires', link: '/partners' }
+      ] // Empty for now as requested
     }
   };
 

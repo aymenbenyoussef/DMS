@@ -30,13 +30,13 @@ const AdminCompanies = ({ user }) => {
     phone: '',
     email: '',
     website: '',
-    description: ''
+    description: '',
+    is_active: true
   });
 
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
 
-  // Fetch data on component mount
   useEffect(() => {
     fetchCompanies();
   }, []);
@@ -61,15 +61,21 @@ const AdminCompanies = ({ user }) => {
       setLoading(false);
     }
   };
-
-  // New useEffect to handle notification display
+  useEffect(() => {
+    let timer;
+    if (success) {
+      timer = setTimeout(() => {
+        setSuccess('');
+      }, 3000);
+    }
+    return () => clearTimeout(timer);
+  }, [success]);
   useEffect(() => {
     if (!loading && filteredCompanies.length === 0) {
       const message = companies.length === 0 ? 'Aucune entreprise disponible' : 'Aucune entreprise ne correspond à vos filtres';
       setNotificationMessage(message);
       setShowNotification(true);
       
-      // Auto-hide notification after 5 seconds
       const timer = setTimeout(() => {
         setShowNotification(false);
       }, 5000);
@@ -105,24 +111,24 @@ const AdminCompanies = ({ user }) => {
   const validate = () => {
     const errors = {};
     const errorMessages = [];
-
-    if (!formData.name.trim()) {
+  
+    if (!String(formData.name || '').trim()) {
       errors.name = 'Le nom de l\'entreprise est requis';
       errorMessages.push('Le nom de l\'entreprise est requis');
     }
-    if (!formData.address.trim()) {
+    if (!String(formData.address || '').trim()) {
       errors.address = 'L\'adresse est requise';
       errorMessages.push('L\'adresse est requise');
     }
-    if (!formData.phone.trim()) {
+    if (!String(formData.phone || '').trim()) {
       errors.phone = 'Le numéro de téléphone est requis';
       errorMessages.push('Le numéro de téléphone est requis');
     }
-    if (!formData.email.trim()) {
+    if (!String(formData.email || '').trim()) {
       errors.email = 'L\'email est requis';
       errorMessages.push('L\'email est requis');
     }
-
+  
     setFieldErrors(errors);
     setGlobalErrors(errorMessages);
     return errorMessages.length === 0;
@@ -136,7 +142,8 @@ const AdminCompanies = ({ user }) => {
       phone: company.phone || '',
       email: company.email || '',
       website: company.website || '',
-      description: company.description || ''
+      description: company.description || '',
+      is_active: company.is_active !== undefined ? company.is_active : true
     });
     setShowModifyTab(true);
     setActiveTab('form');
@@ -145,7 +152,7 @@ const AdminCompanies = ({ user }) => {
   };
 
   const handleDelete = async (companyId) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer cette entreprise ?')) {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer cette entreprise ?')) {
       try {
         await API.companies.delete(companyId);
         setSuccess('Entreprise supprimée avec succès');
@@ -159,10 +166,10 @@ const AdminCompanies = ({ user }) => {
   };
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value,
+      [name]: type === 'checkbox' ? checked : value,
     }));
     
     if (fieldErrors[name]) {
@@ -253,7 +260,6 @@ const AdminCompanies = ({ user }) => {
             </div>
           )}
 
-          {/* Notification using existing alert classes with inline styles for positioning */}
           {showNotification && (
             <div 
               className="alert alert-error" 
@@ -295,16 +301,15 @@ const AdminCompanies = ({ user }) => {
             <table className="users-table-fixed">
               <thead>
                 <tr>
-                  <th></th> {/* Placeholder for status LED */}
+                  <th></th>
                   <th>ID</th>
                   <th>Nom de l'entité</th>
                   <th>Adresse</th>
-                  <th>Téléphone</th>
                   <th>Email</th>
                   <th>Actions</th>
                 </tr>
                 <tr className="filter-row">
-                  <td></td> {/* Placeholder for status LED filter */}
+                  <td></td>
                   <td>
                     <input
                       type="text"
@@ -335,15 +340,6 @@ const AdminCompanies = ({ user }) => {
                   <td>
                     <input
                       type="text"
-                      value={filters.phone}
-                      onChange={(e) => handleFilterChange(e, 'phone')}
-                      placeholder="Filtrer par téléphone"
-                      className="filter-input"
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="text"
                       value={filters.email}
                       onChange={(e) => handleFilterChange(e, 'email')}
                       placeholder="Filtrer par email"
@@ -357,11 +353,12 @@ const AdminCompanies = ({ user }) => {
                 {!loading && filteredCompanies.length > 0 && (
                   filteredCompanies.map(company => (
                     <tr key={company.id}>
-                      <td></td> {/* Placeholder for status LED */}
+                      <td>
+                        <div className={`status-led ${company.is_active ? 'status-led-active' : 'status-led-inactive'}`}></div>
+                      </td>
                       <td>{company.id}</td>
                       <td>{company.name}</td>
                       <td>{company.address}</td>
-                      <td>{company.phone}</td>
                       <td>{company.email}</td>
                       <td>
                         <div className="action-buttons">
@@ -440,16 +437,7 @@ const AdminCompanies = ({ user }) => {
               />
               {fieldErrors.email && <div className="field-error">{fieldErrors.email}</div>}
             </div>
-            <div className="form-group">
-              <label>Site Web</label>
-              <input
-                type="text"
-                name="website"
-                placeholder="Entrez le site web"
-                value={formData.website}
-                onChange={handleInputChange}
-              />
-            </div>
+            
             <div className="form-group">
               <label>Description</label>
               <textarea
@@ -461,10 +449,20 @@ const AdminCompanies = ({ user }) => {
               />
             </div>
 
+            <div className="form-group checkbox-group">
+              <label>Actif</label>
+              <input
+                type="checkbox"
+                name="is_active"
+                checked={formData.is_active}
+                onChange={handleInputChange}
+              />
+            </div>
+
             <div className="form-actions">
               <button
                 type="button"
-                className="btn-primary"
+                className="btn-cancel"
                 onClick={() => {
                   setActiveTab('list');
                   setShowModifyTab(false);
@@ -473,7 +471,7 @@ const AdminCompanies = ({ user }) => {
               >
                 Annuler
               </button>
-              <button type="submit" className="btn-primary">
+              <button type="submit" className="btn">
                 Mettre à jour l'entité
               </button>
             </div>

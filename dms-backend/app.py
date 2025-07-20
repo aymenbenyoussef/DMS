@@ -547,7 +547,14 @@ def create_company():
             messages.append("Company email already exists.")
         return jsonify({"msg": " ".join(messages)}), 400
     try:
-        company_id = db.create_company(data)
+        company_id = db.create_company({
+            "name": data.get('name'),
+            "address": data.get('address', ''),
+            "email": data.get('email', ''),
+            "phone": data.get('phone', ''),
+            "is_active": data.get('is_active', True),  # Added is_active
+            "description": data.get('description', '')  # Added description
+        })
         company = db.get_company_by_id(company_id)
         
         # Create company folder in DMS structure using company ID
@@ -604,7 +611,9 @@ def update_company(company_id):
             name=data.get('name'),
             address=data.get('address'),
             email=data.get('email'),
-            phone=data.get('phone')
+            phone=data.get('phone'),
+            is_active=data.get('is_active'),  # Added is_active
+            description=data.get('description')
         )
         
         # Get updated company for logging

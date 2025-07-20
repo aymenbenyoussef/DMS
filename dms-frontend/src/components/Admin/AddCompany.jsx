@@ -10,6 +10,8 @@ const AdminCompanies = ({ user }) => {
     address: '',
     email: '',
     phone: '',
+    is_active: true, // Added is_active
+    description: '', // Added description
   });
 
   const [loading, setLoading] = useState(false);
@@ -60,6 +62,8 @@ const AdminCompanies = ({ user }) => {
       address: '',
       email: '',
       phone: '',
+      is_active: true, // Reset is_active
+      description: '', // Reset description
     });
     setFieldErrors({});
     
@@ -165,6 +169,33 @@ const AdminCompanies = ({ user }) => {
             />
             {fieldErrors.phone && (
               <p className="error-text">{fieldErrors.phone}</p>
+            )}
+          </div>
+
+          <div className="form-group checkbox-group">
+            <label htmlFor="is_active">Active</label>
+            <input
+              type="checkbox"
+              id="is_active"
+              name="is_active"
+              checked={formData.is_active}
+              onChange={handleInputChange}
+              className="checkbox-input"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="description">Description</label>
+            <textarea
+              id="description"
+              name="description"
+              value={formData.description}
+              onChange={handleInputChange}
+              placeholder="Entrez la description de l'entité"
+              className={fieldErrors.description ? 'input-error' : ''}
+            />
+            {fieldErrors.description && (
+              <p className="error-text">{fieldErrors.description}</p>
             )}
           </div>
 
