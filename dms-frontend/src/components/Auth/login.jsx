@@ -1,11 +1,16 @@
 // src/components/Auth/Login.jsx
 import React, { useState } from 'react';
 import './login.css';
+import API from '../../api';
 
 const Login = ({ onLogin, error }) => {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [fieldErrors, setFieldErrors] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
+  const [showForgot, setShowForgot] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotError, setForgotError] = useState('');
+  const [forgotSuccess, setForgotSuccess] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -34,6 +39,22 @@ const Login = ({ onLogin, error }) => {
     }
   };
 
+  const handleForgotSubmit = async (e) => {
+    e.preventDefault();
+    setForgotError('');
+    setForgotSuccess('');
+    if (!forgotEmail.trim()) {
+      setForgotError("L'e-mail est requis");
+      return;
+    }
+    try {
+      await API.users.forgotPassword(forgotEmail);
+      setForgotSuccess('Veuillez vérifier votre email pour un mot de passe temporaire.');
+    } catch (err) {
+      setForgotError("Erreur lors de la demande de réinitialisation. Veuillez réessayer.");
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
@@ -46,6 +67,26 @@ const Login = ({ onLogin, error }) => {
         <h2 className="login-title">Connexion DMS</h2>
         <p className="login-subtitle">Service fourni par RAN ESMERALD</p>
 
+        {showForgot ? (
+          <form onSubmit={handleForgotSubmit} className="login-form">
+            <div className="form-group">
+              <label className="form-label">E-mail</label>
+              <input
+                type="email"
+                name="forgotEmail"
+                value={forgotEmail}
+                onChange={e => setForgotEmail(e.target.value)}
+                className="form-input"
+                placeholder="Entrez votre e-mail"
+              />
+            </div>
+            {forgotError && <div className="login-error">{forgotError}</div>}
+            {forgotSuccess && <div className="login-error" style={{ color: '#059669', background: '#f0fdf4' }}>{forgotSuccess}</div>}
+            <button type="submit" className="login-button">Envoyer</button>
+            <button type="button" className="login-button" style={{ background: '#d1d5db', color: '#166534', marginTop: 8 }} onClick={() => setShowForgot(false)}>Retour</button>
+          </form>
+        ) : (
+        <>
         {error && (
           <div className="login-error">
             {error}
@@ -83,6 +124,12 @@ const Login = ({ onLogin, error }) => {
             )}
           </div>
 
+          <div style={{ textAlign: 'right', marginBottom: 8 }}>
+            <button type="button" style={{ background: 'none', border: 'none', color: '#059669', cursor: 'pointer', fontSize: 13, textDecoration: 'underline', padding: 0 }} onClick={() => setShowForgot(true)}>
+              Mot de passe oublié ?
+            </button>
+          </div>
+
           <button
             type="submit"
             disabled={loading}
@@ -101,6 +148,8 @@ const Login = ({ onLogin, error }) => {
             <span className="test-account-label">Utilisateur:</span> user@dms.local / user123
           </div>
         </div>
+        </>
+        )}
       </div>
     </div>
   );
