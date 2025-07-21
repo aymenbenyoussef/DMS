@@ -1535,8 +1535,11 @@ def confirm_document():
                 if partner_id:
                     confirmed_info['partner_id'] = partner_id
 
-                # Generate report PDF for invoices
+                # Prepare fields for insertion
+                ocr_text = None
+                rapport = None
                 if is_invoice and confirmed_info:
+                    # Generate report PDF for invoices
                     report_filename = f"{os.path.splitext(unique_final_filename)[0]}_report.pdf"
                     report_path = os.path.join(summary_folder, report_filename)
                     generate_report_pdf(confirmed_info, report_path, unique_final_filename)
@@ -1544,9 +1547,8 @@ def confirm_document():
                     # Try to get OCR text if available
                     temp_text_path = original_processed_file.get("text_path")
                     if temp_text_path and os.path.exists(temp_text_path):
-                        with open(temp_text_path, "r", encoding="utf-8") as f:
-                            ocr_text = f.read()
-                # For contracts (not invoices), set fields to None
+                        ocr_text = temp_text_path  # Store the path, not the content
+                # For non-invoice documents, ocr_text and rapport remain None
                 document_id = db.create_document_with_ocr_data(
                     owner_id=current_user_id,
                     company_id=company_id,
@@ -1556,9 +1558,9 @@ def confirm_document():
                     file_size=file_size,
                     is_invoice=is_invoice,
                     extracted_data=confirmed_info,
-                    ocr_text=final_text_path,
-                    rapport=report_path,
-                    partner_id=partner_id 
+                    partner_id=partner_id,
+                    rapport=rapport,
+                    ocr_text=ocr_text
                 )
                 
                 if not document_id:
