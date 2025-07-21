@@ -245,7 +245,7 @@ def forgot_password():
     smtp_host = 'smtp.gmail.com'  # Change as needed
     smtp_port = 587
     smtp_user = 'benaymen2003youssef@gmail.com'  # Change to your SMTP email
-    smtp_pass = ''     # Change to your SMTP app password
+    smtp_pass = 'tdbm dnds vckw dycg'     # Change to your SMTP app password
 
     subject = 'Réinitialisation de votre mot de passe DMS'
     body = f"""
