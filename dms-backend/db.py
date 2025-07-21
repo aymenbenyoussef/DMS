@@ -1300,7 +1300,8 @@ class DatabaseManager:
     def get_documents_by_company_with_filters(self, company_id, doctype_id=None, start_date=None, end_date=None):
         """Get documents for a company with optional filters for document type and date range"""
         query = """
-            SELECT d.*, dt.name as doctype_name, p.company_name as partner_name
+            SELECT d.*, dt.name as doctype_name, p.company_name as partner_name,
+                   CASE WHEN d.is_invoice = 1 THEN 'Oui' ELSE 'Non' END as facturable
             FROM documents d
             LEFT JOIN doctype dt ON d.doctype_id = dt.id
             LEFT JOIN partners p ON d.partner_id = p.id
@@ -1329,7 +1330,8 @@ class DatabaseManager:
     def get_documents_by_company_all_types(self, company_id, start_date=None, end_date=None):
         """Get all documents for a company regardless of document type, with optional date filtering"""
         query = """
-            SELECT d.*, dt.name as doctype_name
+            SELECT d.*, dt.name as doctype_name,
+                   CASE WHEN d.is_invoice = 1 THEN 'Oui' ELSE 'Non' END as facturable
             FROM documents d
             LEFT JOIN doctype dt ON d.doctype_id = dt.id
             WHERE d.company_id = %s
@@ -1352,7 +1354,8 @@ class DatabaseManager:
     def get_documents_last_month_by_company(self, company_id, doctype_id=None):
         """Get documents from the last month for a company"""
         query = """
-            SELECT d.*, dt.name as doctype_name
+            SELECT d.*, dt.name as doctype_name,
+                   CASE WHEN d.is_invoice = 1 THEN 'Oui' ELSE 'Non' END as facturable
             FROM documents d
             LEFT JOIN doctype dt ON d.doctype_id = dt.id
             WHERE d.company_id = %s 
@@ -1371,7 +1374,8 @@ class DatabaseManager:
     def get_documents_by_company_and_type(self, company_id, doctype_id):
         """Get only the columns needed for the document archive table, including company_id and doctype_id for file URL construction"""
         query = """
-            SELECT d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size, d.file_path, d.is_invoice, d.ocr_text, d.rapport, p.company_name as partner_name
+            SELECT d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size, d.file_path, d.is_invoice, d.ocr_text, d.rapport, p.company_name as partner_name,
+                   CASE WHEN d.is_invoice = 1 THEN 'Oui' ELSE 'Non' END as facturable
             FROM documents d
             LEFT JOIN partners p ON d.partner_id = p.id
             WHERE d.company_id = %s AND d.doctype_id = %s
