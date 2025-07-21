@@ -58,8 +58,8 @@ const DragDropUpload = ({ onUpload, onClose }) => {
       setUploadStatus('multiple_files_error');
       return;
     }
-    
     const selectedFile = selectedFiles[0];
+    console.log('Selected file:', selectedFile);
     if (selectedFile && isValidFileType(selectedFile)) {
       setFile(selectedFile);
       setUploadStatus(null);
@@ -70,14 +70,20 @@ const DragDropUpload = ({ onUpload, onClose }) => {
 
   const isValidFileType = (file) => {
     const validTypes = [
-      'application/pdf', 
-      'image/jpeg', 
-      'image/png', 
-      'image/tiff', 
-      'application/msword', 
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'image/jpeg',
+      'image/png',
+      'image/tiff',
     ];
-    return validTypes.includes(file.type);
+    const validExtensions = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png', '.tiff'];
+    const fileName = file.name.toLowerCase();
+    // Accept if extension matches, even if type is empty
+    return (
+      (file.type && validTypes.includes(file.type)) ||
+      validExtensions.some(ext => fileName.endsWith(ext))
+    );
   };
 
   const handleUpload = useCallback(async () => {
@@ -262,7 +268,7 @@ const DragDropUpload = ({ onUpload, onClose }) => {
                   <label className="file-input-label">
                     <input
                       type="file"
-                      accept=".pdf,.jpg,.jpeg,.png,.tiff,.doc,.docx"
+                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.tiff"
                       onChange={handleFileChange}
                       className="file-input"
                     />

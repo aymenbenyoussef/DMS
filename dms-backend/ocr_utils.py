@@ -163,7 +163,7 @@ def process_uploaded_files(files, base_upload_path, company_name, doctype_name):
                 text = pytesseract.image_to_string(image, lang='fra+eng')  # French + English
             elif filename.lower().endswith('.pdf'):
                 with open(file_path, 'rb') as pdf_file:
-                    images = convert_from_bytes(pdf_file.read())
+                    images = convert_from_bytes(pdf_file.read(), poppler_path=r'C:\poppler-24.08.0\Library\bin')
                     for img in images:
                         text += pytesseract.image_to_string(img, lang='fra+eng') + "\n"
             
