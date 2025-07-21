@@ -11,6 +11,11 @@ const Login = ({ onLogin, error }) => {
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotError, setForgotError] = useState('');
   const [forgotSuccess, setForgotSuccess] = useState('');
+  const [loginError, setLoginError] = useState('');
+
+  React.useEffect(() => {
+    setLoginError(error || '');
+  }, [error]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -51,8 +56,27 @@ const Login = ({ onLogin, error }) => {
       await API.users.forgotPassword(forgotEmail);
       setForgotSuccess('Veuillez vérifier votre email pour un mot de passe temporaire.');
     } catch (err) {
-      setForgotError("Erreur lors de la demande de réinitialisation. Veuillez réessayer.");
+      if (err.response && err.response.status === 404) {
+        setForgotError("Aucun utilisateur trouvé avec cet e-mail.");
+      } else {
+        setForgotError("Erreur lors de la demande de réinitialisation. Veuillez réessayer.");
+      }
     }
+  };
+
+  // Make error disappear after 5 seconds
+  React.useEffect(() => {
+    if (forgotError) {
+      const timer = setTimeout(() => setForgotError(''), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [forgotError]);
+
+  const handleForgotRetour = () => {
+    setShowForgot(false);
+    setForgotError('');
+    setForgotSuccess('');
+    setForgotEmail('');
   };
 
   const handleChange = (e) => {
@@ -83,13 +107,13 @@ const Login = ({ onLogin, error }) => {
             {forgotError && <div className="login-error">{forgotError}</div>}
             {forgotSuccess && <div className="login-error" style={{ color: '#059669', background: '#f0fdf4' }}>{forgotSuccess}</div>}
             <button type="submit" className="login-button">Envoyer</button>
-            <button type="button" className="login-button" style={{ background: '#d1d5db', color: '#166534', marginTop: 8 }} onClick={() => setShowForgot(false)}>Retour</button>
+            <button type="button" className="login-button" style={{ background: '#d1d5db', color: '#166534', marginTop: 8 }} onClick={handleForgotRetour}>Retour</button>
           </form>
         ) : (
         <>
-        {error && (
+        {loginError && (
           <div className="login-error">
-            {error}
+            {loginError}
           </div>
         )}
 
@@ -125,7 +149,17 @@ const Login = ({ onLogin, error }) => {
           </div>
 
           <div style={{ textAlign: 'right', marginBottom: 8 }}>
-            <button type="button" style={{ background: 'none', border: 'none', color: '#059669', cursor: 'pointer', fontSize: 13, textDecoration: 'underline', padding: 0 }} onClick={() => setShowForgot(true)}>
+            <button
+              type="button"
+              style={{ background: 'none', border: 'none', color: '#059669', cursor: 'pointer', fontSize: 13, textDecoration: 'underline', padding: 0 }}
+              onClick={() => {
+                setShowForgot(true);
+                setForgotError('');
+                setForgotSuccess('');
+                setFieldErrors({ email: '', password: '' });
+                setLoginError('');
+              }}
+            >
               Mot de passe oublié ?
             </button>
           </div>
