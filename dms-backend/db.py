@@ -1386,5 +1386,3 @@ class DatabaseManager:
 db = DatabaseManager()
 db.init_database()
 
-
-
