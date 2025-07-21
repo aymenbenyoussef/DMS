@@ -227,44 +227,47 @@ def login():
     return jsonify(access_token=access_token), 200
 
 # --- Forgot Password Endpoint ---
-@app.route('/forgot-password', methods=['POST'])
+@app.route("/forgot-password", methods=["POST"])
 def forgot_password():
     data = request.get_json()
-    if not data or 'email' not in data:
-        return jsonify({'msg': "L'e-mail est requis"}), 400
-    email = data['email']
+    if not data or "email" not in data:
+        return jsonify({"msg": "L'e-mail est requis"}), 400
+    email = data["email"]
     user = db.get_user_by_email(email)
     if not user:
-        return jsonify({'msg': "Aucun utilisateur trouvé avec cet e-mail."}), 404
+        return jsonify({"msg": "Aucun utilisateur trouvé avec cet e-mail."}), 404
 
     # Generate a secure temporary password
-    temp_password = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
-    db.update_user(user['id'], password=temp_password)
-
+    temp_password = "".join(random.choices(string.ascii_letters + string.digits, k=10))
+    db.update_user(user["id"], password=temp_password)
+    
     # Send email via SMTP
-    smtp_host = 'smtp.gmail.com'  # Change as needed
+    smtp_host = "smtp.gmail.com"  # Change as needed
     smtp_port = 587
-    smtp_user = 'benaymen2003youssef@gmail.com'  # Change to your SMTP email
-    smtp_pass = 'tdbm dnds vckw dycg'     # Change to your SMTP app password
+    smtp_user = "benaymen2003youssef@gmail.com"  # Change to your SMTP email
+    smtp_pass = "tdbm dnds vckw dycg"     # Change to your SMTP app password
 
-    subject = 'Réinitialisation de votre mot de passe DMS'
+    subject = "Réinitialisation de votre mot de passe - RAN ESMERALD"
     body = f"""
-Bonjour {user['username']},
+Cher(e) {user["username"]},
 
-Vous avez demandé la réinitialisation de votre mot de passe DMS.
-Voici votre mot de passe temporaire : {temp_password}
+Nous avons reçu une demande de réinitialisation de mot de passe pour votre compte DMS.
 
-Veuillez vous connecter avec ce mot de passe et le changer dès que possible.
+Votre mot de passe temporaire est : {temp_password}
+
+Pour des raisons de sécurité, veuillez vous connecter à votre compte dès que possible et modifier ce mot de passe temporaire par un mot de passe de votre choix.
+
+Si vous n'avez pas initié cette demande, veuillez ignorer cet e-mail ou contacter notre support technique immédiatement.
 
 Cordialement,
-L'équipe DMS
+L'équipe RAN ESMERALD
 """
     try:
         msg = MIMEMultipart()
-        msg['From'] = smtp_user
-        msg['To'] = email
-        msg['Subject'] = subject
-        msg.attach(MIMEText(body, 'plain'))
+        msg["From"] = smtp_user
+        msg["To"] = email
+        msg["Subject"] = subject
+        msg.attach(MIMEText(body, "plain"))
 
         server = smtplib.SMTP(smtp_host, smtp_port)
         server.starttls()
@@ -272,9 +275,11 @@ L'équipe DMS
         server.sendmail(smtp_user, email, msg.as_string())
         server.quit()
     except Exception as e:
-        return jsonify({'msg': f"Erreur lors de l'envoi de l'e-mail: {str(e)}"}), 500
+        return jsonify({"msg": f"Erreur lors de l'envoi de l'e-mail: {str(e)}"}), 500
 
-    return jsonify({'msg': 'Un mot de passe temporaire a été envoyé à votre adresse e-mail.'}), 200
+    return jsonify({"msg": "Un mot de passe temporaire a été envoyé à votre adresse e-mail."}), 200
+
+
 
 def read_activity_logs():
     """Read log file content directly"""

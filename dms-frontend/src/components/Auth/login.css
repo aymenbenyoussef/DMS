@@ -13,6 +13,7 @@
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
   width: 100%;
   max-width: 400px;
+  min-width: 400px; /* Largeur minimale fixe pour éviter le déplacement */
   padding: 32px;
   transition: all 0.3s ease;
   border: 1px solid #dcfce7; /* Bordure vert clair subtile */
@@ -73,12 +74,94 @@
   font-size: 14px;
   transition: border 0.3s ease;
   background-color: #ffffff;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .form-input:focus {
   outline: none;
   border-color: #10b981; /* Vert medium */
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15); /* Ombre verte subtile */
+}
+
+/* Styles pour le conteneur du champ mot de passe avec icône */
+.password-input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.password-input {
+  padding-right: 48px; /* Espace fixe pour l'icône */
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  width: 28px; /* Largeur fixe pour éviter le déplacement */
+  height: 28px; /* Hauteur fixe pour éviter le déplacement */
+  flex-shrink: 0; /* Empêche la réduction de taille */
+  user-select: none; /* Empêche la sélection du texte */
+}
+
+.password-toggle-btn:hover {
+  color: #10b981;
+  background-color: rgba(16, 185, 129, 0.1);
+}
+
+.password-toggle-btn:focus {
+  outline: none;
+  color: #10b981;
+  background-color: rgba(16, 185, 129, 0.1);
+}
+
+.password-toggle-btn:active {
+  color: #10b981;
+  background-color: rgba(16, 185, 129, 0.2);
+}
+
+/* Conteneur pour le lien "Mot de passe oublié ?" */
+.forgot-password-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+  min-height: 20px; /* Hauteur minimale pour éviter le déplacement */
+}
+
+.forgot-password-link {
+  background: none;
+  border: none;
+  color: #059669;
+  cursor: pointer;
+  font-size: 13px;
+  text-decoration: underline;
+  padding: 0;
+  transition: color 0.2s ease;
+  white-space: nowrap; /* Empêche le retour à la ligne */
+}
+
+.forgot-password-link:hover {
+  color: #047857;
+}
+
+.forgot-password-link:focus {
+  outline: none;
+  color: #047857;
 }
 
 .login-button {
@@ -92,6 +175,8 @@
   cursor: pointer;
   transition: background-color 0.3s ease;
   margin-top: 8px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .login-button:hover {
@@ -122,8 +207,19 @@
   font-weight: 600;
   color: #166534; /* Vert foncé doux */
 }
+
 .field-error {
   color: #ef4444;
   font-size: 0.875rem;
   margin-top: 4px;
 }
+
+/* Styles responsifs pour les petits écrans */
+@media (max-width: 480px) {
+  .login-card {
+    min-width: auto;
+    max-width: 90%;
+    margin: 0 20px;
+  }
+}
+
