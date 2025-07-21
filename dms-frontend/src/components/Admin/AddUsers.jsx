@@ -75,6 +75,43 @@ const AddUser = () => {
   return errorMessages.length === 0;
 };
 
+  // Add per-tab validation functions
+  const isProfileTabValid = () => {
+    return (
+      formData.username.trim() &&
+      formData.surname.trim() &&
+      formData.email.trim() &&
+      formData.email.includes('@')
+    );
+  };
+
+  const isSecurityTabValid = () => {
+    return (
+      formData.password &&
+      formData.passwordConfirm &&
+      formData.password === formData.passwordConfirm
+    );
+  };
+
+  // Add tab navigation with validation
+  const handleNextFromProfile = () => {
+    const errors = {};
+    if (!formData.username.trim()) errors.username = "Le nom d'utilisateur est requis";
+    if (!formData.surname.trim()) errors.surname = 'Le prénom est requis';
+    if (!formData.email.trim()) errors.email = "L'email est requis";
+    else if (!formData.email.includes('@')) errors.email = "L'email est invalide";
+    setFieldErrors(errors);
+    if (Object.keys(errors).length === 0) setActiveTab('security');
+  };
+
+  const handleNextFromSecurity = () => {
+    const errors = {};
+    if (!formData.password) errors.password = 'Le mot de passe est requis';
+    if (!formData.passwordConfirm) errors.passwordConfirm = 'Veuillez confirmer le mot de passe';
+    else if (formData.password !== formData.passwordConfirm) errors.passwordConfirm = 'Les mots de passe ne correspondent pas';
+    setFieldErrors(errors);
+    if (Object.keys(errors).length === 0) setActiveTab('access');
+  };
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -224,7 +261,7 @@ const AddUser = () => {
             <button
               type="button"
               className="btn-green"
-              onClick={() => setActiveTab('security')}
+              onClick={handleNextFromProfile}
             >
               Suivant
             </button>
@@ -266,7 +303,7 @@ const AddUser = () => {
             <button
               type="button"
               className="btn-green"
-              onClick={() => setActiveTab('access')}
+              onClick={handleNextFromSecurity}
             >
               Suivant
             </button>

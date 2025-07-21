@@ -54,6 +54,7 @@ API.interceptors.response.use(
 const users = {
   login: (credentials) => API.post('/login', credentials),
   verifyToken: () => API.get('/verify'),
+  forgotPassword: (email) => API.post('/forgot-password', { email }),
 };
 
 // Admin user management endpoints

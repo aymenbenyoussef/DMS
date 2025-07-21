@@ -19,6 +19,11 @@ from io import BytesIO
 from flask import send_file
 
 import logging
+import random
+import string
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 app = Flask(__name__)
 CORS(app, origins="*", supports_credentials=True)
@@ -208,10 +213,10 @@ def login():
 
     user = db.get_user_by_email(data["email"])
     if not user or not db.verify_password(user["password_hash"], data["password"]):
-        return jsonify({"msg": "Invalid credentials"}), 401
+        return jsonify({"msg": "Identifiants invalides"}), 401
 
     if not user["is_active"]:
-        return jsonify({"msg": "Account is deactivated"}), 401
+        return jsonify({"msg": "Compte désactivé"}), 401
 
     access_token = create_access_token(identity=user["email"], additional_claims={
         "id": user["id"],
@@ -220,6 +225,56 @@ def login():
         "email": user["email"]
     })
     return jsonify(access_token=access_token), 200
+
+# --- Forgot Password Endpoint ---
+@app.route('/forgot-password', methods=['POST'])
+def forgot_password():
+    data = request.get_json()
+    if not data or 'email' not in data:
+        return jsonify({'msg': "L'e-mail est requis"}), 400
+    email = data['email']
+    user = db.get_user_by_email(email)
+    if not user:
+        return jsonify({'msg': "Aucun utilisateur trouvé avec cet e-mail."}), 404
+
+    # Generate a secure temporary password
+    temp_password = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+    db.update_user(user['id'], password=temp_password)
+
+    # Send email via SMTP
+    smtp_host = 'smtp.gmail.com'  # Change as needed
+    smtp_port = 587
+    smtp_user = 'benaymen2003youssef@gmail.com'  # Change to your SMTP email
+    smtp_pass = ''     # Change to your SMTP app password
+
+    subject = 'Réinitialisation de votre mot de passe DMS'
+    body = f"""
+Bonjour {user['username']},
+
+Vous avez demandé la réinitialisation de votre mot de passe DMS.
+Voici votre mot de passe temporaire : {temp_password}
+
+Veuillez vous connecter avec ce mot de passe et le changer dès que possible.
+
+Cordialement,
+L'équipe DMS
+"""
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = smtp_user
+        msg['To'] = email
+        msg['Subject'] = subject
+        msg.attach(MIMEText(body, 'plain'))
+
+        server = smtplib.SMTP(smtp_host, smtp_port)
+        server.starttls()
+        server.login(smtp_user, smtp_pass)
+        server.sendmail(smtp_user, email, msg.as_string())
+        server.quit()
+    except Exception as e:
+        return jsonify({'msg': f"Erreur lors de l'envoi de l'e-mail: {str(e)}"}), 500
+
+    return jsonify({'msg': 'Un mot de passe temporaire a été envoyé à votre adresse e-mail.'}), 200
 
 def read_activity_logs():
     """Read log file content directly"""
