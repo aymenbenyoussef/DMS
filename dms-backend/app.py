@@ -27,7 +27,7 @@ from email.mime.multipart import MIMEMultipart
 
 app = Flask(__name__)
 CORS(app, origins="*", supports_credentials=True)
-print("THIS IS THE CORRECT APP.PY")
+
 # Configure logging
 app.logger.setLevel(logging.DEBUG)
 handler = logging.StreamHandler()
@@ -151,7 +151,7 @@ def process_single_file_ocr(file, company_id, doctype_id):
             text = pytesseract.image_to_string(image, lang='fra+eng')
         elif filename.lower().endswith('.pdf'):
             with open(temp_file_path, 'rb') as pdf_file:
-                images = convert_from_bytes(pdf_file.read())
+                images = convert_from_bytes(pdf_file.read(), poppler_path=r'C:\poppler-24.08.0\Library\bin')
                 for img in images:
                     text += pytesseract.image_to_string(img, lang='fra+eng') + "\n"
         
@@ -337,7 +337,6 @@ def create_user():
         return jsonify({"msg": "A user with this email already exists"}), 400
 
     try:
-        print(data)
         user_id = db.create_user(
             username=data['username'],
             surname=data['surname'],
@@ -462,11 +461,10 @@ def get_partnertypes():
 @app.route('/partnertype', methods=['POST'])
 @jwt_required()
 def create_partner_type():
-    print("hello")
+    
     current_user_claims = get_jwt()
     data = request.get_json()
-    print("backend")
-    print(f"Received data for partner type creation: {data}") # Added logging
+    
     if not data or 'name' not in data:
         return jsonify({"msg": "Partner type name is required"}), 400
     
@@ -1537,16 +1535,13 @@ def confirm_document():
                     report_filename = f"{os.path.splitext(unique_final_filename)[0]}_report.pdf"
                     report_path = os.path.join(summary_folder, report_filename)
                     generate_report_pdf(confirmed_info, report_path, unique_final_filename)
-                    with open(report_path, 'rb') as f:
-                        rapport_bytes = f.read()
-                else:
-                    rapport_bytes = None
-                
-                # Generate JSON summary
-                json_filename = f"{os.path.splitext(unique_final_filename)[0]}_summary.json"
-                json_path = os.path.join(summary_folder, json_filename)
-                
-                # Save document to database
+                    rapport = report_path
+                    # Try to get OCR text if available
+                    temp_text_path = original_processed_file.get("text_path")
+                    if temp_text_path and os.path.exists(temp_text_path):
+                        with open(temp_text_path, "r", encoding="utf-8") as f:
+                            ocr_text = f.read()
+                # For contracts (not invoices), set fields to None
                 document_id = db.create_document_with_ocr_data(
                     owner_id=current_user_id,
                     company_id=company_id,
@@ -1813,27 +1808,7 @@ def get_documents_last_month(company_id):
 def get_all_documents_by_company(company_id):
     """Get all documents for a company regardless of document type"""
     try:
-        start_date = request.args.get('start_date')
-        end_date = request.args.get('end_date')
-        
-        # Validate date format if provided
-        if start_date:
-            try:
-                datetime.strptime(start_date, '%Y-%m-%d')
-            except ValueError:
-                return jsonify({"msg": "Invalid start_date format. Use YYYY-MM-DD"}), 400
-        
-        if end_date:
-            try:
-                datetime.strptime(end_date, '%Y-%m-%d')
-            except ValueError:
-                return jsonify({"msg": "Invalid end_date format. Use YYYY-MM-DD"}), 400
-        
-        documents = db.get_documents_by_company_all_types(
-            company_id=company_id,
-            start_date=start_date,
-            end_date=end_date
-        )
+        documents = db.get_documents_by_company_all_types(company_id)
         
         # Process documents
         processed_documents = []
@@ -1855,7 +1830,6 @@ def get_all_documents_by_company(company_id):
                     doc['extracted_data'] = json.loads(doc['extracted_data'])
                 except:
                     pass
-            
             processed_documents.append(doc)
         
         return jsonify({
@@ -2069,7 +2043,7 @@ def cors_test():
     return "CORS OK"
 
 def get_rapport_pdf(doc_id):
-    print("back")
+    
     # Fetch rapport (PDF bytes) and filename from the database
     rapport_bytes = db.get_rapport_pdf(doc_id)
     doc = db.get_document_by_id(doc_id)
@@ -2100,7 +2074,7 @@ if __name__ == '__main__':
     ensure_log_dir()
     
     # Print all registered routes for debugging
-    print("Registered routes:")
+    
     for rule in app.url_map.iter_rules():
         print(f"  {rule.rule} -> {rule.endpoint}")
     

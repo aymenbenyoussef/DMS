@@ -1329,24 +1329,13 @@ class DatabaseManager:
     def get_documents_by_company_all_types(self, company_id, start_date=None, end_date=None):
         """Get all documents for a company regardless of document type, with optional date filtering"""
         query = """
-            SELECT d.*, dt.name as doctype_name
+            SELECT d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size, d.file_path, d.is_invoice, d.ocr_text, d.rapport, p.company_name as partner_name
             FROM documents d
-            LEFT JOIN doctype dt ON d.doctype_id = dt.id
+            LEFT JOIN partners p ON d.partner_id = p.id
             WHERE d.company_id = %s
+            ORDER BY d.created_at DESC
         """
         params = [company_id]
-        
-        # Add date range filters if provided
-        if start_date:
-            query += " AND DATE(d.created_at) >= %s"
-            params.append(start_date)
-        
-        if end_date:
-            query += " AND DATE(d.created_at) <= %s"
-            params.append(end_date)
-        
-        query += " ORDER BY d.created_at DESC"
-        
         return self.execute_query(query, params, fetch=True)
 
     def get_documents_last_month_by_company(self, company_id, doctype_id=None):

@@ -246,20 +246,8 @@ const documents = {
   },
 
   // Get all documents for a company
-  getAllByCompany: (companyId, filters = {}) => {
-    const params = new URLSearchParams();
-    
-    if (filters.startDate) {
-      params.append('start_date', filters.startDate);
-    }
-    if (filters.endDate) {
-      params.append('end_date', filters.endDate);
-    }
-    
-    const queryString = params.toString();
-    const url = `/documents/company/${companyId}/all${queryString ? '?' + queryString : ''}`;
-    
-    return API.get(url);
+  getAllByCompany: (companyId) => {
+    return API.get(`/documents/company/${companyId}/all`);
   }
 };
 

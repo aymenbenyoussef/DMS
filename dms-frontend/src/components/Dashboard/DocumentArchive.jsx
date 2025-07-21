@@ -71,12 +71,8 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
           selectedDoctype.id
         );
       } else {
-        // If no specific doctype, get all documents for the company
-        const filters = {};
-        if (startDate) filters.startDate = startDate;
-        if (endDate) filters.endDate = endDate;
-        
-        response = await API.documents.getAllByCompany(selectedCompany.id, filters);
+        // If no specific doctype, get all documents for the company (no filters)
+        response = await API.documents.getAllByCompany(selectedCompany.id);
       }
       
       setDocuments(response.data.documents || []);
@@ -514,7 +510,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
   }
 
   return (
-    <div className="container-fluid py-4">
+    <div className="container-fluid py-4" style={{ maxHeight: '90vh', overflowY: 'auto' }}>
       {/* Upload Modal */}
       {isUploadModalOpen && (
           <div className="modal-dialog modal-lg">
@@ -656,14 +652,15 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
               </div>
             </div>
           ) : filteredDocuments.length > 0 ? (
-            <div className="table-responsive">
-              <table className="table table-hover">
-                <thead>
+            <div className="table-responsive" style={{ maxHeight: '500px', overflowY: 'auto' }}>
+              <table className="table table-hover" style={{ minWidth: '900px' }}>
+                <thead style={{ position: 'sticky', top: 0, background: '#f8f9fa', zIndex: 2 }}>
                   <tr>
                     <th>ID</th>
                     <th>Document</th>
                     <th>Partner</th>
-                    <th>Données extraites</th>
+                    <th>Facture</th>
+                    <th>Rapport</th>
                     <th>OCR extrait</th>
                     <th>Date d'upload</th>
                     <th>Actions</th>
@@ -676,7 +673,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                       <td>
                         <div className="d-flex align-items-center">
                           <i className={`bi ${getFileIconClass(doc.filename)} me-2`}></i>
-                          <div>
+                          <div style={{ maxWidth: '400px', wordBreak: 'break-word', whiteSpace: 'normal' }}>
                             <div className="fw-medium">{doc.filename}</div>
                             <small className="text-muted">
                               {getFileType(doc.filename)} • {formatFileSize(doc.file_size || doc.size || 0)}
@@ -685,6 +682,31 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                         </div>
                       </td>
                       <td>{doc.partner_name || '-'}</td>
+                      <td>
+                        {doc.is_invoice ? (
+                          <span style={{
+                            display: 'inline-block',
+                            background: '#dcfce7',
+                            color: '#16a34a',
+                            fontWeight: 'bold',
+                            borderRadius: '999px',
+                            padding: '2px 14px',
+                            fontSize: '0.95em',
+                            border: '1px solid #bbf7d0',
+                          }}>oui</span>
+                        ) : (
+                          <span style={{
+                            display: 'inline-block',
+                            background: '#fee2e2',
+                            color: '#dc2626',
+                            fontWeight: 'bold',
+                            borderRadius: '999px',
+                            padding: '2px 14px',
+                            fontSize: '0.95em',
+                            border: '1px solid #fecaca',
+                          }}>non</span>
+                        )}
+                      </td>
                       <td>
                         <div className="extracted-data-cell">
                           {doc.rapport ? (
