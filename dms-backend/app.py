@@ -141,9 +141,8 @@ def process_single_file_ocr(file, company_id, doctype_id):
         timestamp = int(datetime.now().timestamp())
         unique_filename = f"{timestamp}_{filename}"
         temp_file_path = os.path.join(app.config['TEMP_UPLOAD_FOLDER'], unique_filename)
-        
         file.save(temp_file_path)
-        
+
         # Perform OCR based on file type
         text = ""
         if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff')):
@@ -154,25 +153,27 @@ def process_single_file_ocr(file, company_id, doctype_id):
                 images = convert_from_bytes(pdf_file.read(), poppler_path=r'C:\poppler-24.08.0\Library\bin')
                 for img in images:
                     text += pytesseract.image_to_string(img, lang='fra+eng') + "\n"
-        
-        # Save OCR text to temporary folder
-        text_filename = f"{os.path.splitext(unique_filename)[0]}.txt"
-        text_path = os.path.join(app.config['TEMP_UPLOAD_FOLDER'], text_filename)
-        with open(text_path, 'w', encoding='utf-8') as f:
-            f.write(text)
-        
-        # Extract structured data
+
+        # Extract invoice data from OCR text
         extracted_data = extract_invoice_data(text)
-        
+        is_invoice = extracted_data.get('is_invoice', False)
+
+        text_path = None
+        if is_invoice:
+            # Save OCR text to temporary folder only for invoices
+            text_filename = f"{os.path.splitext(unique_filename)[0]}.txt"
+            text_path = os.path.join(app.config['TEMP_UPLOAD_FOLDER'], text_filename)
+            with open(text_path, "w", encoding="utf-8") as f:
+                f.write(text)
+
         return {
             "filename": unique_filename,
             "original_filename": filename,
-            "temp_file_path": temp_file_path,  # Temporary path
+            "temp_file_path": temp_file_path,
             "text_path": text_path,
-            "ocr_text": text,
+            "ocr_text": text if is_invoice else None,
             "extracted_data": extracted_data
         }
-        
     except Exception as e:
         return {
             "filename": file.filename,
@@ -1560,7 +1561,7 @@ def confirm_document():
                     extracted_data=confirmed_info,
                     partner_id=partner_id,
                     rapport=rapport,
-                    ocr_text=ocr_text
+                    ocr_text=temp_text_path
                 )
                 
                 if not document_id:

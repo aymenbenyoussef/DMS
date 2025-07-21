@@ -84,13 +84,16 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Add FilesUploaded event listener only once per company/type change
+  useEffect(() => {
     const documentHandler = () => fetchDocuments();
     window.addEventListener('FilesUploaded', documentHandler);
-
     return () => {
       window.removeEventListener('FilesUploaded', documentHandler);
     };
-  };
+  }, [selectedCompany, selectedDoctype]);
 
   // Function to fetch available document types for the company
   const fetchAvailableDoctypes = async () => {
