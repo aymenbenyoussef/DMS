@@ -106,6 +106,9 @@ const DocumentConfirmationForm = ({
       if (field === 'is_invoice') {
         updated[idx].is_invoice = value;
         updated[idx].confirmed_data.is_invoice = value;
+        // Reset partner selection when toggling invoice status
+        updated[idx].confirmed_data.partner_id = '';
+        updated[idx].confirmed_data.partner = '';
       } else {
         updated[idx].confirmed_data[field] = value;
       }
@@ -117,6 +120,11 @@ const DocumentConfirmationForm = ({
       if (newErrors[idx] && newErrors[idx][field]) {
         newErrors[idx] = { ...newErrors[idx] };
         delete newErrors[idx][field];
+      }
+      // Also clear partner_id error if toggling is_invoice
+      if (field === 'is_invoice' && newErrors[idx] && newErrors[idx]['partner_id']) {
+        newErrors[idx] = { ...newErrors[idx] };
+        delete newErrors[idx]['partner_id'];
       }
       return newErrors;
     });

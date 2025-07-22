@@ -513,7 +513,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
   }
 
   return (
-    <div className="container-fluid py-4" style={{ maxHeight: '90vh', overflowY: 'auto' }}>
+    <div className="container-fluid py-4">
       {/* Upload Modal */}
       {isUploadModalOpen && (
           <div className="modal-dialog modal-lg">
