@@ -3,6 +3,11 @@ import API from '../../api';
 import './AdminUsers.css';
 import { Link, useNavigate } from 'react-router-dom';
 
+// Helper to convert snake_case to camelCase
+function toCamelCase(str) {
+  return str.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+}
+
 const AddPartner = ({ user }) => {
   const [activeTab, setActiveTab] = useState('Identity');
   const [formData, setFormData] = useState({
@@ -34,6 +39,7 @@ const AddPartner = ({ user }) => {
   const [fieldValidation, setFieldValidation] = useState({});
   const navigate = useNavigate();
   const [error, setError] = useState('');
+  const [hasSubmitted, setHasSubmitted] = useState(false);
 
   const validateFieldAsync = async (fieldName, fieldValue) => {
     if (!fieldValue || fieldValue.trim() === '') {
@@ -138,6 +144,14 @@ const AddPartner = ({ user }) => {
       }
     }
 
+    // Billing and payments tab validation
+    if (tab === 'Billing and payments') {
+      if (!formData.bankAccountNumber.trim()) {
+        errors.bankAccountNumber = 'Bank account number is required';
+        errorMessages.push('Bank account number is required');
+      }
+    }
+
     return { errors, errorMessages };
   };
 
@@ -173,6 +187,7 @@ const AddPartner = ({ user }) => {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
+    let newValue = type === 'checkbox' ? checked : value;
     
     if (name === 'companies' || name === 'partnertypes') {
       const id = parseInt(value, 10);
@@ -191,7 +206,7 @@ const AddPartner = ({ user }) => {
     } else {
       setFormData((prev) => ({
         ...prev,
-        [name]: type === 'checkbox' ? checked : value
+        [name]: newValue
       }));
       
       // Validate unique fields in real-time with debouncing
@@ -207,8 +222,14 @@ const AddPartner = ({ user }) => {
       }
     }
     
-    // Clear error for this field when it changes
-    setFieldErrors((prev) => ({ ...prev, [name]: '' }));
+    // Only clear the error for this field if the value actually changes
+    setFieldErrors((prev) => {
+      if (prev[name]) {
+        return { ...prev, [name]: '' };
+      }
+      return prev;
+    });
+    setHasSubmitted(false);
   };
 
   const handleTabChange = (tab) => {
@@ -221,19 +242,22 @@ const AddPartner = ({ user }) => {
       setFieldErrors(errors);
       setGlobalErrors(errorMessages);
     }
+    setHasSubmitted(false);
   };
 
   // In AddPartner.jsx, update the handleSubmit function
 const handleSubmit = async (e) => {
   e.preventDefault();
+  setHasSubmitted(true);
   setGlobalErrors([]);
   
   // Validate all tabs before submitting
   const { errors: identityErrors, errorMessages: identityMessages } = validate('Identity');
   const { errors: contactErrors, errorMessages: contactMessages } = validate('Contact');
+  const { errors: billingErrors, errorMessages: billingMessages } = validate('Billing and payments');
   
-  const allErrors = { ...identityErrors, ...contactErrors };
-  const allMessages = [...identityMessages, ...contactMessages];
+  const allErrors = { ...identityErrors, ...contactErrors, ...billingErrors };
+  const allMessages = [...identityMessages, ...contactMessages, ...billingMessages];
   
   if (allMessages.length > 0) {
     setFieldErrors(allErrors);
@@ -271,45 +295,31 @@ const handleSubmit = async (e) => {
     }, 1500);
   } catch (err) {
     let errorMsg = 'Error creating partner';
-    
+    let errors = {};
     if (err.response) {
-      // Handle specific validation errors
-      if (err.response.data.message?.includes('unique identifier')) {
-        setFieldErrors({...fieldErrors, uniqueIdentifier: err.response.data.message});
-        errorMsg = err.response.data.message;
-      } 
-      else if (err.response.data.message?.includes('email')) {
-        setFieldErrors({...fieldErrors, email: err.response.data.message});
-        errorMsg = err.response.data.message;
+      const msg = err.response.data.message || err.response.data.msg || '';
+      if (msg.toLowerCase().includes('nom d\'entreprise')) {
+        errorMsg = 'Le nom d\'entreprise existe déjà';
+        errors.companyName = 'Le nom d\'entreprise existe déjà';
+      } else if (msg.toLowerCase().includes('identifiant unique')) {
+        errorMsg = 'L\'identifiant unique existe déjà';
+        errors.uniqueIdentifier = 'L\'identifiant unique existe déjà';
+      } else if (msg.toLowerCase().includes('email')) {
+        errorMsg = 'L\'email existe déjà';
+        errors.email = 'L\'email existe déjà';
+      } else if (msg.toLowerCase().includes('numéro de téléphone principal')) {
+        errorMsg = 'Le numéro de téléphone principal existe déjà';
+        errors.phone1 = 'Le numéro de téléphone principal existe déjà';
+      } else if (msg.toLowerCase().includes('adresse postale')) {
+        errorMsg = 'L\'adresse postale existe déjà';
+        errors.mailingAddress = 'L\'adresse postale existe déjà';
+      } else if (msg.toLowerCase().includes('numéro de compte bancaire')) {
+        errorMsg = 'Le numéro de compte bancaire existe déjà';
+        errors.bankAccountNumber = 'Le numéro de compte bancaire existe déjà';
       }
-      else if (err.response.data.message?.includes('phone1')) {
-        setFieldErrors({...fieldErrors, phone1: err.response.data.message});
-        errorMsg = err.response.data.message;
-      }
-      else if (err.response.data.message?.includes('mailing address')) {
-        setFieldErrors({...fieldErrors, mailingAddress: err.response.data.message});
-        errorMsg = err.response.data.message;
-      }
-      else if (err.response.data.message?.includes('bank account number')) {
-        setFieldErrors({...fieldErrors, bankAccountNumber: err.response.data.message});
-        errorMsg = err.response.data.message;
-      }
-      else if (err.response.data.message?.includes('company name')) {
-        setFieldErrors({...fieldErrors, companyName: err.response.data.message});
-        errorMsg = err.response.data.message;
-      }
-      else {
-        errorMsg = err.response.data.message || err.response.data.msg || errorMsg;
-      }
-      
-      // Handle field-specific errors from API
-      if (err.response.data.errors) {
-        setFieldErrors(err.response.data.errors);
-      }
-    } else if (err.request) {
-      errorMsg = 'Network error. Please check your connection.';
+      // Add more fields as needed
     }
-
+    setFieldErrors((prev) => ({ ...prev, ...errors }));
     setGlobalErrors([errorMsg]);
     console.error('Partner creation error:', err);
   } finally {
@@ -593,14 +603,16 @@ const handleSubmit = async (e) => {
             />
           </div>
           <div className="form-group">
-            <label>Bank account number</label>
+            <label>Bank account number *</label>
             <input
               type="text"
               name="bankAccountNumber"
               placeholder="Enter bank account number"
               value={formData.bankAccountNumber}
               onChange={handleInputChange}
+              className={fieldErrors.bankAccountNumber ? 'input-error' : ''}
             />
+            {fieldErrors.bankAccountNumber && <div className="field-error">{fieldErrors.bankAccountNumber}</div>}
             {fieldValidation.bankAccountNumber && (
               <div className={`field-validation ${fieldValidation.bankAccountNumber.isValid ? 'valid' : 'invalid'}`}>
                 {fieldValidation.bankAccountNumber.message}
@@ -647,6 +659,17 @@ const handleSubmit = async (e) => {
               rows="4"
             />
           </div>
+
+          {/* Show global existence errors above the Create button */}
+          {hasSubmitted && Object.keys(fieldErrors).length > 0 && (
+            <div className="alert alert-error" style={{marginBottom: '16px'}}>
+              <ul style={{margin: 0, paddingLeft: '20px'}}>
+                {Object.entries(fieldErrors).map(([key, msg]) =>
+                  msg ? <li key={key}>{msg}</li> : null
+                )}
+              </ul>
+            </div>
+          )}
 
           <div className="form-actions">
             <button
