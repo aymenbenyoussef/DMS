@@ -37,6 +37,94 @@
   background-color: #f8f9fa; /* Give it a solid background */
 }
 
+/* --- NEW SEARCH & FILTER CONTAINER STYLES --- */
+
+/* Compact search and filter container */
+.search-filter-container {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.search-filter-container .card-body {
+  padding: 1rem !important; /* Reduced padding */
+}
+
+.search-filter-container h2 {
+  font-size: 1rem !important; /* Smaller title */
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.75rem !important;
+}
+
+/* Compact form controls */
+.search-filter-container .form-control-sm {
+  padding: 0.375rem 0.5rem;
+  font-size: 0.875rem;
+  border-radius: 0.375rem;
+}
+
+.search-filter-container .form-label {
+  font-size: 0.75rem !important;
+  font-weight: 500;
+  color: #6b7280;
+  margin-bottom: 0.25rem !important;
+}
+
+.search-filter-container .form-label.small {
+  font-size: 0.75rem;
+}
+
+/* Compact checkboxes */
+.search-filter-container .form-check-sm {
+  margin-bottom: 0.25rem;
+}
+
+.search-filter-container .form-check-sm .form-check-input {
+  margin-top: 0.125rem;
+  transform: scale(0.9);
+}
+
+.search-filter-container .form-check-sm .form-check-label {
+  font-size: 0.75rem;
+  padding-left: 0.25rem;
+}
+
+/* Search input group styling */
+.search-filter-container .input-group-sm .btn {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+.search-filter-container .input-group-sm .btn i {
+  font-size: 0.875rem;
+}
+
+/* Responsive adjustments for search & filter */
+@media (max-width: 768px) {
+  .search-filter-container .row.g-3 {
+    --bs-gutter-x: 1rem;
+  }
+  
+  .search-filter-container .col-md-6 {
+    margin-bottom: 0.75rem;
+  }
+  
+  .search-filter-container .d-flex.flex-wrap.gap-2 {
+    gap: 0.5rem !important;
+  }
+}
+
+/* Ensure proper spacing between sections */
+.search-filter-container .row.g-2 {
+  --bs-gutter-x: 0.5rem;
+  --bs-gutter-y: 0.5rem;
+}
+
+.search-filter-container .row.g-3 {
+  --bs-gutter-x: 1rem;
+  --bs-gutter-y: 1rem;
+}
+
 /* --- MODIFICATIONS END HERE --- */
 
 .document-grid {
@@ -933,3 +1021,4 @@
   border-color: #6c757d;
   color: #fff;
 }
+

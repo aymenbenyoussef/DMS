@@ -558,85 +558,81 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
         <div className="alert alert-success">{successMessage}</div>
       )}
       
-      {/* Stats Cards 
-      <div className="row g-3 mb-4">
-        {['Documents totaux', 'Facturable', 'Non Facturable'].map((title, index) => (
-          <div key={index} className="col-md-4">
-            <div className="card h-100">
-              <div className="card-body">
-                <h3 className="card-title fs-6 text-muted">{title}</h3>
-                <p className="card-text fs-4 fw-bold">
-                  {index === 0 ? filteredDocuments.length : 0} Active
-                </p>
+      {/* Search and Filter Section - MODIFIED */}
+      <div className="card mb-4 search-filter-container">
+        <div className="card-body p-3">
+          <h2 className="h6 mb-3">Recherche & Filtres</h2>
+          
+          <div className="row g-3">
+            {/* Left Column - Filters */}
+            <div className="col-md-6">
+              {/* Date Range Filters */}
+              <div className="row g-2 mb-3">
+                <div className="col-6">
+                  <label className="form-label small">Date de début</label>
+                  <input 
+                    type="date" 
+                    className="form-control form-control-sm"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                  />
+                </div>
+                <div className="col-6">
+                  <label className="form-label small">Date de fin</label>
+                  <input 
+                    type="date" 
+                    className="form-control form-control-sm"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                  />
+                </div>
               </div>
-            </div>
-          </div>
-        ))}
-      </div>*/}
-      {/* Search and Filter Section */}
-      <div className="card mb-4">
-        <div className="card-body">
-          <h2 className="h5 mb-3">Search & Filter</h2>
-          
-          {/* Search Input */}
-          <div className="input-group mb-3">
-            <input 
-              type="text" 
-              placeholder="Search documents..." 
-              className="form-control"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <button className="btn btn-primary">Search</button>
-          </div>
-          
-          {/* Date Range Filters */}
-          <div className="row mb-3">
-            <div className="col-md-6">
-              <label className="form-label">Date de début</label>
-              <input 
-                type="date" 
-                className="form-control"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-              />
-            </div>
-            <div className="col-md-6">
-              <label className="form-label">Date de fin</label>
-              <input 
-                type="date" 
-                className="form-control"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-              />
-            </div>
-          </div>
-          
-          {/* Document Type Filters - Only show when no specific doctype is selected */}
-          {!selectedDoctype && availableDoctypes.length > 0 && (
-            <div>
-              <h6 className="mb-2">Types de documents</h6>
-              <div className="d-flex flex-wrap gap-3">
-                {availableDoctypes.map((doctype) => (
-                  <div key={doctype.id} className="form-check">
-                    <input 
-                      type="checkbox" 
-                      className="form-check-input" 
-                      id={`filter-doctype-${doctype.id}`}
-                      checked={selectedDoctypeFilters.includes(doctype.id)}
-                      onChange={() => handleDoctypeFilterChange(doctype.id)}
-                    />
-                    <label 
-                      className="form-check-label text-muted" 
-                      htmlFor={`filter-doctype-${doctype.id}`}
-                    >
-                      {doctype.name}
-                    </label>
+              
+              {/* Document Type Filters - Only show when no specific doctype is selected */}
+              {!selectedDoctype && availableDoctypes.length > 0 && (
+                <div>
+                  <h6 className="mb-2 small">Types de documents</h6>
+                  <div className="d-flex flex-wrap gap-2">
+                    {availableDoctypes.map((doctype) => (
+                      <div key={doctype.id} className="form-check form-check-sm">
+                        <input 
+                          type="checkbox" 
+                          className="form-check-input" 
+                          id={`filter-doctype-${doctype.id}`}
+                          checked={selectedDoctypeFilters.includes(doctype.id)}
+                          onChange={() => handleDoctypeFilterChange(doctype.id)}
+                        />
+                        <label 
+                          className="form-check-label text-muted small" 
+                          htmlFor={`filter-doctype-${doctype.id}`}
+                        >
+                          {doctype.name}
+                        </label>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                </div>
+              )}
+            </div>
+            
+            {/* Right Column - Search */}
+            <div className="col-md-6">
+              <label className="form-label small">Rechercher</label>
+              <div className="input-group input-group-sm">
+                <input 
+                  type="text" 
+                  placeholder="Rechercher des documents..." 
+                  className="form-control"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                <button className="btn btn-primary btn-sm">
+                  Recherche
+                  <i className="bi bi-search"></i>
+                </button>
               </div>
             </div>
-          )}
+          </div>
         </div>
       </div>
 
@@ -937,3 +933,4 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
 };
 
 export default DocumentArchive;
+
