@@ -229,6 +229,7 @@ const AdminDoctypes = ({ user }) => {
       setShowModifyTab(false);
       setActiveTab('list');
       fetchDoctypes();
+      window.dispatchEvent(new Event('doctypeUpdated'));
     } catch (err) {
       const apiError = err.response?.data;
       const errorMessage = apiError?.msg || apiError?.error || apiError?.message || 'Error updating document type';

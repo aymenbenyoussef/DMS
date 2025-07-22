@@ -47,6 +47,44 @@ const AdminUsers = ({user ,loadingUser}) => {
   const [usersTimeout, setUsersTimeout] = useState(false);
   const [companiesTimeout, setCompaniesTimeout] = useState(false);
 
+  // Move loadData to top level so it can be called after updates
+  const loadData = async () => {
+    setLoading(true);
+    setError('');
+    setTimeoutError(false);
+    let timeoutId;
+    timeoutId = setTimeout(() => {
+      setTimeoutError(true);
+    }, 8000);
+    try {
+      const [companiesRes, usersRes] = await Promise.all([
+        API.companies.getAll(),
+        API.admin.getUsers()
+      ]);
+      clearTimeout(timeoutId);
+      setTimeoutError(false);
+      let companiesArray = Array.isArray(companiesRes?.data) ? companiesRes.data : companiesRes?.data?.companies;
+      if (!Array.isArray(companiesArray)) companiesArray = [];
+      setCompanies(companiesArray);
+      const usersWithCompanies = Array.isArray(usersRes?.data)
+        ? usersRes.data.map(u => ({ ...u, companies: u.companies || [] }))
+        : [];
+      setUsers(usersWithCompanies);
+      setFilteredUsers(usersWithCompanies);
+      const companiesMap = {};
+      usersWithCompanies.forEach(u => {
+        companiesMap[u.id] = u.companies;
+      });
+      setUserCompanies(companiesMap);
+    } catch (err) {
+      clearTimeout(timeoutId);
+      setError('Erreur lors du chargement des données: ' + (err?.message || err));
+      console.error('AdminUsers loadData error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (loadingUser || !user?.id) return;
     let isMounted = true;
@@ -265,7 +303,7 @@ const AdminUsers = ({user ,loadingUser}) => {
         });
         setEditingUser(null);
         setActiveTab('list');
-        //fetchUsers();
+        await loadData();
       }
     } catch (err) {
       const errorMsg = err.response?.data?.msg || "Error occurred while creating the entity.";
@@ -382,6 +420,11 @@ const AdminUsers = ({user ,loadingUser}) => {
 
       {activeTab === 'list' && (
         <div className="users-list">
+          {success && (
+            <div className="alert alert-success" style={{marginBottom: '16px', textAlign: 'left'}}>
+              {success}
+            </div>
+          )}
           {showSpinner ? (
             <div className="loading-message">
               <div className="loading-spinner" style={{marginRight:'8px',display:'inline-block',verticalAlign:'middle'}}></div>

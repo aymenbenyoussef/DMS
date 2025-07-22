@@ -71,7 +71,12 @@ const Sidebar = ({ user, loadingUser }) => {
     const companyHandler = () => fetchCompanies();
 
     const doctypeHandler = (e) => {
-      const companyIds = e.detail.affectedCompanyIds || [];
+      let companyIds = [];
+      if (e && e.detail && Array.isArray(e.detail.affectedCompanyIds)) {
+        companyIds = e.detail.affectedCompanyIds;
+      } else {
+        companyIds = Object.keys(folders);
+      }
       companyIds.forEach(companyId => {
         if (folders[companyId]) {
           fetchFoldersForCompany(companyId);
@@ -79,6 +84,9 @@ const Sidebar = ({ user, loadingUser }) => {
       });
     };
 
+    // Add listeners for companyUpdated and doctypeUpdated
+    window.addEventListener('companyUpdated', companyHandler);
+    window.addEventListener('doctypeUpdated', doctypeHandler);
     window.addEventListener('companyAdded', companyHandler);
     window.addEventListener('companyDeleted', companyHandler);
     window.addEventListener('doctypeAdded', doctypeHandler);
@@ -86,6 +94,8 @@ const Sidebar = ({ user, loadingUser }) => {
     window.addEventListener('doctypeUpdated', doctypeHandler);
 
     return () => {
+      window.removeEventListener('companyUpdated', companyHandler);
+      window.removeEventListener('doctypeUpdated', doctypeHandler);
       window.removeEventListener('companyAdded', companyHandler);
       window.removeEventListener('companyDeleted', companyHandler);
       window.removeEventListener('doctypeAdded', doctypeHandler);
@@ -202,7 +212,7 @@ const Sidebar = ({ user, loadingUser }) => {
         ) : (!error && !timeoutError && companies.length === 0) ? (
           <div className="no-results">Aucune entreprise trouvée</div>
         ) : (!error && !timeoutError && companies.map) ? (
-          companies.map(company => (
+          companies.filter(company => company.is_active).map(company => (
             <React.Fragment key={company.id}>
               <li
                 className={`folder-item ${selectedCompany?.id === company.id ? 'selected' : ''}`}
@@ -230,7 +240,7 @@ const Sidebar = ({ user, loadingUser }) => {
                     </div>
                   ) : (
                     folders[company.id]?.length > 0 ? (
-                      folders[company.id].map(folder => (
+                      folders[company.id].filter(folder => folder.status).map(folder => (
                         <li
                           key={folder.id}
                           className={`folder-item folder-subitem ${selectedDoctype?.id === folder.id ? 'selected' : ''}`}

@@ -1592,7 +1592,7 @@ def confirm_document():
                 
                 # Log document creation
                 log_activity(
-                    actor=current_user_claims.get('username', 'Unknown'),
+                    actor=f"{current_user_claims.get('username', 'Unknown')} (id={current_user_id})",
                     action="Create",
                     resource_type="document",
                     resource_data={

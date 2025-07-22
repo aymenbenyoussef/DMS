@@ -193,6 +193,7 @@ const AdminCompanies = ({ user }) => {
       setShowModifyTab(false);
       setActiveTab('list');
       fetchCompanies();
+      window.dispatchEvent(new Event('companyUpdated'));
     } catch (err) {
       const apiError = err.response?.data;
       const errorMessage = apiError?.msg || apiError?.error || apiError?.message || 'Error updating company';

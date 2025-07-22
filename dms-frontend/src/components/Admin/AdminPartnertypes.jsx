@@ -117,7 +117,7 @@ const AdminPartnerTypes = ({ user }) => {
     setEditingPartnerType(partnerType);
     setFormData({
       name: partnerType.name || '',
-      status: partnerType.status || true
+      status: partnerType.status
     });
     setShowModifyTab(true);
     setActiveTab('form');
