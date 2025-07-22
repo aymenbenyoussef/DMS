@@ -2083,7 +2083,6 @@ if __name__ == '__main__':
     
     # Print all registered routes for debugging
     
-    for rule in app.url_map.iter_rules():
-        print(f"  {rule.rule} -> {rule.endpoint}")
+    
     
     app.run(host='0.0.0.0', debug=True)

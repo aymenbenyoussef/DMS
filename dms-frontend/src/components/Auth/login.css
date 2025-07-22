@@ -149,7 +149,7 @@
   color: #059669;
   cursor: pointer;
   font-size: 13px;
-  text-decoration: underline;
+  text-decoration: none;
   padding: 0;
   transition: color 0.2s ease;
   white-space: nowrap; /* Empêche le retour à la ligne */

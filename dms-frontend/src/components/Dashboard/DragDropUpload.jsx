@@ -6,14 +6,13 @@ import './DragDropUpload.css';
 
 const DragDropUpload = ({ onUpload, onClose }) => {
   const { selectedCompany, selectedDoctype } = useContext(AppContext);
-  const [file, setFile] = useState(null);
+  const [files, setFiles] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState(null);
-  const [showConfirmation, setShowConfirmation] = useState(false);
-  const [sessionId, setSessionId] = useState(null);
-  const [extractedData, setExtractedData] = useState(null);
+  const [showConfirmations, setShowConfirmations] = useState([]); // [{sessionId, extractedData, file}]
+  const [confirmationData, setConfirmationData] = useState([]); // [{confirmedDocument, errors}]
 
   const handleDragEnter = (e) => {
     e.preventDefault();
@@ -36,46 +35,33 @@ const DragDropUpload = ({ onUpload, onClose }) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
-    
-    const droppedFiles = Array.from(e.dataTransfer.files);
-    if (droppedFiles.length > 1) {
-      setUploadStatus('multiple_files_error');
+    const droppedFiles = Array.from(e.dataTransfer.files).filter(isValidFileType);
+    if (droppedFiles.length === 0) {
+      setUploadStatus('invalid');
       return;
     }
-    
-    const droppedFile = droppedFiles[0];
-    if (droppedFile && isValidFileType(droppedFile)) {
-      setFile(droppedFile);
+    setFiles(prev => [...prev, ...droppedFiles]);
       setUploadStatus(null);
-    } else {
-      setUploadStatus('invalid');
-    }
   };
 
   const handleFileChange = (e) => {
-    const selectedFiles = Array.from(e.target.files);
-    if (selectedFiles.length > 1) {
-      setUploadStatus('multiple_files_error');
+    const selectedFiles = Array.from(e.target.files).filter(isValidFileType);
+    if (selectedFiles.length === 0) {
+      setUploadStatus('invalid');
       return;
     }
-    const selectedFile = selectedFiles[0];
-    console.log('Selected file:', selectedFile);
-    if (selectedFile && isValidFileType(selectedFile)) {
-      setFile(selectedFile);
+    setFiles(prev => [...prev, ...selectedFiles]);
       setUploadStatus(null);
-    } else {
-      setUploadStatus('invalid');
-    }
   };
 
   const isValidFileType = (file) => {
     const validTypes = [
-      'application/pdf',
+      'application/pdf', 
       'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'image/jpeg',
-      'image/png',
-      'image/tiff',
+      'image/jpeg', 
+      'image/png', 
+      'image/tiff', 
     ];
     const validExtensions = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png', '.tiff'];
     const fileName = file.name.toLowerCase();
@@ -87,74 +73,79 @@ const DragDropUpload = ({ onUpload, onClose }) => {
   };
 
   const handleUpload = useCallback(async () => {
-    if (!file) return;
+    if (!files.length) return;
     if (!selectedCompany || !selectedDoctype) {
       setUploadStatus('error');
       alert('Veuillez sélectionner une entreprise et un type de document.');
       return;
     }
-
     setIsUploading(true);
     setUploadStatus('pending');
     setUploadProgress(0);
-
-    // Simulate progress animation
-    const progressInterval = setInterval(() => {
-      setUploadProgress(prev => {
-        if (prev >= 90) {
-          clearInterval(progressInterval);
-          return 90;
-        }
-        return prev + 10;
-      });
-    }, 200);
-
-    try {
-      // Upload single file with OCR processing
+    let confirmations = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      try {
       const response = await API.documents.uploadSingleFile(
         file, 
         selectedCompany.id, 
         selectedDoctype.id
       );
-      
-      clearInterval(progressInterval);
-      setUploadProgress(100);
-      setUploadStatus('processed');
-      
-      // Store session data for confirmation
-      setSessionId(response.data?.session_id);
-      setExtractedData(response.data?.extracted_data);
-      setShowConfirmation(true);
-      
-    } catch (error) {
-      clearInterval(progressInterval);
-      console.error('Upload failed:', error);
-      setUploadStatus('error');
-      alert('Erreur lors de l\'upload: ' + (error.response?.data?.msg || error.message));
-    } finally {
-      setIsUploading(false);
+        confirmations.push({
+          sessionId: response.data?.session_id,
+          extractedData: response.data?.extracted_data,
+          file
+        });
+      } catch (error) {
+        console.error('Upload failed:', error);
+        confirmations.push({ error, file });
+      }
+      setUploadProgress(Math.round(((i + 1) / files.length) * 100));
     }
-  }, [file, selectedCompany, selectedDoctype]);
+    setShowConfirmations(confirmations);
+    // Initialize confirmationData for each file
+    setConfirmationData(confirmations.map(conf => ({ confirmedDocument: null, errors: {} })));
+      setUploadStatus('processed');
+    setIsUploading(false);
+  }, [files, selectedCompany, selectedDoctype]);
 
-  const handleConfirmDocument = useCallback(async (confirmedDocument) => {
-    if (!sessionId) return;
+  // Handler to update confirmation form data for each file
+  const handleFormChange = (idx, confirmedDocument, errors) => {
+    setConfirmationData(prev => {
+      const updated = [...prev];
+      updated[idx] = { confirmedDocument, errors };
+      return updated;
+    });
+  };
 
+  // Validate all forms and confirm all
+  const handleConfirmAll = async () => {
+    let hasError = false;
+    // Check for errors in all forms
+    for (let i = 0; i < confirmationData.length; i++) {
+      if (!confirmationData[i].confirmedDocument || Object.keys(confirmationData[i].errors).length > 0) {
+        hasError = true;
+        break;
+      }
+    }
+    if (hasError) {
+      setUploadStatus('error');
+      alert('Veuillez corriger les erreurs dans tous les formulaires avant de confirmer.');
+      return;
+    }
     setIsUploading(true);
     setUploadStatus('confirming');
-
     try {
+      for (let i = 0; i < showConfirmations.length; i++) {
+        const conf = showConfirmations[i];
+        const doc = confirmationData[i].confirmedDocument;
+        if (conf.sessionId && doc) {
       const documentToConfirm = {
-        ...confirmedDocument,
-        partner_id: confirmedDocument.confirmed_data.partner_id || null, // <-- FIX: set at top level
-        confirmed_data: {
-          ...confirmedDocument.confirmed_data
-        }
-      };
-      const response = await API.documents.confirmDocuments(sessionId, [documentToConfirm]);
-      
-      setUploadStatus('completed');
-      
-      // Notify parent component about successful upload
+            ...doc,
+            partner_id: doc.confirmed_data.partner_id || null,
+            confirmed_data: { ...doc.confirmed_data }
+          };
+          const response = await API.documents.confirmDocuments(conf.sessionId, [documentToConfirm]);
       const savedDoc = response.data.saved_documents[0];
       if (savedDoc && !savedDoc.error) {
         onUpload({
@@ -166,24 +157,23 @@ const DragDropUpload = ({ onUpload, onClose }) => {
           partner_id: savedDoc.partner_id
         });
       }
-      // Always dispatch FilesUploaded event after successful confirmation
+        }
+      }
       window.dispatchEvent(new Event('FilesUploaded'));
-      
+      setUploadStatus('completed');
       setTimeout(() => {
         onClose();
       }, 2000);
-      
     } catch (error) {
-      console.error('Confirmation failed:', error);
       setUploadStatus('error');
       alert('Erreur lors de la confirmation: ' + (error.response?.data?.msg || error.message));
     } finally {
       setIsUploading(false);
     }
-  }, [sessionId, onUpload, onClose]);
+  };
 
-  const removeFile = () => {
-    setFile(null);
+  const removeFile = (index) => {
+    setFiles(prev => prev.filter((_, i) => i !== index));
     setUploadStatus(null);
   };
 
@@ -208,7 +198,14 @@ const DragDropUpload = ({ onUpload, onClose }) => {
     }
   };
 
-  if (showConfirmation) {
+  if (showConfirmations.length > 0) {
+    // Filter out errored files for the form
+    const validFiles = showConfirmations.filter(conf => !conf.error).map(conf => ({
+      sessionId: conf.sessionId,
+      extractedData: conf.extractedData,
+      filename: conf.file?.name
+    }));
+    const erroredFiles = showConfirmations.filter(conf => conf.error);
     return (
       <div className="upload-modal-overlay">
         <div className="upload-modal confirmation-modal">
@@ -216,17 +213,66 @@ const DragDropUpload = ({ onUpload, onClose }) => {
             <h3>Document confirmation</h3>
             <button className="close-btn" onClick={onClose}>×</button>
           </div>
-          
-          <DocumentConfirmationForm
-            sessionId={sessionId}
-            extractedData={extractedData}
-            filename={file?.name}
-            onConfirm={handleConfirmDocument}
-            onCancel={onClose}
-            initialCompany={selectedCompany}
-            initialDoctype={selectedDoctype}
-          />
-          
+          {erroredFiles.map((conf, idx) => (
+            <div key={idx} className="status-message error">
+              Error processing file {conf.file.name}: {conf.error.message}
+            </div>
+          ))}
+          {validFiles.length > 0 && (
+            <DocumentConfirmationForm
+              files={validFiles}
+              onConfirm={async (confirmedDocuments, errors) => {
+                // If any errors, do not proceed
+                const hasError = errors.some(err => Object.keys(err).length > 0);
+                if (hasError) {
+                  setUploadStatus('error');
+                  alert('Veuillez corriger les erreurs dans tous les formulaires avant de confirmer.');
+                  return;
+                }
+                setIsUploading(true);
+                setUploadStatus('confirming');
+                try {
+                  for (let i = 0; i < validFiles.length; i++) {
+                    const conf = showConfirmations.find(c => c.sessionId === validFiles[i].sessionId);
+                    const doc = confirmedDocuments[i];
+                    if (conf.sessionId && doc) {
+                      const documentToConfirm = {
+                        ...doc,
+                        partner_id: doc.confirmed_data.partner_id || null,
+                        confirmed_data: { ...doc.confirmed_data }
+                      };
+                      const response = await API.documents.confirmDocuments(conf.sessionId, [documentToConfirm]);
+                      const savedDoc = response.data.saved_documents[0];
+                      if (savedDoc && !savedDoc.error) {
+                        onUpload({
+                          id: savedDoc.document_id,
+                          filename: savedDoc.filename,
+                          is_invoice: savedDoc.is_invoice,
+                          created_at: new Date().toISOString(),
+                          status: 'confirmed',
+                          partner_id: savedDoc.partner_id
+                        });
+                      }
+                    }
+                  }
+                  window.dispatchEvent(new Event('FilesUploaded'));
+                  setUploadStatus('completed');
+                  setTimeout(() => {
+                    onClose();
+                  }, 2000);
+                } catch (error) {
+                  setUploadStatus('error');
+                  alert('Erreur lors de la confirmation: ' + (error.response?.data?.msg || error.message));
+                } finally {
+                  setIsUploading(false);
+                }
+              }}
+              onCancel={onClose}
+              initialCompany={selectedCompany}
+              initialDoctype={selectedDoctype}
+              hideConfirmButton={false}
+            />
+          )}
           {uploadStatus && (
             <div className={`status-message ${uploadStatus}`}>
               {getStatusMessage()}
@@ -254,49 +300,50 @@ const DragDropUpload = ({ onUpload, onClose }) => {
           )}
           
           <div 
-            className={`drop-zone ${isDragging ? 'dragging' : ''} ${file ? 'has-file' : ''}`}
+            className={`drop-zone ${isDragging ? 'dragging' : ''} ${files.length ? 'has-file' : ''}`}
             onDragEnter={handleDragEnter}
             onDragLeave={handleDragLeave}
             onDragOver={handleDragOver}
             onDrop={handleDrop}
           >
             <div className="drop-zone-content">
-              {!file ? (
                 <>
                   <div className="upload-icon">📄</div>
-                  <p>Upload Your File Here</p>
+                <p>Upload Your File(s) Here</p>
                   <label className="file-input-label">
                     <input
                       type="file"
-                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.tiff"
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.tiff"
                       onChange={handleFileChange}
                       className="file-input"
+                    multiple
                     />
                     Browse Files
                   </label>
                   <p className="file-types">
                     Accepted Format : PDF, JPG, PNG, TIFF, DOC, DOCX
                   </p>
-                  <p className="single-file-note">
-                    ⚠️ Only one file at a time
-                  </p>
-                </>
-              ) : (
-                <div className="file-preview">
+              </>
+              {files.length > 0 && (
+                <div className="multi-file-preview">
+                  {files.map((f, idx) => (
+                    <div className="file-preview" key={idx}>
                   <div className="file-icon">📄</div>
                   <div className="file-info">
-                    <span className="file-name">{file.name}</span>
+                        <span className="file-name">{f.name}</span>
                     <span className="file-size">
-                      ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                          ({(f.size / 1024 / 1024).toFixed(2)} MB)
                     </span>
                   </div>
                   <button 
                     className="remove-file-btn"
-                    onClick={removeFile}
+                        onClick={() => removeFile(idx)}
                     disabled={isUploading}
                   >
                     ×
                   </button>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -331,7 +378,7 @@ const DragDropUpload = ({ onUpload, onClose }) => {
             <button 
               className="btn-primary" 
               onClick={handleUpload}
-              disabled={!file || isUploading || !selectedCompany || !selectedDoctype}
+              disabled={!files.length || isUploading || !selectedCompany || !selectedDoctype}
             >
               {isUploading ? 'Treatment...' : 'Upload'}
             </button>
