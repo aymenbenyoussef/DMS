@@ -672,7 +672,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
               </div>
             </div>
           ) : filteredDocuments.length > 0 ? (
-            <div className="table-responsive" style={{ maxHeight: '500px', overflowY: 'auto' }}>
+            <div className="table-responsive" style={{ height: '350px', overflowY: 'auto' }}>
               <table className="table table-hover" style={{ minWidth: '900px' }}>
                 <thead style={{ position: 'sticky', top: 0, background: '#f8f9fa', zIndex: 2 }}>
                   <tr>

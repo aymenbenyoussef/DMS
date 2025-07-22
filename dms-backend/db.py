@@ -534,7 +534,6 @@ class DatabaseManager:
         
         try:
             result = self.execute_query(query, param, fetch=True)
-            print("Raw companies result:", result)  # Debugging line
             # Vérification du résultat
             if not result:
                 return []
