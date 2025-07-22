@@ -549,40 +549,25 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
             </div>
           </div>
       )}
-
-      {/* Header */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <nav className="breadcrumb mb-0">
-          <ol className="breadcrumb">
-            {getBreadcrumb().split(' > ').map((item, index, arr) => (
-              <li 
-                key={index} 
-                className={`breadcrumb-item ${index === arr.length - 1 ? 'active' : ''}`}
-              >
-                {item}
-              </li>
-            ))}
-          </ol>
-        </nav>
-        
-        {(selectedDoctype || selectedCompany) && (
-          <button 
-            className="btn btn-primary d-flex align-items-center ms-auto"
-            onClick={openUploadModal}
-          >
-            <i className="bi bi-plus me-1"></i> Upload File
-          </button>
-        )}
-      </div>
       
       {successMessage && (
         <div className="alert alert-success">{successMessage}</div>
       )}
       
-      {/* Search and Filter Section - MODIFIED */}
+      {/* Search and Filter Section - MODIFIED to include Upload Button */}
       <div className="card mb-4 search-filter-container">
         <div className="card-body p-3">
-          <h2 className="h6 mb-3">Recherche & Filtres</h2>
+          <div className="d-flex justify-content-between align-items-start mb-3">
+            <h2 className="h6 mb-0">Recherche & Filtres</h2>
+            {(selectedDoctype || selectedCompany) && (
+              <button 
+                className="btn btn-primary btn-sm d-flex align-items-center"
+                onClick={openUploadModal}
+              >
+                <i className="bi bi-plus me-1"></i> Upload File
+              </button>
+            )}
+          </div>
           
           <div className="row g-3">
             {/* Left Column - Filters */}
@@ -648,8 +633,8 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
                 <button className="btn btn-primary btn-sm">
+                  <i className="bi bi-search me-1"></i>
                   Recherche
-                  <i className="bi bi-search"></i>
                 </button>
               </div>
             </div>
@@ -660,8 +645,23 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
       {/* Documents Table */}
       <div className="card">
         <div className="card-body">
+          {/* MODIFIED: Breadcrumb and Title Section */}
           <div className="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
-            <h2 className="h5 mb-0">Documents</h2>
+            <div className="d-flex align-items-center">
+              <nav className="breadcrumb mb-0 me-3">
+                <ol className="breadcrumb">
+                  {getBreadcrumb().split(' > ').map((item, index, arr) => (
+                    <li 
+                      key={index} 
+                      className={`breadcrumb-item ${index === arr.length - 1 ? 'active' : ''}`}
+                    >
+                      {item}
+                    </li>
+                  ))}
+                </ol>
+              </nav>
+              <h2 className="h5 mb-0">Documents</h2>
+            </div>
             <span className="text-muted">{filteredDocuments.length} items</span>
           </div>
           
