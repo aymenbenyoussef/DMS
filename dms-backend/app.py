@@ -44,7 +44,6 @@ ACTIVITY_LOG = os.path.join(LOG_DIR, "activity.log")
 
 
 
-
 def ensure_log_dir():
     """Create logs directory if it doesn't exist"""
     if not os.path.exists(LOG_DIR):
@@ -1525,6 +1524,7 @@ def confirm_document():
 
                 # Move OCR text file if exists
                 temp_text_path = original_processed_file.get('text_path')
+                final_text_path = None
                 if temp_text_path and os.path.exists(temp_text_path):
                     final_text_filename = f"{os.path.splitext(unique_final_filename)[0]}.txt"
                     final_text_path = os.path.join(doctype_folder, final_text_filename)
@@ -1537,7 +1537,7 @@ def confirm_document():
                     confirmed_info['partner_id'] = partner_id
 
                 # Prepare fields for insertion
-                ocr_text = None
+                ocr_text = final_text_path if final_text_path and os.path.exists(final_text_path) else None
                 rapport = None
                 if is_invoice and confirmed_info:
                     # Generate report PDF for invoices
@@ -1545,10 +1545,6 @@ def confirm_document():
                     report_path = os.path.join(summary_folder, report_filename)
                     generate_report_pdf(confirmed_info, report_path, unique_final_filename)
                     rapport = report_path
-                    # Try to get OCR text if available
-                    temp_text_path = original_processed_file.get("text_path")
-                    if temp_text_path and os.path.exists(temp_text_path):
-                        ocr_text = temp_text_path  # Store the path, not the content
                 # For non-invoice documents, ocr_text and rapport remain None
                 document_id = db.create_document_with_ocr_data(
                     owner_id=current_user_id,
@@ -1561,7 +1557,7 @@ def confirm_document():
                     extracted_data=confirmed_info,
                     partner_id=partner_id,
                     rapport=rapport,
-                    ocr_text=temp_text_path
+                    ocr_text=ocr_text
                 )
                 
                 if not document_id:

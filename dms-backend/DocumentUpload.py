@@ -338,7 +338,7 @@ def confirm_document():
                 final_file_path = os.path.join(doctype_folder, unique_final_filename)
                 shutil.move(temp_file_path, final_file_path)
 
-                temp_text_path = original_processed_file.get("text_path")
+                final_text_path = None
                 if temp_text_path and os.path.exists(temp_text_path):
                     final_text_filename = f"{os.path.splitext(unique_final_filename)[0]}.txt"
                     final_text_path = os.path.join(doctype_folder, final_text_filename)
@@ -350,7 +350,7 @@ def confirm_document():
                     confirmed_info["partner_id"] = partner_id
 
                 # Prepare fields for insertion
-                ocr_text = None
+                ocr_text = final_text_path if final_text_path and os.path.exists(final_text_path) else None
                 rapport = None
                 extracted_data = None
                 if is_invoice and confirmed_info:
@@ -360,11 +360,6 @@ def confirm_document():
                     report_path = os.path.join(summary_folder, report_filename)
                     generate_report_pdf(confirmed_info, report_path, unique_final_filename)
                     rapport = report_path
-                    # Try to get OCR text if available
-                    temp_text_path = original_processed_file.get("text_path")
-                    if temp_text_path and os.path.exists(temp_text_path):
-                        with open(temp_text_path, "r", encoding="utf-8") as f:
-                            ocr_text = f.read()
                 # For contracts (not invoices), set fields to None
                 document_id = db.create_document_with_ocr_data(
                     owner_id=current_user_id,
@@ -379,7 +374,7 @@ def confirm_document():
                     rapport=rapport,
                     ocr_text=ocr_text
                 )
-                
+
                 if not document_id:
                     raise Exception("Failed to create document in database")
                 
