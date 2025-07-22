@@ -109,6 +109,10 @@ const DocumentConfirmationForm = ({
         // Reset partner selection when toggling invoice status
         updated[idx].confirmed_data.partner_id = '';
         updated[idx].confirmed_data.partner = '';
+      } else if (field === 'company_id') {
+        updated[idx].company_id = value;
+      } else if (field === 'doctype_id') {
+        updated[idx].doctype_id = value;
       } else {
         updated[idx].confirmed_data[field] = value;
       }
@@ -215,7 +219,12 @@ const DocumentConfirmationForm = ({
               <label>Entité *:</label>
               <select 
                 value={currentCompany?.id || ''} 
-                onChange={e => { setCurrentCompany(companies.find(c => c.id === parseInt(e.target.value))); setSelectedCompany(companies.find(c => c.id === parseInt(e.target.value))); }}
+                onChange={e => { 
+                  const companyId = parseInt(e.target.value);
+                  setCurrentCompany(companies.find(c => c.id === companyId));
+                  setSelectedCompany(companies.find(c => c.id === companyId));
+                  updateConfirmedDocument(0, 'company_id', companyId);
+                }}
                 className={`${currentCompany?.id !== (initialCompany || selectedCompany)?.id ? 'changed' : ''} ${err.company_id ? 'error' : ''}`}
               >
                 <option value="">Sélectionner une entité</option>
@@ -232,7 +241,12 @@ const DocumentConfirmationForm = ({
               <label>Type de document *:</label>
               <select 
                 value={currentDoctype?.id || ''} 
-                onChange={e => { setCurrentDoctype(doctypes.find(d => d.id === parseInt(e.target.value))); setSelectedDoctype(doctypes.find(d => d.id === parseInt(e.target.value))); }}
+                onChange={e => { 
+                  const doctypeId = parseInt(e.target.value);
+                  setCurrentDoctype(doctypes.find(d => d.id === doctypeId));
+                  setSelectedDoctype(doctypes.find(d => d.id === doctypeId));
+                  updateConfirmedDocument(0, 'doctype_id', doctypeId);
+                }}
                 disabled={!currentCompany}
                 className={`${currentDoctype?.id !== (initialDoctype || selectedDoctype)?.id ? 'changed' : ''} ${err.doctype_id ? 'error' : ''}`}
               >
@@ -371,7 +385,12 @@ const DocumentConfirmationForm = ({
                 <label>Entité *:</label>
                 <select 
                   value={currentCompany?.id || ''} 
-                  onChange={e => { setCurrentCompany(companies.find(c => c.id === parseInt(e.target.value))); setSelectedCompany(companies.find(c => c.id === parseInt(e.target.value))); }}
+                  onChange={e => { 
+                    const companyId = parseInt(e.target.value);
+                    setCurrentCompany(companies.find(c => c.id === companyId));
+                    setSelectedCompany(companies.find(c => c.id === companyId));
+                    updateConfirmedDocument(idx, 'company_id', companyId);
+                  }}
                   className={`${currentCompany?.id !== (initialCompany || selectedCompany)?.id ? 'changed' : ''} ${errors[idx].company_id ? 'error' : ''}`}
                 >
                   <option value="">Sélectionner une entité</option>
@@ -388,7 +407,12 @@ const DocumentConfirmationForm = ({
                 <label>Type de document *:</label>
                 <select 
                   value={currentDoctype?.id || ''} 
-                  onChange={e => { setCurrentDoctype(doctypes.find(d => d.id === parseInt(e.target.value))); setSelectedDoctype(doctypes.find(d => d.id === parseInt(e.target.value))); }}
+                  onChange={e => { 
+                    const doctypeId = parseInt(e.target.value);
+                    setCurrentDoctype(doctypes.find(d => d.id === doctypeId));
+                    setSelectedDoctype(doctypes.find(d => d.id === doctypeId));
+                    updateConfirmedDocument(idx, 'doctype_id', doctypeId);
+                  }}
                   disabled={!currentCompany}
                   className={`${currentDoctype?.id !== (initialDoctype || selectedDoctype)?.id ? 'changed' : ''} ${errors[idx].doctype_id ? 'error' : ''}`}
                 >

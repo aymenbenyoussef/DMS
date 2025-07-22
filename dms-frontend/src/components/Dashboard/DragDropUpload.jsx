@@ -214,12 +214,12 @@ const DragDropUpload = ({ onUpload, onClose }) => {
             <button className="close-btn" onClick={onClose}>×</button>
           </div>
           {erroredFiles.map((conf, idx) => (
-            <div key={idx} className="status-message error">
-              Error processing file {conf.file.name}: {conf.error.message}
-            </div>
+              <div key={idx} className="status-message error">
+                Error processing file {conf.file.name}: {conf.error.message}
+              </div>
           ))}
           {validFiles.length > 0 && (
-            <DocumentConfirmationForm
+          <DocumentConfirmationForm
               files={validFiles}
               onConfirm={async (confirmedDocuments, errors) => {
                 // If any errors, do not proceed
@@ -238,6 +238,8 @@ const DragDropUpload = ({ onUpload, onClose }) => {
                     if (conf.sessionId && doc) {
                       const documentToConfirm = {
                         ...doc,
+                        company_id: doc.company_id,
+                        doctype_id: doc.doctype_id,
                         partner_id: doc.confirmed_data.partner_id || null,
                         confirmed_data: { ...doc.confirmed_data }
                       };
@@ -267,9 +269,9 @@ const DragDropUpload = ({ onUpload, onClose }) => {
                   setIsUploading(false);
                 }
               }}
-              onCancel={onClose}
-              initialCompany={selectedCompany}
-              initialDoctype={selectedDoctype}
+            onCancel={onClose}
+            initialCompany={selectedCompany}
+            initialDoctype={selectedDoctype}
               hideConfirmButton={false}
             />
           )}

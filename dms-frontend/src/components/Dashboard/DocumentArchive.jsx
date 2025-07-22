@@ -159,11 +159,32 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     
     // Filter by search term
     if (searchTerm) {
-      filtered = filtered.filter(doc => 
-        doc.filename?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        doc.invoice_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        doc.ocr_text?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      const lowerSearch = searchTerm.toLowerCase();
+      filtered = filtered.filter(doc => {
+        // Search in filename, invoice_number, ocr_text (as before)
+        const baseMatch =
+          doc.filename?.toLowerCase().includes(lowerSearch) ||
+          doc.invoice_number?.toLowerCase().includes(lowerSearch) ||
+          doc.ocr_text?.toLowerCase().includes(lowerSearch);
+        // Search in extracted_data (metadata)
+        let metaMatch = false;
+        if (doc.extracted_data) {
+          let meta = doc.extracted_data;
+          if (typeof meta === 'string') {
+            try { meta = JSON.parse(meta); } catch { meta = {}; }
+          }
+          for (const key in meta) {
+            if (
+              meta[key] &&
+              String(meta[key]).toLowerCase().includes(lowerSearch)
+            ) {
+              metaMatch = true;
+              break;
+            }
+          }
+        }
+        return baseMatch || metaMatch;
+      });
     }
     
     // Filter by selected document types (only when no specific doctype is selected)
