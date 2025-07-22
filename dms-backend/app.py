@@ -244,8 +244,8 @@ def forgot_password():
     # Send email via SMTP
     smtp_host = "smtp.gmail.com"  # Change as needed
     smtp_port = 587
-    smtp_user = "benaymen2003youssef@gmail.com"  # Change to your SMTP email
-    smtp_pass = "tdbm dnds vckw dycg"     # Change to your SMTP app password
+    smtp_user = "ranesmerald358@gmail.com"  # Change to your SMTP email
+    smtp_pass = "tvkw cnff wpge eccz"     # Change to your SMTP app password
 
     subject = "Réinitialisation de votre mot de passe - RAN ESMERALD"
     body = f"""
