@@ -327,7 +327,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
         return docDate >= start && docDate <= end;
       });
     }
-
+    
     setFilteredDocuments(filtered);
   }, [documents, searchTerm, selectedDoctypeFilters, selectedDoctype, startDate, endDate]);
 
@@ -700,7 +700,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
             </div>
           </div>
       )}
-      
+
       {successMessage && (
         <div className="alert alert-success">{successMessage}</div>
       )}
@@ -711,16 +711,16 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
           <div className="d-flex justify-content-between align-items-start mb-3">
             <h2 className="h6 mb-0">Recherche & Filtres</h2>
             <div className="d-flex gap-2">
-              {(selectedDoctype || selectedCompany) && (
-                <button 
+        {(selectedDoctype || selectedCompany) && (
+          <button 
                   className="btn btn-blue btn-sm d-flex align-items-center"
-                  onClick={openUploadModal}
-                >
-                  <i className="bi bi-plus me-1"></i> Upload File
-                </button>
-              )}
-            </div>
-          </div>
+            onClick={openUploadModal}
+          >
+            <i className="bi bi-plus me-1"></i> Upload File
+          </button>
+        )}
+      </div>
+              </div>
           
           <div className="row g-3">
             {/* Left Column - Filters */}
@@ -729,49 +729,49 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
               <div className="row g-2 mb-3">
                 <div className="col-6">
                   <label className="form-label small">Date de début</label>
-                  <input 
-                    type="date" 
+              <input 
+                type="date" 
                     className="form-control form-control-sm"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                  />
-                </div>
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+            </div>
                 <div className="col-6">
                   <label className="form-label small">Date de fin</label>
-                  <input 
-                    type="date" 
+              <input 
+                type="date" 
                     className="form-control form-control-sm"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                  />
-                </div>
-              </div>
-              
-              {/* Document Type Filters - Only show when no specific doctype is selected */}
-              {!selectedDoctype && availableDoctypes.length > 0 && (
-                <div>
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
+            </div>
+          </div>
+          
+          {/* Document Type Filters - Only show when no specific doctype is selected */}
+          {!selectedDoctype && availableDoctypes.length > 0 && (
+            <div>
                   <h6 className="mb-2 small">Types de documents</h6>
                   <div className="d-flex flex-wrap gap-2">
-                    {availableDoctypes.map((doctype) => (
+                {availableDoctypes.map((doctype) => (
                       <div key={doctype.id} className="form-check form-check-sm">
-                        <input 
-                          type="checkbox" 
-                          className="form-check-input" 
-                          id={`filter-doctype-${doctype.id}`}
-                          checked={selectedDoctypeFilters.includes(doctype.id)}
-                          onChange={() => handleDoctypeFilterChange(doctype.id)}
-                        />
-                        <label 
+                    <input 
+                      type="checkbox" 
+                      className="form-check-input" 
+                      id={`filter-doctype-${doctype.id}`}
+                      checked={selectedDoctypeFilters.includes(doctype.id)}
+                      onChange={() => handleDoctypeFilterChange(doctype.id)}
+                    />
+                    <label 
                           className="form-check-label text-muted small" 
-                          htmlFor={`filter-doctype-${doctype.id}`}
-                        >
-                          {doctype.name}
-                        </label>
-                      </div>
-                    ))}
+                      htmlFor={`filter-doctype-${doctype.id}`}
+                    >
+                      {doctype.name}
+                    </label>
                   </div>
-                </div>
-              )}
+                ))}
+              </div>
+            </div>
+          )}
             </div>
             
             {/* Right Column - Search */}
@@ -813,7 +813,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                   ))}
                 </ol>
               </nav>
-            </div>
+          </div>
             <div className="d-flex align-items-center gap-3">
               <span className="text-muted items-count">{filteredDocuments.length} items</span>
               

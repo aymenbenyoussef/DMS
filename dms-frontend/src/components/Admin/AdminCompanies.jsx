@@ -3,6 +3,7 @@ import API from '../../api';
 import './AdminUsers.css';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
+import axios from 'axios';
 
 const AdminCompanies = ({ user }) => {
   const [companies, setCompanies] = useState([]);
@@ -36,14 +37,26 @@ const AdminCompanies = ({ user }) => {
 
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
+  const [maxEntities, setMaxEntities] = useState(null);
+  const [globalLimitError, setGlobalLimitError] = useState('');
 
   useEffect(() => {
     fetchCompanies();
+    axios.get('http://localhost:5000/api/settings').then(res => {
+      setMaxEntities(res.data.maxEntities);
+    });
   }, []);
 
   useEffect(() => {
     applyFilters();
   }, [filters, companies]);
+
+  useEffect(() => {
+    if (globalLimitError) {
+      const timer = setTimeout(() => setGlobalLimitError(''), 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [globalLimitError]);
 
   const fetchCompanies = async () => {
     try {
@@ -135,6 +148,7 @@ const AdminCompanies = ({ user }) => {
   };
 
   const handleEdit = (company) => {
+    setGlobalLimitError('');
     setEditingCompany(company);
     setFormData({
       name: company.name || '',
@@ -215,31 +229,49 @@ const AdminCompanies = ({ user }) => {
     setShowNotification(false);
   };
 
+  const handleAddEntity = (e) => {
+    setGlobalLimitError('');
+    if (maxEntities !== null && companies.length >= maxEntities) {
+      setGlobalLimitError('Vous avez atteint le nombre maximal d’entités. Veuillez contacter le support technique.');
+      return;
+    }
+    else {
+      navigate('/AddComp');
+    }
+  };
+
+  const handleTabChange = (tab) => {
+    setGlobalLimitError('');
+    setActiveTab(tab);
+    setShowModifyTab(false);
+    setEditingCompany(null);
+  };
+
   return (
     <div className="admin-users">
       <div className="admin-header">
         <div className="admin-tabs">
           <button
             className={`tab-btn ${activeTab === 'list' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveTab('list');
-              setShowModifyTab(false);
-              setEditingCompany(null);
-            }}
+            onClick={() => handleTabChange('list')}
           >
             Liste des entités
           </button>
           {showModifyTab && (
             <button
               className={`tab-btn ${activeTab === 'form' ? 'active' : ''}`}
-              onClick={() => setActiveTab('form')}
+              onClick={() => handleTabChange('form')}
             >
               Modifier l'entité
             </button>
           )}
-          <Link to="/AddComp" className="btn-primary-2">
+          <button
+            className="btn-primary-2"
+            onClick={handleAddEntity}
+            
+          >
             Ajouter une entité
-          </Link>
+          </button>
         </div>
       </div>
 
@@ -251,6 +283,9 @@ const AdminCompanies = ({ user }) => {
             <div key={index}>{err}</div>
           ))}
         </div>
+      )}
+      {globalLimitError && (
+        <div className="alert alert-error" style={{marginBottom: '1rem', fontWeight: 600}}>{globalLimitError}</div>
       )}
 
       {activeTab === 'list' && (
