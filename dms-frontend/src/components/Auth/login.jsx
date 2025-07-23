@@ -121,32 +121,15 @@ const Login = ({ onLogin, error }) => {
   return (
     <div className="login-container">
       <div className="login-card">
-        <h2 className="login-title">Connexion DMS</h2>
-        <p className="login-subtitle">Service fourni par RAN ESMERALD</p>
-
-        {showForgot ? (
-          <form onSubmit={handleForgotSubmit} className="login-form">
-            <div className="form-group">
-              <label className="form-label">E-mail</label>
-              <input
-                type="email"
-                name="forgotEmail"
-                value={forgotEmail}
-                onChange={e => setForgotEmail(e.target.value)}
-                className="form-input"
-                placeholder="Entrez votre e-mail"
-              />
-            </div>
-            {forgotError && <div className="login-error">{forgotError}</div>}
-            {forgotSuccess && <div className="login-error" style={{ color: '#059669', background: '#f0fdf4' }}>{forgotSuccess}</div>}
-            <button type="submit" className="login-button">Envoyer</button>
-            <button type="button" className="login-button" style={{ background: '#d1d5db', color: '#166534', marginTop: 8 }} onClick={handleForgotRetour}>Retour</button>
-          </form>
-        ) : (
-        <>
+        <h2 className="login-title">Connexion</h2>
+        <p className="login-subtitle">Veuillez entrer vos identifiants pour accéder au DMS</p>
         {loginError && (
           <div className="login-error">
-            {loginError}
+            {loginError === 'Le système est inactif' ? (
+              <span style={{ fontWeight: 'bold', color: '#b91c1c' }}>{loginError}</span>
+            ) : (
+              loginError
+            )}
           </div>
         )}
 
@@ -238,8 +221,6 @@ const Login = ({ onLogin, error }) => {
             <span className="test-account-label">Utilisateur:</span> user@dms.local / user123
           </div>
         </div>
-        </>
-        )}
       </div>
     </div>
   );

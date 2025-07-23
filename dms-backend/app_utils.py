@@ -1,8 +1,10 @@
 import os
 from datetime import datetime
+from dotenv import load_dotenv
+load_dotenv()
 
 # ====== Logging Configuration ======
-LOG_DIR = "../../logs"
+LOG_DIR = os.environ.get('LOGS_PATH', '../../logs')
 ACTIVITY_LOG = os.path.join(LOG_DIR, "activity.log")
 
 def ensure_log_dir():
@@ -58,7 +60,8 @@ def log_activity(actor, action, resource_type, resource_data):
         f.write(log_entry + "\n")
 
 # ====== Upload Configuration ======
-DMS_UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../dms-data/upload"))
+_entities_base = os.environ.get('ENTITIES_DATA_PATH', '../../dms-data/upload')
+DMS_UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), _entities_base))
 TEMP_UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../uploads"))
 ALLOWED_EXTENSIONS = {"pdf", "png", "jpg", "jpeg", "docx", "txt", "doc", "tiff"}
 

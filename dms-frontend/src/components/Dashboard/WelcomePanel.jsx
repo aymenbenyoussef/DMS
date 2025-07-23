@@ -34,7 +34,7 @@ const WelcomePanel = ({ user }) => {
       }
     };
 
-    if (user?.role === 'admin') {
+    if (user?.role === 'admin' || user?.role === 'superuser') {
       fetchStats();
     }
   }, [user]);
@@ -48,7 +48,7 @@ const WelcomePanel = ({ user }) => {
         </p>
       </div>
 
-      {user?.role === 'admin' && (
+      {(user?.role === 'admin' || user?.role === 'superuser') && (
         <div className="row g-3 mb-4">
           {/* Users Card */}
           <div className="col-md-4">

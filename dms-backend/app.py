@@ -25,6 +25,10 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
+import os
+from dotenv import load_dotenv, dotenv_values
+load_dotenv()
+
 app = Flask(__name__)
 CORS(app, origins="*", supports_credentials=True)
 
@@ -36,7 +40,7 @@ formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(messag
 handler.setFormatter(formatter)
 app.logger.addHandler(handler)
 # ====== Logging Configuration ======
-LOG_DIR = "../../logs"
+LOG_DIR = os.environ.get('SYSTEM_LOGS_PATH', '../../logs')
 ACTIVITY_LOG = os.path.join(LOG_DIR, "activity.log")
 
 
@@ -106,7 +110,8 @@ def get_activity_logs():
         return [line.strip() for line in f.readlines() if line.strip()]
 
 # ====== Upload Configuration ======
-DMS_UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../dms-data/upload'))
+_entities_base = os.environ.get('ENTITIES_DATA_PATH', '../../dms-data/upload')
+DMS_UPLOAD_FOLDER = os.environ.get('ENTITIES_DATA_PATH', os.path.abspath(os.path.join(os.path.dirname(__file__), _entities_base)))
 TEMP_UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../uploads'))
 ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'docx', 'txt', 'doc', 'tiff'}
 
@@ -217,6 +222,12 @@ def login():
     if not user["is_active"]:
         return jsonify({"msg": "Compte désactivé"}), 401
 
+    # System enabled check (dynamic, from .env)
+    config = dotenv_values('.env')
+    system_enabled = config.get('SYSTEM_ENABLED', 'true').lower() == 'true'
+    if not system_enabled and user["role"] != "superuser":
+        return jsonify({"msg": "Le système est inactif"}), 403
+
     access_token = create_access_token(identity=user["email"], additional_claims={
         "id": user["id"],
         "role": user["role"],
@@ -298,7 +309,7 @@ def read_activity_logs():
 @jwt_required()
 def get_activity_logs_endpoint():
     current_user_claims = get_jwt()
-    if current_user_claims.get('role') != 'admin':
+    if current_user_claims.get('role') != 'admin' and current_user_claims.get('role') != 'superuser':
         app.logger.warning("Unauthorized access attempt to logs from user: %s", 
                           current_user_claims.get('username'))
         return jsonify({"msg": "Admin access required"}), 403
@@ -317,7 +328,7 @@ def get_activity_logs_endpoint():
 @jwt_required()
 def get_users():
     current_user_claims = get_jwt()
-    if current_user_claims.get('role') != 'admin':
+    if current_user_claims.get('role') != 'admin' and current_user_claims.get('role') != 'superuser':
         return jsonify({"msg": "Admin access required"}), 403
     
     try:
@@ -330,7 +341,7 @@ def get_users():
 @jwt_required()
 def create_user():
     current_user_claims = get_jwt()
-    if current_user_claims.get('role') != 'admin':
+    if current_user_claims.get('role') != 'admin' and current_user_claims.get('role') != 'superuser':
         return jsonify({"msg": "Admin access required"}), 403
     
     data = request.get_json()
@@ -375,7 +386,7 @@ def create_user():
 @jwt_required()
 def update_user(user_id):
     current_user_claims = get_jwt()
-    if current_user_claims.get('role') != 'admin':
+    if current_user_claims.get('role') != 'admin' and current_user_claims.get('role') != 'superuser':
         return jsonify({"msg": "Admin access required"}), 403
     
     data = request.get_json()
@@ -423,7 +434,7 @@ def update_user(user_id):
 @jwt_required()
 def delete_user(user_id):
     current_user_claims = get_jwt()
-    if current_user_claims.get('role') != 'admin':
+    if current_user_claims.get('role') != 'admin' and current_user_claims.get('role') != 'superuser':
         return jsonify({"msg": "Admin access required"}), 403
     
     try:
@@ -648,7 +659,7 @@ def create_company():
 @jwt_required()
 def update_company(company_id):
     current_user_claims = get_jwt()
-    if current_user_claims.get('role') != 'admin':
+    if current_user_claims.get('role') != 'admin' and current_user_claims.get('role') != 'superuser':
         return jsonify({"msg": "Admin access required"}), 403
 
     data = request.get_json()
@@ -736,20 +747,16 @@ def delete_company(company_id):
 @jwt_required()
 def get_companies():
     try:
-        # Récupère les claims du JWT
         claims = get_jwt()
         current_user_id = claims.get("id")
-        user_role = claims.get("role", "user")  # 'admin' ou 'user'
+        user_role = claims.get("role", "user")
 
         if not current_user_id:
             return jsonify({"error": "User ID not found in token"}), 400
 
-        # Sélection de la méthode selon le rôle
-        if user_role == 'admin':
-            # Admin : toutes les companies
+        if user_role == "admin" or user_role == "superuser":
             companies = db.get_all_companies()
         else:
-            # Utilisateur normal : uniquement ses companies
             companies = db.get_user_companies(current_user_id)
 
         return jsonify(companies), 200
@@ -777,7 +784,7 @@ def get_companies_by_user(user_id):
 @jwt_required()
 def create_partner():
     current_user_claims = get_jwt()
-    if current_user_claims.get('role') != 'admin':
+    if current_user_claims.get('role') != 'admin' and current_user_claims.get('role') != 'superuser':
         return jsonify({"msg": "Admin access required"}), 403
     
     data = request.get_json()
@@ -837,7 +844,7 @@ def create_partner():
 @jwt_required()
 def update_partner(partner_id):
     current_user_claims = get_jwt()
-    if current_user_claims.get('role') != 'admin':
+    if current_user_claims.get('role') != 'admin' and current_user_claims.get('role') != 'superuser':
         return jsonify({"msg": "Admin access required"}), 403
     
     data = request.get_json()
@@ -976,8 +983,8 @@ def get_partners():
             return jsonify({"error": "User ID not found in token"}), 400
 
         # Sélection de la méthode selon le rôle
-        if user_role == 'admin':
-            # Admin : tous les partenaires
+        if user_role == 'admin' or user_role == 'superuser':
+            # Admin or superuser: all partners
             partners = db.get_all_partners()
         else:
             # Utilisateur normal : uniquement les partenaires liés à ses companies
@@ -1130,7 +1137,7 @@ def get_doctypes():
 @jwt_required()
 def update_doctype(doctype_id):
     current_user_claims = get_jwt()
-    if current_user_claims.get('role') != 'admin':
+    if current_user_claims.get('role') != 'admin' and current_user_claims.get('role') != 'superuser':
         return jsonify({"msg": "Admin access required"}), 403
 
     data = request.get_json()
@@ -1171,7 +1178,7 @@ def update_doctype(doctype_id):
 @jwt_required()
 def delete_doctype(doctype_id):
     current_user_claims = get_jwt()
-    if current_user_claims.get('role') != 'admin':
+    if current_user_claims.get('role') != 'admin' and current_user_claims.get('role') != 'superuser':
         return jsonify({"msg": "Admin access required"}), 403
 
     try:
@@ -1867,7 +1874,7 @@ def download_file(company_id, doctype_id, filename):
 def check_partner_field():
     """Check if a specific partner field value already exists"""
     current_user_claims = get_jwt()
-    if current_user_claims.get('role') != 'admin':
+    if current_user_claims.get('role') != 'admin' and current_user_claims.get('role') != 'superuser':
         return jsonify({"msg": "Admin access required"}), 403
     
     data = request.get_json()
@@ -1898,7 +1905,7 @@ def check_partner_field():
 def check_multiple_partner_fields():
     """Check multiple partner fields for conflicts"""
     current_user_claims = get_jwt()
-    if current_user_claims.get('role') != 'admin':
+    if (current_user_claims.get('role') != 'admin' and current_user_claims.get('role') != 'superuser'):
         return jsonify({"msg": "Admin access required"}), 403
     
     data = request.get_json()
