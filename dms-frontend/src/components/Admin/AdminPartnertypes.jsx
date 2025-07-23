@@ -104,8 +104,8 @@ const AdminPartnerTypes = ({ user }) => {
     const errorMessages = [];
 
     if (!formData.name.trim()) {
-      errors.name = 'Name is required';
-      errorMessages.push('Name is required');
+      errors.name = 'Le nom est requis';
+      errorMessages.push('Le nom est requis');
     }
 
     setFieldErrors(errors);
@@ -160,7 +160,7 @@ const AdminPartnerTypes = ({ user }) => {
     
     try {
       await API.partnertype.update(editingPartnerType.id, formData);
-      setSuccess('Partner type updated successfully');
+      setSuccess('Type de partenaire mis à jour avec succès');
       setEditingPartnerType(null);
       setShowModifyTab(false);
       setActiveTab('list');
@@ -170,11 +170,11 @@ const AdminPartnerTypes = ({ user }) => {
       const errorMessage = apiError?.msg || apiError?.error || apiError?.message || 'Error updating partner';
       
       if (errorMessage.toLowerCase().includes('name')) {
-        setFieldErrors({ name: 'Partner name already exists' });
-        setGlobalErrors(['Partner name already exists']);
+        setFieldErrors({ name: 'Le nom du type de partenaire existe déjà' });
+        setGlobalErrors(['Le nom du type de partenaire existe déjà']);
       } else {
-        setError('Error updating partner');
-        console.error('Error updating partner:', err);
+        setError('Erreur lors de la mise à jour du type de partenaire');
+        console.error('Erreur lors de la mise à jour du type de partenaire:', err);
       }
     }
   };
@@ -195,19 +195,19 @@ const AdminPartnerTypes = ({ user }) => {
               setEditingPartnerType(null);
             }}
           >
-            Partner Types List
+            Liste des types de partenaires
           </button>
           {showModifyTab && (
             <button
               className={`tab-btn ${activeTab === 'form' ? 'active' : ''}`}
               onClick={() => setActiveTab('form')}
             >
-              Modify Partner Type
+              Modifier le type de partenaire
             </button>
           )}
           
           <Link to="/AddPartnerType" className="btn-primary-2">
-            Add Partner Type
+            Ajouter un type de partenaire
           </Link>
         </div>
       </div>
@@ -219,7 +219,7 @@ const AdminPartnerTypes = ({ user }) => {
         <div className="users-list">
           {loading && (
             <div className="loading-message">
-              Loading partner types...
+              Chargement des types de partenaires...
             </div>
           )}
 
@@ -267,7 +267,7 @@ const AdminPartnerTypes = ({ user }) => {
                 <tr>
                   <th></th>
                   <th>ID</th>
-                  <th>Name</th>
+                  <th>Nom</th>
                   <th>Actions</th>
                 </tr>
                 <tr className="filter-row">
@@ -277,7 +277,7 @@ const AdminPartnerTypes = ({ user }) => {
                       type="text"
                       value={filters.id}
                       onChange={(e) => handleFilterChange(e, 'id')}
-                      placeholder="Filter ID"
+                      placeholder="Filtrer l'ID"
                       className="filter-input"
                     />
                   </td>
@@ -286,7 +286,7 @@ const AdminPartnerTypes = ({ user }) => {
                       type="text"
                       value={filters.name}
                       onChange={(e) => handleFilterChange(e, 'name')}
-                      placeholder="Filter Name"
+                      placeholder="Filtrer le nom"
                       className="filter-input"
                     />
                   </td>
@@ -308,13 +308,13 @@ const AdminPartnerTypes = ({ user }) => {
                             className="btn-edit"
                             onClick={() => handleEdit(partnerType)}
                           >
-                            Modify
+                            Modifier
                           </button>
                           <button
                             className="btn-delete"
                             onClick={() => handleDelete(partnerType.id)}
                           >
-                            Delete
+                            Supprimer
                           </button>
                         </div>
                       </td>

@@ -158,19 +158,18 @@ def process_single_file_ocr(file, company_id, doctype_id):
         is_invoice = extracted_data.get('is_invoice', False)
 
         text_path = None
-        if is_invoice:
-            # Save OCR text to temporary folder only for invoices
-            text_filename = f"{os.path.splitext(unique_filename)[0]}.txt"
-            text_path = os.path.join(app.config['TEMP_UPLOAD_FOLDER'], text_filename)
-            with open(text_path, "w", encoding="utf-8") as f:
-                f.write(text)
+        # Always save OCR text to temporary folder for all documents
+        text_filename = f"{os.path.splitext(unique_filename)[0]}.txt"
+        text_path = os.path.join(app.config['TEMP_UPLOAD_FOLDER'], text_filename)
+        with open(text_path, "w", encoding="utf-8") as f:
+            f.write(text)
 
         return {
             "filename": unique_filename,
             "original_filename": filename,
             "temp_file_path": temp_file_path,
             "text_path": text_path,
-            "ocr_text": text if is_invoice else None,
+            "ocr_text": text,
             "extracted_data": extracted_data
         }
     except Exception as e:

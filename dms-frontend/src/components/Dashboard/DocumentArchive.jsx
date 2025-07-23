@@ -209,7 +209,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
         return docDate >= start && docDate <= end;
       });
     }
-
+    
     setFilteredDocuments(filtered);
   }, [documents, searchTerm, selectedDoctypeFilters, selectedDoctype, startDate, endDate]);
 
@@ -391,10 +391,14 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     }
   };
 
+  // State for document preview modal
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [previewType, setPreviewType] = useState(null); // 'pdf', 'image', 'txt', 'other'
+
   const handleViewDocument = async (doc) => {
     try {
       const response = await API.documents.download(doc.id);
-      
       if (response.status !== 200) {
         if (response.status === 404) {
           alert('Document non disponible.');
@@ -402,12 +406,15 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
         }
         throw new Error('Network response was not ok');
       }
-      
       const blob = response.data;
       const url = window.URL.createObjectURL(blob);
-      window.open(url, '_blank');
-      // Note: We don't revoke the URL immediately as the new window needs it
-      // It will be cleaned up when the window is closed
+      // Determine file type
+      let type = 'other';
+      if (doc.filename && doc.filename.toLowerCase().endsWith('.pdf')) type = 'pdf';
+      else if (doc.filename && ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'].some(ext => doc.filename.toLowerCase().endsWith(ext))) type = 'image';
+      setPreviewType(type);
+      setPreviewUrl(url);
+      setPreviewModalOpen(true);
     } catch (error) {
       console.error('View failed:', error);
       alert('Échec de l\'ouverture. Veuillez réessayer.');
@@ -426,9 +433,9 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
       }
       const blob = response.data;
       const url = window.URL.createObjectURL(blob);
-      window.open(url, '_blank');
-      // Note: We don't revoke the URL immediately as the new window needs it
-      // It will be cleaned up when the window is closed
+      setPreviewType('pdf');
+      setPreviewUrl(url);
+      setPreviewModalOpen(true);
     } catch (error) {
       console.error('View failed:', error);
       alert('Échec de l\'ouverture. Veuillez réessayer.');
@@ -446,14 +453,50 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
         throw new Error('Network response was not ok');
       }
       const blob = response.data;
-      const url = window.URL.createObjectURL(blob);
-      window.open(url, '_blank');
-      // Note: We don't revoke the URL immediately as the new window needs it
-      // It will be cleaned up when the window is closed
+      const text = await blob.text();
+      setPreviewType('txt');
+      setPreviewUrl(text);
+      setPreviewModalOpen(true);
     } catch (error) {
       console.error('View failed:', error);
       alert('Échec de l\'ouverture. Veuillez réessayer.');
     }
+  };
+
+  // Modal for document/rapport/OCR preview
+  const renderPreviewModal = () => {
+    if (!previewModalOpen) return null;
+    // For PDF, append params to hide toolbar/sidebar
+    const pdfUrl = previewType === 'pdf' && previewUrl ? `${previewUrl}#toolbar=0&navpanes=0&view=FitH` : previewUrl;
+    let modalTitle = 'Aperçu du document';
+    if (previewType === 'pdf') modalTitle = 'Aperçu du rapport';
+    else if (previewType === 'image') modalTitle = "Aperçu de l'image";
+    else if (previewType === 'txt') modalTitle = 'Aperçu du texte OCR';
+    return (
+      <div className="document-preview-modal-overlay">
+        <div className="document-preview-modal-content">
+          <div className="document-preview-modal-header">
+            <span className="document-preview-modal-title">{modalTitle}</span>
+            <button type="button" className="btn-close document-preview-modal-close" onClick={() => {
+              setPreviewModalOpen(false);
+              if (previewType !== 'txt' && previewUrl) window.URL.revokeObjectURL(previewUrl);
+              setPreviewUrl(null);
+            }} aria-label="Close">&times;</button>
+          </div>
+          <div className="document-preview-modal-body">
+            {previewType === 'pdf' ? (
+              <iframe src={pdfUrl} title="Document PDF"></iframe>
+            ) : previewType === 'image' ? (
+              <img src={previewUrl} alt="Document" />
+            ) : previewType === 'txt' ? (
+              <pre>{previewUrl}</pre>
+            ) : (
+              <div className="text-muted">Aperçu non disponible pour ce type de fichier.</div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
   };
 
   // Function to render extracted data in a visual format
@@ -565,7 +608,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
             </div>
           </div>
       )}
-      
+
       {successMessage && (
         <div className="alert alert-success">{successMessage}</div>
       )}
@@ -575,16 +618,16 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
         <div className="card-body p-3">
           <div className="d-flex justify-content-between align-items-start mb-3">
             <h2 className="h6 mb-0">Recherche & Filtres</h2>
-            {(selectedDoctype || selectedCompany) && (
-              <button 
+        {(selectedDoctype || selectedCompany) && (
+          <button 
                 className="btn btn-primary btn-sm d-flex align-items-center"
-                onClick={openUploadModal}
-              >
-                <i className="bi bi-plus me-1"></i> Upload File
-              </button>
-            )}
-          </div>
-          
+            onClick={openUploadModal}
+          >
+            <i className="bi bi-plus me-1"></i> Upload File
+          </button>
+        )}
+      </div>
+      
           <div className="row g-3">
             {/* Left Column - Filters */}
             <div className="col-md-6">
@@ -592,49 +635,49 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
               <div className="row g-2 mb-3">
                 <div className="col-6">
                   <label className="form-label small">Date de début</label>
-                  <input 
-                    type="date" 
+              <input 
+                type="date" 
                     className="form-control form-control-sm"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                  />
-                </div>
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+            </div>
                 <div className="col-6">
                   <label className="form-label small">Date de fin</label>
-                  <input 
-                    type="date" 
+              <input 
+                type="date" 
                     className="form-control form-control-sm"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                  />
-                </div>
-              </div>
-              
-              {/* Document Type Filters - Only show when no specific doctype is selected */}
-              {!selectedDoctype && availableDoctypes.length > 0 && (
-                <div>
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
+            </div>
+          </div>
+          
+          {/* Document Type Filters - Only show when no specific doctype is selected */}
+          {!selectedDoctype && availableDoctypes.length > 0 && (
+            <div>
                   <h6 className="mb-2 small">Types de documents</h6>
                   <div className="d-flex flex-wrap gap-2">
-                    {availableDoctypes.map((doctype) => (
+                {availableDoctypes.map((doctype) => (
                       <div key={doctype.id} className="form-check form-check-sm">
-                        <input 
-                          type="checkbox" 
-                          className="form-check-input" 
-                          id={`filter-doctype-${doctype.id}`}
-                          checked={selectedDoctypeFilters.includes(doctype.id)}
-                          onChange={() => handleDoctypeFilterChange(doctype.id)}
-                        />
-                        <label 
+                    <input 
+                      type="checkbox" 
+                      className="form-check-input" 
+                      id={`filter-doctype-${doctype.id}`}
+                      checked={selectedDoctypeFilters.includes(doctype.id)}
+                      onChange={() => handleDoctypeFilterChange(doctype.id)}
+                    />
+                    <label 
                           className="form-check-label text-muted small" 
-                          htmlFor={`filter-doctype-${doctype.id}`}
-                        >
-                          {doctype.name}
-                        </label>
-                      </div>
-                    ))}
+                      htmlFor={`filter-doctype-${doctype.id}`}
+                    >
+                      {doctype.name}
+                    </label>
                   </div>
-                </div>
-              )}
+                ))}
+              </div>
+            </div>
+          )}
             </div>
             
             {/* Right Column - Search */}
@@ -676,7 +719,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                   ))}
                 </ol>
               </nav>
-              <h2 className="h5 mb-0">Documents</h2>
+            <h2 className="h5 mb-0">Documents</h2>
             </div>
             <span className="text-muted">{filteredDocuments.length} items</span>
           </div>
@@ -965,6 +1008,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
           </div>
         </div>
       )}
+      {renderPreviewModal()}
     </div>
   );
 };

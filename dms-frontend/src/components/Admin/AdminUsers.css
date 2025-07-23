@@ -122,7 +122,7 @@
   font-weight: 600;
   color: #495057;
   font-size: 1rem;
-  text-transform: capitalize;
+  /*text-transform: capitalize;*/
   letter-spacing: 0.5px;
   text-align: left;
 }

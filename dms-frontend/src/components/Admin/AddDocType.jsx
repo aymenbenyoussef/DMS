@@ -48,7 +48,7 @@ const AddDocType = () => {
         const data = Array.isArray(res.data) ? res.data : res.data.companies;
         setCompanies(data ?? []);
       } catch (err) {
-        setError('Error loading companies');
+        setError('Erreur lors du chargement des entités');
         console.error(err);
       }
     })();
@@ -61,7 +61,7 @@ const AddDocType = () => {
     setLoading(true);
 
     const errors = {};
-    if (!formData.name.trim()) errors.name = 'Name is required.';
+    if (!formData.name.trim()) errors.name = 'Le nom est requis.';
 
     if (Object.keys(errors).length) {
       setFieldErrors(errors);
@@ -78,7 +78,7 @@ const AddDocType = () => {
 
       await API.doctype.create(dataToSend);     
 
-      setSuccess('Document type created successfully!');
+      setSuccess('Type de document créé avec succès!');
       // reset
       setFormData({ name: '', status: true, companies: [] });
       setFieldErrors({});
@@ -125,7 +125,7 @@ const AddDocType = () => {
         <form onSubmit={handleSubmit}>
           {/* name */}
           <div className="form-group">
-            <label htmlFor="name">Name of the document type</label>
+            <label htmlFor="name">Nom du type de document</label>
             <input
               type="text"
               id="name"
@@ -140,7 +140,7 @@ const AddDocType = () => {
 
           {/* companies list */}
           <div className="form-group">
-            <label>Companies</label>
+            <label>Entités</label>
             <div className="checkbox-list">
               {companies.map((c) => (
                 <label key={c.id} className="checkbox-item">
@@ -166,17 +166,17 @@ const AddDocType = () => {
                 checked={formData.status}
                 onChange={handleInputChange}
               />{' '}
-              Active
+              Actif
             </label>
           </div>
 
           {/* submit */}
           <div className="form-actions">
             <Link to="/doctypes" className="btn-cancel">
-                Cancel
+                Annuler
             </Link>
             <button type="submit" className="btn" disabled={loading}>
-              {loading ? 'En cours...' : 'Create Document Type'}
+              {loading ? 'En cours...' : 'Créer le type de document'}
             </button>
           </div>
         </form>

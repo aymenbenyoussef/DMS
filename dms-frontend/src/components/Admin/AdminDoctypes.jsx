@@ -326,8 +326,8 @@ const AdminDoctypes = ({ user }) => {
                 <tr>
                   <th></th>
                   <th>ID</th>
-                  <th>Name</th>
-                  <th>Companies</th>
+                  <th>Nom</th>
+                  <th>Entités</th>
                   <th>Actions</th>
                 </tr>
                 <tr className="filter-row">

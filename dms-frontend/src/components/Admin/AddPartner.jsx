@@ -288,13 +288,13 @@ const handleSubmit = async (e) => {
     };
 
     const response = await API.partner.create(partnerData);
-    setSuccess('Partner created successfully');
+    setSuccess('Partenaire créé avec succès');
     
     setTimeout(() => {
       navigate('/partners');
     }, 1500);
   } catch (err) {
-    let errorMsg = 'Error creating partner';
+    let errorMsg = 'Erreur lors de la création du partenaire';
     let errors = {};
     if (err.response) {
       const msg = err.response.data.message || err.response.data.msg || '';
@@ -344,7 +344,7 @@ const handleSubmit = async (e) => {
           className={`tab-btn ${activeTab === 'Identity' ? 'active' : ''}`}
           onClick={() => handleTabChange('Identity')}
         >
-          Identity
+          Identité
         </button>
         <button
           type="button"
@@ -358,7 +358,7 @@ const handleSubmit = async (e) => {
           className={`tab-btn ${activeTab === 'Billing and payments' ? 'active' : ''}`}
           onClick={() => handleTabChange('Billing and payments')}
         >
-          Billing and payments
+          Facturation et paiement
         </button>
         <button
           type="button"
@@ -377,11 +377,11 @@ const handleSubmit = async (e) => {
         {/* Identity Tab */}
         <div className="tab-panel" style={{ display: activeTab === 'Identity' ? 'block' : 'none' }}>
           <div className="form-group">
-            <label>Company name *</label>
+            <label>Nom de l'entité *</label>
             <input
               type="text"
               name="companyName"
-              placeholder="Enter company name"
+              placeholder="Entrez le nom de l'entité"
               value={formData.companyName}
               onChange={handleInputChange}
               className={fieldErrors.companyName ? 'input-error' : ''}
@@ -394,21 +394,21 @@ const handleSubmit = async (e) => {
             )}
           </div>
           <div className="form-group">
-            <label>Trade name (if different)</label>
+            <label>Nom commercial (si différent)</label>
             <input
               type="text"
               name="tradeName"
-              placeholder="Enter trade name"
+              placeholder="Entrez le nom commercial"
               value={formData.tradeName}
               onChange={handleInputChange}
             />
           </div>
           <div className="form-group">
-            <label>Unique identifier *</label>
+            <label>Identifiant unique *</label>
             <input
               type="text"
               name="uniqueIdentifier"
-              placeholder="Enter unique identifier"
+              placeholder="Entrez l'identifiant unique"
               value={formData.uniqueIdentifier}
               onChange={handleInputChange}
               className={fieldErrors.uniqueIdentifier ? 'input-error' : ''}
@@ -422,7 +422,7 @@ const handleSubmit = async (e) => {
           </div>
 
           <div className="form-group">
-            <label>Entities *</label>
+            <label>Entités *</label>
             {fieldErrors.companies && <div className="field-error">{fieldErrors.companies}</div>}
             <div className="checkbox-list">
               {companies.map((c) => (
@@ -440,7 +440,7 @@ const handleSubmit = async (e) => {
             </div>
           </div>
           <div className="form-group">
-            <label>Partner types *</label>
+            <label>Types de partenaire *</label>
             {fieldErrors.partnertypes && <div className="field-error">{fieldErrors.partnertypes}</div>}
             <div className="checkbox-list">
               {partnertypes.map((c) => (
@@ -465,7 +465,7 @@ const handleSubmit = async (e) => {
                 checked={formData.isActive}
                 onChange={handleInputChange}
               />{' '}
-              Active
+              Actif
             </label>
           </div>
           <div className="form-actions">
@@ -474,7 +474,7 @@ const handleSubmit = async (e) => {
               className="btn"
               onClick={() => handleTabChange('Contact')}
             >
-              Next
+              Suivant
             </button>
           </div>
         </div>
@@ -482,11 +482,11 @@ const handleSubmit = async (e) => {
         {/* Contact Tab */}
         <div className="tab-panel" style={{ display: activeTab === 'Contact' ? 'block' : 'none' }}>
           <div className="form-group">
-            <label>Mailing address *</label>
+            <label>Adresse postale *</label>
             <input
               type="text"
               name="mailingAddress"
-              placeholder="Enter mailing address"
+              placeholder="Entrez l'adresse postale"
               value={formData.mailingAddress}
               onChange={handleInputChange}
               className={fieldErrors.mailingAddress ? 'input-error' : ''}
@@ -499,21 +499,21 @@ const handleSubmit = async (e) => {
             )}
           </div>
           <div className="form-group">
-            <label>Head office or billing address</label>
+            <label>Adresse de facturation</label>
             <input
               type="text"
               name="billingAddress"
-              placeholder="Enter billing address"
+              placeholder="Entrez l'adresse de facturation"
               value={formData.billingAddress}
               onChange={handleInputChange}
             />
           </div>
           <div className="form-group">
-            <label>Phone 1 (primary) *</label>
+            <label>Téléphone 1 (principal) *</label>
             <input
               type="text"
               name="phone1"
-              placeholder="Enter primary phone"
+              placeholder="Entrez le téléphone principal"
               value={formData.phone1}
               onChange={handleInputChange}
               className={fieldErrors.phone1 ? 'input-error' : ''}
@@ -526,31 +526,31 @@ const handleSubmit = async (e) => {
             )}
           </div>
           <div className="form-group">
-            <label>Phone 2</label>
+            <label>Téléphone 2</label>
             <input
               type="text"
               name="phone2"
-              placeholder="Enter secondary phone"
+              placeholder="Entrez le téléphone secondaire"
               value={formData.phone2}
               onChange={handleInputChange}
             />
           </div>
           <div className="form-group">
-            <label>Phone 3</label>
+            <label>Téléphone 3</label>
             <input
               type="text"
               name="phone3"
-              placeholder="Enter additional phone"
+              placeholder="Entrez le téléphone additionnel"
               value={formData.phone3}
               onChange={handleInputChange}
             />
           </div>
           <div className="form-group">
-            <label>Email *</label>
+            <label>Email</label>
             <input
               type="email"
               name="email"
-              placeholder="Enter email"
+              placeholder="Entrez l'email"
               value={formData.email}
               onChange={handleInputChange}
               className={fieldErrors.email ? 'input-error' : ''}
@@ -568,14 +568,14 @@ const handleSubmit = async (e) => {
               className="btn"
               onClick={() => handleTabChange('Identity')}
             >
-              Previous
+              Précédent
             </button>
             <button
               type="button"
               className="btn"
               onClick={() => handleTabChange('Billing and payments')}
             >
-              Next
+              Suivant
             </button>
           </div>
         </div>
@@ -583,31 +583,31 @@ const handleSubmit = async (e) => {
         {/* Billing and payments Tab */}
         <div className="tab-panel" style={{ display: activeTab === 'Billing and payments' ? 'block' : 'none' }}>
           <div className="form-group">
-            <label>Payment terms</label>
+            <label>Conditions de paiement</label>
             <input
               type="text"
               name="paymentTerms"
-              placeholder="Enter payment terms"
+              placeholder="Entrez les conditions de paiement"
               value={formData.paymentTerms}
               onChange={handleInputChange}
             />
           </div>
           <div className="form-group">
-            <label>Billing terms</label>
+            <label>Conditions de facturation</label>
             <input
               type="text"
               name="billingTerms"
-              placeholder="Enter billing terms"
+              placeholder="Entrez les conditions de facturation"
               value={formData.billingTerms}
               onChange={handleInputChange}
             />
           </div>
           <div className="form-group">
-            <label>Bank account number *</label>
+            <label>Numéro de compte bancaire *</label>
             <input
               type="text"
               name="bankAccountNumber"
-              placeholder="Enter bank account number"
+              placeholder="Entrez le numéro de compte bancaire"
               value={formData.bankAccountNumber}
               onChange={handleInputChange}
               className={fieldErrors.bankAccountNumber ? 'input-error' : ''}
@@ -620,11 +620,11 @@ const handleSubmit = async (e) => {
             )}
           </div>
           <div className="form-group">
-            <label>Bank name</label>
+            <label>Nom de la banque</label>
             <input
               type="text"
               name="bankName"
-              placeholder="Enter bank name"
+              placeholder="Entrez le nom de la banque"
               value={formData.bankName}
               onChange={handleInputChange}
             />
@@ -635,14 +635,14 @@ const handleSubmit = async (e) => {
               className="btn"
               onClick={() => handleTabChange('Contact')}
             >
-              Previous
+              Précédent
             </button>
             <button
               type="button"
               className="btn"
               onClick={() => handleTabChange('Notes')}
             >
-              Next
+              Suivant
             </button>
           </div>
         </div>
@@ -653,7 +653,7 @@ const handleSubmit = async (e) => {
             <label>Notes</label>
             <textarea
               name="notes"
-              placeholder="Enter any additional notes"
+              placeholder="Entrez les notes supplémentaires"
               value={formData.notes}
               onChange={handleInputChange}
               rows="4"
@@ -677,13 +677,13 @@ const handleSubmit = async (e) => {
               className="btn"
               onClick={() => handleTabChange('Billing and payments')}
             >
-              Previous
+              Précédent
             </button>
             <Link to="/partners" className="btn-cancel">
-              Cancel
+              Annuler
             </Link>
             <button type="submit" disabled={loading} className="btn">
-              {loading ? 'Creating...' : 'Create Partner'}
+              {loading ? 'En cours...' : 'Créer le partenaire'}
             </button>
           </div>
         </div>

@@ -60,7 +60,7 @@ const AddPartnerType = () => {
       console.log('Sending data:', dataToSend);
       console.error('API error:', err.response?.data || err.message);
       
-      const msg = err.response?.data?.msg || 'Error occurred while creating the partner type.';
+      const msg = err.response?.data?.msg || 'Erreur lors de la création du type de partenaire.';
       
       // Check for specific name conflict error
       if ((msg.toLowerCase().includes('name already exists') || msg.toLowerCase().includes('name')) && msg.toLowerCase().includes('exists')) {

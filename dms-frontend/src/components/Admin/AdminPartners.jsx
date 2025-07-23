@@ -74,7 +74,7 @@ const AdminPartners = ({ user }) => {
   // New useEffect to handle notification display
   useEffect(() => {
     if (!loading && filteredPartners.length === 0) {
-      const message = partners.length === 0 ? 'No partners available' : 'No partners found matching your filters';
+      const message = partners.length === 0 ? 'Aucun partenaire disponible' : 'Aucun partenaire trouvé correspondant à vos filtres';
       setNotificationMessage(message);
       setShowNotification(true);
       
@@ -368,18 +368,18 @@ const AdminPartners = ({ user }) => {
               setEditingPartner(null);
             }}
           >
-            Partners List
+            Liste des partenaires
           </button>
           {showModifyTab && (
             <button
               className={`tab-btn ${activeTab === 'form' ? 'active' : ''}`}
               onClick={() => setActiveTab('form')}
             >
-              Modify Partner
+              Modifier le partenaire
             </button>
           )}
           <Link to="/AddPartner" className="btn-primary-2">
-            Add Partner 
+            Ajouter un partenaire 
           </Link>
         </div>
       </div>
@@ -392,7 +392,7 @@ const AdminPartners = ({ user }) => {
         <div className="users-list">
           {loading && (
             <div className="loading-message">
-              Loading partners...
+              Chargement des partenaires...
             </div>
           )}
 
@@ -456,7 +456,7 @@ const AdminPartners = ({ user }) => {
                       type="text"
                       value={filters.unique_identifier}
                       onChange={(e) => handleFilterChange(e, 'unique_identifier')}
-                      placeholder="Filter Identifier"
+                      placeholder="Filtrer l'identifiant"
                       className="filter-input"
                     />
                   </td>
@@ -465,7 +465,7 @@ const AdminPartners = ({ user }) => {
                       type="text"
                       value={filters.company_name}
                       onChange={(e) => handleFilterChange(e, 'company_name')}
-                      placeholder="Filter Name"
+                      placeholder="Filtrer le nom"
                       className="filter-input"
                     />
                   </td>
@@ -474,7 +474,7 @@ const AdminPartners = ({ user }) => {
                       type="text"
                       value={filters.company}
                       onChange={(e) => handleFilterChange(e, 'company')}
-                      placeholder="Filter Entities"
+                      placeholder="Filtrer les entités"
                       className="filter-input"
                     />
                   </td>
@@ -483,7 +483,7 @@ const AdminPartners = ({ user }) => {
                       type="text"
                       value={filters.partnertype}
                       onChange={(e) => handleFilterChange(e, 'partnertype')}
-                      placeholder="Filter Types"
+                      placeholder="Filtrer les types"
                       className="filter-input"
                     />
                   </td>
@@ -492,7 +492,7 @@ const AdminPartners = ({ user }) => {
                       type="text"
                       value={filters.phone}
                       onChange={(e) => handleFilterChange(e, 'phone')}
-                      placeholder="Filter Phone"
+                      placeholder="Filtrer le téléphone"
                       className="filter-input"
                     />
                   </td>
@@ -501,7 +501,7 @@ const AdminPartners = ({ user }) => {
                       type="text"
                       value={filters.email}
                       onChange={(e) => handleFilterChange(e, 'email')}
-                      placeholder="Filter Email"
+                      placeholder="Filtrer l'email"
                       className="filter-input"
                     />
                   </td>
@@ -559,18 +559,18 @@ const AdminPartners = ({ user }) => {
 
       {activeTab === 'form' && editingPartner && (
         <div className="user-form">
-          <h2>Modify Partner</h2>
+            <h2>Modifier le partenaire</h2>
           <form onSubmit={handleUpdate}>
             <div className="tab-panel">
               {/* Identity Tab */}
               <div className="form-section">
-                <h3>Identity</h3>
+                <h3>Identité</h3>
                 <div className="form-group">
-                  <label>Company name *</label>
+                  <label>Nom de l'entité *</label>
                   <input
                     type="text"
                     name="company_name"
-                    placeholder="Enter company name"
+                    placeholder="Entrez le nom de l'entité"
                     value={formData.company_name}
                     onChange={handleInputChange}
                     className={fieldErrors.company_name ? 'input-error' : ''}
@@ -578,21 +578,21 @@ const AdminPartners = ({ user }) => {
                   {fieldErrors.company_name && <div className="field-error">{fieldErrors.company_name}</div>}
                 </div>
                 <div className="form-group">
-                  <label>Trade name (if different)</label>
+                  <label>Nom commercial (si différent)</label>
                   <input
                     type="text"
                     name="trade_name"
-                    placeholder="Enter trade name"
+                    placeholder="Entrez le nom commercial"
                     value={formData.trade_name}
                     onChange={handleInputChange}
                   />
                 </div>
                 <div className="form-group">
-                  <label>Unique identifier *</label>
+                  <label>Identifiant unique *</label>
                   <input
                     type="text"
                     name="unique_identifier"
-                    placeholder="Enter unique identifier"
+                    placeholder="Entrez un identifiant unique"
                     value={formData.unique_identifier}
                     onChange={handleInputChange}
                     className={fieldErrors.unique_identifier ? 'input-error' : ''}
@@ -601,7 +601,7 @@ const AdminPartners = ({ user }) => {
                 </div>
 
                 <div className="form-group">
-                  <label>Entities *</label>
+                  <label>Entités *</label>
                   {fieldErrors.companies && <div className="field-error">{fieldErrors.companies}</div>}
                   <div className="checkbox-list">
                     {companies.map((c) => (
@@ -619,7 +619,7 @@ const AdminPartners = ({ user }) => {
                   </div>
                 </div>
                 <div className="form-group">
-                  <label>Partner types *</label>
+                  <label>Types de partenaire *</label>
                   {fieldErrors.partnertypes && <div className="field-error">{fieldErrors.partnertypes}</div>}
                   <div className="checkbox-list">
                     {partnertypes.map((pt) => (
@@ -653,11 +653,11 @@ const AdminPartners = ({ user }) => {
               <div className="form-section">
                 <h3>Contact</h3>
                 <div className="form-group">
-                  <label>Mailing address *</label>
+                  <label>Adresse postale *</label>
                   <input
                     type="text"
                     name="mailing_address"
-                    placeholder="Enter mailing address"
+                    placeholder="Entrez l'adresse postale"
                     value={formData.mailing_address}
                     onChange={handleInputChange}
                     className={fieldErrors.mailing_address ? 'input-error' : ''}
@@ -665,21 +665,21 @@ const AdminPartners = ({ user }) => {
                   {fieldErrors.mailing_address && <div className="field-error">{fieldErrors.mailing_address}</div>}
                 </div>
                 <div className="form-group">
-                  <label>Head office or billing address</label>
+                  <label>Adresse de facturation</label>
                   <input
                     type="text"
                     name="billing_address"
-                    placeholder="Enter billing address"
+                    placeholder="Entrez l'adresse de facturation"
                     value={formData.billing_address}
                     onChange={handleInputChange}
                   />
                 </div>
                 <div className="form-group">
-                  <label>Phone 1 (primary) *</label>
+                  <label>Téléphone 1 (principal) *</label>
                   <input
                     type="text"
                     name="phone1"
-                    placeholder="Enter primary phone"
+                    placeholder="Entrez le téléphone principal"
                     value={formData.phone1}
                     onChange={handleInputChange}
                     className={fieldErrors.phone1 ? 'input-error' : ''}
@@ -687,31 +687,31 @@ const AdminPartners = ({ user }) => {
                   {fieldErrors.phone1 && <div className="field-error">{fieldErrors.phone1}</div>}
                 </div>
                 <div className="form-group">
-                  <label>Phone 2</label>
+                  <label>Téléphone 2</label>
                   <input
                     type="text"
                     name="phone2"
-                    placeholder="Enter secondary phone"
+                    placeholder="Entrez le téléphone secondaire"
                     value={formData.phone2}
                     onChange={handleInputChange}
                   />
                 </div>
                 <div className="form-group">
-                  <label>Phone 3</label>
+                  <label>Téléphone 3</label>
                   <input
                     type="text"
                     name="phone3"
-                    placeholder="Enter additional phone"
+                    placeholder="Entrez le téléphone additionnel"
                     value={formData.phone3}
                     onChange={handleInputChange}
                   />
                 </div>
                 <div className="form-group">
-                  <label>Email *</label>
+                  <label>Email</label>
                   <input
                     type="email"
                     name="email"
-                    placeholder="Enter email"
+                    placeholder="Entrez l'email"
                     value={formData.email}
                     onChange={handleInputChange}
                     className={fieldErrors.email ? 'input-error' : ''}
@@ -722,43 +722,43 @@ const AdminPartners = ({ user }) => {
 
               {/* Billing and payments Tab */}
               <div className="form-section">
-                <h3>Billing and payments</h3>
+                  <h3>Facturation et paiement</h3>
                 <div className="form-group">
-                  <label>Payment terms</label>
+                  <label>Conditions de paiement</label>
                   <input
                     type="text"
                     name="payment_terms"
-                    placeholder="Enter payment terms"
+                    placeholder="Entrez les conditions de paiement"
                     value={formData.payment_terms}
                     onChange={handleInputChange}
                   />
                 </div>
                 <div className="form-group">
-                  <label>Billing terms</label>
+                  <label>Conditions de facturation</label>
                   <input
                     type="text"
                     name="billing_terms"
-                    placeholder="Enter billing terms"
+                    placeholder="Entrez les conditions de facturation"
                     value={formData.billing_terms}
                     onChange={handleInputChange}
                   />
                 </div>
                 <div className="form-group">
-                  <label>Bank account number</label>
+                  <label>Numéro de compte bancaire</label>
                   <input
                     type="text"
                     name="bank_account_number"
-                    placeholder="Enter bank account number"
+                    placeholder="Entrez le numéro de compte bancaire"
                     value={formData.bank_account_number}
                     onChange={handleInputChange}
                   />
                 </div>
                 <div className="form-group">
-                  <label>Bank name</label>
+                  <label>Nom de la banque</label>
                   <input
                     type="text"
                     name="bank_name"
-                    placeholder="Enter bank name"
+                    placeholder="Entrez le nom de la banque"
                     value={formData.bank_name}
                     onChange={handleInputChange}
                   />
@@ -772,7 +772,7 @@ const AdminPartners = ({ user }) => {
                   <label>Notes</label>
                   <textarea
                     name="notes"
-                    placeholder="Enter any additional notes"
+                    placeholder="Entrez les notes supplémentaires"
                     value={formData.notes}
                     onChange={handleInputChange}
                     rows="4"
