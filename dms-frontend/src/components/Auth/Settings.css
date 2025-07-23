@@ -1,8 +1,10 @@
 /* src/components/Settings/Settings.css */
 .settings-container {
-  min-height: 100vh;
+  min-height: 90vh;
+  height: 90vh;
   background-color: #f8fafc;
-  padding: 2rem 1rem;
+  padding: 2rem 1rem 3rem 1rem;
+  overflow-y: auto;
 }
 
 .settings-header {
@@ -24,33 +26,31 @@
 }
 
 .settings-grid {
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
   display: grid;
   grid-template-columns: 1fr;
-  gap: 1.5rem;
+  gap: 2.5rem;
 }
 
 @media (min-width: 768px) {
   .settings-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  
-  .settings-card:last-child {
-    grid-column: span 2;
-  }
 }
 
 .settings-card {
   background-color: white;
   border-radius: 1rem;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
   overflow: hidden;
+  min-height: 180px;
+  padding-bottom: 0.5rem;
 }
 
 .settings-card-header {
-  background: linear-gradient(135deg, #3b82f6, #6366f1);
-  padding: 1.25rem 1.5rem;
+  background: #0f5132;
+  padding: 1rem 1.25rem;
   display: flex;
   align-items: center;
 }
@@ -62,13 +62,14 @@
 }
 
 .settings-card-title {
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   font-weight: 600;
   color: white;
 }
 
 .settings-card-content {
-  padding: 1.5rem;
+  padding: 1.25rem;
+  font-size: 1rem;
 }
 
 .settings-options {
@@ -78,9 +79,8 @@
 }
 
 .setting-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  margin-bottom: 1rem;
+  font-size: 1rem;
 }
 
 .setting-info {
@@ -200,4 +200,25 @@
   font-size: 1.25rem;
   font-weight: 700;
   color: #94a3b8;
+}
+
+@media (max-width: 900px) {
+  .settings-card-header {
+    padding: 0.75rem 0.5rem;
+  }
+  .settings-card-content {
+    padding: 0.75rem 0.5rem;
+  }
+}
+@media (max-width: 600px) {
+  .settings-card {
+    min-height: 120px;
+    padding-bottom: 0.25rem;
+  }
+  .settings-card-header {
+    padding: 0.5rem 0.25rem;
+  }
+  .settings-card-content {
+    padding: 0.5rem 0.25rem;
+  }
 }

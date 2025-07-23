@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import API from '../../api';
 import './AdminUsers.css'; // Changed from AdminDashboard.css
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
+import axios from 'axios';
 
 const AdminUsers = ({user ,loadingUser}) => {
   const [users, setUsers] = useState([]);
@@ -46,6 +47,10 @@ const AdminUsers = ({user ,loadingUser}) => {
   const [companiesError, setCompaniesError] = useState('');
   const [usersTimeout, setUsersTimeout] = useState(false);
   const [companiesTimeout, setCompaniesTimeout] = useState(false);
+  const [maxUsers, setMaxUsers] = useState(null);
+  const [globalLimitError, setGlobalLimitError] = useState('');
+
+  const navigate = useNavigate();
 
   // Move loadData to top level so it can be called after updates
   const loadData = async () => {
@@ -84,6 +89,12 @@ const AdminUsers = ({user ,loadingUser}) => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    axios.get('http://localhost:5000/api/settings').then(res => {
+      setMaxUsers(res.data.maxUsers);
+    });
+  }, []);
 
   useEffect(() => {
     if (loadingUser || !user?.id) return;
@@ -159,7 +170,15 @@ const AdminUsers = ({user ,loadingUser}) => {
     return () => clearTimeout(timer2);
   }, [error, fieldErrors]);
 
+  useEffect(() => {
+    if (globalLimitError) {
+      const timer = setTimeout(() => setGlobalLimitError(''), 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [globalLimitError]);
+
   const handleTabChange = (tab) => {
+    setGlobalLimitError('');
     if (tab !== 'list') {
       setError('');
       setSuccess('');
@@ -282,6 +301,11 @@ const AdminUsers = ({user ,loadingUser}) => {
     setSuccess('');
     setGlobalErrors([]);
     setFieldErrors({});
+    setGlobalLimitError('');
+    if (!editingUser && maxUsers !== null && users.length >= maxUsers) {
+      setGlobalLimitError('Vous avez atteint le nombre maximal d’utilisateurs. Veuillez contacter le support technique.');
+      return;
+    }
     if (!validate()) return;
     setLoading(true);
 
@@ -326,6 +350,7 @@ const AdminUsers = ({user ,loadingUser}) => {
   };
 
   const handleEdit = (user) => {
+    setGlobalLimitError('');
     setEditingUser(user);
     setFormData({
       id: user.id,
@@ -374,6 +399,15 @@ const AdminUsers = ({user ,loadingUser}) => {
   const errorMsg = error || (timeoutError && 'Le chargement prend trop de temps.');
   const canShowList = !loading && !timeoutError && !error;
 
+  const handleAddUser = (e) => {
+    setGlobalLimitError('');
+    if (maxUsers !== null && users.length >= maxUsers) {
+      setGlobalLimitError('Vous avez atteint le nombre maximal d’utilisateurs. Veuillez contacter le support technique.');
+      return;
+    }
+    navigate('/AddUsers');
+  };
+
   return (
     <div className="admin-users">
       <div className="admin-header">
@@ -405,11 +439,15 @@ const AdminUsers = ({user ,loadingUser}) => {
               Modifier l'utilisateur
             </button>
           )}
-          <Link to="/AddUsers" className="btn-primary-2">
+          <button className="btn-primary-2" onClick={handleAddUser}>
             Ajouter un utilisateur
-          </Link>
+          </button>
         </div>
       </div>
+
+      {globalLimitError && (
+        <div className="alert alert-error" style={{marginBottom: '1rem', fontWeight: 600}}>{globalLimitError}</div>
+      )}
 
       {showError && (
         <div className="alert alert-error" style={{display:'flex',flexDirection:'column',alignItems:'center',gap:'8px'}}>

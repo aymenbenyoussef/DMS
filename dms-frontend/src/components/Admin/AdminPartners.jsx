@@ -3,6 +3,7 @@ import API from '../../api';
 import './AdminUsers.css';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
+import axios from 'axios';
 
 const AdminPartners = ({ user }) => {
   const [partners, setPartners] = useState([]);
@@ -27,6 +28,8 @@ const AdminPartners = ({ user }) => {
   const [companies, setCompanies] = useState([]);
   const [partnertypes, setPartnertypes] = useState([]);
   const navigate = useNavigate();
+  const [maxExternalEntities, setMaxExternalEntities] = useState(null);
+  const [globalLimitError, setGlobalLimitError] = useState('');
 
   const [formData, setFormData] = useState({
     company_name: '',
@@ -60,11 +63,21 @@ const AdminPartners = ({ user }) => {
     }
   }, [success]);
 
+  useEffect(() => {
+    if (globalLimitError) {
+      const timer = setTimeout(() => setGlobalLimitError(''), 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [globalLimitError]);
+
   // Fetch data on component mount
   useEffect(() => {
     fetchPartners();
     fetchCompanies();
     fetchPartnerTypes();
+    axios.get('http://localhost:5000/api/settings').then(res => {
+      setMaxExternalEntities(res.data.maxExternalEntities);
+    });
   }, []);
 
   useEffect(() => {
@@ -200,6 +213,7 @@ const AdminPartners = ({ user }) => {
   };
 
   const handleEdit = async (partner) => {
+    setGlobalLimitError('');
     try {
       const fullPartner = await API.partner.getById(partner.id);
       setEditingPartner(fullPartner.data);
@@ -356,6 +370,15 @@ const AdminPartners = ({ user }) => {
     setShowNotification(false);
   };
 
+  const handleAddPartner = (e) => {
+    setGlobalLimitError('');
+    if (maxExternalEntities !== null && partners.length >= maxExternalEntities) {
+      setGlobalLimitError('Vous avez atteint le nombre maximal d’entités externes. Veuillez contacter le support technique.');
+      return;
+    }
+    navigate('/AddPartner');
+  };
+
   return (
     <div className="admin-users">
       <div className="admin-header">
@@ -378,14 +401,17 @@ const AdminPartners = ({ user }) => {
               Modifier le partenaire
             </button>
           )}
-          <Link to="/AddPartner" className="btn-primary-2">
-            Ajouter un partenaire 
-          </Link>
+          <button className="btn-primary-2" onClick={handleAddPartner}>
+            Ajouter un partenaire
+          </button>
         </div>
       </div>
 
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
+      {globalLimitError && (
+        <div className="alert alert-error" style={{marginBottom: '1rem', fontWeight: 600}}>{globalLimitError}</div>
+      )}
       
 
       {activeTab === 'list' && (
