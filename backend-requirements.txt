@@ -1,0 +1,26 @@
+# === Backend Setup Commands ===
+# 1. Install Python dependencies:
+#    pip install -r backend-requirements.txt
+#
+# 2. Install system dependencies:
+#    # On Ubuntu/Debian:
+#    sudo apt update && sudo apt install tesseract-ocr poppler-utils
+#    # On Windows:
+#    - Download and install Tesseract OCR: https://github.com/tesseract-ocr/tesseract
+#    - Download and install Poppler: https://github.com/oschwartz10612/poppler-windows
+#    (Add both to your PATH)
+
+Flask
+flask-cors
+flask-jwt-extended
+mysql-connector-python
+bcrypt
+pytesseract
+Pillow
+pdf2image
+python-dateutil
+reportlab
+
+# System dependencies (install separately):
+# - Tesseract OCR (https://github.com/tesseract-ocr/tesseract)
+# - Poppler for PDF to image conversion (https://github.com/oschwartz10612/poppler-windows or your OS package manager) 
