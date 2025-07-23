@@ -48,6 +48,13 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
   const [groupError, setGroupError] = useState('');
   const [groupSuccess, setGroupSuccess] = useState('');
 
+  // Add preview modal state at the top of the component
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [previewType, setPreviewType] = useState(''); // 'pdf', 'image', 'text', etc
+  const [previewUrl, setPreviewUrl] = useState('');
+  const [previewTitle, setPreviewTitle] = useState('');
+  const [previewText, setPreviewText] = useState('');
+
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => {
     setIsModalOpen(false);
@@ -502,10 +509,10 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     }
   };
 
+  // Update handleViewDocument to open modal
   const handleViewDocument = async (doc) => {
     try {
       const response = await API.documents.download(doc.id);
-      
       if (response.status !== 200) {
         if (response.status === 404) {
           alert('Document non disponible.');
@@ -513,18 +520,26 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
         }
         throw new Error('Network response was not ok');
       }
-      
       const blob = response.data;
       const url = window.URL.createObjectURL(blob);
-      window.open(url, '_blank');
-      // Note: We don't revoke the URL immediately as the new window needs it
-      // It will be cleaned up when the window is closed
+      const ext = doc.filename.split('.').pop().toLowerCase();
+      let type = '';
+      if (["pdf"].includes(ext)) type = 'pdf';
+      else if (["jpg","jpeg","png","gif","tiff","bmp","webp"].includes(ext)) type = 'image';
+      else if (["txt"].includes(ext)) type = 'text';
+      else type = 'other';
+      setPreviewType(type);
+      setPreviewUrl(url);
+      setPreviewTitle(doc.filename);
+      setPreviewText('');
+      setIsPreviewModalOpen(true);
     } catch (error) {
       console.error('View failed:', error);
       alert('Échec de l\'ouverture. Veuillez réessayer.');
     }
   };
 
+  // Update handleViewRapport to open modal
   const handleViewRapport = async (doc) => {
     try {
       const response = await API.documents.getRapport(doc.id);
@@ -537,15 +552,18 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
       }
       const blob = response.data;
       const url = window.URL.createObjectURL(blob);
-      window.open(url, '_blank');
-      // Note: We don't revoke the URL immediately as the new window needs it
-      // It will be cleaned up when the window is closed
+      setPreviewType('pdf');
+      setPreviewUrl(url + '#toolbar=0&navpanes=0&scrollbar=0');
+      setPreviewTitle(doc.filename.replace(/\.[^/.]+$/, '') + '_rapport.pdf');
+      setPreviewText('');
+      setIsPreviewModalOpen(true);
     } catch (error) {
       console.error('View failed:', error);
       alert('Échec de l\'ouverture. Veuillez réessayer.');
     }
   };
 
+  // Update handleViewOcrText to open modal
   const handleViewOcrText = async (doc) => {
     try {
       const response = await API.documents.getOcrText(doc.id);
@@ -557,10 +575,16 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
         throw new Error('Network response was not ok');
       }
       const blob = response.data;
-      const url = window.URL.createObjectURL(blob);
-      window.open(url, '_blank');
-      // Note: We don't revoke the URL immediately as the new window needs it
-      // It will be cleaned up when the window is closed
+      // Try to read as text
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        setPreviewType('text');
+        setPreviewUrl('');
+        setPreviewTitle(doc.filename.replace(/\.[^/.]+$/, '') + '_ocr.txt');
+        setPreviewText(e.target.result);
+        setIsPreviewModalOpen(true);
+      };
+      reader.readAsText(blob);
     } catch (error) {
       console.error('View failed:', error);
       alert('Échec de l\'ouverture. Veuillez réessayer.');
@@ -1186,6 +1210,50 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                   >
                     Cancel
                   </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      {isPreviewModalOpen && (
+        <div className="upload-modal-overlay" style={{zIndex: 2000}}>
+          <div className="upload-modal confirmation-modal" style={{maxWidth: '90vw', width: '100%', minHeight: '60vh', maxHeight: '95vh', display: 'flex', flexDirection: 'column'}}>
+            <div className="upload-header" style={{background: '#2563eb', color: 'white', borderRadius: '12px 12px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+              <h3 style={{margin: 0, fontSize: '1.2rem', fontWeight: 600}}>{previewTitle}</h3>
+              <button className="close-btn" onClick={() => {
+                setIsPreviewModalOpen(false);
+                if (previewUrl) window.URL.revokeObjectURL(previewUrl);
+              }}>×</button>
+            </div>
+            <div style={{flex: 1, overflow: 'auto', background: '#f8fafc', padding: 24, display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+              {previewType === 'pdf' && previewUrl && (
+                <iframe
+                  src={previewUrl + (previewUrl.includes('#') ? '' : '#toolbar=0&navpanes=0&scrollbar=0')}
+                  title="PDF Preview"
+                  style={{width: '100%', height: '70vh', border: 'none', borderRadius: 8, background: 'white', boxShadow: '0 2px 8px rgba(0,0,0,0.08)'}}
+                  allowFullScreen
+                />
+              )}
+              {previewType === 'image' && previewUrl && (
+                <img
+                  src={previewUrl}
+                  alt={previewTitle}
+                  style={{maxWidth: '100%', maxHeight: '70vh', borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', background: 'white'}}
+                />
+              )}
+              {previewType === 'text' && (
+                <textarea
+                  value={previewText}
+                  readOnly
+                  style={{width: '100%', height: '70vh', border: '1px solid #e5e7eb', borderRadius: 8, padding: 16, fontSize: 16, background: 'white', color: '#1e293b', resize: 'none'}}
+                />
+              )}
+              {previewType === 'other' && previewUrl && (
+                <div style={{textAlign: 'center', color: '#64748b'}}>
+                  <i className="bi bi-file-earmark-text" style={{fontSize: 48, marginBottom: 16}}></i>
+                  <p>Prévisualisation non supportée pour ce type de fichier.</p>
+                  <a href={previewUrl} download={previewTitle} className="btn btn-blue">Télécharger</a>
                 </div>
               )}
             </div>
