@@ -2242,6 +2242,243 @@ def get_groups_by_document(document_id):
         return jsonify({"msg": str(e)}), 500
 
 
+
+# Email management routes
+@app.route('/users/email-selection', methods=['GET'])
+@jwt_required()
+def get_users_for_email():
+    """Get all users for email selection"""
+    try:
+        company_id = request.args.get('company_id', type=int)
+        
+        if company_id:
+            # Get users associated with specific company
+            users = db.get_users_by_company(company_id)
+        else:
+            # Get all active users
+            users = db.get_users_for_email_selection()
+        
+        return jsonify({
+            "users": users,
+            "count": len(users)
+        }), 200
+    except Exception as e:
+        return jsonify({"msg": f"Error fetching users: {str(e)}"}), 500
+
+@app.route('/documents/<int:document_id>/send-email', methods=['POST'])
+@jwt_required()
+def send_document_email(document_id):
+    """Send document via email to selected users"""
+    current_user_claims = get_jwt()
+    current_user_id = current_user_claims.get('id')
+    current_username = current_user_claims.get('username', 'Unknown')
+    
+    data = request.get_json()
+    if not data:
+        return jsonify({"msg": "No data provided"}), 400
+    
+    recipient_emails = data.get('recipients', [])
+    email_type = data.get('email_type', 'document')  # 'document', 'rapport', 'ocr_text'
+    subject = data.get('subject', '')
+    message = data.get('message', '')
+    
+    if not recipient_emails:
+        return jsonify({"msg": "At least one recipient is required"}), 400
+    
+    if email_type not in ['document', 'rapport', 'ocr_text']:
+        return jsonify({"msg": "Invalid email type"}), 400
+    
+    try:
+        # Get document details
+        document = db.get_document_with_details(document_id)
+        if not document:
+            return jsonify({"msg": "Document not found"}), 404
+        
+        # Prepare email content
+        if not subject:
+            subject = f"Document: {document['filename']}"
+        
+        # Create email body
+        email_body = f"""
+Bonjour,
+
+{message if message else f"Veuillez trouver ci-joint le document demandé."}
+
+Détails du document:
+- Nom du fichier: {document['filename']}
+- Entreprise: {document.get('company_name', 'N/A')}
+- Type de document: {document.get('doctype_name', 'N/A')}
+- Date de création: {document['created_at']}
+"""
+        
+        if document.get('partner_name'):
+            email_body += f"- Partenaire: {document['partner_name']}\n"
+        
+        if document.get('is_invoice') and document.get('invoice_number'):
+            email_body += f"- Numéro de facture: {document['invoice_number']}\n"
+        
+        email_body += f"""
+Envoyé par: {current_username}
+Système de Gestion Documentaire - RAN ESMERALD
+
+Cordialement,
+L'équipe RAN ESMERALD
+"""
+        
+        # Determine attachment path based on email type
+        attachment_path = None
+        attachment_name = None
+        
+        if email_type == 'document' and document.get('file_path'):
+            attachment_path = document['file_path']
+            attachment_name = document['filename']
+        elif email_type == 'rapport' and document.get('rapport'):
+            attachment_path = document['rapport']
+            attachment_name = f"{os.path.splitext(document['filename'])[0]}_rapport.pdf"
+        elif email_type == 'ocr_text' and document.get('ocr_text'):
+            attachment_path = document['ocr_text']
+            attachment_name = f"{os.path.splitext(document['filename'])[0]}_ocr.txt"
+        
+        if not attachment_path or not os.path.exists(attachment_path):
+            return jsonify({"msg": f"Le fichier {email_type} n'est pas disponible pour ce document"}), 404
+        
+        # Send email to each recipient
+        smtp_host = "smtp.gmail.com"
+        smtp_port = 587
+        smtp_user = "ranesmerald358@gmail.com"
+        smtp_pass = "tvkw cnff wpge eccz"
+        
+        successful_sends = []
+        failed_sends = []
+        
+        for recipient_email in recipient_emails:
+            try:
+                msg = MIMEMultipart()
+                msg["From"] = smtp_user
+                msg["To"] = recipient_email
+                msg["Subject"] = subject
+                
+                # Attach text body
+                msg.attach(MIMEText(email_body, "plain", "utf-8"))
+                
+                # Attach file
+                with open(attachment_path, "rb") as attachment:
+                    from email.mime.base import MIMEBase
+                    from email import encoders
+                    
+                    part = MIMEBase('application', 'octet-stream')
+                    part.set_payload(attachment.read())
+                    encoders.encode_base64(part)
+                    part.add_header(
+                        'Content-Disposition',
+                        f'attachment; filename= {attachment_name}'
+                    )
+                    msg.attach(part)
+                
+                # Send email
+                server = smtplib.SMTP(smtp_host, smtp_port)
+                server.starttls()
+                server.login(smtp_user, smtp_pass)
+                server.sendmail(smtp_user, recipient_email, msg.as_string())
+                server.quit()
+                
+                successful_sends.append(recipient_email)
+                
+            except Exception as e:
+                failed_sends.append({"email": recipient_email, "error": str(e)})
+        
+        # Log email activity
+        try:
+            status = "sent" if successful_sends and not failed_sends else "failed"
+            db.log_email_activity(document_id, current_user_id, recipient_emails, email_type, status)
+        except Exception as log_error:
+            print(f"Error logging email activity: {log_error}")
+        
+        # Log activity
+        log_activity(
+            actor=current_username,
+            action="Send Email",
+            resource_type="document",
+            resource_data={
+                'id': document_id,
+                'filename': document['filename'],
+                'company_id': document['company_id'],
+                'email_type': email_type,
+                'recipients_count': len(successful_sends),
+                'failed_count': len(failed_sends)
+            }
+        )
+        
+        if successful_sends and not failed_sends:
+            return jsonify({
+                "msg": f"Email envoyé avec succès à {len(successful_sends)} destinataire(s)",
+                "successful_sends": successful_sends
+            }), 200
+        elif successful_sends and failed_sends:
+            return jsonify({
+                "msg": f"Email partiellement envoyé. Succès: {len(successful_sends)}, Échecs: {len(failed_sends)}",
+                "successful_sends": successful_sends,
+                "failed_sends": failed_sends
+            }), 207  # Multi-status
+        else:
+            return jsonify({
+                "msg": "Échec de l'envoi de tous les emails",
+                "failed_sends": failed_sends
+            }), 500
+            
+    except Exception as e:
+        return jsonify({"msg": f"Erreur lors de l'envoi de l'email: {str(e)}"}), 500
+
+@app.route('/documents/<int:document_id>/email-info', methods=['GET'])
+@jwt_required()
+def get_document_email_info(document_id):
+    """Get document information for email sending"""
+    try:
+        document = db.get_document_with_details(document_id)
+        if not document:
+            return jsonify({"msg": "Document not found"}), 404
+        
+        # Check available email types
+        available_types = []
+        
+        if document.get('file_path') and os.path.exists(document['file_path']):
+            available_types.append({
+                "type": "document",
+                "label": "Document original",
+                "description": f"Fichier: {document['filename']}"
+            })
+        
+        if document.get('rapport') and os.path.exists(document['rapport']):
+            available_types.append({
+                "type": "rapport",
+                "label": "Rapport PDF",
+                "description": "Rapport généré automatiquement"
+            })
+        
+        if document.get('ocr_text') and os.path.exists(document['ocr_text']):
+            available_types.append({
+                "type": "ocr_text",
+                "label": "Texte OCR",
+                "description": "Texte extrait du document"
+            })
+        
+        return jsonify({
+            "document": {
+                "id": document['id'],
+                "filename": document['filename'],
+                "company_name": document.get('company_name'),
+                "doctype_name": document.get('doctype_name'),
+                "partner_name": document.get('partner_name'),
+                "is_invoice": document.get('is_invoice', False),
+                "invoice_number": document.get('invoice_number'),
+                "created_at": document['created_at']
+            },
+            "available_types": available_types
+        }), 200
+        
+    except Exception as e:
+        return jsonify({"msg": f"Error fetching document info: {str(e)}"}), 500
+
 if __name__ == '__main__':
     # Ensure log directory exists when app starts
     ensure_log_dir()

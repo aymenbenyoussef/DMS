@@ -48,12 +48,26 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
   const [groupError, setGroupError] = useState('');
   const [groupSuccess, setGroupSuccess] = useState('');
 
-  // Add preview modal state at the top of the component
+  // Enhanced preview modal state with document information
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [previewType, setPreviewType] = useState(''); // 'pdf', 'image', 'text', etc
   const [previewUrl, setPreviewUrl] = useState('');
   const [previewTitle, setPreviewTitle] = useState('');
   const [previewText, setPreviewText] = useState('');
+  const [currentDocument, setCurrentDocument] = useState(null); // Store full document info
+  const [relatedDocuments, setRelatedDocuments] = useState([]); // Documents in same group
+
+  // Email sending states
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [emailUsers, setEmailUsers] = useState([]);
+  const [selectedRecipients, setSelectedRecipients] = useState([]);
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailMessage, setEmailMessage] = useState('');
+  const [emailType, setEmailType] = useState('document'); // 'document', 'rapport', 'ocr_text'
+  const [availableEmailTypes, setAvailableEmailTypes] = useState([]);
+  const [emailError, setEmailError] = useState('');
+  const [emailSuccess, setEmailSuccess] = useState('');
+  const [isEmailSending, setIsEmailSending] = useState(false);
 
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => {
@@ -133,6 +147,27 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     } catch (error) {
       console.error('Error loading groups', error);
       setGroups([]);
+    }
+  };
+
+  // Function to fetch related documents for a document
+  const fetchRelatedDocuments = async (documentId) => {
+    try {
+      // Use the groups API to get documents in the same group
+      const response = await API.groups.getByDocument(documentId);
+      if (response.data && response.data.length > 0) {
+        // Get documents from the first group (assuming a document belongs to one main group)
+        const groupId = response.data[0].id;
+        const groupDocsResponse = await API.groups.getDocuments(groupId);
+        // Filter out the current document
+        const relatedDocs = groupDocsResponse.data.filter(doc => doc.id !== documentId);
+        setRelatedDocuments(relatedDocs || []);
+      } else {
+        setRelatedDocuments([]);
+      }
+    } catch (error) {
+      console.error('Error loading related documents', error);
+      setRelatedDocuments([]);
     }
   };
 
@@ -222,6 +257,94 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
       }, 2000);
     } catch (error) {
       setGroupError(error.response?.data?.msg || 'Erreur lors de la création du groupe');
+    }
+  };
+
+  // Email management functions
+  const handleSendEmail = async (document) => {
+    try {
+      // Fetch document email info and available users
+      const [docInfoResponse, usersResponse] = await Promise.all([
+        API.email.getDocumentInfo(document.id),
+        API.email.getUsersForSelection(selectedCompany?.id)
+      ]);
+
+      setCurrentDocument(document);
+      setAvailableEmailTypes(docInfoResponse.data.available_types);
+      setEmailUsers(usersResponse.data.users);
+      
+      // Set default values
+      setEmailType(docInfoResponse.data.available_types[0]?.type || 'document');
+      setEmailSubject(`Document: ${document.filename}`);
+      setEmailMessage('');
+      setSelectedRecipients([]);
+      setEmailError('');
+      setEmailSuccess('');
+      
+      setIsEmailModalOpen(true);
+    } catch (error) {
+      console.error('Error preparing email:', error);
+      alert('Erreur lors de la préparation de l\'email');
+    }
+  };
+
+  const handleCloseEmailModal = () => {
+    setIsEmailModalOpen(false);
+    setCurrentDocument(null);
+    setEmailUsers([]);
+    setSelectedRecipients([]);
+    setEmailSubject('');
+    setEmailMessage('');
+    setEmailType('document');
+    setAvailableEmailTypes([]);
+    setEmailError('');
+    setEmailSuccess('');
+    setIsEmailSending(false);
+  };
+
+  const handleRecipientToggle = (userEmail) => {
+    setSelectedRecipients(prev => {
+      if (prev.includes(userEmail)) {
+        return prev.filter(email => email !== userEmail);
+      } else {
+        return [...prev, userEmail];
+      }
+    });
+  };
+
+  const handleConfirmSendEmail = async () => {
+    if (selectedRecipients.length === 0) {
+      setEmailError('Veuillez sélectionner au moins un destinataire');
+      return;
+    }
+
+    if (!emailSubject.trim()) {
+      setEmailError('Veuillez saisir un objet');
+      return;
+    }
+
+    setIsEmailSending(true);
+    setEmailError('');
+
+    try {
+      const emailData = {
+        recipients: selectedRecipients,
+        email_type: emailType,
+        subject: emailSubject.trim(),
+        message: emailMessage.trim()
+      };
+
+      const response = await API.email.sendDocument(currentDocument.id, emailData);
+      
+      setEmailSuccess(response.data.msg);
+      
+      setTimeout(() => {
+        handleCloseEmailModal();
+      }, 2000);
+    } catch (error) {
+      setEmailError(error.response?.data?.msg || 'Erreur lors de l\'envoi de l\'email');
+    } finally {
+      setIsEmailSending(false);
     }
   };
 
@@ -509,7 +632,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     }
   };
 
-  // Update handleViewDocument to open modal
+  // Update handleViewDocument to open enhanced modal
   const handleViewDocument = async (doc) => {
     try {
       const response = await API.documents.download(doc.id);
@@ -528,10 +651,16 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
       else if (["jpg","jpeg","png","gif","tiff","bmp","webp"].includes(ext)) type = 'image';
       else if (["txt"].includes(ext)) type = 'text';
       else type = 'other';
+      
       setPreviewType(type);
       setPreviewUrl(url);
       setPreviewTitle(doc.filename);
       setPreviewText('');
+      setCurrentDocument(doc);
+      
+      // Fetch related documents
+      await fetchRelatedDocuments(doc.id);
+      
       setIsPreviewModalOpen(true);
     } catch (error) {
       console.error('View failed:', error);
@@ -539,7 +668,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     }
   };
 
-  // Update handleViewRapport to open modal
+  // Update handleViewRapport to open enhanced modal
   const handleViewRapport = async (doc) => {
     try {
       const response = await API.documents.getRapport(doc.id);
@@ -552,10 +681,16 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
       }
       const blob = response.data;
       const url = window.URL.createObjectURL(blob);
+      
       setPreviewType('pdf');
       setPreviewUrl(url + '#toolbar=0&navpanes=0&scrollbar=0');
       setPreviewTitle(doc.filename.replace(/\.[^/.]+$/, '') + '_rapport.pdf');
       setPreviewText('');
+      setCurrentDocument(doc);
+      
+      // Fetch related documents
+      await fetchRelatedDocuments(doc.id);
+      
       setIsPreviewModalOpen(true);
     } catch (error) {
       console.error('View failed:', error);
@@ -563,7 +698,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     }
   };
 
-  // Update handleViewOcrText to open modal
+  // Update handleViewOcrText to open enhanced modal
   const handleViewOcrText = async (doc) => {
     try {
       const response = await API.documents.getOcrText(doc.id);
@@ -582,6 +717,11 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
         setPreviewUrl('');
         setPreviewTitle(doc.filename.replace(/\.[^/.]+$/, '') + '_ocr.txt');
         setPreviewText(e.target.result);
+        setCurrentDocument(doc);
+        
+        // Fetch related documents
+        fetchRelatedDocuments(doc.id);
+        
         setIsPreviewModalOpen(true);
       };
       reader.readAsText(blob);
@@ -678,6 +818,24 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
       console.error('Download failed:', error);
       alert('Échec du téléchargement. Veuillez réessayer.');
     }
+  };
+
+  // Function to get document type name
+  const getDoctypeName = (doctypeId) => {
+    const doctype = availableDoctypes.find(dt => dt.id === doctypeId);
+    return doctype ? doctype.name : 'Type inconnu';
+  };
+
+  // Function to get group name for a document
+  const getDocumentGroup = (doc) => {
+    // This would need to be implemented based on your API structure
+    // For now, returning a placeholder
+    return doc.group_name || 'Aucun groupe';
+  };
+
+  // Function to get uploader name
+  const getUploaderName = (doc) => {
+    return doc.uploaded_by || user?.name || 'Utilisateur inconnu';
   };
 
   if (!selectedCompany && !selectedDoctype) {
@@ -1005,13 +1163,6 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                               >
                                 Voir
                               </button>
-                              <button
-                                className="btn btn-sm btn-outline-secondary"
-                                onClick={() => handleRapportDownload(doc)}
-                                title="Télécharger le rapport PDF"
-                              >
-                                Télécharger
-                              </button>
                             </div>
                           ) : (
                             <span className="text-muted">-</span>
@@ -1028,13 +1179,6 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                                 title="Voir le texte OCR"
                               >
                                 Voir
-                              </button>
-                              <button
-                                className="btn btn-sm btn-outline-secondary"
-                                onClick={() => handleOcrTextDownload(doc)}
-                                title="Télécharger le texte OCR"
-                              >
-                                Télécharger
                               </button>
                             </div>
                           ) : (
@@ -1053,13 +1197,6 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                             title="Voir le document"
                           >
                             Voir <i className="bi bi-eye"></i>
-                          </button>
-                          <button 
-                            className="btn btn-sm btn-outline-secondary"
-                            onClick={() => handleDownload(doc)}
-                            title="Télécharger"
-                          >
-                            Télécharger <i className="bi bi-download"></i>
                           </button>
                         </div>
                       </td>
@@ -1216,46 +1353,516 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
           </div>
         </div>
       )}
+
+      {/* Enhanced Preview Modal with Two-Column Layout */}
       {isPreviewModalOpen && (
-        <div className="upload-modal-overlay" style={{zIndex: 2000}}>
-          <div className="upload-modal confirmation-modal" style={{maxWidth: '90vw', width: '100%', minHeight: '60vh', maxHeight: '95vh', display: 'flex', flexDirection: 'column'}}>
-            <div className="upload-header" style={{background: '#2563eb', color: 'white', borderRadius: '12px 12px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
-              <h3 style={{margin: 0, fontSize: '1.2rem', fontWeight: 600}}>{previewTitle}</h3>
-              <button className="close-btn" onClick={() => {
-                setIsPreviewModalOpen(false);
-                if (previewUrl) window.URL.revokeObjectURL(previewUrl);
-              }}>×</button>
+        <div className="modal-overlay" style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          backgroundColor: 'rgba(0,0,0,0.7)',
+          zIndex: 2000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <div className="modal-content-enhanced" style={{
+            width: '95vw',
+            height: '90vh',
+            maxWidth: '1400px',
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+          }}>
+            {/* Modal Header */}
+            <div className="modal-header-enhanced" style={{
+              padding: '20px 24px',
+              borderBottom: '1px solid #e5e7eb',
+              backgroundColor: '#f8fafc',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <h3 style={{
+                margin: 0,
+                fontSize: '1.25rem',
+                fontWeight: 600,
+                color: '#1f2937'
+              }}>
+                {previewTitle}
+              </h3>
+              <button 
+                className="close-btn"
+                onClick={() => {
+                  setIsPreviewModalOpen(false);
+                  if (previewUrl) window.URL.revokeObjectURL(previewUrl);
+                  setCurrentDocument(null);
+                  setRelatedDocuments([]);
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  color: '#6b7280',
+                  padding: '8px',
+                  borderRadius: '6px',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = '#f3f4f6';
+                  e.target.style.color = '#374151';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = 'transparent';
+                  e.target.style.color = '#6b7280';
+                }}
+              >
+                ×
+              </button>
             </div>
-            <div style={{flex: 1, overflow: 'auto', background: '#f8fafc', padding: 24, display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-              {previewType === 'pdf' && previewUrl && (
-                <iframe
-                  src={previewUrl + (previewUrl.includes('#') ? '' : '#toolbar=0&navpanes=0&scrollbar=0')}
-                  title="PDF Preview"
-                  style={{width: '100%', height: '70vh', border: 'none', borderRadius: 8, background: 'white', boxShadow: '0 2px 8px rgba(0,0,0,0.08)'}}
-                  allowFullScreen
-                />
-              )}
-              {previewType === 'image' && previewUrl && (
-                <img
-                  src={previewUrl}
-                  alt={previewTitle}
-                  style={{maxWidth: '100%', maxHeight: '70vh', borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', background: 'white'}}
-                />
-              )}
-              {previewType === 'text' && (
-                <textarea
-                  value={previewText}
-                  readOnly
-                  style={{width: '100%', height: '70vh', border: '1px solid #e5e7eb', borderRadius: 8, padding: 16, fontSize: 16, background: 'white', color: '#1e293b', resize: 'none'}}
-                />
-              )}
-              {previewType === 'other' && previewUrl && (
-                <div style={{textAlign: 'center', color: '#64748b'}}>
-                  <i className="bi bi-file-earmark-text" style={{fontSize: 48, marginBottom: 16}}></i>
-                  <p>Prévisualisation non supportée pour ce type de fichier.</p>
-                  <a href={previewUrl} download={previewTitle} className="btn btn-blue">Télécharger</a>
-                </div>
-              )}
+
+            {/* Modal Body - Two Column Layout */}
+            <div className="modal-body-enhanced" style={{
+              flex: 1,
+              display: 'flex',
+              overflow: 'hidden'
+            }}>
+              {/* Left Column - File Display */}
+              <div className="file-display-column" style={{
+                flex: '1',
+                backgroundColor: '#f8fafc',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '24px',
+                borderRight: '1px solid #e5e7eb'
+              }}>
+                {previewType === 'pdf' && previewUrl && (
+                  <iframe
+                    src={previewUrl + (previewUrl.includes('#') ? '' : '#toolbar=0&navpanes=0&scrollbar=0')}
+                    title="PDF Preview"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      border: 'none',
+                      borderRadius: '8px',
+                      backgroundColor: 'white',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                    }}
+                  />
+                )}
+                {previewType === 'image' && previewUrl && (
+                  <img
+                    src={previewUrl}
+                    alt={previewTitle}
+                    style={{
+                      maxWidth: '100%',
+                      maxHeight: '100%',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                      backgroundColor: 'white'
+                    }}
+                  />
+                )}
+                {previewType === 'text' && (
+                  <textarea
+                    value={previewText}
+                    readOnly
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      padding: '16px',
+                      fontSize: '14px',
+                      backgroundColor: 'white',
+                      color: '#1e293b',
+                      resize: 'none',
+                      fontFamily: 'monospace'
+                    }}
+                  />
+                )}
+                {previewType === 'other' && (
+                  <div style={{
+                    textAlign: 'center',
+                    color: '#64748b',
+                    padding: '40px'
+                  }}>
+                    <i className="bi bi-file-earmark-text" style={{
+                      fontSize: '64px',
+                      marginBottom: '16px',
+                      display: 'block'
+                    }}></i>
+                    <p style={{ fontSize: '18px', marginBottom: '24px' }}>
+                      Prévisualisation non supportée pour ce type de fichier
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Right Column - Document Information */}
+              <div className="document-info-column" style={{
+                width: '400px',
+                backgroundColor: 'white',
+                padding: '24px',
+                overflowY: 'auto',
+                display: 'flex',
+                flexDirection: 'column'
+              }}>
+                {currentDocument && (
+                  <>
+                    {/* Document Information Section */}
+                    <div className="info-section" style={{ marginBottom: '24px' }}>
+                      <h4 style={{
+                        fontSize: '16px',
+                        fontWeight: 600,
+                        color: '#1f2937',
+                        marginBottom: '16px',
+                        borderBottom: '2px solid #e5e7eb',
+                        paddingBottom: '8px'
+                      }}>
+                        Informations du document
+                      </h4>
+                      
+                      <div className="info-item" style={{ marginBottom: '12px' }}>
+                        <strong style={{ color: '#374151', fontSize: '14px' }}>Utilisateur:</strong>
+                        <span style={{ marginLeft: '8px', color: '#6b7280', fontSize: '14px' }}>
+                          {getUploaderName(currentDocument)}
+                        </span>
+                      </div>
+                      
+                      <div className="info-item" style={{ marginBottom: '12px' }}>
+                        <strong style={{ color: '#374151', fontSize: '14px' }}>Type de document:</strong>
+                        <span style={{ marginLeft: '8px', color: '#6b7280', fontSize: '14px' }}>
+                          {getDoctypeName(currentDocument.doctype_id)}
+                        </span>
+                      </div>
+                      
+                      <div className="info-item" style={{ marginBottom: '12px' }}>
+                        <strong style={{ color: '#374151', fontSize: '14px' }}>Entreprise:</strong>
+                        <span style={{ marginLeft: '8px', color: '#6b7280', fontSize: '14px' }}>
+                          {selectedCompany?.name || 'Non spécifiée'}
+                        </span>
+                      </div>
+                      
+                      <div className="info-item" style={{ marginBottom: '12px' }}>
+                        <strong style={{ color: '#374151', fontSize: '14px' }}>Groupe:</strong>
+                        <span style={{ marginLeft: '8px', color: '#6b7280', fontSize: '14px' }}>
+                          {getDocumentGroup(currentDocument)}
+                        </span>
+                      </div>
+                      
+                      <div className="info-item" style={{ marginBottom: '12px' }}>
+                        <strong style={{ color: '#374151', fontSize: '14px' }}>Taille:</strong>
+                        <span style={{ marginLeft: '8px', color: '#6b7280', fontSize: '14px' }}>
+                          {formatFileSize(currentDocument.file_size || currentDocument.size || 0)}
+                        </span>
+                      </div>
+                      
+                      <div className="info-item" style={{ marginBottom: '12px' }}>
+                        <strong style={{ color: '#374151', fontSize: '14px' }}>Date d'upload:</strong>
+                        <span style={{ marginLeft: '8px', color: '#6b7280', fontSize: '14px' }}>
+                          {currentDocument.created_at ? new Date(currentDocument.created_at).toLocaleDateString('fr-FR') : 'Non disponible'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Related Documents Section */}
+                    <div className="info-section" style={{ marginBottom: '24px' }}>
+                      <h4 style={{
+                        fontSize: '16px',
+                        fontWeight: 600,
+                        color: '#1f2937',
+                        marginBottom: '16px',
+                        borderBottom: '2px solid #e5e7eb',
+                        paddingBottom: '8px'
+                      }}>
+                        Documents reliés
+                      </h4>
+                      
+                      {relatedDocuments.length > 0 ? (
+                        <div className="related-docs-list">
+                          {relatedDocuments.map((relDoc) => (
+                            <div key={relDoc.id} style={{
+                              padding: '8px 12px',
+                              backgroundColor: '#f8fafc',
+                              borderRadius: '6px',
+                              marginBottom: '8px',
+                              border: '1px solid #e5e7eb'
+                            }}>
+                              <div style={{
+                                fontSize: '13px',
+                                fontWeight: 500,
+                                color: '#374151',
+                                marginBottom: '4px'
+                              }}>
+                                {relDoc.filename}
+                              </div>
+                              <div style={{
+                                fontSize: '12px',
+                                color: '#6b7280'
+                              }}>
+                                {getFileType(relDoc.filename)} • {formatFileSize(relDoc.file_size || 0)}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p style={{
+                          color: '#6b7280',
+                          fontSize: '14px',
+                          fontStyle: 'italic'
+                        }}>
+                          Aucun document relié
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Action Buttons Section */}
+                    <div className="action-buttons" style={{
+                      marginTop: 'auto',
+                      paddingTop: '24px',
+                      borderTop: '1px solid #e5e7eb'
+                    }}>
+                      <button
+                        className="btn btn-blue"
+                        onClick={() => handleDownload(currentDocument)}
+                        style={{
+                          width: '100%',
+                          marginBottom: '12px',
+                          padding: '12px',
+                          fontSize: '14px',
+                          fontWeight: 500,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '8px'
+                        }}
+                      >
+                        <i className="bi bi-download"></i>
+                        Télécharger
+                      </button>
+                      
+                      <button
+                        className="btn btn-outline-primary"
+                        onClick={() => handleSendEmail(currentDocument)}
+                        style={{
+                          width: '100%',
+                          padding: '12px',
+                          fontSize: '14px',
+                          fontWeight: 500,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '8px',
+                          backgroundColor: 'transparent',
+                          border: '1px solid #2563eb',
+                          color: '#2563eb'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.backgroundColor = '#2563eb';
+                          e.target.style.color = 'white';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.backgroundColor = 'transparent';
+                          e.target.style.color = '#2563eb';
+                        }}
+                      >
+                        <i className="bi bi-send"></i>
+                        Envoyer par email
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Email Sending Modal */}
+      {isEmailModalOpen && (
+        <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-lg">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">
+                  <i className="bi bi-envelope me-2"></i>
+                  Envoyer le document par email
+                </h5>
+                <button 
+                  type="button" 
+                  className="btn-close" 
+                  onClick={handleCloseEmailModal}
+                ></button>
+              </div>
+              
+              <div className="modal-body">
+                {currentDocument && (
+                  <>
+                    {/* Document Information */}
+                    <div className="card mb-4">
+                      <div className="card-body">
+                        <h6 className="card-title">Document à envoyer</h6>
+                        <div className="d-flex align-items-center">
+                          <i className={`bi ${getFileIconClass(currentDocument.filename)} me-2`}></i>
+                          <div>
+                            <div className="fw-medium">{currentDocument.filename}</div>
+                            <small className="text-muted">
+                              {formatFileSize(currentDocument.file_size || 0)} • 
+                              Créé le {currentDocument.created_at ? new Date(currentDocument.created_at).toLocaleDateString('fr-FR') : 'N/A'}
+                            </small>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Email Type Selection */}
+                    <div className="mb-4">
+                      <label className="form-label">Type de fichier à envoyer</label>
+                      <div className="row g-2">
+                        {availableEmailTypes.map((type) => (
+                          <div key={type.type} className="col-md-4">
+                            <div className="form-check">
+                              <input 
+                                className="form-check-input" 
+                                type="radio" 
+                                name="emailType"
+                                id={`emailType-${type.type}`}
+                                value={type.type}
+                                checked={emailType === type.type}
+                                onChange={(e) => setEmailType(e.target.value)}
+                              />
+                              <label className="form-check-label" htmlFor={`emailType-${type.type}`}>
+                                <strong>{type.label}</strong>
+                                <br />
+                                <small className="text-muted">{type.description}</small>
+                              </label>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Recipients Selection */}
+                    <div className="mb-4">
+                      <label className="form-label">Destinataires</label>
+                      <div className="border rounded p-3" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                        {emailUsers.length > 0 ? (
+                          <>
+                            <div className="mb-2">
+                              <button 
+                                type="button" 
+                                className="btn btn-sm btn-outline-primary me-2"
+                                onClick={() => setSelectedRecipients(emailUsers.map(u => u.email))}
+                              >
+                                Tout sélectionner
+                              </button>
+                              <button 
+                                type="button" 
+                                className="btn btn-sm btn-outline-secondary"
+                                onClick={() => setSelectedRecipients([])}
+                              >
+                                Tout désélectionner
+                              </button>
+                            </div>
+                            {emailUsers.map((user) => (
+                              <div key={user.id} className="form-check">
+                                <input 
+                                  className="form-check-input" 
+                                  type="checkbox" 
+                                  id={`user-${user.id}`}
+                                  checked={selectedRecipients.includes(user.email)}
+                                  onChange={() => handleRecipientToggle(user.email)}
+                                />
+                                <label className="form-check-label" htmlFor={`user-${user.id}`}>
+                                  <strong>{user.username} {user.surname}</strong>
+                                  <br />
+                                  <small className="text-muted">{user.email} • {user.role}</small>
+                                </label>
+                              </div>
+                            ))}
+                          </>
+                        ) : (
+                          <p className="text-muted mb-0">Aucun utilisateur disponible</p>
+                        )}
+                      </div>
+                      {selectedRecipients.length > 0 && (
+                        <small className="text-muted">
+                          {selectedRecipients.length} destinataire(s) sélectionné(s)
+                        </small>
+                      )}
+                    </div>
+
+                    {/* Email Subject */}
+                    <div className="mb-3">
+                      <label className="form-label">Objet</label>
+                      <input 
+                        type="text" 
+                        className="form-control"
+                        value={emailSubject}
+                        onChange={(e) => setEmailSubject(e.target.value)}
+                        placeholder="Objet de l'email"
+                      />
+                    </div>
+
+                    {/* Email Message */}
+                    <div className="mb-4">
+                      <label className="form-label">Message (optionnel)</label>
+                      <textarea 
+                        className="form-control"
+                        rows="4"
+                        value={emailMessage}
+                        onChange={(e) => setEmailMessage(e.target.value)}
+                        placeholder="Message personnalisé à ajouter à l'email..."
+                      />
+                    </div>
+
+                    {/* Error and Success Messages */}
+                    {emailError && (
+                      <div className="alert alert-danger">{emailError}</div>
+                    )}
+                    {emailSuccess && (
+                      <div className="alert alert-success">{emailSuccess}</div>
+                    )}
+                  </>
+                )}
+              </div>
+              
+              <div className="modal-footer">
+                <button 
+                  type="button" 
+                  className="btn btn-secondary"
+                  onClick={handleCloseEmailModal}
+                  disabled={isEmailSending}
+                >
+                  Annuler
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-primary"
+                  onClick={handleConfirmSendEmail}
+                  disabled={isEmailSending || selectedRecipients.length === 0}
+                >
+                  {isEmailSending ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                      Envoi en cours...
+                    </>
+                  ) : (
+                    <>
+                      <i className="bi bi-send me-2"></i>
+                      Envoyer l'email
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1264,6 +1871,5 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
   );
 };
 
-export default DocumentArchive;
-
+export default DocumentArchive; 
 
