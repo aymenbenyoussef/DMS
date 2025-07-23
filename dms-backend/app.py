@@ -2241,6 +2241,80 @@ def get_groups_by_document(document_id):
     except Exception as e:
         return jsonify({"msg": str(e)}), 500
 
+SETTINGS_ENV_PATH = os.path.join(os.path.dirname(__file__), ".env")
+
+@app.route('/api/settings', methods=['POST'])
+def update_settings():
+    data = request.json
+    env_map = {
+        "systemEnabled": "SYSTEM_ENABLED",
+        "systemName": "SYSTEM_NAME",
+        "dbHost": "SYSTEM_DB_HOST",
+        "dbUsername": "SYSTEM_DB_USERNAME",
+        "dbPassword": "SYSTEM_DB_PASSWORD",
+        "maxUsers": "SYSTEM_MAX_USERS",
+        "maxEntities": "SYSTEM_MAX_ENTITIES",
+        "maxExternalEntities": "SYSTEM_MAX_EXTERNAL_ENTITIES",
+        "maxFileSize": "SYSTEM_MAX_FILE_SIZE",
+        "logsPath": "SYSTEM_LOGS_PATH",
+        "entitiesDataPath": "ENTITIES_DATA_PATH",
+        "entityLogPath": "ENTITY_LOG_PATH",
+        "externalEntitiesDataPath": "EXTERNAL_ENTITIES_DATA_PATH",
+        "externalEntitiesLogPath": "EXTERNAL_ENTITIES_LOG_PATH"
+    }
+    # Read current .env
+    env_vars = {}
+    if os.path.exists(SETTINGS_ENV_PATH):
+        with open(SETTINGS_ENV_PATH, "r") as f:
+            for line in f:
+                if "=" in line:
+                    k, v = line.strip().split("=", 1)
+                    env_vars[k] = v
+    # Update with new values
+    for key, env_key in env_map.items():
+        if key in data:
+            env_vars[env_key] = str(data[key])
+    # Write back to .env
+    with open(SETTINGS_ENV_PATH, "w") as f:
+        for k, v in env_vars.items():
+            f.write(f"{k}={v}\n")
+    return jsonify({"success": True, "message": "Settings updated."})
+
+@app.route('/api/settings', methods=['GET'])
+def get_settings():
+    env_map = {
+        "systemEnabled": "SYSTEM_ENABLED",
+        "systemName": "SYSTEM_NAME",
+        "dbHost": "SYSTEM_DB_HOST",
+        "dbUsername": "SYSTEM_DB_USERNAME",
+        "dbPassword": "SYSTEM_DB_PASSWORD",
+        "maxUsers": "SYSTEM_MAX_USERS",
+        "maxEntities": "SYSTEM_MAX_ENTITIES",
+        "maxExternalEntities": "SYSTEM_MAX_EXTERNAL_ENTITIES",
+        "maxFileSize": "SYSTEM_MAX_FILE_SIZE",
+        "logsPath": "SYSTEM_LOGS_PATH",
+        "entitiesDataPath": "ENTITIES_DATA_PATH",
+        "entityLogPath": "ENTITY_LOG_PATH",
+        "externalEntitiesDataPath": "EXTERNAL_ENTITIES_DATA_PATH",
+        "externalEntitiesLogPath": "EXTERNAL_ENTITIES_LOG_PATH"
+    }
+    env_vars = {k: '' for k in env_map.keys()}
+    if os.path.exists(SETTINGS_ENV_PATH):
+        with open(SETTINGS_ENV_PATH, "r") as f:
+            for line in f:
+                if "=" in line:
+                    k, v = line.strip().split("=", 1)
+                    for frontend_key, env_key in env_map.items():
+                        if k == env_key:
+                            env_vars[frontend_key] = v
+    # Convert booleans and numbers
+    env_vars["systemEnabled"] = env_vars["systemEnabled"].lower() == "true"
+    for key in ["maxUsers", "maxEntities", "maxExternalEntities", "maxFileSize"]:
+        try:
+            env_vars[key] = int(env_vars[key])
+        except:
+            pass
+    return jsonify(env_vars)
 
 if __name__ == '__main__':
     # Ensure log directory exists when app starts
