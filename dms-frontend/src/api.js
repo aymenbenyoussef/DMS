@@ -290,6 +290,16 @@ const groups = {
 
 
 
+// Email management endpoints
+const email = {
+  getUsersForSelection: (companyId = null) => {
+    const params = companyId ? `?company_id=${companyId}` : '';
+    return API.get(`/users/email-selection${params}`);
+  },
+  getDocumentInfo: (documentId) => API.get(`/documents/${documentId}/email-info`),
+  sendDocument: (documentId, emailData) => API.post(`/documents/${documentId}/send-email`, emailData),
+};
+
 // Export the API instance and endpoint groups
 export default {
   ...API,
@@ -302,6 +312,6 @@ export default {
   documents,
   folders,
   ocr,
-  groups
+  groups,
+  email
 };
-

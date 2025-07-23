@@ -457,7 +457,7 @@ class DatabaseManager:
             raise Exception(f"Database error: {error_message}")
         except Exception as e:  # Catch any other unexpected exceptions
             raise Exception(f"Error creating company: {str(e)}")
-    #/////////
+
     def delete_company(self, company_id):
         
         try:
@@ -1494,6 +1494,93 @@ class DatabaseManager:
             return bool(result)
         except Exception as e:
             raise Exception(f"Error checking group name: {str(e)}")
+
+
+    # Email management methods
+    def get_users_for_email_selection(self):
+        """Get all active users for email selection"""
+        try:
+            query = """
+                SELECT id, username, surname, email, role
+                FROM users 
+                WHERE is_active = TRUE 
+                ORDER BY username
+            """
+            return self.execute_query(query, fetch=True)
+        except Exception as e:
+            raise Exception(f"Error fetching users for email: {str(e)}")
+
+    def get_users_by_company(self, company_id):
+        """Get all active users associated with a specific company"""
+        try:
+            query = """
+                SELECT DISTINCT u.id, u.username, u.surname, u.email, u.role
+                FROM users u
+                JOIN user_companies uc ON u.id = uc.user_id
+                WHERE u.is_active = TRUE AND uc.company_id = %s
+                ORDER BY u.username
+            """
+            return self.execute_query(query, (company_id,), fetch=True)
+        except Exception as e:
+            raise Exception(f"Error fetching users by company: {str(e)}")
+
+    def get_document_with_details(self, document_id):
+        """Get document with company and doctype details for email"""
+        try:
+            query = """
+                SELECT d.*, c.name as company_name, dt.name as doctype_name, 
+                       p.company_name as partner_name
+                FROM documents d
+                LEFT JOIN companies c ON d.company_id = c.id
+                LEFT JOIN doctype dt ON d.doctype_id = dt.id
+                LEFT JOIN partners p ON d.partner_id = p.id
+                WHERE d.id = %s
+            """
+            result = self.execute_query(query, (document_id,), fetch=True)
+            return result[0] if result else None
+        except Exception as e:
+            raise Exception(f"Error fetching document details: {str(e)}")
+
+    def log_email_activity(self, document_id, sender_id, recipients, email_type, status):
+        """Log email sending activity"""
+        try:
+            query = """
+                INSERT INTO email_logs (document_id, sender_id, recipients, email_type, status, sent_at)
+                VALUES (%s, %s, %s, %s, %s, NOW())
+            """
+            recipients_json = json.dumps(recipients) if isinstance(recipients, list) else recipients
+            return self.execute_query(query, (document_id, sender_id, recipients_json, email_type, status))
+        except Exception as e:
+            # If email_logs table doesn't exist, we'll create it
+            self.create_email_logs_table()
+            return self.execute_query(query, (document_id, sender_id, recipients_json, email_type, status))
+
+    def create_email_logs_table(self):
+        """Create email logs table if it doesn't exist"""
+        try:
+            conn = self.pool.get_connection()
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS email_logs (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    document_id INT NOT NULL,
+                    sender_id INT NOT NULL,
+                    recipients JSON,
+                    email_type ENUM('document', 'rapport', 'ocr_text') NOT NULL,
+                    status ENUM('sent', 'failed') NOT NULL,
+                    sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE CASCADE,
+                    FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
+                )
+            """)
+            
+            conn.commit()
+            cursor.close()
+            conn.close()
+        except Exception as e:
+            print(f"Error creating email_logs table: {e}")
+
 
 # Create global database instance
 db = DatabaseManager()
