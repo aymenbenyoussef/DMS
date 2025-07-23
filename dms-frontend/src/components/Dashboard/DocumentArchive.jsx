@@ -1014,5 +1014,3 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
 };
 
 export default DocumentArchive;
-
-

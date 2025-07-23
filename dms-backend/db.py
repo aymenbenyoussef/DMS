@@ -202,16 +202,27 @@ class DatabaseManager:
                     FOREIGN KEY (partner_id) REFERENCES partners(id) ON DELETE CASCADE
                 )""")
 
-            # Create document_history table
+            # Create groups table
             cursor.execute("""
-                CREATE TABLE IF NOT EXISTS document_history (
+                CREATE TABLE IF NOT EXISTS groups (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    name VARCHAR(255) NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    created_by INT,
+                    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+                )
+            """)
+
+            # Create documents_group table (relation between documents and groups)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS documents_group (
                     id INT AUTO_INCREMENT PRIMARY KEY,
                     document_id INT NOT NULL,
-                    user_id INT NOT NULL,
-                    action VARCHAR(255) NOT NULL,
-                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    group_id INT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE CASCADE,
-                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                    FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE,
+                    UNIQUE KEY unique_document_group (document_id, group_id)
                 )
             """)
             conn.commit()
@@ -1371,7 +1382,119 @@ class DatabaseManager:
         query = "SELECT rapport FROM documents WHERE id = %s"
         result = self.execute_query(query, (document_id,), fetch=True)
         return result[0]['rapport'] if result and result[0]['rapport'] else None
+
+    # Group management methods
+    def create_group(self, name, created_by):
+        """Create a new group"""
+        try:
+            query = "INSERT INTO groups (name, created_by) VALUES (%s, %s)"
+            return self.execute_query(query, (name, created_by))
+        except Exception as e:
+            raise Exception(f"Error creating group: {str(e)}")
+
+    def get_all_groups(self):
+        """Get all groups"""
+        try:
+            query = "SELECT * FROM groups ORDER BY name"
+            return self.execute_query(query, fetch=True)
+        except Exception as e:
+            raise Exception(f"Error fetching groups: {str(e)}")
+
+    def get_group_by_id(self, group_id):
+        """Get group by ID"""
+        try:
+            query = "SELECT * FROM groups WHERE id = %s"
+            result = self.execute_query(query, (group_id,), fetch=True)
+            return result[0] if result else None
+        except Exception as e:
+            raise Exception(f"Error fetching group: {str(e)}")
+
+    def update_group(self, group_id, name):
+        """Update group name"""
+        try:
+            query = "UPDATE groups SET name = %s WHERE id = %s"
+            self.execute_query(query, (name, group_id))
+            return True
+        except Exception as e:
+            raise Exception(f"Error updating group: {str(e)}")
+
+    def delete_group(self, group_id):
+        """Delete a group and all its document associations"""
+        try:
+            # First delete all document-group associations
+            self.execute_query("DELETE FROM documents_group WHERE group_id = %s", (group_id,))
+            # Then delete the group
+            self.execute_query("DELETE FROM groups WHERE id = %s", (group_id,))
+            return True
+        except Exception as e:
+            raise Exception(f"Error deleting group: {str(e)}")
+
+    def add_documents_to_group(self, group_id, document_ids):
+        """Add multiple documents to a group"""
+        try:
+            for document_id in document_ids:
+                query = """
+                    INSERT IGNORE INTO documents_group (document_id, group_id) 
+                    VALUES (%s, %s)
+                """
+                self.execute_query(query, (document_id, group_id))
+            return True
+        except Exception as e:
+            raise Exception(f"Error adding documents to group: {str(e)}")
+
+    def remove_document_from_group(self, document_id, group_id):
+        """Remove a document from a group"""
+        try:
+            query = "DELETE FROM documents_group WHERE document_id = %s AND group_id = %s"
+            self.execute_query(query, (document_id, group_id))
+            return True
+        except Exception as e:
+            raise Exception(f"Error removing document from group: {str(e)}")
+
+    def get_documents_by_group(self, group_id):
+        """Get all documents in a specific group"""
+        try:
+            query = """
+                SELECT d.*, dg.created_at as added_to_group_at
+                FROM documents d
+                JOIN documents_group dg ON d.id = dg.document_id
+                WHERE dg.group_id = %s
+                ORDER BY dg.created_at DESC
+            """
+            return self.execute_query(query, (group_id,), fetch=True)
+        except Exception as e:
+            raise Exception(f"Error fetching documents by group: {str(e)}")
+
+    def get_groups_by_document(self, document_id):
+        """Get all groups that contain a specific document"""
+        try:
+            query = """
+                SELECT g.*, dg.created_at as added_to_group_at
+                FROM groups g
+                JOIN documents_group dg ON g.id = dg.group_id
+                WHERE dg.document_id = %s
+                ORDER BY g.name
+            """
+            return self.execute_query(query, (document_id,), fetch=True)
+        except Exception as e:
+            raise Exception(f"Error fetching groups by document: {str(e)}")
+
+    def check_group_name_exists(self, name, exclude_id=None):
+        """Check if a group name already exists"""
+        try:
+            query = "SELECT id FROM groups WHERE name = %s"
+            params = [name]
+            
+            if exclude_id:
+                query += " AND id != %s"
+                params.append(exclude_id)
+            
+            query += " LIMIT 1"
+            result = self.execute_query(query, params, fetch=True)
+            return bool(result)
+        except Exception as e:
+            raise Exception(f"Error checking group name: {str(e)}")
+
 # Create global database instance
 db = DatabaseManager()
 db.init_database()
-
