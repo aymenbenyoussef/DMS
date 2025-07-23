@@ -276,6 +276,18 @@ const ocr = {
   }
 };
 
+// Group management endpoints
+const groups = {
+  getAll: () => API.get('/groups'),
+  create: (groupData) => API.post('/groups', groupData),
+  update: (groupId, groupData) => API.put(`/groups/${groupId}`, groupData),
+  delete: (groupId) => API.delete(`/groups/${groupId}`),
+  addDocuments: (groupId, documentIds) => API.post(`/groups/${groupId}/documents`, { document_ids: documentIds }),
+  removeDocument: (groupId, documentId) => API.delete(`/groups/${groupId}/documents/${documentId}`),
+  getDocuments: (groupId) => API.get(`/groups/${groupId}/documents`),
+  getByDocument: (documentId) => API.get(`/documents/${documentId}/groups`)
+};
+
 
 
 // Export the API instance and endpoint groups
@@ -289,5 +301,7 @@ export default {
   partnertype,
   documents,
   folders,
-  ocr
+  ocr,
+  groups
 };
+

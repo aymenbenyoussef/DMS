@@ -2081,6 +2081,168 @@ def get_companies_by_datatype_route(datatype_id):
     companies = db.get_companies_by_datatype(datatype_id)
     return jsonify(companies), 200
 
+
+# Group management routes
+@app.route('/groups', methods=['GET'])
+@jwt_required()
+def get_groups():
+    """Get all groups"""
+    try:
+        groups = db.get_all_groups()
+        return jsonify(groups), 200
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+
+@app.route('/groups', methods=['POST'])
+@jwt_required()
+def create_group():
+    """Create a new group"""
+    current_user_claims = get_jwt()
+    current_user_id = current_user_claims.get('id')
+    
+    data = request.get_json()
+    if not data or 'name' not in data or not data['name'].strip():
+        return jsonify({"msg": "Group name is required"}), 400
+    
+    name = data['name'].strip()
+    
+    try:
+        # Check if group name already exists
+        if db.check_group_name_exists(name):
+            return jsonify({"msg": "A group with this name already exists"}), 400
+        
+        group_id = db.create_group(name, current_user_id)
+        return jsonify({
+            "msg": "Group created successfully",
+            "group_id": group_id
+        }), 201
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+
+@app.route('/groups/<int:group_id>', methods=['PUT'])
+@jwt_required()
+def update_group(group_id):
+    """Update a group"""
+    data = request.get_json()
+    if not data or 'name' not in data or not data['name'].strip():
+        return jsonify({"msg": "Group name is required"}), 400
+    
+    name = data['name'].strip()
+    
+    try:
+        # Check if group exists
+        group = db.get_group_by_id(group_id)
+        if not group:
+            return jsonify({"msg": "Group not found"}), 404
+        
+        # Check if new name already exists (excluding current group)
+        if db.check_group_name_exists(name, exclude_id=group_id):
+            return jsonify({"msg": "A group with this name already exists"}), 400
+        
+        success = db.update_group(group_id, name)
+        if success:
+            return jsonify({"msg": "Group updated successfully"}), 200
+        else:
+            return jsonify({"msg": "Failed to update group"}), 500
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+
+@app.route('/groups/<int:group_id>', methods=['DELETE'])
+@jwt_required()
+def delete_group(group_id):
+    """Delete a group"""
+    try:
+        # Check if group exists
+        group = db.get_group_by_id(group_id)
+        if not group:
+            return jsonify({"msg": "Group not found"}), 404
+        
+        success = db.delete_group(group_id)
+        if success:
+            return jsonify({"msg": "Group deleted successfully"}), 200
+        else:
+            return jsonify({"msg": "Failed to delete group"}), 500
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+
+@app.route('/groups/<int:group_id>/documents', methods=['POST'])
+@jwt_required()
+def add_documents_to_group(group_id):
+    """Add documents to a group"""
+    data = request.get_json()
+    if not data or 'document_ids' not in data or not isinstance(data['document_ids'], list):
+        return jsonify({"msg": "document_ids array is required"}), 400
+    
+    document_ids = data['document_ids']
+    if not document_ids:
+        return jsonify({"msg": "At least one document ID is required"}), 400
+    
+    try:
+        # Check if group exists
+        group = db.get_group_by_id(group_id)
+        if not group:
+            return jsonify({"msg": "Group not found"}), 404
+        
+        success = db.add_documents_to_group(group_id, document_ids)
+        if success:
+            return jsonify({"msg": "Documents added to group successfully"}), 200
+        else:
+            return jsonify({"msg": "Failed to add documents to group"}), 500
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+
+@app.route('/groups/<int:group_id>/documents/<int:document_id>', methods=['DELETE'])
+@jwt_required()
+def remove_document_from_group(group_id, document_id):
+    """Remove a document from a group"""
+    try:
+        success = db.remove_document_from_group(document_id, group_id)
+        if success:
+            return jsonify({"msg": "Document removed from group successfully"}), 200
+        else:
+            return jsonify({"msg": "Failed to remove document from group"}), 500
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+
+@app.route('/groups/<int:group_id>/documents', methods=['GET'])
+@jwt_required()
+def get_documents_by_group(group_id):
+    """Get all documents in a group"""
+    try:
+        # Check if group exists
+        group = db.get_group_by_id(group_id)
+        if not group:
+            return jsonify({"msg": "Group not found"}), 404
+        
+        documents = db.get_documents_by_group(group_id)
+        return jsonify({
+            "group": group,
+            "documents": documents,
+            "count": len(documents)
+        }), 200
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+
+@app.route('/documents/<int:document_id>/groups', methods=['GET'])
+@jwt_required()
+def get_groups_by_document(document_id):
+    """Get all groups that contain a specific document"""
+    try:
+        # Check if document exists
+        document = db.get_document_by_id(document_id)
+        if not document:
+            return jsonify({"msg": "Document not found"}), 404
+        
+        groups = db.get_groups_by_document(document_id)
+        return jsonify({
+            "document": document,
+            "groups": groups,
+            "count": len(groups)
+        }), 200
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+
+
 if __name__ == '__main__':
     # Ensure log directory exists when app starts
     ensure_log_dir()

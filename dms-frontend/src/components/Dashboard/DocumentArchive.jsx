@@ -38,6 +38,16 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [availableDoctypes, setAvailableDoctypes] = useState([]);
 
+  // Group management states
+  const [groups, setGroups] = useState([]);
+  const [selectedDocuments, setSelectedDocuments] = useState([]);
+  const [isGroupMode, setIsGroupMode] = useState(false);
+  const [groupAction, setGroupAction] = useState(''); // 'add' or 'create'
+  const [selectedGroup, setSelectedGroup] = useState('');
+  const [newGroupName, setNewGroupName] = useState('');
+  const [groupError, setGroupError] = useState('');
+  const [groupSuccess, setGroupSuccess] = useState('');
+
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => {
     setIsModalOpen(false);
@@ -108,6 +118,106 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     }
   };
 
+  // Function to fetch groups
+  const fetchGroups = async () => {
+    try {
+      const response = await API.groups.getAll();
+      setGroups(response.data || []);
+    } catch (error) {
+      console.error('Error loading groups', error);
+      setGroups([]);
+    }
+  };
+
+  // Group management functions
+  const handleAddToGroup = () => {
+    setGroupAction('add');
+    setIsGroupMode(true);
+    setSelectedDocuments([]);
+    setGroupError('');
+    setGroupSuccess('');
+  };
+
+  const handleCreateGroup = () => {
+    setGroupAction('create');
+    setIsGroupMode(true);
+    setSelectedDocuments([]);
+    setNewGroupName('');
+    setGroupError('');
+    setGroupSuccess('');
+  };
+
+  const handleCancelGroupAction = () => {
+    setIsGroupMode(false);
+    setGroupAction('');
+    setSelectedDocuments([]);
+    setSelectedGroup('');
+    setNewGroupName('');
+    setGroupError('');
+    setGroupSuccess('');
+  };
+
+  const handleDocumentSelection = (documentId) => {
+    setSelectedDocuments(prev => {
+      if (prev.includes(documentId)) {
+        return prev.filter(id => id !== documentId);
+      } else {
+        return [...prev, documentId];
+      }
+    });
+  };
+
+  const handleConfirmAddToGroup = async () => {
+    if (!selectedGroup) {
+      setGroupError('Veuillez sélectionner un groupe');
+      return;
+    }
+
+    if (selectedDocuments.length === 0) {
+      setGroupError('Veuillez sélectionner au moins un document');
+      return;
+    }
+
+    try {
+      await API.groups.addDocuments(selectedGroup, selectedDocuments);
+      setGroupSuccess('Documents ajoutés au groupe avec succès');
+      setTimeout(() => {
+        handleCancelGroupAction();
+      }, 2000);
+    } catch (error) {
+      setGroupError(error.response?.data?.msg || 'Erreur lors de l\'ajout des documents au groupe');
+    }
+  };
+
+  const handleConfirmCreateGroup = async () => {
+    if (!newGroupName.trim()) {
+      setGroupError('Veuillez saisir un nom de groupe');
+      return;
+    }
+
+    try {
+      // Create the group first
+      const createResponse = await API.groups.create({ name: newGroupName.trim() });
+      const newGroupId = createResponse.data.group_id;
+
+      // Add documents to the group if any are selected
+      if (selectedDocuments.length > 0) {
+        await API.groups.addDocuments(newGroupId, selectedDocuments);
+      }
+
+      setGroupSuccess('Groupe créé avec succès');
+      
+      // Refresh groups list
+      fetchGroups();
+      
+      setTimeout(() => {
+        handleCancelGroupAction();
+      }, 2000);
+    } catch (error) {
+      setGroupError(error.response?.data?.msg || 'Erreur lors de la création du groupe');
+    }
+  };
+
   const fetchFolders = async () => {
     if (!selectedCompany) return;
     
@@ -139,6 +249,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     if (selectedCompany) {
       fetchFolders();
       fetchAvailableDoctypes();
+      fetchGroups();
       
       // Set default date range to last month
       const lastMonth = new Date();
@@ -575,14 +686,16 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
         <div className="card-body p-3">
           <div className="d-flex justify-content-between align-items-start mb-3">
             <h2 className="h6 mb-0">Recherche & Filtres</h2>
-            {(selectedDoctype || selectedCompany) && (
-              <button 
-                className="btn btn-primary btn-sm d-flex align-items-center"
-                onClick={openUploadModal}
-              >
-                <i className="bi bi-plus me-1"></i> Upload File
-              </button>
-            )}
+            <div className="d-flex gap-2">
+              {(selectedDoctype || selectedCompany) && (
+                <button 
+                  className="btn btn-blue btn-sm d-flex align-items-center"
+                  onClick={openUploadModal}
+                >
+                  <i className="bi bi-plus me-1"></i> Upload File
+                </button>
+              )}
+            </div>
           </div>
           
           <div className="row g-3">
@@ -661,7 +774,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
       {/* Documents Table */}
       <div className="card">
         <div className="card-body">
-          {/* MODIFIED: Breadcrumb and Title Section */}
+          {/* Breadcrumb and Title Section */}
           <div className="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
             <div className="d-flex align-items-center">
               <nav className="breadcrumb mb-0 me-3">
@@ -676,10 +789,98 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                   ))}
                 </ol>
               </nav>
-              <h2 className="h5 mb-0">Documents</h2>
             </div>
-            <span className="text-muted">{filteredDocuments.length} items</span>
+            <div className="d-flex align-items-center gap-3">
+              <span className="text-muted items-count">{filteredDocuments.length} items</span>
+              
+              {/* Group management buttons - moved to extreme right */}
+              <div className="d-flex gap-2">
+                {!isGroupMode && (
+                  <>
+                    <button 
+                      className="btn btn-blue btn-sm d-flex align-items-center"
+                      onClick={handleAddToGroup}
+                    >
+                      <i className="bi bi-plus-circle me-1"></i> Ajouter au groupe
+                    </button>
+                    <button 
+                      className="btn btn-blue btn-sm d-flex align-items-center"
+                      onClick={handleCreateGroup}
+                    >
+                      <i className="bi bi-folder-plus me-1"></i> Créer groupe
+                    </button>
+                  </>
+                )}
+                
+                {/* Group action controls */}
+                {isGroupMode && (
+                  <div className="d-flex gap-2 align-items-center flex-wrap">
+                    {groupAction === 'add' && (
+                      <>
+                        <select 
+                          className="form-select form-select-sm" 
+                          style={{ width: '200px' }}
+                          value={selectedGroup}
+                          onChange={(e) => setSelectedGroup(e.target.value)}
+                          required
+                        >
+                          <option value="">Sélectionner un groupe</option>
+                          {groups.map(group => (
+                            <option key={group.id} value={group.id}>{group.name}</option>
+                          ))}
+                        </select>
+                        <button 
+                          className="btn btn-blue btn-sm"
+                          onClick={handleConfirmAddToGroup}
+                        >
+                          Confirmer
+                        </button>
+                      </>
+                    )}
+                    
+                    {groupAction === 'create' && (
+                      <>
+                        <input 
+                          type="text"
+                          className="form-control form-control-sm"
+                          style={{ width: '200px' }}
+                          placeholder="Nom du groupe"
+                          value={newGroupName}
+                          onChange={(e) => setNewGroupName(e.target.value)}
+                          required
+                        />
+                        <button 
+                          className="btn btn-blue btn-sm"
+                          onClick={handleConfirmCreateGroup}
+                        >
+                          Confirmer
+                        </button>
+                      </>
+                    )}
+                    
+                    <button 
+                      className="btn btn-secondary btn-sm"
+                      onClick={handleCancelGroupAction}
+                    >
+                      Annuler
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
+          
+          {/* Group action messages */}
+          {isGroupMode && (
+            <div className="mb-3">
+              {groupError && (
+                <div className="alert alert-danger alert-sm py-2">{groupError}</div>
+              )}
+              {groupSuccess && (
+                <div className="alert alert-success alert-sm py-2">{groupSuccess}</div>
+              )}
+            </div>
+          )}
           
           {isLoading ? (
             <div className="text-center py-5">
@@ -688,10 +889,26 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
               </div>
             </div>
           ) : filteredDocuments.length > 0 ? (
-            <div className="table-responsive" style={{ height: '380px', overflowY: 'auto' }}>
-              <table className="table table-hover" style={{ minWidth: '900px' }}>
-                <thead style={{ position: 'sticky', top: 0, background: '#f8f9fa', zIndex: 2 }}>
+            <div className="table-responsive documents-table-container">
+              <table className="table table-hover stylish-table">
+                <thead className="table-header-sticky">
                   <tr>
+                    {isGroupMode && (
+                      <th style={{ width: '50px' }}>
+                        <input 
+                          type="checkbox" 
+                          className="form-check-input"
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedDocuments(filteredDocuments.map(doc => doc.id));
+                            } else {
+                              setSelectedDocuments([]);
+                            }
+                          }}
+                          checked={selectedDocuments.length === filteredDocuments.length && filteredDocuments.length > 0}
+                        />
+                      </th>
+                    )}
                     <th>ID</th>
                     <th>Document</th>
                     <th>Partner</th>
@@ -704,13 +921,23 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                 </thead>
                 <tbody>
                   {filteredDocuments.map((doc) => (
-                    <tr key={doc.id}>
-                      <td>{doc.id}</td>
+                    <tr key={doc.id} className="table-row-hover">
+                      {isGroupMode && (
+                        <td>
+                          <input 
+                            type="checkbox" 
+                            className="form-check-input"
+                            checked={selectedDocuments.includes(doc.id)}
+                            onChange={() => handleDocumentSelection(doc.id)}
+                          />
+                        </td>
+                      )}
+                      <td className="text-muted">{doc.id}</td>
                       <td>
                         <div className="d-flex align-items-center">
                           <i className={`bi ${getFileIconClass(doc.filename)} me-2`}></i>
                           <div style={{ maxWidth: '400px', wordBreak: 'break-word', whiteSpace: 'normal' }}>
-                            <div className="fw-medium">{doc.filename}</div>
+                            <div className="fw-medium document-filename">{doc.filename}</div>
                             <small className="text-muted">
                               {getFileType(doc.filename)} • {formatFileSize(doc.file_size || doc.size || 0)}
                             </small>
@@ -748,7 +975,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                           {doc.rapport ? (
                             <div className="btn-group" role="group">
                               <button
-                                className="btn btn-sm btn-outline-primary"
+                                className="btn btn-sm btn-outline-blue"
                                 onClick={() => handleViewRapport(doc)}
                                 title="Voir le rapport PDF"
                               >
@@ -772,7 +999,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                           {doc.ocr_text ? (
                             <div className="btn-group" role="group">
                               <button
-                                className="btn btn-sm btn-outline-primary"
+                                className="btn btn-sm btn-outline-blue"
                                 onClick={() => handleViewOcrText(doc)}
                                 title="Voir le texte OCR"
                               >
@@ -796,21 +1023,19 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                       </td>
                       <td>
                         <div className="btn-group" role="group">
-                          <a
-                            className="btn btn-sm btn-outline-primary"
+                          <button
+                            className="btn btn-sm btn-outline-blue"
                             onClick={() => handleViewDocument(doc)}
-                           
                             title="Voir le document"
-                            style={{ textDecoration: 'none' }}
                           >
                             Voir <i className="bi bi-eye"></i>
-                          </a>
+                          </button>
                           <button 
                             className="btn btn-sm btn-outline-secondary"
                             onClick={() => handleDownload(doc)}
                             title="Télécharger"
-                          >Télécharger
-                            <i className="bi bi-download"></i>
+                          >
+                            Télécharger <i className="bi bi-download"></i>
                           </button>
                         </div>
                       </td>
@@ -820,13 +1045,15 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
               </table>
             </div>
           ) : (
-            <div className="text-center py-5 border rounded">
-              <p className="text-muted mb-3">No documents found</p>
+            <div className="text-center py-5 border rounded empty-state">
+              <i className="bi bi-folder2-open text-muted mb-3" style={{ fontSize: '3rem' }}></i>
+              <p className="text-muted mb-3">Aucun document trouvé</p>
               <button 
-                className="btn-link text-primary p-0"
+                className="btn btn-blue"
                 onClick={openUploadModal}
               >
-                Upload documents to get started
+                <i className="bi bi-plus me-1"></i>
+                Télécharger des documents pour commencer
               </button>
             </div>
           )}       
