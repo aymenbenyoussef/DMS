@@ -211,7 +211,7 @@ const DocumentConfirmationForm = ({
             </div>
           )}
         </div>
-        <div className="document-form">
+        <div className="confirmation-form-scroll-area document-form">
           <h4 className="document-title">{files[0].filename}</h4>
           {/* First row: Entity and Document Type */}
           <div className="form-row">
@@ -375,7 +375,7 @@ const DocumentConfirmationForm = ({
           </div>
         )}
       </div>
-      <div className="document-form">
+      <div className="confirmation-form-scroll-area document-form">
         {files.map((file, idx) => (
           <div key={file.sessionId || file.filename} className="multi-file-section">
             <h4 className="document-title">{file.filename}</h4>
