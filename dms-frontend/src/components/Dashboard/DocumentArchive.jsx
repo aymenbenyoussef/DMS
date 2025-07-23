@@ -183,7 +183,9 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
             }
           }
         }
-        return baseMatch || metaMatch;
+        // Search in extracted_text (OCR text)
+        const ocrMatch = doc.extracted_text && doc.extracted_text.toLowerCase().includes(lowerSearch);
+        return baseMatch || metaMatch || ocrMatch;
       });
     }
     
@@ -193,9 +195,23 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
         selectedDoctypeFilters.includes(doc.doctype_id)
       );
     }
-    
+
+    // Filter by date range
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      filtered = filtered.filter(doc => {
+        if (!doc.created_at) return false;
+        const docDate = new Date(doc.created_at);
+        // Set time to 0:0:0 for start, 23:59:59 for end to include full days
+        start.setHours(0,0,0,0);
+        end.setHours(23,59,59,999);
+        return docDate >= start && docDate <= end;
+      });
+    }
+
     setFilteredDocuments(filtered);
-  }, [documents, searchTerm, selectedDoctypeFilters, selectedDoctype]);
+  }, [documents, searchTerm, selectedDoctypeFilters, selectedDoctype, startDate, endDate]);
 
   const createFolder = async () => {
     if (folderName.trim() === '') {
@@ -672,7 +688,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
               </div>
             </div>
           ) : filteredDocuments.length > 0 ? (
-            <div className="table-responsive" style={{ height: '350px', overflowY: 'auto' }}>
+            <div className="table-responsive" style={{ height: '380px', overflowY: 'auto' }}>
               <table className="table table-hover" style={{ minWidth: '900px' }}>
                 <thead style={{ position: 'sticky', top: 0, background: '#f8f9fa', zIndex: 2 }}>
                   <tr>

@@ -185,6 +185,7 @@ class DatabaseManager:
                     file_path VARCHAR(500),
                     ocr_text varchar(500),
                     extracted_data JSON,
+                    extracted_text varchar(5000),
                     rapport varchar(500),
                     is_invoice BOOLEAN DEFAULT FALSE,   
                     invoice_number VARCHAR(100),
@@ -1081,7 +1082,7 @@ class DatabaseManager:
 
 
     def create_document_with_ocr_data(self, owner_id, company_id, doctype_id, filename, file_path, file_size,
-                                is_invoice=False, extracted_data=None, partner_id=None, rapport=None, ocr_text=None):
+                                is_invoice=False, extracted_data=None, extracted_text=None, partner_id=None, rapport=None, ocr_text=None):
         """Create a document with OCR extracted data"""
         try:
             # Prepare extracted data
@@ -1101,12 +1102,11 @@ class DatabaseManager:
             query = """
                 INSERT INTO documents (
                     filename, owner_id, company_id, doctype_id, file_path, file_size,
-                    extracted_data, rapport ,is_invoice, invoice_number, invoice_date,
+                    extracted_data, extracted_text, rapport ,is_invoice, invoice_number, invoice_date,
                     partner_id, total_ht, tva, total_ttc, ocr_text
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) 
             """
-            
             params = (
                 filename, 
                 owner_id, 
@@ -1115,6 +1115,7 @@ class DatabaseManager:
                 file_path, 
                 file_size,
                 json.dumps(extracted_data) if extracted_data else None,
+                extracted_text if extracted_text else None,
                 rapport,
                 is_invoice, 
                 invoice_number, 
@@ -1359,7 +1360,7 @@ class DatabaseManager:
     def get_documents_by_company_and_type(self, company_id, doctype_id):
         """Get only the columns needed for the document archive table, including company_id and doctype_id for file URL construction"""
         query = """
-            SELECT d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size, d.file_path, d.is_invoice, d.ocr_text, d.rapport, p.company_name as partner_name
+            SELECT d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size, d.file_path, d.is_invoice, d.ocr_text, d.extracted_text, d.rapport, p.company_name as partner_name
             FROM documents d
             LEFT JOIN partners p ON d.partner_id = p.id
             WHERE d.company_id = %s AND d.doctype_id = %s

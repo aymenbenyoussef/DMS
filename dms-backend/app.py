@@ -1538,6 +1538,13 @@ def confirm_document():
 
                 # Prepare fields for insertion
                 ocr_text = final_text_path if final_text_path and os.path.exists(final_text_path) else None
+                extracted_text = ''
+                if ocr_text and os.path.exists(ocr_text):
+                    try:
+                        with open(ocr_text, 'r', encoding='utf-8') as f:
+                            extracted_text = f.read()
+                    except Exception as e:
+                        extracted_text = ''
                 rapport = None
                 if is_invoice and confirmed_info:
                     # Generate report PDF for invoices
@@ -1555,6 +1562,7 @@ def confirm_document():
                     file_size=file_size,
                     is_invoice=is_invoice,
                     extracted_data=confirmed_info,
+                    extracted_text=extracted_text,
                     partner_id=partner_id,
                     rapport=rapport,
                     ocr_text=ocr_text
