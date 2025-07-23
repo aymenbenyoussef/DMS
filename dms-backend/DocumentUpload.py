@@ -374,7 +374,7 @@ def confirm_document():
                     rapport=rapport,
                     ocr_text=ocr_text
                 )
-
+                
                 if not document_id:
                     raise Exception("Failed to create document in database")
                 
