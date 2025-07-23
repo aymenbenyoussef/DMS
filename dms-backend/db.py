@@ -3,13 +3,18 @@ from mysql.connector import Error, pooling
 import bcrypt
 from datetime import datetime
 import json
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Database configuration
 DB_CONFIG = {
-    'host': 'localhost',
+    'host': os.environ.get('SYSTEM_DB_HOST', 'localhost'),
     'database': 'dms_db',
-    'user': 'root',
-    'password': '',  # Set your MySQL password
+    'user': os.environ.get('SYSTEM_DB_USERNAME', 'root'),
+    'password': os.environ.get('SYSTEM_DB_PASSWORD', ''),
     # 'pool_name' and 'pool_size' removed from here
 }
 
@@ -72,7 +77,7 @@ class DatabaseManager:
                     surname VARCHAR(50) NOT NULL ,
                     email VARCHAR(50) NOT NULL UNIQUE,
                     password_hash VARCHAR(255) NOT NULL,
-                    role ENUM('admin', 'user') DEFAULT 'user',
+                    role ENUM('admin', 'user','superuser') DEFAULT 'user',
                     is_active BOOLEAN DEFAULT TRUE,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
@@ -250,6 +255,18 @@ class DatabaseManager:
                 'admin',             # rôle
                 )
                 print("Default admin user created: admin/admin123")
+
+        # Superuser
+            if not self.get_user_by_username('slim'):
+                self.create_user(
+                    'slim',
+                    'khanfir',
+                    'slim@ranesmerald.com',
+                    'slim123',
+                    True,
+                    'superuser'
+                )
+                print("Default superuser created: slim/slim123")
 
         # User normal
         except Exception as e:

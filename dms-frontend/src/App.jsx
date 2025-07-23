@@ -193,7 +193,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Dashboard user={user} />} />
   
-            {user.role === 'admin' && (
+            {(user.role === 'admin' || user.role === 'superuser') && (
               <>
                 <Route path="/admin/users" element={<AdminUsers user={user} loadingUser={loading} />} />
                 {/* Updated to ActivityLogs component */}

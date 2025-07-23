@@ -143,7 +143,7 @@ def get_companies():
         if not current_user_id:
             return jsonify({"error": "User ID not found in token"}), 400
 
-        if user_role == "admin":
+        if user_role == "admin" or user_role == "superuser":
             companies = db.get_all_companies()
         else:
             companies = db.get_user_companies(current_user_id)

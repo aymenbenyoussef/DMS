@@ -32,7 +32,7 @@ const NavBar = ({ user, onLogout }) => {
         { icon: <BiCollection size={16} />, label: 'Types de données', link: '/doctypes' },
         { icon: <BiFolder size={16} />, label: 'Types de partenaires', link: '/partnertypes' },
         { icon: <BiFile size={16} />, label: 'Logs', link: '/admin/activity_logs' },
-        { icon: <BiCog size={16} />, label: 'Paramètres', link: '/settings' }
+        // Paramètres will be conditionally rendered below
       ]
     },
     businessData: {
@@ -107,7 +107,7 @@ const NavBar = ({ user, onLogout }) => {
           </Link>
           
           {/* Admin Tools Dropdown */}
-          {user && user.role === 'admin' && (
+          {user && (user.role === 'admin' || user.role === 'superuser') && (
             <div className="admin-tools-container" ref={adminToolsRef}>
               <button 
                 className={`nav-link ${isActive('/admin/tools')}`}
@@ -141,9 +141,19 @@ const NavBar = ({ user, onLogout }) => {
                             <span>{item.label}</span>
                           </Link>
                         ))}
+                        {/* Show Paramètres only for superuser */}
+                        {user.role === 'superuser' && (
+                          <Link 
+                            to="/settings" 
+                            className="dropdown-item"
+                            onClick={() => setShowAdminTools(false)}
+                          >
+                            <span className="dropdown-icon"><BiCog size={16} /></span>
+                            <span>Paramètres</span>
+                          </Link>
+                        )}
                       </div>
                     </div>
-                    
                     {/* Business Data Column */}
                     <div className="dropdown-column">
                       <div className="category-header">
@@ -169,7 +179,6 @@ const NavBar = ({ user, onLogout }) => {
                       )}
                     </div>
                   </div>
-                  
                   <div className="dropdown-footer">
                     <button
                       onClick={() => {
@@ -186,17 +195,10 @@ const NavBar = ({ user, onLogout }) => {
               )}
             </div>
           )}
-          
-          {/* Settings link - Show for non-admin users */}
-          {(!user || user.role !== 'admin') && (
-            <Link to="/settings" className={`nav-link ${isActive('/settings')}`}>
-              <span className="nav-icon"><BiCog size={20} /></span>
-              <span>Paramètres</span>
-            </Link>
-          )}
+         
 
           {/* Logout button for non-admin users */}
-          {user && user.role !== 'admin' && (
+          {user && user.role !== 'admin' && user.role !== 'superuser' && (
             <button
               onClick={onLogout}
               className="nav-link logout-nav-button"
