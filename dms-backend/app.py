@@ -138,7 +138,6 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def process_single_file_ocr(file, company_id, doctype_id):
-    """Process a single file with OCR and return extracted data - STORES IN TEMPORARY FOLDER"""
     try:
         # Save the file to temporary folder first (NOT final destination)
         filename = secure_filename(file.filename)
@@ -146,6 +145,13 @@ def process_single_file_ocr(file, company_id, doctype_id):
         unique_filename = f"{timestamp}_{filename}"
         temp_file_path = os.path.join(app.config['TEMP_UPLOAD_FOLDER'], unique_filename)
         file.save(temp_file_path)
+
+        # Log file path and size
+        try:
+            file_size = os.path.getsize(temp_file_path)
+        except Exception as e:
+            file_size = 'unknown'
+        print(f"[OCR DEBUG] Processing file: {temp_file_path}, size: {file_size}")
 
         # Perform OCR based on file type
         text = ""
@@ -155,19 +161,18 @@ def process_single_file_ocr(file, company_id, doctype_id):
         elif filename.lower().endswith('.pdf'):
             with open(temp_file_path, 'rb') as pdf_file:
                 images = convert_from_bytes(pdf_file.read(), poppler_path=r'C:\poppler-24.08.0\Library\bin')
-                for img in images:
-                    text += pytesseract.image_to_string(img, lang='fra+eng') + "\n"
-
-        # Extract invoice data from OCR text
-        extracted_data = extract_invoice_data(text)
-        is_invoice = extracted_data.get('is_invoice', False)
-
-        text_path = None
-        # Always save OCR text to temporary folder for all documents
+                for idx, img in enumerate(images):
+                    t = pytesseract.image_to_string(img, lang='fra+eng')
+                    text += t + "\n"
+        else:
+            print(f"[OCR DEBUG] Unsupported file type for OCR: {filename}")
+        
         text_filename = f"{os.path.splitext(unique_filename)[0]}.txt"
         text_path = os.path.join(app.config['TEMP_UPLOAD_FOLDER'], text_filename)
-        with open(text_path, "w", encoding="utf-8") as f:
+        with open(text_path, 'w', encoding='utf-8') as f:
             f.write(text)
+
+        extracted_data = extract_invoice_data(text)
 
         return {
             "filename": unique_filename,
@@ -177,7 +182,9 @@ def process_single_file_ocr(file, company_id, doctype_id):
             "ocr_text": text,
             "extracted_data": extracted_data
         }
+
     except Exception as e:
+        print(f"[OCR DEBUG] Exception during OCR: {e}")
         return {
             "filename": file.filename,
             "error": str(e)
@@ -1031,7 +1038,7 @@ def get_partners_by_company_route(company_id):
             return jsonify({"error": "User ID not found in token"}), 400
 
         # Vérifier si l'utilisateur a accès à cette company (sauf pour les admins)
-        if user_role != 'admin':
+        if user_role != 'admin' and user_role != 'superuser':
             user_companies = db.get_user_companies(current_user_id)
             user_company_ids = [company['id'] for company in user_companies]
             
@@ -1552,6 +1559,7 @@ def confirm_document():
                     except Exception as e:
                         extracted_text = ''
                 rapport = None
+                print(extracted_text)
                 if is_invoice and confirmed_info:
                     # Generate report PDF for invoices
                     report_filename = f"{os.path.splitext(unique_final_filename)[0]}_report.pdf"

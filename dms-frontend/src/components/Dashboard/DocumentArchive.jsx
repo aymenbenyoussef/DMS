@@ -69,6 +69,9 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
   const [emailSuccess, setEmailSuccess] = useState('');
   const [isEmailSending, setIsEmailSending] = useState(false);
 
+  // Add a state to hold the displayed filename for the email modal
+  const [displayedEmailFilename, setDisplayedEmailFilename] = useState('');
+
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => {
     setIsModalOpen(false);
@@ -838,6 +841,25 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     return doc.uploaded_by || user?.name || 'Utilisateur inconnu';
   };
 
+  // Update the effect that runs when emailType or currentDocument changes
+  useEffect(() => {
+    if (!currentDocument) {
+      setDisplayedEmailFilename('');
+      return;
+    }
+    // Find the selected type object
+    const selectedType = availableEmailTypes.find(t => t.type === emailType);
+    if (selectedType && selectedType.filename) {
+      setDisplayedEmailFilename(selectedType.filename);
+    } else if (emailType === 'rapport' && currentDocument.rapport_filename) {
+      setDisplayedEmailFilename(currentDocument.rapport_filename);
+    } else if (emailType === 'ocr_text' && currentDocument.ocr_text_filename) {
+      setDisplayedEmailFilename(currentDocument.ocr_text_filename);
+    } else {
+      setDisplayedEmailFilename(currentDocument.filename);
+    }
+  }, [emailType, currentDocument, availableEmailTypes]);
+
   if (!selectedCompany && !selectedDoctype) {
     return <WelcomePanel user={user} />;
   }
@@ -1158,6 +1180,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                             <div className="btn-group" role="group">
                               <button
                                 className="btn btn-sm btn-outline-blue"
+                                style={{ padding: '10px 24px', fontSize: '1.15em', fontWeight: 600 }}
                                 onClick={() => handleViewRapport(doc)}
                                 title="Voir le rapport PDF"
                               >
@@ -1175,6 +1198,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                             <div className="btn-group" role="group">
                               <button
                                 className="btn btn-sm btn-outline-blue"
+                                style={{ padding: '10px 24px', fontSize: '1.15em', fontWeight: 600 }}
                                 onClick={() => handleViewOcrText(doc)}
                                 title="Voir le texte OCR"
                               >
@@ -1193,6 +1217,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                         <div className="btn-group" role="group">
                           <button
                             className="btn btn-sm btn-outline-blue"
+                            style={{ padding: '10px 24px', fontSize: '1.15em', fontWeight: 600 }}
                             onClick={() => handleViewDocument(doc)}
                             title="Voir le document"
                           >
@@ -1651,7 +1676,10 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                       
                       <button
                         className="btn btn-outline-primary"
-                        onClick={() => handleSendEmail(currentDocument)}
+                        onClick={() => {
+                          setIsPreviewModalOpen(false); // Close the voir modal first
+                          handleSendEmail(currentDocument); // Then open the email modal
+                        }}
                         style={{
                           width: '100%',
                           padding: '12px',
@@ -1713,7 +1741,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                         <div className="d-flex align-items-center">
                           <i className={`bi ${getFileIconClass(currentDocument.filename)} me-2`}></i>
                           <div>
-                            <div className="fw-medium">{currentDocument.filename}</div>
+                            <div className="fw-medium">{displayedEmailFilename || currentDocument.filename}</div>
                             <small className="text-muted">
                               {formatFileSize(currentDocument.file_size || 0)} • 
                               Créé le {currentDocument.created_at ? new Date(currentDocument.created_at).toLocaleDateString('fr-FR') : 'N/A'}
@@ -1737,12 +1765,20 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                                 id={`emailType-${type.type}`}
                                 value={type.type}
                                 checked={emailType === type.type}
-                                onChange={(e) => setEmailType(e.target.value)}
+                                onChange={(e) => {
+                                  setEmailType(e.target.value);
+                                }}
                               />
-                              <label className="form-check-label" htmlFor={`emailType-${type.type}`}>
+                              <label className="form-check-label" htmlFor={`emailType-${type.type}`}> 
                                 <strong>{type.label}</strong>
                                 <br />
-                                <small className="text-muted">{type.description}</small>
+                                {/* Show filename for all types, with 'Fichier :' prefix */}
+                                <span style={{ display: 'block', color: '#64748b', fontSize: '12px', marginTop: '2px' }}>
+                                  Fichier : {type.filename ||
+                                    (type.type === 'rapport' && currentDocument.rapport_filename) ||
+                                    (type.type === 'ocr_text' && currentDocument.ocr_text_filename) ||
+                                    currentDocument.filename}
+                                </span>
                               </label>
                             </div>
                           </div>
@@ -1871,5 +1907,5 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
   );
 };
 
-export default DocumentArchive; 
+export default DocumentArchive;
 
