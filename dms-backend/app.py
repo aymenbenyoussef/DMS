@@ -354,9 +354,11 @@ def get_activity_logs_endpoint():
         app.logger.warning("Unauthorized access attempt to logs from user: %s", 
                           current_user_claims.get('username'))
         return jsonify({"msg": "Admin access required"}), 403
-    
     try:
         logs = read_activity_logs()
+        # If admin (not superuser), filter out logs of the superuser
+        if current_user_claims.get('role') == 'admin':
+            logs = [line for line in logs if 'superuser' not in line and 'slim' not in line]
         app.logger.info("Returning %d log entries to user: %s", 
                        len(logs), current_user_claims.get('username'))
         return jsonify({"logs": logs}), 200
