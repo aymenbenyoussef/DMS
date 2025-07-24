@@ -4,6 +4,7 @@ import API from '../../api';
 import { AppContext } from '../context';
 import WelcomePanel from './WelcomePanel';
 import { useNavigate } from 'react-router-dom';
+import EditDocumentForm from './EditDocumentForm';
 import './DocumentArchive.css';
 // Remove: import path from 'path-browserify';
 
@@ -72,6 +73,30 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
 
   // Add a state to hold the displayed filename for the email modal
   const [displayedEmailFilename, setDisplayedEmailFilename] = useState('');
+
+  // Document modification states
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingDocument, setEditingDocument] = useState(null);
+  const [editError, setEditError] = useState('');
+  const [editSuccess, setEditSuccess] = useState('');
+  const [isEditSaving, setIsEditSaving] = useState(false);
+
+  // Dropdown menu states
+  const [openDropdownId, setOpenDropdownId] = useState(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (openDropdownId && !event.target.closest('.dropdown')) {
+        setOpenDropdownId(null);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [openDropdownId]);
 
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => {
@@ -286,6 +311,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
       setEmailSuccess('');
       
       setIsEmailModalOpen(true);
+      setOpenDropdownId(null); // Close dropdown after action
     } catch (error) {
       console.error('Error preparing email:', error);
       alert('Erreur lors de la préparation de l\'email');
@@ -842,18 +868,6 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     return doc.uploaded_by || user?.name || 'Utilisateur inconnu';
   };
 
-  // Add a helper to get the filename for the selected emailType
-  function getSelectedEmailFilename(type, doc) {
-    if (!doc) return '';
-    if (type === 'rapport' && doc.rapport) {
-      return doc.rapport.split(/[\\/]/).pop();
-    } else if (type === 'ocr_text' && doc.ocr_text) {
-      return doc.ocr_text.split(/[\\/]/).pop();
-    } else {
-      return doc.filename;
-    }
-  }
-
   // Update the effect that runs when emailType or currentDocument changes
   useEffect(() => {
     if (!currentDocument) {
@@ -1126,6 +1140,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                     <th>OCR extrait</th>
                     <th>Date d'upload</th>
                     <th>Actions</th>
+                    <th>Plus d'actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1228,6 +1243,62 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                           >
                             Voir <i className="bi bi-eye"></i>
                           </button>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="dropdown">
+                          <button 
+                            className="btn btn-sm btn-outline-secondary dropdown-toggle"
+                            type="button" 
+                            id={`dropdownMenuButton${doc.id}`}
+                            aria-expanded={openDropdownId === doc.id ? "true" : "false"}
+                            onClick={() => setOpenDropdownId(openDropdownId === doc.id ? null : doc.id)}
+                            style={{ 
+                              border: 'none', 
+                              background: 'transparent',
+                              padding: '8px 12px',
+                              fontSize: '16px',
+                              color: '#6c757d'
+                            }}
+                          >
+                            <i className="bi bi-three-dots-vertical"></i>
+                          </button>
+                          <ul 
+                            className={`dropdown-menu ${openDropdownId === doc.id ? 'show' : ''}`}
+                            aria-labelledby={`dropdownMenuButton${doc.id}`}
+                          >
+                            <li>
+                              <button 
+                                className="dropdown-item d-flex align-items-center"
+                                onClick={() => {
+                                  setIsPreviewModalOpen(false); // Close any open modal first
+                                  handleSendEmail(doc);
+                                }}
+                              >
+                                <i className="bi bi-envelope me-2"></i>
+                                Envoyer
+                              </button>
+                            </li>
+                            <li>
+                              <button 
+                                className="dropdown-item d-flex align-items-center"
+                                onClick={() => handleEditDocument(doc)}
+                              >
+                                <i className="bi bi-pencil-square me-2"></i>
+                                Modifier
+                              </button>
+                            </li>
+                            <li><hr className="dropdown-divider" /></li>
+                            <li>
+                              <button 
+                                className="dropdown-item d-flex align-items-center text-danger"
+                                onClick={() => handleDeleteDocument(doc)}
+                              >
+                                <i className="bi bi-trash me-2"></i>
+                                Supprimer
+                              </button>
+                            </li>
+                          </ul>
                         </div>
                       </td>
                     </tr>
@@ -1908,6 +1979,66 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                     </>
                   )}
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Document Edit Modal */}
+      {isEditModalOpen && editingDocument && (
+        <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-lg">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">
+                  <i className="bi bi-pencil-square me-2"></i>
+                  Modifier le document
+                </h5>
+                <button 
+                  type="button" 
+                  className="btn-close" 
+                  onClick={handleCloseEditModal}
+                ></button>
+              </div>
+              
+              <div className="modal-body">
+                {editingDocument && (
+                  <>
+                    {/* Document Information */}
+                    <div className="card mb-4">
+                      <div className="card-body">
+                        <h6 className="card-title">Document à modifier</h6>
+                        <div className="d-flex align-items-center">
+                          <i className={`bi ${getFileIconClass(editingDocument.filename)} me-2`}></i>
+                          <div>
+                            <div className="fw-medium">{editingDocument.filename}</div>
+                            <small className="text-muted">
+                              {formatFileSize(editingDocument.file_size || 0)} • 
+                              Créé le {editingDocument.created_at ? new Date(editingDocument.created_at).toLocaleDateString('fr-FR') : 'N/A'}
+                            </small>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Edit Document Form */}
+                    <EditDocumentForm
+                      document={editingDocument}
+                      onSave={handleSaveEditDocument}
+                      onCancel={handleCloseEditModal}
+                      isLoading={isEditSaving}
+                    />
+
+                    {/* Error and Success Messages */}
+                    {editError && (
+                      <div className="alert alert-danger mt-3">{editError}</div>
+                    )}
+                    {editSuccess && (
+                      <div className="alert alert-success mt-3">{editSuccess}</div>
+                    )}
+                  </>
+                )}
               </div>
             </div>
           </div>
