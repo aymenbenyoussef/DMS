@@ -331,7 +331,7 @@ class DatabaseManager:
 
     def get_all_users(self):
     # First get all users
-        users_query = "SELECT * FROM users ORDER BY created_at DESC"
+        users_query = "SELECT * FROM users where role='user' ORDER BY created_at DESC"
         users = self.execute_query(users_query, fetch=True)
     
         if not users:
@@ -1520,7 +1520,7 @@ class DatabaseManager:
             query = """
                 SELECT id, username, surname, email, role
                 FROM users 
-                WHERE is_active = TRUE 
+                WHERE is_active = TRUE and role='user'
                 ORDER BY username
             """
             return self.execute_query(query, fetch=True)
@@ -1534,7 +1534,7 @@ class DatabaseManager:
                 SELECT DISTINCT u.id, u.username, u.surname, u.email, u.role
                 FROM users u
                 JOIN user_companies uc ON u.id = uc.user_id
-                WHERE u.is_active = TRUE AND uc.company_id = %s
+                WHERE u.is_active = TRUE AND uc.company_id = %s and u.role='user'
                 ORDER BY u.username
             """
             return self.execute_query(query, (company_id,), fetch=True)

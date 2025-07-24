@@ -6,6 +6,7 @@ import WelcomePanel from './WelcomePanel';
 import { useNavigate } from 'react-router-dom';
 import EditDocumentForm from './EditDocumentForm';
 import './DocumentArchive.css';
+// Remove: import path from 'path-browserify';
 
 const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -867,85 +868,16 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     return doc.uploaded_by || user?.name || 'Utilisateur inconnu';
   };
 
-  // Document modification functions
-  const handleEditDocument = (document) => {
-    setEditingDocument(document);
-    setEditError("");
-    setEditSuccess("");
-    setIsEditModalOpen(true);
-    setOpenDropdownId(null); // Close dropdown after action
-  };
-
-  const handleCloseEditModal = () => {
-    setIsEditModalOpen(false);
-    setEditingDocument(null);
-    setEditError('');
-    setEditSuccess('');
-    setIsEditSaving(false);
-  };
-
-  const handleSaveEditDocument = async (updateData) => {
-    if (!editingDocument || !updateData) {
-      setEditError('Aucune donnée à sauvegarder');
-      return;
-    }
-
-    setIsEditSaving(true);
-    setEditError('');
-
-    try {
-      const response = await API.documents.update(editingDocument.id, updateData);
-      
-      setEditSuccess('Document modifié avec succès');
-      
-      // Refresh documents list
-      fetchDocuments();
-      
-      setTimeout(() => {
-        handleCloseEditModal();
-      }, 2000);
-    } catch (error) {
-      setEditError(error.response?.data?.msg || 'Erreur lors de la modification du document');
-    } finally {
-      setIsEditSaving(false);
-    }
-  };
-
-  const handleDeleteDocument = async (document) => {
-    if (!window.confirm(`Êtes-vous sûr de vouloir supprimer le document "${document.filename}" ? Cette action est irréversible.`)) {
-      return;
-    }
-
-    try {
-      await API.documents.delete(document.id);
-      alert("Document supprimé avec succès");
-      
-      // Refresh documents list
-      fetchDocuments();
-      setOpenDropdownId(null); // Close dropdown after action
-    } catch (error) {
-      alert(error.response?.data?.msg || "Erreur lors de la suppression du document");
-    }
-  };
-
   // Update the effect that runs when emailType or currentDocument changes
   useEffect(() => {
     if (!currentDocument) {
       setDisplayedEmailFilename('');
       return;
     }
-    // Find the selected type object
-    const selectedType = availableEmailTypes.find(t => t.type === emailType);
-    if (selectedType && selectedType.filename) {
-      setDisplayedEmailFilename(selectedType.filename);
-    } else if (emailType === 'rapport' && currentDocument.rapport_filename) {
-      setDisplayedEmailFilename(currentDocument.rapport_filename);
-    } else if (emailType === 'ocr_text' && currentDocument.ocr_text_filename) {
-      setDisplayedEmailFilename(currentDocument.ocr_text_filename);
-    } else {
-      setDisplayedEmailFilename(currentDocument.filename);
-    }
-  }, [emailType, currentDocument, availableEmailTypes]);
+    const filename = getSelectedEmailFilename(emailType, currentDocument);
+    setDisplayedEmailFilename(filename);
+    setEmailSubject(`Document: ${filename}`);
+  }, [emailType, currentDocument]);
 
   if (!selectedCompany && !selectedDoctype) {
     return <WelcomePanel user={user} />;
@@ -1861,8 +1793,8 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
       {/* Email Sending Modal */}
       {isEmailModalOpen && (
         <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog modal-lg">
-            <div className="modal-content">
+          <div className="modal-dialog modal-lg" style={{ height: '80vh', maxHeight: '80vh', display: 'flex', alignItems: 'center' }}>
+            <div className="modal-content" style={{ height: '80vh', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
               <div className="modal-header">
                 <h5 className="modal-title">
                   <i className="bi bi-envelope me-2"></i>
@@ -1874,12 +1806,11 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                   onClick={handleCloseEmailModal}
                 ></button>
               </div>
-              
-              <div className="modal-body">
+              <div className="modal-body" style={{ overflowY: 'auto', flex: 1, minHeight: 0 }}>
                 {currentDocument && (
                   <>
                     {/* Document Information */}
-                    <div className="card mb-4">
+                    <div className="card mb-4" style={{height:'120px'}}>
                       <div className="card-body">
                         <h6 className="card-title">Document à envoyer</h6>
                         <div className="d-flex align-items-center">
@@ -1899,34 +1830,40 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                     <div className="mb-4">
                       <label className="form-label">Type de fichier à envoyer</label>
                       <div className="row g-2">
-                        {availableEmailTypes.map((type) => (
-                          <div key={type.type} className="col-md-4">
-                            <div className="form-check">
-                              <input 
-                                className="form-check-input" 
-                                type="radio" 
-                                name="emailType"
-                                id={`emailType-${type.type}`}
-                                value={type.type}
-                                checked={emailType === type.type}
-                                onChange={(e) => {
-                                  setEmailType(e.target.value);
-                                }}
-                              />
-                              <label className="form-check-label" htmlFor={`emailType-${type.type}`}> 
-                                <strong>{type.label}</strong>
-                                <br />
-                                {/* Show filename for all types, with 'Fichier :' prefix */}
-                                <span style={{ display: 'block', color: '#64748b', fontSize: '12px', marginTop: '2px' }}>
-                                  Fichier : {type.filename ||
-                                    (type.type === 'rapport' && currentDocument.rapport_filename) ||
-                                    (type.type === 'ocr_text' && currentDocument.ocr_text_filename) ||
-                                    currentDocument.filename}
-                                </span>
-                              </label>
+                        {availableEmailTypes.map((type) => {
+                          let fileLabel = '';
+                          if (type.type === 'rapport' && currentDocument.rapport) {
+                            fileLabel = currentDocument.rapport.split(/[\\/]/).pop();
+                          } else if (type.type === 'ocr_text' && currentDocument.ocr_text) {
+                            fileLabel = currentDocument.ocr_text.split(/[\\/]/).pop();
+                          } else {
+                            fileLabel = currentDocument.filename;
+                          }
+                          return (
+                            <div key={type.type} className="col-md-4">
+                              <div className="form-check">
+                                <input 
+                                  className="form-check-input" 
+                                  type="radio" 
+                                  name="emailType"
+                                  id={`emailType-${type.type}`}
+                                  value={type.type}
+                                  checked={emailType === type.type}
+                                  onChange={(e) => {
+                                    setEmailType(e.target.value);
+                                  }}
+                                />
+                                <label className="form-check-label" htmlFor={`emailType-${type.type}`}> 
+                                  <strong>{type.label}</strong>
+                                  <br />
+                                  <span style={{ display: 'block', color: '#64748b', fontSize: '12px', marginTop: '2px' }}>
+                                    Fichier : {fileLabel}
+                                  </span>
+                                </label>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
 
