@@ -2102,43 +2102,32 @@ def download_document_ocr_text(document_id):
 @app.route('/documents/<int:document_id>', methods=['PUT'])
 @jwt_required()
 def update_document(document_id):
-    """Update document information"""
+    """Update document name and partner only"""
     current_user_claims = get_jwt()
     data = request.get_json()
-    
     if not data:
         return jsonify({"msg": "No data provided"}), 400
-    
     try:
-        # Get the current document to verify it exists
         doc = db.get_document_by_id(document_id)
         if not doc:
             return jsonify({"msg": "Document not found"}), 404
-        
-        # Prepare invoice data if provided
-        invoice_data = None
-        if 'confirmed_data' in data:
-            invoice_data = json.dumps(data['confirmed_data'])
-        
-        # Update the document
-        success = db.update_document(document_id, invoice_data)
-        
+        name = data.get('filename')
+        partner_id = data.get('partner_id')
+        success = db.update_document(document_id, name=name, partner_id=partner_id)
         if success:
-            # Log document update
             log_activity(
                 actor=current_user_claims['username'],
                 action="Update",
                 resource_type="document",
                 resource_data={
                     'id': document_id,
-                    'filename': doc['filename'],
+                    'filename': name or doc['filename'],
                     'company_id': doc['company_id']
                 }
             )
             return jsonify({"msg": "Document updated successfully"}), 200
         else:
             return jsonify({"msg": "Failed to update document"}), 500
-            
     except Exception as e:
         app.logger.error(f"Error updating document {document_id}: {str(e)}")
         return jsonify({"msg": f"Error updating document: {str(e)}"}), 500
