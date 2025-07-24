@@ -93,7 +93,19 @@ def log_activity(actor, action, resource_type, resource_data):
             f"{resource_data['id']}, {resource_data['company_name']}, "
             f"type={resource_data.get('partner_type', 'N/A')}, "
             f"status={'active' if resource_data.get('status', True) else 'inactive'}"
-        )     
+        )
+    elif resource_type == "login":
+        log_entry = (
+            f"{timestamp} - {actor} - {action} Compte: "
+            f"email={resource_data.get('email','')}, username={resource_data.get('username','')}, "
+            f"result={resource_data.get('result','')}, date={resource_data.get('date','')}"
+        )
+    elif resource_type == "MDPreinitialisation":
+        log_entry = (
+            f"{timestamp} - {actor} - {action} Compte: "
+            f"email={resource_data.get('email','')}, username={resource_data.get('username','')}, "
+            f"date={resource_data.get('date','')}"
+        )
     else:
         return  # Unsupported resource type
     
@@ -241,6 +253,17 @@ def login():
         "username": user["username"],
         "email": user["email"]
     })
+    # Log the login event
+    log_activity(
+        actor=user["username"],
+        action="Login",
+        resource_type="login",
+        resource_data={
+            "email": user["email"],
+            "username": user["username"],
+            "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+    )
     return jsonify(access_token=access_token), 200
 
 # --- Forgot Password Endpoint ---
@@ -257,6 +280,17 @@ def forgot_password():
     # Generate a secure temporary password
     temp_password = "".join(random.choices(string.ascii_letters + string.digits, k=10))
     db.update_user(user["id"], password=temp_password)
+    # Log the password reset event
+    log_activity(
+        actor=user["username"],
+        action="PasswordReset",
+        resource_type="MDPreinitialisation",
+        resource_data={
+            "email": user["email"],
+            "username": user["username"],
+            "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+    )
     
     # Send email via SMTP
     smtp_host = "smtp.gmail.com"  # Change as needed
