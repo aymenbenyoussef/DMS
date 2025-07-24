@@ -847,6 +847,7 @@
   .table tbody td:nth-of-type(6)::before { content: "OCR extrait"; }
   .table tbody td:nth-of-type(7)::before { content: "Date d'upload"; }
   .table tbody td:nth-of-type(8)::before { content: "Actions"; }
+  .table tbody td:nth-of-type(9)::before { content: "Plus d'actions"; }
 
   .table .btn-group .btn {
     display: block;
@@ -1275,3 +1276,4 @@
 }
 
 
+/* Group management modal styles */

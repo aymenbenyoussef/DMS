@@ -2099,6 +2099,102 @@ def download_document_ocr_text(document_id):
         app.logger.error(f"OCR text download error: {str(e)}")
         return jsonify({"msg": "Error downloading OCR text"}), 500
 
+@app.route('/documents/<int:document_id>', methods=['PUT'])
+@jwt_required()
+def update_document(document_id):
+    """Update document information"""
+    current_user_claims = get_jwt()
+    data = request.get_json()
+    
+    if not data:
+        return jsonify({"msg": "No data provided"}), 400
+    
+    try:
+        # Get the current document to verify it exists
+        doc = db.get_document_by_id(document_id)
+        if not doc:
+            return jsonify({"msg": "Document not found"}), 404
+        
+        # Prepare invoice data if provided
+        invoice_data = None
+        if 'confirmed_data' in data:
+            invoice_data = json.dumps(data['confirmed_data'])
+        
+        # Update the document
+        success = db.update_document(document_id, invoice_data)
+        
+        if success:
+            # Log document update
+            log_activity(
+                actor=current_user_claims['username'],
+                action="Update",
+                resource_type="document",
+                resource_data={
+                    'id': document_id,
+                    'filename': doc['filename'],
+                    'company_id': doc['company_id']
+                }
+            )
+            return jsonify({"msg": "Document updated successfully"}), 200
+        else:
+            return jsonify({"msg": "Failed to update document"}), 500
+            
+    except Exception as e:
+        app.logger.error(f"Error updating document {document_id}: {str(e)}")
+        return jsonify({"msg": f"Error updating document: {str(e)}"}), 500
+
+@app.route('/documents/<int:document_id>', methods=['DELETE'])
+@jwt_required()
+def delete_document(document_id):
+    """Delete a document"""
+    current_user_claims = get_jwt()
+    
+    try:
+        # Get document info before deletion for logging
+        doc = db.get_document_by_id(document_id)
+        if not doc:
+            return jsonify({"msg": "Document not found"}), 404
+        
+        # Delete associated files if they exist
+        files_to_delete = []
+        if doc.get('file_path') and os.path.exists(doc['file_path']):
+            files_to_delete.append(doc['file_path'])
+        if doc.get('rapport') and os.path.exists(doc['rapport']):
+            files_to_delete.append(doc['rapport'])
+        if doc.get('ocr_text') and os.path.exists(doc['ocr_text']):
+            files_to_delete.append(doc['ocr_text'])
+        
+        # Delete the document from database
+        success = db.delete_document(document_id)
+        
+        if success:
+            # Delete associated files
+            for file_path in files_to_delete:
+                try:
+                    os.remove(file_path)
+                    app.logger.info(f"Deleted file: {file_path}")
+                except Exception as e:
+                    app.logger.warning(f"Could not delete file {file_path}: {str(e)}")
+            
+            # Log document deletion
+            log_activity(
+                actor=current_user_claims['username'],
+                action="Delete",
+                resource_type="document",
+                resource_data={
+                    'id': document_id,
+                    'filename': doc['filename'],
+                    'company_id': doc['company_id']
+                }
+            )
+            return jsonify({"msg": "Document deleted successfully"}), 200
+        else:
+            return jsonify({"msg": "Failed to delete document"}), 500
+            
+    except Exception as e:
+        app.logger.error(f"Error deleting document {document_id}: {str(e)}")
+        return jsonify({"msg": f"Error deleting document: {str(e)}"}), 500
+
 @app.route('/cors-test', methods=['GET', 'OPTIONS'])
 @cross_origin()
 def cors_test():

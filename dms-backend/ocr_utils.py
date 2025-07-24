@@ -243,7 +243,7 @@ def generate_report_pdf(confirmed_data, output_path, original_filename):
         story.append(Spacer(1, 30))
         
         # Footer
-        footer_text = "Ce rapport a été généré automatiquement par le système DMS."
+        footer_text = "Ce rapport a été généré automatiquement par le système RAN ESMERALD DMS."
         story.append(Paragraph(footer_text, styles['Normal']))
         
         doc.build(story)
