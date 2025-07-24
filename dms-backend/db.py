@@ -1078,21 +1078,20 @@ class DatabaseManager:
                 ORDER BY d.created_at DESC
             """
             return self.execute_query(query, (company_id,), fetch=True)
-    def update_document(self, document_id, invoice_data=None):
+    def update_document(self, document_id, name=None, partner_id=None):
         updates = []
         params = []
-        
-        if invoice_data is not None:
-            updates.append("invoice_data = %s")
-            params.append(invoice_data)
-        
+        if name is not None:
+            updates.append("filename = %s")
+            params.append(name)
+        if partner_id is not None:
+            updates.append("partner_id = %s")
+            params.append(partner_id)
         if not updates:
             return False
-        
         updates.append("updated_at = CURRENT_TIMESTAMP")
         params.append(document_id)
-        
-        query = f"UPDATE documents SET {' , '.join(updates)} WHERE id = %s"
+        query = f"UPDATE documents SET {', '.join(updates)} WHERE id = %s"
         try:
             self.execute_query(query, params)
             return True

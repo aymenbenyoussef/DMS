@@ -81,6 +81,12 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
   const [editSuccess, setEditSuccess] = useState('');
   const [isEditSaving, setIsEditSaving] = useState(false);
 
+  // Delete confirmation modal state
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deletingDocument, setDeletingDocument] = useState(null);
+  const [deleteError, setDeleteError] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+
   // Dropdown menu states
   const [openDropdownId, setOpenDropdownId] = useState(null);
 
@@ -879,6 +885,138 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     setEmailSubject(`Document: ${filename}`);
   }, [emailType, currentDocument]);
 
+  // Helper to get the filename for the selected email type
+  function getSelectedEmailFilename(type, doc) {
+    if (!doc) return '';
+    if (type === 'rapport' && doc.rapport) {
+      return doc.rapport.split(/[\\/]/).pop();
+    } else if (type === 'ocr_text' && doc.ocr_text) {
+      return doc.ocr_text.split(/[\\/]/).pop();
+    } else {
+      return doc.filename;
+    }
+  }
+
+  // Stub handlers for edit/delete modal actions
+  // Edit modal form state
+  const [editForm, setEditForm] = useState({
+    filename: '',
+    partner_id: '',
+    is_invoice: false,
+    invoice_number: '',
+    date: '',
+    total_ht: '',
+    tva: '',
+    total_ttc: '',
+  });
+  const [editPartners, setEditPartners] = useState([]);
+  const [isEditLoading, setIsEditLoading] = useState(false);
+
+  // Open edit modal and prefill fields
+  const handleEditDocument = async (doc) => {
+    setEditingDocument(doc);
+    setEditError('');
+    setEditSuccess('');
+    setIsEditModalOpen(true);
+    setIsEditLoading(true);
+    try {
+      // Fetch partners for the document's company
+      const partnersRes = await API.partner.getByCompany(doc.company_id);
+      let partnersList = partnersRes.data || [];
+      let selectedPartnerId = doc.partner_id != null ? String(doc.partner_id) : '';
+      // If the partner_id is set but not in the list, fetch it and add to the list
+      if (selectedPartnerId && !partnersList.some(p => String(p.id) === selectedPartnerId)) {
+        try {
+          const partnerRes = await API.partner.getById(doc.partner_id);
+          if (partnerRes.data) {
+            partnersList = [...partnersList, partnerRes.data];
+          }
+        } catch (e) { /* ignore if not found */ }
+      }
+      setEditPartners(partnersList);
+      setEditForm({
+        filename: doc.filename || '',
+        partner_id: selectedPartnerId,
+      });
+    } catch (e) {
+      setEditPartners([]);
+    } finally {
+      setIsEditLoading(false);
+    }
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setEditingDocument(null);
+    setEditError('');
+    setEditSuccess('');
+    setEditForm({
+      filename: '', partner_id: '', is_invoice: false, invoice_number: '', date: '', total_ht: '', tva: '', total_ttc: ''
+    });
+  };
+
+  const handleEditFormChange = (field, value) => {
+    setEditForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSaveEditDocument = async () => {
+    if (!editingDocument) return;
+    setIsEditSaving(true);
+    setEditError('');
+    setEditSuccess('');
+    try {
+      const updateData = {
+        filename: editForm.filename,
+        partner_id: editForm.partner_id ? Number(editForm.partner_id) : null,
+      };
+      await API.documents.update(editingDocument.id, updateData);
+      setEditSuccess('Document modifié avec succès');
+      // Update document in UI
+      setDocuments(prev => prev.map(doc => doc.id === editingDocument.id ? { ...doc, ...updateData } : doc));
+      setFilteredDocuments(prev => prev.map(doc => doc.id === editingDocument.id ? { ...doc, ...updateData } : doc));
+      // Refresh the document list from the backend to reflect partner name change
+      fetchDocuments();
+      setTimeout(() => {
+        setIsEditModalOpen(false);
+        setEditingDocument(null);
+        setEditSuccess('');
+      }, 1200);
+    } catch (error) {
+      setEditError(error.response?.data?.msg || 'Erreur lors de la modification du document');
+    } finally {
+      setIsEditSaving(false);
+    }
+  };
+  // Update handleDeleteDocument to open confirmation modal
+  const handleDeleteDocument = (doc) => {
+    setDeletingDocument(doc);
+    setDeleteError('');
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleCloseDeleteModal = () => {
+    setIsDeleteModalOpen(false);
+    setDeletingDocument(null);
+    setDeleteError('');
+    setIsDeleting(false);
+  };
+  const handleConfirmDeleteDocument = async () => {
+    if (!deletingDocument) return;
+    setIsDeleting(true);
+    setDeleteError('');
+    try {
+      await API.delete(`/documents/${deletingDocument.id}`);
+      setDocuments(prev => prev.filter(doc => doc.id !== deletingDocument.id));
+      setFilteredDocuments(prev => prev.filter(doc => doc.id !== deletingDocument.id));
+      setIsDeleteModalOpen(false);
+      setDeletingDocument(null);
+    } catch (error) {
+      setDeleteError(error.response?.data?.msg || 'Erreur lors de la suppression du document');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (!selectedCompany && !selectedDoctype) {
     return <WelcomePanel user={user} />;
   }
@@ -1252,7 +1390,10 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                             type="button" 
                             id={`dropdownMenuButton${doc.id}`}
                             aria-expanded={openDropdownId === doc.id ? "true" : "false"}
-                            onClick={() => setOpenDropdownId(openDropdownId === doc.id ? null : doc.id)}
+                            onClick={(e) => {
+                              e.stopPropagation(); // Prevent global click handler from firing
+                              setOpenDropdownId(openDropdownId === doc.id ? null : doc.id);
+                            }}
                             style={{ 
                               border: 'none', 
                               background: 'transparent',
@@ -1266,6 +1407,8 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                           <ul 
                             className={`dropdown-menu ${openDropdownId === doc.id ? 'show' : ''}`}
                             aria-labelledby={`dropdownMenuButton${doc.id}`}
+                            onClick={e => e.stopPropagation()} // Prevent closing when clicking inside
+                            style={{ zIndex: 1050, position: 'absolute' }}
                           >
                             <li>
                               <button 
@@ -1985,10 +2128,10 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
         </div>
       )}
       
-      {/* Document Edit Modal */}
+      {/* Document Edit Modal - styled like DocumentConfirmationForm */}
       {isEditModalOpen && editingDocument && (
         <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog modal-lg">
+          <div className="modal-dialog modal-lg" style={{ marginTop: '120px' }}>
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">
@@ -2001,44 +2144,130 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                   onClick={handleCloseEditModal}
                 ></button>
               </div>
-              
               <div className="modal-body">
-                {editingDocument && (
-                  <>
-                    {/* Document Information */}
-                    <div className="card mb-4">
-                      <div className="card-body">
-                        <h6 className="card-title">Document à modifier</h6>
-                        <div className="d-flex align-items-center">
-                          <i className={`bi ${getFileIconClass(editingDocument.filename)} me-2`}></i>
-                          <div>
-                            <div className="fw-medium">{editingDocument.filename}</div>
-                            <small className="text-muted">
-                              {formatFileSize(editingDocument.file_size || 0)} • 
-                              Créé le {editingDocument.created_at ? new Date(editingDocument.created_at).toLocaleDateString('fr-FR') : 'N/A'}
-                            </small>
+                {isEditLoading ? (
+                  <div className="text-center py-5">
+                    <div className="spinner-border text-primary" role="status">
+                      <span className="visually-hidden">Loading...</span>
                           </div>
                         </div>
+                ) : (
+                  <form className="document-confirmation-form document-form">
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Nom du document :</label>
+                        <input
+                          type="text"
+                          value={editForm.filename}
+                          onChange={e => handleEditFormChange('filename', e.target.value)}
+                          className="form-control"
+                        />
                       </div>
+                      <div className="form-group">
+                        <label>Partenaire externe :</label>
+                        <select
+                          value={editForm.partner_id}
+                          onChange={e => handleEditFormChange('partner_id', e.target.value)}
+                          className="form-control"
+                        >
+                          <option value="">Sélectionner un partenaire externe</option>
+                          {editPartners.map(partner => (
+                            <option key={partner.id} value={String(partner.id)}>{partner.company_name} ({partner.partnertypes?.map(pt => pt.name).join(', ')})</option>
+                          ))}
+                        </select>
                     </div>
-
-                    {/* Edit Document Form */}
-                    <EditDocumentForm
-                      document={editingDocument}
-                      onSave={handleSaveEditDocument}
-                      onCancel={handleCloseEditModal}
-                      isLoading={isEditSaving}
-                    />
-
-                    {/* Error and Success Messages */}
-                    {editError && (
-                      <div className="alert alert-danger mt-3">{editError}</div>
-                    )}
-                    {editSuccess && (
-                      <div className="alert alert-success mt-3">{editSuccess}</div>
-                    )}
-                  </>
+                    </div>
+                    {editError && <div className="alert alert-danger mt-3">{editError}</div>}
+                    {editSuccess && <div className="alert alert-success mt-3">{editSuccess}</div>}
+                  </form>
                 )}
+              </div>
+              <div className="modal-footer">
+                <button 
+                  type="button" 
+                  className="btn btn-secondary"
+                  onClick={handleCloseEditModal}
+                  disabled={isEditSaving}
+                >
+                  Annuler
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-primary"
+                  onClick={handleSaveEditDocument}
+                  disabled={isEditSaving}
+                >
+                  {isEditSaving ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                      Sauvegarde...
+                    </>
+                  ) : (
+                    <>
+                      <i className="bi bi-save me-2"></i>
+                      Sauvegarder
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Document Delete Confirmation Modal */}
+      {isDeleteModalOpen && deletingDocument && (
+        <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog" style={{ marginTop: '120px' }}>
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title d-flex align-items-center">
+                  <i className="bi bi-trash me-2 text-danger" style={{ fontSize: '1.5rem' }}></i>
+                  Confirmation de suppression
+                </h5>
+                <button 
+                  type="button" 
+                  className="btn-close" 
+                  onClick={handleCloseDeleteModal}
+                  aria-label="Fermer"
+                ></button>
+              </div>
+              <div className="modal-body" style={{ padding: '2rem 2.5rem', textAlign: 'center' }}>
+                <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>
+                  Êtes-vous sûr de vouloir supprimer ce document&nbsp;?
+                </p>
+                <p className="text-muted" style={{ fontSize: '0.98rem', marginBottom: 0 }}>
+                  Cette action est <strong>irréversible</strong> et entraînera la suppression définitive du document de la base de données.
+                </p>
+                {deleteError && <div className="alert alert-danger mt-3">{deleteError}</div>}
+              </div>
+              <div className="modal-footer" style={{ justifyContent: 'center', gap: '1rem' }}>
+                <button 
+                  type="button" 
+                  className="btn btn-secondary"
+                  onClick={handleCloseDeleteModal}
+                  disabled={isDeleting}
+                >
+                  Annuler
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-danger"
+                  onClick={handleConfirmDeleteDocument}
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                      Suppression...
+                    </>
+                  ) : (
+                    <>
+                      <i className="bi bi-trash me-2"></i>
+                      Supprimer
+                    </>
+                  )}
+                </button>
               </div>
             </div>
           </div>
