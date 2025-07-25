@@ -16,9 +16,11 @@ import {
   BiFile,
   BiData
 } from 'react-icons/bi';
+import DmsTempUploadModal from '../Dashboard/DmsTempUploadModal';
 
 const NavBar = ({ user, onLogout }) => {
   const [showAdminTools, setShowAdminTools] = useState(false);
+  const [showDmsTempModal, setShowDmsTempModal] = useState(false);
   const location = useLocation();
   const adminToolsRef = useRef(null);
   
@@ -123,6 +125,23 @@ const NavBar = ({ user, onLogout }) => {
               {showAdminTools && (
                 <div className="admin-tools-dropdown">
                   <div className="dropdown-columns">
+                    {/* DMS Column */}
+                    <div className="dropdown-column">
+                      <div className="category-header">
+                        <span className="category-icon"><BiData size={16} /></span>
+                        <span className="category-title">Document management </span>
+                      </div>
+                      <div className="category-items">
+                        <button className="dropdown-item" onClick={() => { setShowDmsTempModal(true); setShowAdminTools(false); }}>
+                          <span className="dropdown-icon"><BiFile size={16} /></span>
+                          <span>Upload File</span>
+                        </button>
+                        <Link to="/dms/rapports" className="dropdown-item" onClick={() => setShowAdminTools(false)}>
+                          <span className="dropdown-icon"><BiBarChart size={16} /></span>
+                          <span>Rapports</span>
+                        </Link>
+                      </div>
+                    </div>
                     {/* System Configuration Column */}
                     <div className="dropdown-column">
                       <div className="category-header">
@@ -209,6 +228,9 @@ const NavBar = ({ user, onLogout }) => {
           )}
         </div>
       </div>
+      {showDmsTempModal && (
+        <DmsTempUploadModal onClose={() => setShowDmsTempModal(false)} />
+      )}
     </nav>
   );
 };

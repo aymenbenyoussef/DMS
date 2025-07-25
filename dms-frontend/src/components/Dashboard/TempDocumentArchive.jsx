@@ -1,0 +1,650 @@
+import React, { useState, useEffect, useContext } from 'react';
+import API from '../../api';
+import { AppContext } from '../context';
+import TempDocumentConfirmationForm from './TempDocumentConfirmationForm';
+import './DocumentArchive.css';
+
+const TempDocumentArchive = () => {
+  const { selectedCompany, selectedDoctype, setSelectedCompany, setSelectedDoctype } = useContext(AppContext);
+  
+  // Helper function to get first day of current month
+  const getFirstDayOfMonth = () => {
+    const now = new Date();
+    // Ensure we're working with local time to avoid timezone issues
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+    const year = firstDay.getFullYear();
+    const month = String(firstDay.getMonth() + 1).padStart(2, '0');
+    const day = String(firstDay.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Helper function to get today's date
+  const getToday = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const [documents, setDocuments] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [startDate, setStartDate] = useState(getFirstDayOfMonth());
+  const [endDate, setEndDate] = useState(getToday());
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [previewType, setPreviewType] = useState('');
+  const [previewUrl, setPreviewUrl] = useState('');
+  const [previewTitle, setPreviewTitle] = useState('');
+  const [currentDocument, setCurrentDocument] = useState(null);
+  const [deleteError, setDeleteError] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+  const [confirmationData, setConfirmationData] = useState(null);
+  const [processingDocId, setProcessingDocId] = useState(null);
+  const [originalCompany, setOriginalCompany] = useState(null);
+  const [originalDoctype, setOriginalDoctype] = useState(null);
+  const [successMessage, setSuccessMessage] = useState('');
+
+  useEffect(() => {
+    fetchDocuments();
+    // eslint-disable-next-line
+  }, [startDate, endDate]);
+
+  const fetchDocuments = async () => {
+    setIsLoading(true);
+    try {
+      const response = await API.tempDocuments.getAll(startDate, endDate);
+      setDocuments(response.data || []);
+    } catch (error) {
+      setDocuments([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
+
+  const handleViewDocument = async (doc) => {
+    try {
+      const response = await API.tempDocuments.download(doc.id);
+      const blob = response.data;
+      const url = window.URL.createObjectURL(blob);
+      const ext = doc.filename.split('.').pop().toLowerCase();
+      let type = '';
+      if (["pdf"].includes(ext)) type = 'pdf';
+      else if (["jpg","jpeg","png","gif","tiff","bmp","webp"].includes(ext)) type = 'image';
+      else if (["txt"].includes(ext)) type = 'text';
+      else type = 'other';
+      setPreviewType(type);
+      setPreviewUrl(url);
+      setPreviewTitle(doc.filename);
+      setCurrentDocument(doc);
+      setIsPreviewModalOpen(true);
+    } catch (error) {
+      alert('Erreur lors de la prévisualisation.');
+    }
+  };
+
+  const handleDeleteDocument = async (doc) => {
+    if (!window.confirm("Êtes-vous sûr de vouloir supprimer ce document ?")) return;
+    setIsDeleting(true);
+    setDeleteError('');
+    try {
+      await API.tempDocuments.delete(doc.id);
+      setDocuments(prev => prev.filter(d => d.id !== doc.id));
+    } catch (error) {
+      setDeleteError('Erreur lors de la suppression.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleSend = async (doc) => {
+    setProcessingDocId(doc.id);
+    setCurrentDocument(doc);
+    
+    // Store original company and doctype to restore later
+    setOriginalCompany(selectedCompany);
+    setOriginalDoctype(selectedDoctype);
+    
+    try {
+      // Download the file to get the blob
+      const response = await API.tempDocuments.download(doc.id);
+      const blob = response.data;
+      
+      // Create a File object from the blob
+      const file = new File([blob], doc.filename, { type: blob.type });
+      
+      // Process the file with OCR (similar to DragDropUpload)
+      const ocrResponse = await API.documents.uploadSingleFile(
+        file,
+        selectedCompany?.id || null, // Use selected company if available
+        selectedDoctype?.id || null  // Use selected doctype if available
+      );
+      
+      // Set up confirmation data
+      const confirmationData = {
+        sessionId: ocrResponse.data?.session_id,
+        extractedData: ocrResponse.data?.extracted_data,
+        filename: doc.filename
+      };
+      
+      setConfirmationData([confirmationData]);
+      setShowConfirmationModal(true);
+    } catch (error) {
+      console.error('Error processing document:', error);
+      alert('Erreur lors du traitement du document: ' + (error.response?.data?.msg || error.message));
+    } finally {
+      setProcessingDocId(null);
+    }
+  };
+
+  const handleConfirmDocuments = async (confirmedDocuments, errors) => {
+    if (!confirmationData || !confirmationData[0]) return;
+    
+    try {
+      const sessionId = confirmationData[0].sessionId;
+      const doc = confirmedDocuments[0];
+      
+      if (doc && sessionId) {
+        const documentToConfirm = {
+          ...doc,
+          partner_id: doc.confirmed_data.partner_id || null,
+          confirmed_data: { ...doc.confirmed_data }
+        };
+        
+        const response = await API.documents.confirmDocuments(sessionId, [documentToConfirm]);
+        const savedDoc = response.data.saved_documents[0];
+        
+        if (savedDoc && !savedDoc.error) {
+          // Modal will be closed by the form after showing success message
+        }
+      }
+    } catch (error) {
+      console.error('Error confirming document:', error);
+      alert('Erreur lors de la confirmation: ' + (error.response?.data?.msg || error.message));
+    }
+  };
+
+  const handleCancelConfirmation = () => {
+    setShowConfirmationModal(false);
+    setConfirmationData(null);
+    
+    // Restore original company and doctype
+    if (originalCompany) {
+      setSelectedCompany(originalCompany);
+    }
+    if (originalDoctype) {
+      setSelectedDoctype(originalDoctype);
+    }
+    
+    setOriginalCompany(null);
+    setOriginalDoctype(null);
+  };
+
+  const handleModalClose = () => {
+    setShowConfirmationModal(false);
+    setConfirmationData(null);
+    
+    // Restore original company and doctype
+    if (originalCompany) {
+      setSelectedCompany(originalCompany);
+    }
+    if (originalDoctype) {
+      setSelectedDoctype(originalDoctype);
+    }
+    
+    setOriginalCompany(null);
+    setOriginalDoctype(null);
+  };
+
+  return (
+    <div className="container-fluid py-4">
+
+      <div className="card mb-4 search-filter-container">
+        <div className="card-body p-3">
+          <div className="row g-3">
+            <div className="col-md-6">
+              <div className="row g-2 mb-3">
+                <div className="col-6">
+                  <label className="form-label small">Date de début</label>
+                  <input
+                    type="date"
+                    className="form-control form-control-sm"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                  />
+                </div>
+                <div className="col-6">
+                  <label className="form-label small">Date de fin</label>
+                  <input
+                    type="date"
+                    className="form-control form-control-sm"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="card">
+        <div className="card-body">
+          <div className="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+            <h2 className="h6 mb-0">Documents temporaires</h2>
+            <span className="text-muted items-count">{documents.length} items</span>
+          </div>
+          {isLoading ? (
+            <div className="text-center py-5">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+            </div>
+          ) : documents.length > 0 ? (
+            <div className="table-responsive documents-table-container">
+              <table className="table table-hover stylish-table">
+                <thead className="table-header-sticky">
+                  <tr>
+                    <th>ID</th>
+                    <th>Document</th>
+                    <th>Date d'upload</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {documents.map((doc) => (
+                    <tr key={doc.id} className="table-row-hover">
+                      <td className="text-muted">{doc.id}</td>
+                      <td>{doc.filename}</td>
+                      <td>{doc.created_at ? new Date(doc.created_at).toLocaleDateString('fr-FR') : '-'}</td>
+                                            <td>
+                        <div className="d-flex gap-2">
+                          <button
+                            className="btn btn-outline-primary d-flex align-items-center justify-content-center"
+                            onClick={() => handleViewDocument(doc)}
+                            title="Voir"
+                            style={{
+                              padding: '8px 12px',
+                              fontSize: '14px',
+                              minWidth: '80px'
+                            }}
+                          >
+                            <i className="bi bi-eye me-1"></i>
+                            Voir
+                          </button>
+                          <button
+                            className="btn btn-outline-info d-flex align-items-center justify-content-center"
+                            onClick={() => handleSend(doc)}
+                            disabled={processingDocId === doc.id}
+                            title="Envoyer"
+                            style={{
+                              padding: '8px 12px',
+                              fontSize: '14px',
+                              minWidth: '80px',
+                              ...(processingDocId === doc.id && {
+                              
+                                color: 'white',
+                                
+                              })
+                            }}
+                          >
+                            {processingDocId === doc.id ? (
+                              'Traitement...'
+                            ) : (
+                              <>
+                                <i className="bi bi-send me-1"></i>
+                                Envoyer
+                              </>
+                            )}
+                          </button>
+                          <button
+                            className="btn btn-outline-warning d-flex align-items-center justify-content-center"
+                            onClick={() => handleDeleteDocument(doc)}
+                            disabled={isDeleting}
+                            title="Supprimer"
+                            style={{
+                              padding: '8px 12px',
+                              fontSize: '14px',
+                              minWidth: '80px',
+                              backgroundColor: 'red',
+                              color: 'white'
+                            }}
+                          >
+                            <i className="bi bi-trash me-1"></i>
+                            Supprimer
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-center py-5 border rounded empty-state">
+              <i className="bi bi-folder2-open text-muted mb-3" style={{ fontSize: '3rem' }}></i>
+              <p className="text-muted mb-3">Aucun document trouvé</p>
+            </div>
+          )}
+        </div>
+      </div>
+      {/* Preview Modal */}
+      {isPreviewModalOpen && (
+        <div className="modal-overlay" style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          backgroundColor: 'rgba(0,0,0,0.7)',
+          zIndex: 2000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+          <div className="modal-content-enhanced" style={{
+            width: '95vw',
+            height: '90vh',
+            maxWidth: '900px',
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+          }}>
+            <div className="modal-header-enhanced" style={{
+              padding: '20px 24px',
+              borderBottom: '1px solid #e5e7eb',
+              backgroundColor: '#f8fafc',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}>
+              <h3 style={{
+                margin: 0,
+                fontSize: '1.25rem',
+                fontWeight: 600,
+                color: '#1f2937',
+              }}>
+                {previewTitle}
+              </h3>
+              <button
+                className="close-btn"
+                onClick={() => {
+                  setIsPreviewModalOpen(false);
+                  if (previewUrl) window.URL.revokeObjectURL(previewUrl);
+                  setCurrentDocument(null);
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  color: '#6b7280',
+                  padding: '8px',
+                  borderRadius: '6px',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = '#f3f4f6';
+                  e.target.style.color = '#374151';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = 'transparent';
+                  e.target.style.color = '#6b7280';
+                }}
+              >
+                ×
+              </button>
+            </div>
+            {/* Modal Body - Two Column Layout */}
+            <div className="modal-body-enhanced" style={{
+              flex: 1,
+              display: 'flex',
+              overflow: 'hidden'
+            }}>
+              {/* Left Column - File Display */}
+              <div className="file-display-column" style={{
+                flex: '1',
+                backgroundColor: '#f8fafc',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '24px',
+                borderRight: '1px solid #e5e7eb'
+              }}>
+                {previewType === 'pdf' && previewUrl && (
+                  <iframe
+                    src={previewUrl + (previewUrl.includes('#') ? '' : '#toolbar=0&navpanes=0&scrollbar=0')}
+                    title="PDF Preview"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      border: 'none',
+                      borderRadius: '8px',
+                      backgroundColor: 'white',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                    }}
+                  />
+                )}
+                {previewType === 'image' && previewUrl && (
+                  <img
+                    src={previewUrl}
+                    alt={previewTitle}
+                    style={{
+                      maxWidth: '100%',
+                      maxHeight: '100%',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                      backgroundColor: 'white'
+                    }}
+                  />
+                )}
+                {previewType === 'text' && (
+                  <textarea
+                    value={previewUrl}
+                    readOnly
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      padding: '16px',
+                      fontSize: '14px',
+                      backgroundColor: 'white',
+                      color: '#1e293b',
+                      resize: 'none',
+                      fontFamily: 'monospace'
+                    }}
+                  />
+                )}
+                {previewType === 'other' && (
+                  <div style={{
+                    textAlign: 'center',
+                    color: '#64748b',
+                    padding: '40px'
+                  }}>
+                    <i className="bi bi-file-earmark-text" style={{
+                      fontSize: '64px',
+                      marginBottom: '16px',
+                      display: 'block'
+                    }}></i>
+                    <p style={{ fontSize: '18px', marginBottom: '24px' }}>
+                      Prévisualisation non supportée pour ce type de fichier
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Right Column - Document Information */}
+              <div className="document-info-column" style={{
+                width: '400px',
+                backgroundColor: 'white',
+                padding: '24px',
+                overflowY: 'auto',
+                display: 'flex',
+                flexDirection: 'column'
+              }}>
+                <h4 style={{
+                  margin: '0 0 20px 0',
+                  fontSize: '1.1rem',
+                  fontWeight: 600,
+                  color: '#1f2937'
+                }}>
+                  Informations du document
+                </h4>
+                
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{
+                    fontSize: '0.875rem',
+                    fontWeight: 500,
+                    color: '#6b7280',
+                    display: 'block',
+                    marginBottom: '4px'
+                  }}>
+                    Nom du fichier
+                  </label>
+                  <p style={{
+                    margin: 0,
+                    fontSize: '0.875rem',
+                    color: '#1f2937',
+                    wordBreak: 'break-word'
+                  }}>
+                    {currentDocument?.filename || '-'}
+                  </p>
+                </div>
+
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{
+                    fontSize: '0.875rem',
+                    fontWeight: 500,
+                    color: '#6b7280',
+                    display: 'block',
+                    marginBottom: '4px'
+                  }}>
+                    Date d'upload
+                  </label>
+                  <p style={{
+                    margin: 0,
+                    fontSize: '0.875rem',
+                    color: '#1f2937'
+                  }}>
+                    {currentDocument?.created_at ? new Date(currentDocument.created_at).toLocaleDateString('fr-FR') : '-'}
+                  </p>
+                </div>
+
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{
+                    fontSize: '0.875rem',
+                    fontWeight: 500,
+                    color: '#6b7280',
+                    display: 'block',
+                    marginBottom: '4px'
+                  }}>
+                    ID du document
+                  </label>
+                  <p style={{
+                    margin: 0,
+                    fontSize: '0.875rem',
+                    color: '#1f2937'
+                  }}>
+                    {currentDocument?.id || '-'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Document Confirmation Modal */}
+      {showConfirmationModal && confirmationData && (
+        <div className="modal-overlay" style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          backgroundColor: 'rgba(0,0,0,0.7)',
+          zIndex: 2000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+          <div className="modal-content" style={{
+            width: '80vw',
+            maxWidth: '800px',
+            maxHeight: '95vh',
+            height: '90vh',
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            overflow: 'hidden',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+            display: 'flex',
+            flexDirection: 'column',
+          }}>
+            {/* Modal Header */}
+            <div className="modal-header" style={{
+              padding: '20px 24px',
+              borderBottom: '1px solid #e5e7eb',
+              backgroundColor: '#f8fafc',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}>
+              <h3 style={{
+                margin: 0,
+                fontSize: '1.25rem',
+                fontWeight: 600,
+                color: '#1f2937',
+              }}>
+                Confirmation de document
+              </h3>
+              <button
+                className="close-btn"
+                onClick={handleCancelConfirmation}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  color: '#6b7280',
+                  padding: '8px',
+                  borderRadius: '6px',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = '#f3f4f6';
+                  e.target.style.color = '#374151';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = 'transparent';
+                  e.target.style.color = '#6b7280';
+                }}
+              >
+                ×
+              </button>
+            </div>
+            
+            {/* Modal Body */}
+            <div className="modal-body" style={{ flex: 1, overflow: 'hidden' }}>
+              <TempDocumentConfirmationForm
+                files={confirmationData}
+                onConfirm={handleConfirmDocuments}
+                onCancel={handleModalClose}
+                initialCompany={selectedCompany}
+                initialDoctype={selectedDoctype}
+                tempDocumentId={currentDocument?.id}
+                onRefresh={fetchDocuments}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default TempDocumentArchive; 

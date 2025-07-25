@@ -2689,6 +2689,83 @@ def get_document_email_info(document_id):
     except Exception as e:
         return jsonify({"msg": f"Error fetching document info: {str(e)}"}), 500
 
+@app.route('/')
+def home():
+    return 'DMS Backend is running.'
+
+@app.route('/upload_temp', methods=['POST'])
+@jwt_required()
+def upload_temp_documents():
+    current_user_claims = get_jwt()
+    owner_id = current_user_claims.get('id')
+    # Find the company_id for 'À verifier'
+    verifier_company = db.get_company_by_id(
+        db.execute_query("SELECT id FROM companies WHERE name = %s LIMIT 1", ("À verifier",), fetch=True)[0]['id']
+    )
+    if not verifier_company:
+        return jsonify({"msg": "Company 'À verifier' not found."}), 400
+    company_id = verifier_company['id']
+
+    if 'files' not in request.files:
+        return jsonify({"msg": "No files part in the request."}), 400
+    files = request.files.getlist('files')
+    if not files:
+        return jsonify({"msg": "No files uploaded."}), 400
+
+    saved_files = []
+    upload_dir = os.path.join('uploads', 'temp_documents')
+    os.makedirs(upload_dir, exist_ok=True)
+    for file in files:
+        filename = secure_filename(file.filename)
+        file_path = os.path.join(upload_dir, filename)
+        file.save(file_path)
+        db.create_temp_document(filename, file_path, owner_id, company_id)
+        saved_files.append({"filename": filename, "file_path": file_path})
+    return jsonify({"msg": "Files uploaded to temp_documents.", "files": saved_files}), 201
+
+@app.route('/temp_documents', methods=['GET'])
+@jwt_required()
+def get_temp_documents():
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    try:
+        temp_docs = db.get_all_temp_documents(start_date, end_date)
+        return jsonify(temp_docs), 200
+    except Exception as e:
+        return jsonify({'msg': str(e)}), 500
+
+@app.route('/temp_documents/<int:doc_id>', methods=['DELETE'])
+@jwt_required()
+def delete_temp_document(doc_id):
+    try:
+        # Get file path before deleting
+        temp_doc = db.execute_query("SELECT * FROM temp_documents WHERE id = %s", (doc_id,), fetch=True)
+        if not temp_doc:
+            return jsonify({'msg': 'Document not found'}), 404
+        file_path = temp_doc[0]['file_path']
+        db.execute_query("DELETE FROM temp_documents WHERE id = %s", (doc_id,))
+        # Optionally delete the file from disk
+        if file_path and os.path.exists(file_path):
+            os.remove(file_path)
+        return jsonify({'msg': 'Document deleted'}), 200
+    except Exception as e:
+        return jsonify({'msg': str(e)}), 500
+
+@app.route('/temp_documents/<int:doc_id>/file', methods=['GET'])
+@jwt_required()
+def download_temp_document(doc_id):
+    try:
+        temp_doc = db.execute_query("SELECT * FROM temp_documents WHERE id = %s", (doc_id,), fetch=True)
+        if not temp_doc:
+            return jsonify({'msg': 'Document not found'}), 404
+        file_path = temp_doc[0]['file_path']
+        filename = temp_doc[0]['filename']
+        if not os.path.exists(file_path):
+            return jsonify({'msg': 'File not found on disk'}), 404
+        return send_file(file_path, as_attachment=True, download_name=filename)
+    except Exception as e:
+        return jsonify({'msg': str(e)}), 500
+
 if __name__ == '__main__':
     # Ensure log directory exists when app starts
     ensure_log_dir()

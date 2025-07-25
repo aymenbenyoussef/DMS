@@ -9,6 +9,26 @@ import './DocumentArchive.css';
 // Remove: import path from 'path-browserify';
 
 const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
+  // Helper function to get first day of current month
+  const getFirstDayOfMonth = () => {
+    const now = new Date();
+    // Ensure we're working with local time to avoid timezone issues
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+    const year = firstDay.getFullYear();
+    const month = String(firstDay.getMonth() + 1).padStart(2, '0');
+    const day = String(firstDay.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Helper function to get today's date
+  const getToday = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [folderName, setFolderName] = useState('');
@@ -35,8 +55,8 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
   
   // Filter states
   const [selectedDoctypeFilters, setSelectedDoctypeFilters] = useState([]);
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [startDate, setStartDate] = useState(getFirstDayOfMonth());
+  const [endDate, setEndDate] = useState(getToday());
   const [searchTerm, setSearchTerm] = useState('');
   const [availableDoctypes, setAvailableDoctypes] = useState([]);
 
@@ -417,11 +437,9 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
       fetchAvailableDoctypes();
       fetchGroups();
       
-      // Set default date range to last month
-      const lastMonth = new Date();
-      lastMonth.setMonth(lastMonth.getMonth() - 1);
-      setStartDate(lastMonth.toISOString().split('T')[0]);
-      setEndDate(new Date().toISOString().split('T')[0]);
+      // Set default date range to first day of current month and today
+      setStartDate(getFirstDayOfMonth());
+      setEndDate(getToday());
     }
   }, [selectedCompany]);
 

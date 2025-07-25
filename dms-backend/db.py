@@ -232,9 +232,37 @@ class DatabaseManager:
             """)
             conn.commit()
 
+            # Create temp_documents table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS temp_documents (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    filename VARCHAR(255) NOT NULL,
+                    file_path VARCHAR(500) NOT NULL,
+                    owner_id INT NOT NULL,
+                    company_id INT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
+                    FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+                )
+            """)
 
             # Create default users if they don\'t exist
             self.create_default_users()
+
+            # Create company 'À verifier' if it does not exist
+            company_name = "À verifier"
+            company_email = "a-verifier@dms.local"
+            check = self.check_company_exist(company_name, company_email)
+            if not check["name_exists"] and not check["email_exists"]:
+                self.create_company({
+                    "name": company_name,
+                    "address": "",
+                    "email": company_email,
+                    "phone": "",
+                    "is_active": True,
+                    "description": "Company to verify documents"
+                })
+                
 
             cursor.close()
             print("Database initialized successfully")
@@ -1596,6 +1624,26 @@ class DatabaseManager:
             conn.close()
         except Exception as e:
             print(f"Error creating email_logs table: {e}")
+
+    def create_temp_document(self, filename, file_path, owner_id, company_id):
+        query = """
+            INSERT INTO temp_documents (filename, file_path, owner_id, company_id)
+            VALUES (%s, %s, %s, %s)
+        """
+        params = (filename, file_path, owner_id, company_id)
+        return self.execute_query(query, params)
+
+    def get_all_temp_documents(self, start_date=None, end_date=None):
+        query = "SELECT * FROM temp_documents WHERE 1=1"
+        params = []
+        if start_date:
+            query += " AND DATE(created_at) >= %s"
+            params.append(start_date)
+        if end_date:
+            query += " AND DATE(created_at) <= %s"
+            params.append(end_date)
+        query += " ORDER BY created_at DESC"
+        return self.execute_query(query, params, fetch=True)
 
 
 # Create global database instance

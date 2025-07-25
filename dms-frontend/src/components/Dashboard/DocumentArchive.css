@@ -6,6 +6,45 @@
   min-height: 100vh;
 }
 
+/* Dropdown styles for better visibility */
+.dropdown {
+  position: relative;
+}
+
+.dropdown-menu {
+  position: absolute !important;
+  z-index: 9999 !important;
+  top: 100% !important;
+  right: 0 !important;
+  left: auto !important;
+  min-width: 150px !important;
+  margin-top: 2px !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+  border: 1px solid #dee2e6 !important;
+  border-radius: 6px !important;
+  background-color: white !important;
+  transform: none !important;
+}
+
+.dropdown-menu.show {
+  display: block !important;
+}
+
+/* Ensure table container allows dropdown overflow */
+.documents-table-container {
+  overflow: visible !important;
+}
+
+.table-responsive {
+  overflow: visible !important;
+}
+
+/* Ensure table cells can accommodate dropdown */
+.table td {
+  position: relative;
+  overflow: visible;
+}
+
 /* --- MODIFICATIONS START HERE --- */
 
 /* 1. Main container setup for full-height layout */
