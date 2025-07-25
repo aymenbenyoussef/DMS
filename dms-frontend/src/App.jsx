@@ -24,7 +24,7 @@ import { AppProvider } from './components/context';  // Updated import
 import './App.css';
 
 // API configuration remains the same as in your original file
-const API_BASE = 'http://localhost:5000';
+const API_BASE = 'http://192.168.1.28:5000';
 
 const api = {
 

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Create axios instance with base configuration
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = 'http://192.168.1.28:5000';
 
 const API = axios.create({
   baseURL: API_BASE_URL,
@@ -300,6 +300,25 @@ const email = {
   sendDocument: (documentId, emailData) => API.post(`/documents/${documentId}/send-email`, emailData),
 };
 
+const tempDocuments = {
+  upload: (files) => {
+    const formData = new FormData();
+    files.forEach((file) => {formData.append("files", file);});
+    return API.post('/upload_temp', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 60000,
+    });
+  },
+  getAll: (startDate, endDate) => {
+    const params = new URLSearchParams();
+    if (startDate) params.append('start_date', startDate);
+    if (endDate) params.append('end_date', endDate);
+    return API.get(`/temp_documents?${params.toString()}`);
+  },
+  delete: (id) => API.delete(`/temp_documents/${id}`),
+  download: (id) => API.get(`/temp_documents/${id}/file`, { responseType: 'blob' }),
+};
+
 // Export the API instance and endpoint groups
 export default {
   ...API,
@@ -313,5 +332,6 @@ export default {
   folders,
   ocr,
   groups,
-  email
+  email,
+  tempDocuments
 };

@@ -482,3 +482,52 @@ body {
   transition: all 0.2s ease;
 }
 
+/* DMS Menu Styles */
+.dms-menu {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-right: 1.5rem;
+}
+.dms-title {
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 2px;
+  cursor: default;
+  background: none;
+  box-shadow: none;
+  padding-left: 0;
+}
+.dms-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.dms-btn {
+  margin-left: 0;
+  margin-bottom: 2px;
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 500;
+  padding: 7px 14px;
+  transition: background 0.2s, color 0.2s;
+}
+.dms-btn:hover, .dms-btn.active {
+  background: rgba(255,255,255,0.18);
+  color: #e8f5e8;
+}
+@media (max-width: 1024px) {
+  .dms-title span:not(.nav-icon), .dms-btn span:not(.nav-icon) {
+    display: none;
+  }
+  .dms-title, .dms-btn {
+    padding: 12px;
+    border-radius: 50%;
+  }
+  .dms-menu {
+    margin-right: 0.5rem;
+  }
+}
+
