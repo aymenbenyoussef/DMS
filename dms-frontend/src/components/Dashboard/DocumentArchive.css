@@ -33,10 +33,17 @@
 /* Ensure table container allows dropdown overflow */
 .documents-table-container {
   overflow: visible !important;
+  max-height: 500px !important;
+  overflow-y: auto !important;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .table-responsive {
   overflow: visible !important;
+  max-height: 500px !important;
+  overflow-y: auto !important;
 }
 
 /* Ensure table cells can accommodate dropdown */
@@ -62,6 +69,7 @@
   overflow-y: auto;
   padding-bottom: 80px;
   border-radius: 8px;
+  max-height: 500px;
 }
 
 /* 3. Make the table header sticky */
@@ -75,6 +83,31 @@
   top: 0;
   z-index: 10; /* Ensure header stays above table content */
   background-color: #f8f9fa; /* Give it a solid background */
+}
+
+/* Enhanced sticky header for better visibility */
+.table-header-sticky {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 20 !important;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+  border-bottom: 2px solid #e5e7eb !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.table-header-sticky th {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+  border-bottom: 2px solid #e5e7eb !important;
+  font-weight: 600 !important;
+  color: #374151 !important;
+  padding: 1rem 0.75rem !important;
+  vertical-align: middle !important;
+  font-size: 0.875rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.025em !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 20 !important;
 }
 
 /* --- NEW SEARCH & FILTER CONTAINER STYLES --- */

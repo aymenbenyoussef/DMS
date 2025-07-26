@@ -2,7 +2,8 @@ import React, { useState, useEffect, useContext } from 'react';
 import API from '../../api';
 import { AppContext } from '../context';
 import TempDocumentConfirmationForm from './TempDocumentConfirmationForm';
-import './DocumentArchive.css';
+import DmsTempUploadModal from './DmsTempUploadModal';
+import './TempDocumentArchive.css';
 
 const TempDocumentArchive = () => {
   const { selectedCompany, selectedDoctype, setSelectedCompany, setSelectedDoctype } = useContext(AppContext);
@@ -44,11 +45,31 @@ const TempDocumentArchive = () => {
   const [originalCompany, setOriginalCompany] = useState(null);
   const [originalDoctype, setOriginalDoctype] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  
+  // Delete confirmation modal state
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deletingDocument, setDeletingDocument] = useState(null);
 
   useEffect(() => {
     fetchDocuments();
     // eslint-disable-next-line
   }, [startDate, endDate]);
+
+  // Add event listener for temporary document uploads
+  useEffect(() => {
+    const handleTempDocumentUpload = () => {
+      fetchDocuments();
+    };
+
+    // Listen for temporary document uploads
+    window.addEventListener('TempDocumentsUploaded', handleTempDocumentUpload);
+    
+    // Cleanup event listener on component unmount
+    return () => {
+      window.removeEventListener('TempDocumentsUploaded', handleTempDocumentUpload);
+    };
+  }, []);
 
   const fetchDocuments = async () => {
     setIsLoading(true);
@@ -86,17 +107,32 @@ const TempDocumentArchive = () => {
   };
 
   const handleDeleteDocument = async (doc) => {
-    if (!window.confirm("Êtes-vous sûr de vouloir supprimer ce document ?")) return;
+    setDeletingDocument(doc);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingDocument) return;
     setIsDeleting(true);
     setDeleteError('');
     try {
-      await API.tempDocuments.delete(doc.id);
-      setDocuments(prev => prev.filter(d => d.id !== doc.id));
+      await API.tempDocuments.delete(deletingDocument.id);
+      setDocuments(prev => prev.filter(d => d.id !== deletingDocument.id));
+      
+      // Dispatch event to refresh the table (in case other components need to know)
+      window.dispatchEvent(new Event('TempDocumentsUploaded'));
+      setIsDeleteModalOpen(false);
+      setDeletingDocument(null);
     } catch (error) {
       setDeleteError('Erreur lors de la suppression.');
     } finally {
       setIsDeleting(false);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setIsDeleteModalOpen(false);
+    setDeletingDocument(null);
   };
 
   const handleSend = async (doc) => {
@@ -157,6 +193,12 @@ const TempDocumentArchive = () => {
         const savedDoc = response.data.saved_documents[0];
         
         if (savedDoc && !savedDoc.error) {
+          // Remove the temporary document from the list since it's now confirmed
+          setDocuments(prev => prev.filter(d => d.id !== currentDocument?.id));
+          
+          // Dispatch event to refresh the table
+          window.dispatchEvent(new Event('TempDocumentsUploaded'));
+          
           // Modal will be closed by the form after showing success message
         }
       }
@@ -203,6 +245,16 @@ const TempDocumentArchive = () => {
 
       <div className="card mb-4 search-filter-container">
         <div className="card-body p-3">
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <h2 className="h6 mb-0">Recherche & Filtres</h2>
+            <button 
+              className="btn btn-blue d-flex align-items-center"
+              style={{ marginRight: '20px'}}
+              onClick={() => setIsUploadModalOpen(true)}
+            >
+              <i className="bi bi-plus me-2"></i> Télécharger
+            </button>
+          </div>
           <div className="row g-3">
             <div className="col-md-6">
               <div className="row g-2 mb-3">
@@ -294,7 +346,7 @@ const TempDocumentArchive = () => {
                             ) : (
                               <>
                                 <i className="bi bi-send me-1"></i>
-                                Envoyer
+                                déplacer
                               </>
                             )}
                           </button>
@@ -307,7 +359,7 @@ const TempDocumentArchive = () => {
                               padding: '8px 12px',
                               fontSize: '14px',
                               minWidth: '80px',
-                              backgroundColor: 'red',
+                              backgroundColor: 'orangered',
                               color: 'white'
                             }}
                           >
@@ -639,6 +691,75 @@ const TempDocumentArchive = () => {
                 tempDocumentId={currentDocument?.id}
                 onRefresh={fetchDocuments}
               />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Temporary Document Upload Modal */}
+      {isUploadModalOpen && (
+        <DmsTempUploadModal
+          onClose={() => setIsUploadModalOpen(false)}
+          onSuccess={() => {
+            setIsUploadModalOpen(false);
+            // The table will automatically refresh due to the event listener
+          }}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {isDeleteModalOpen && deletingDocument && (
+        <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog" style={{ marginTop: '120px' }}>
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title d-flex align-items-center">
+                  <i className="bi bi-trash me-2 text-danger" style={{ fontSize: '1.5rem' }}></i>
+                  Confirmation de suppression
+                </h5>
+                <button 
+                  type="button" 
+                  className="btn-close" 
+                  onClick={handleCancelDelete}
+                  aria-label="Fermer"
+                ></button>
+              </div>
+              <div className="modal-body" style={{ padding: '2rem 2.5rem', textAlign: 'center' }}>
+                <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>
+                  Êtes-vous sûr de vouloir supprimer ce document&nbsp;?
+                </p>
+                <p className="text-muted" style={{ fontSize: '0.98rem', marginBottom: 0 }}>
+                  Cette action est <strong>irréversible</strong> et entraînera la suppression définitive du document.
+                </p>
+                {deleteError && <div className="alert alert-danger mt-3">{deleteError}</div>}
+              </div>
+              <div className="modal-footer" style={{ justifyContent: 'center', gap: '1rem' }}>
+                <button 
+                  type="button" 
+                  className="btn btn-secondary"
+                  onClick={handleCancelDelete}
+                  disabled={isDeleting}
+                  style={{backgroundColor: 'gray'}}
+                >
+                  Annuler
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-danger"
+                  onClick={handleConfirmDelete}
+                  disabled={isDeleting}
+                  style={{backgroundColor: 'orangered'}}
+                >
+                  {isDeleting ? (
+                    'Suppression...'
+                  ) : (
+                    <>
+                      <i className="bi bi-trash me-2"></i>
+                      Supprimer
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>

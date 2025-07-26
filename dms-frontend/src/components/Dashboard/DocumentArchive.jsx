@@ -2255,7 +2255,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                   Êtes-vous sûr de vouloir supprimer ce document&nbsp;?
                 </p>
                 <p className="text-muted" style={{ fontSize: '0.98rem', marginBottom: 0 }}>
-                  Cette action est <strong>irréversible</strong> et entraînera la suppression définitive du document de la base de données.
+                  Cette action est <strong>irréversible</strong> et entraînera la suppression définitive du document.
                 </p>
                 {deleteError && <div className="alert alert-danger mt-3">{deleteError}</div>}
               </div>
@@ -2265,6 +2265,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                   className="btn btn-secondary"
                   onClick={handleCloseDeleteModal}
                   disabled={isDeleting}
+                  style={{backgroundColor: 'gray'}}
                 >
                   Annuler
                 </button>
@@ -2273,12 +2274,10 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                   className="btn btn-danger"
                   onClick={handleConfirmDeleteDocument}
                   disabled={isDeleting}
+                  style={{backgroundColor: 'orangered'}}
                 >
                   {isDeleting ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status"></span>
-                      Suppression...
-                    </>
+                    'Suppression...'
                   ) : (
                     <>
                       <i className="bi bi-trash me-2"></i>
