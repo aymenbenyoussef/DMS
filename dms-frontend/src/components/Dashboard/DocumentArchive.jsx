@@ -85,7 +85,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
   const [selectedRecipients, setSelectedRecipients] = useState([]);
   const [emailSubject, setEmailSubject] = useState('');
   const [emailMessage, setEmailMessage] = useState('');
-  const [emailType, setEmailType] = useState('document'); // 'document', 'rapport', 'ocr_text'
+  const [selectedEmailTypes, setSelectedEmailTypes] = useState(['document']); // Array of selected email types
   const [availableEmailTypes, setAvailableEmailTypes] = useState([]);
   const [emailError, setEmailError] = useState('');
   const [emailSuccess, setEmailSuccess] = useState('');
@@ -329,7 +329,6 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
       setEmailUsers(usersResponse.data.users);
       
       // Set default values
-      setEmailType(docInfoResponse.data.available_types[0]?.type || 'document');
       setEmailSubject(`Document: ${document.filename}`);
       setEmailMessage('');
       setSelectedRecipients([]);
@@ -351,7 +350,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     setSelectedRecipients([]);
     setEmailSubject('');
     setEmailMessage('');
-    setEmailType('document');
+    setSelectedEmailTypes(['document']);
     setAvailableEmailTypes([]);
     setEmailError('');
     setEmailSuccess('');
@@ -374,6 +373,11 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
       return;
     }
 
+    if (selectedEmailTypes.length === 0) {
+      setEmailError('Veuillez sélectionner au moins un type de fichier à envoyer');
+      return;
+    }
+
     if (!emailSubject.trim()) {
       setEmailError('Veuillez saisir un objet');
       return;
@@ -385,7 +389,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     try {
       const emailData = {
         recipients: selectedRecipients,
-        email_type: emailType,
+        email_type: selectedEmailTypes,
         subject: emailSubject.trim(),
         message: emailMessage.trim()
       };
@@ -898,20 +902,32 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
       setDisplayedEmailFilename('');
       return;
     }
-    const filename = getSelectedEmailFilename(emailType, currentDocument);
+    const filename = getSelectedEmailFilename(selectedEmailTypes, currentDocument);
     setDisplayedEmailFilename(filename);
     setEmailSubject(`Document: ${filename}`);
-  }, [emailType, currentDocument]);
+  }, [selectedEmailTypes, currentDocument]);
 
   // Helper to get the filename for the selected email type
-  function getSelectedEmailFilename(type, doc) {
+  function getSelectedEmailFilename(types, doc) {
     if (!doc) return '';
-    if (type === 'rapport' && doc.rapport) {
-      return doc.rapport.split(/[\\/]/).pop();
-    } else if (type === 'ocr_text' && doc.ocr_text) {
-      return doc.ocr_text.split(/[\\/]/).pop();
+    if (types.length === 0) return doc.filename;
+    if (types.length === 1) {
+      if (types.includes('rapport') && doc.rapport) {
+        return doc.rapport.split(/[\\/]/).pop();
+      } else if (types.includes('ocr_text') && doc.ocr_text) {
+        return doc.ocr_text.split(/[\\/]/).pop();
+      } else {
+        return doc.filename;
+      }
     } else {
-      return doc.filename;
+      // Multiple types selected - show a summary
+      const typeLabels = types.map(type => {
+        if (type === 'document') return 'Document';
+        if (type === 'rapport') return 'Rapport';
+        if (type === 'ocr_text') return 'OCR';
+        return type;
+      });
+      return `${doc.filename} (${typeLabels.join(', ')})`;
     }
   }
 
@@ -1989,7 +2005,28 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
 
                     {/* Email Type Selection */}
                     <div className="mb-4">
-                      <label className="form-label">Type de fichier à envoyer</label>
+                      <label className="form-label">
+                        Type de fichier à envoyer
+                        {selectedEmailTypes.length > 0 && (
+                          <span className="badge bg-primary ms-2">{selectedEmailTypes.length} sélectionné(s)</span>
+                        )}
+                      </label>
+                      <div className="mb-2">
+                        <button 
+                          type="button" 
+                          className="btn btn-sm btn-outline-primary me-2"
+                          onClick={() => setSelectedEmailTypes(availableEmailTypes.map(type => type.type))}
+                        >
+                          Tout sélectionner
+                        </button>
+                        <button 
+                          type="button" 
+                          className="btn btn-sm btn-outline-secondary"
+                          onClick={() => setSelectedEmailTypes([])}
+                        >
+                          Tout désélectionner
+                        </button>
+                      </div>
                       <div className="row g-2">
                         {availableEmailTypes.map((type) => {
                           let fileLabel = '';
@@ -2005,13 +2042,17 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                               <div className="form-check">
                                 <input 
                                   className="form-check-input" 
-                                  type="radio" 
+                                  type="checkbox" 
                                   name="emailType"
                                   id={`emailType-${type.type}`}
                                   value={type.type}
-                                  checked={emailType === type.type}
+                                  checked={selectedEmailTypes.includes(type.type)}
                                   onChange={(e) => {
-                                    setEmailType(e.target.value);
+                                    if (e.target.checked) {
+                                      setSelectedEmailTypes(prev => [...prev, type.type]);
+                                    } else {
+                                      setSelectedEmailTypes(prev => prev.filter(t => t !== type.type));
+                                    }
                                   }}
                                 />
                                 <label className="form-check-label" htmlFor={`emailType-${type.type}`}> 
@@ -2119,6 +2160,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                   className="btn btn-secondary"
                   onClick={handleCloseEmailModal}
                   disabled={isEmailSending}
+                  style={{backgroundColor: 'gray'}}
                 >
                   Annuler
                 </button>
@@ -2126,7 +2168,8 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                   type="button" 
                   className="btn btn-primary"
                   onClick={handleConfirmSendEmail}
-                  disabled={isEmailSending || selectedRecipients.length === 0}
+                  disabled={isEmailSending || selectedRecipients.length === 0 || selectedEmailTypes.length === 0}
+                  
                 >
                   {isEmailSending ? (
                     <>

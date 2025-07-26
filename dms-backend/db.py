@@ -1600,7 +1600,7 @@ class DatabaseManager:
         except Exception as e:
             raise Exception(f"Error fetching document details: {str(e)}")
 
-    def log_email_activity(self, document_id, sender_id, recipients, email_type, status):
+    def log_email_activity(self, document_id, sender_id, recipients, email_types, status):
         """Log email sending activity"""
         try:
             query = """
@@ -1608,11 +1608,13 @@ class DatabaseManager:
                 VALUES (%s, %s, %s, %s, %s, NOW())
             """
             recipients_json = json.dumps(recipients) if isinstance(recipients, list) else recipients
-            return self.execute_query(query, (document_id, sender_id, recipients_json, email_type, status))
+            # Convert email_types array to JSON string for storage
+            email_types_json = json.dumps(email_types) if isinstance(email_types, list) else email_types
+            return self.execute_query(query, (document_id, sender_id, recipients_json, email_types_json, status))
         except Exception as e:
             # If email_logs table doesn't exist, we'll create it
             self.create_email_logs_table()
-            return self.execute_query(query, (document_id, sender_id, recipients_json, email_type, status))
+            return self.execute_query(query, (document_id, sender_id, recipients_json, email_types_json, status))
 
     def create_email_logs_table(self):
         """Create email logs table if it doesn't exist"""
@@ -1626,7 +1628,7 @@ class DatabaseManager:
                     document_id INT NOT NULL,
                     sender_id INT NOT NULL,
                     recipients JSON,
-                    email_type ENUM('document', 'rapport', 'ocr_text') NOT NULL,
+                    email_type JSON,
                     status ENUM('sent', 'failed') NOT NULL,
                     sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE CASCADE,

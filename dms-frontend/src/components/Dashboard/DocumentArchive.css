@@ -759,10 +759,7 @@
     padding: 8px;
   }
 
-  .extracted-data-cell,
-  .ocr-text-cell {
-    /* Removed max-width */
-  }
+  
 
   .btn-group .btn {
     padding: 4px 8px;
