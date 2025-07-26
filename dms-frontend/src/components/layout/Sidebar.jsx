@@ -218,20 +218,24 @@ const Sidebar = ({ user, loadingUser }) => {
                 className={`folder-item ${selectedCompany?.id === company.id ? 'selected' : ''}`}
                 onClick={() => handleCompanyClick(company)}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="company-icon" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M3 21v-2h18v2H3zm2-3V3h6v15H5zm8 0V7h6v11h-6z" />
-                </svg>
+                {company.name !== 'À verifier' && (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="company-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3 21v-2h18v2H3zm2-3V3h6v15H5zm8 0V7h6v11h-6z" />
+                  </svg>
+                )}
                 <span className="company-name">{company.name}</span>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className={`expand-icon ${expandedCompany === company.id ? 'expanded' : ''}`}
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                >
-                  <path d="M7 10l5 5 5-5z" />
-                </svg>
+                {company.name !== 'À verifier' && (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className={`expand-icon ${expandedCompany === company.id ? 'expanded' : ''}`}
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path d="M7 10l5 5 5-5z" />
+                  </svg>
+                )}
               </li>
-              {expandedCompany === company.id && (
+              {expandedCompany === company.id && company.name !== 'À verifier' && (
                 <div className="folder-subitems">
                   {loadingStates.folders[company.id] ? (
                     <div className="loading-container small">

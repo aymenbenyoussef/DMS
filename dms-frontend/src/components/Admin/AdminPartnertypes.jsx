@@ -310,12 +310,7 @@ const AdminPartnerTypes = ({ user }) => {
                           >
                             Modifier
                           </button>
-                          <button
-                            className="btn-delete"
-                            onClick={() => handleDelete(partnerType.id)}
-                          >
-                            Supprimer
-                          </button>
+                          
                         </div>
                       </td>
                     </tr>

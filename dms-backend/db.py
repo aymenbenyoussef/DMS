@@ -199,6 +199,7 @@ class DatabaseManager:
                     tva DECIMAL(10,2),
                     total_ttc DECIMAL(10,2),
                     file_size INT DEFAULT 0,
+                    flag BOOLEAN DEFAULT TRUE,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                     FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -245,6 +246,19 @@ class DatabaseManager:
                     FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
                 )
             """)
+
+            # Add flag column to existing documents table if it doesn't exist
+            try:
+                cursor.execute("ALTER TABLE documents ADD COLUMN flag BOOLEAN DEFAULT TRUE")
+                print("Added flag column to documents table")
+            except Error as e:
+                if "Duplicate column name" in str(e):
+                    print("Flag column already exists in documents table")
+                else:
+                    print(f"Error adding flag column: {e}")
+
+            # Update existing documents to have flag = TRUE
+            cursor.execute("UPDATE documents SET flag = TRUE WHERE flag IS NULL")
 
             # Create default users if they don\'t exist
             self.create_default_users()
@@ -1092,7 +1106,7 @@ class DatabaseManager:
                 FROM documents d
                 LEFT JOIN users u ON d.owner_id = u.id
                 LEFT JOIN folders f ON d.folder_id = f.id
-                WHERE d.company_id = %s AND d.document_type = %s
+                WHERE d.company_id = %s AND d.document_type = %s AND d.flag = TRUE
                 ORDER BY d.created_at DESC
             """
             return self.execute_query(query, (company_id, document_type), fetch=True)
@@ -1102,7 +1116,7 @@ class DatabaseManager:
                 FROM documents d
                 LEFT JOIN users u ON d.owner_id = u.id
                 LEFT JOIN folders f ON d.folder_id = f.id
-                WHERE d.company_id = %s
+                WHERE d.company_id = %s AND d.flag = TRUE
                 ORDER BY d.created_at DESC
             """
             return self.execute_query(query, (company_id,), fetch=True)
@@ -1128,7 +1142,7 @@ class DatabaseManager:
             return False
 
     def delete_document(self, document_id):
-        query = "DELETE FROM documents WHERE id = %s"
+        query = "UPDATE documents SET flag = FALSE WHERE id = %s"
         try:
             self.execute_query(query, (document_id,))
             return True
@@ -1188,7 +1202,7 @@ class DatabaseManager:
 
     def get_document_by_id(self, document_id):
         """Get document by ID"""
-        query = "SELECT * FROM documents WHERE id = %s"
+        query = "SELECT * FROM documents WHERE id = %s AND flag = TRUE"
         result = self.execute_query(query, (document_id,), fetch=True)
         return result[0] if result else None
 
@@ -1209,7 +1223,7 @@ class DatabaseManager:
         """Get all invoices for a specific company"""
         query = """
             SELECT * FROM documents 
-            WHERE company_id = %s AND is_invoice = TRUE
+            WHERE company_id = %s AND is_invoice = TRUE AND flag = TRUE
             ORDER BY invoice_date DESC, created_at DESC
         """
         return self.execute_query(query, (company_id,), fetch=True)
@@ -1217,7 +1231,7 @@ class DatabaseManager:
         """Search documents by filename, invoice number, or partner"""
         query = """
             SELECT * FROM documents 
-            WHERE (filename LIKE %s OR invoice_number LIKE %s OR partner LIKE %s)
+            WHERE (filename LIKE %s OR invoice_number LIKE %s OR partner LIKE %s) AND flag = TRUE
         """
         params = [f"%{search_term}%", f"%{search_term}%", f"%{search_term}%"]
 
@@ -1359,7 +1373,7 @@ class DatabaseManager:
             FROM documents d
             LEFT JOIN doctype dt ON d.doctype_id = dt.id
             LEFT JOIN partners p ON d.partner_id = p.id
-            WHERE d.company_id = %s
+            WHERE d.company_id = %s AND d.flag = TRUE
         """
         params = [company_id]
         
@@ -1387,7 +1401,7 @@ class DatabaseManager:
             SELECT d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size, d.file_path,d.extracted_text, d.is_invoice, d.ocr_text, d.rapport, p.company_name as partner_name
             FROM documents d
             LEFT JOIN partners p ON d.partner_id = p.id
-            WHERE d.company_id = %s
+            WHERE d.company_id = %s AND d.flag = TRUE
             ORDER BY d.created_at DESC
         """
         params = [company_id]
@@ -1401,6 +1415,7 @@ class DatabaseManager:
             LEFT JOIN doctype dt ON d.doctype_id = dt.id
             WHERE d.company_id = %s 
             AND d.created_at >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH)
+            AND d.flag = TRUE
         """
         params = [company_id]
         
@@ -1418,12 +1433,12 @@ class DatabaseManager:
             SELECT d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size, d.file_path, d.is_invoice, d.ocr_text, d.extracted_text, d.rapport, p.company_name as partner_name
             FROM documents d
             LEFT JOIN partners p ON d.partner_id = p.id
-            WHERE d.company_id = %s AND d.doctype_id = %s
+            WHERE d.company_id = %s AND d.doctype_id = %s AND d.flag = TRUE
             ORDER BY d.created_at DESC
         """
         return self.execute_query(query, (company_id, doctype_id), fetch=True)
     def get_rapport_pdf(self, document_id):
-        query = "SELECT rapport FROM documents WHERE id = %s"
+        query = "SELECT rapport FROM documents WHERE id = %s AND flag = TRUE"
         result = self.execute_query(query, (document_id,), fetch=True)
         return result[0]['rapport'] if result and result[0]['rapport'] else None
 
@@ -1502,7 +1517,7 @@ class DatabaseManager:
                 SELECT d.*, dg.created_at as added_to_group_at
                 FROM documents d
                 JOIN documents_group dg ON d.id = dg.document_id
-                WHERE dg.group_id = %s
+                WHERE dg.group_id = %s AND d.flag = TRUE
                 ORDER BY dg.created_at DESC
             """
             return self.execute_query(query, (group_id,), fetch=True)
@@ -1578,7 +1593,7 @@ class DatabaseManager:
                 LEFT JOIN companies c ON d.company_id = c.id
                 LEFT JOIN doctype dt ON d.doctype_id = dt.id
                 LEFT JOIN partners p ON d.partner_id = p.id
-                WHERE d.id = %s
+                WHERE d.id = %s AND d.flag = TRUE
             """
             result = self.execute_query(query, (document_id,), fetch=True)
             return result[0] if result else None

@@ -69,6 +69,7 @@ const NavBar = ({ user, onLogout }) => {
   }, []);
 
   return (
+    <>
     <nav className="navbar">
       <div className="navbar-container">
         {/* Logo Section */}
@@ -228,10 +229,11 @@ const NavBar = ({ user, onLogout }) => {
           )}
         </div>
       </div>
-      {showDmsTempModal && (
-        <DmsTempUploadModal onClose={() => setShowDmsTempModal(false)} />
-      )}
     </nav>
+    {showDmsTempModal && (
+      <DmsTempUploadModal onClose={() => setShowDmsTempModal(false)} />
+    )}
+  </>
   );
 };
 

@@ -90,10 +90,6 @@ const Settings = () => {
 
   return (
     <div className="settings-container">
-      <div className="settings-header">
-        <h1 className="settings-title">Paramètres du système</h1>
-        <p className="settings-subtitle">Configurez les paramètres de votre système</p>
-      </div>
       <div className="settings-grid">
         {/* System Settings Card */}
         <div className="settings-card">
@@ -117,17 +113,6 @@ const Settings = () => {
                 </div>
                 <input type="text" value={systemName} onChange={e => setSystemName(e.target.value)} />
               </div>
-            </form>
-          </div>
-        </div>
-        {/* Database Settings Card */}
-        <div className="settings-card">
-          <div className="settings-card-header">
-            <div className="settings-card-icon">🗄️</div>
-            <h2 className="settings-card-title">Paramètres de la base de données</h2>
-          </div>
-          <div className="settings-card-content">
-            <form>
               <div className="setting-item">
                 <div className="setting-info">
                   <div className="setting-label">Hôte de la base de données</div>
@@ -145,7 +130,25 @@ const Settings = () => {
                   <div className="setting-label">Mot de passe de la base de données</div>
                 </div>
                 <input type="password" value={dbPassword} onChange={e => setDbPassword(e.target.value)} />
-            </div>
+              </div>
+              <div className="setting-item">
+                <div className="setting-info">
+                  <div className="setting-label">Chemin des logs de l'entité</div>
+                </div>
+                <input type="text" value={entityLogPath} onChange={e => setEntityLogPath(e.target.value)} />
+              </div>
+              <div className="setting-item">
+                <div className="setting-info">
+                  <div className="setting-label">Chemin des données des entités externes</div>
+                </div>
+                <input type="text" value={externalEntitiesDataPath} onChange={e => setExternalEntitiesDataPath(e.target.value)} />
+              </div>
+              <div className="setting-item">
+                <div className="setting-info">
+                  <div className="setting-label">Chemin des logs des entités externes</div>
+                </div>
+                <input type="text" value={externalEntitiesLogPath} onChange={e => setExternalEntitiesLogPath(e.target.value)} />
+              </div>
             </form>
           </div>
         </div>
@@ -170,28 +173,17 @@ const Settings = () => {
                 <input type="number" value={maxEntities} onChange={e => setMaxEntities(e.target.value)} min={1} />
               </div>
               <div className="setting-item">
-                  <div className="setting-info">
+                <div className="setting-info">
                   <div className="setting-label">Nombre maximal d'entités externes</div>
                 </div>
                 <input type="number" value={maxExternalEntities} onChange={e => setMaxExternalEntities(e.target.value)} min={1} />
-                  </div>
+              </div>
               <div className="setting-item">
                 <div className="setting-info">
                   <div className="setting-label">Taille maximale de fichier (Mo)</div>
                 </div>
                 <input type="number" value={maxFileSize} onChange={e => setMaxFileSize(e.target.value)} min={1} />
-            </div>
-            </form>
-          </div>
-        </div>
-        {/* File & Log Paths Card */}
-        <div className="settings-card">
-          <div className="settings-card-header">
-            <div className="settings-card-icon">📁</div>
-            <h2 className="settings-card-title">Chemins des fichiers & logs</h2>
-          </div>
-          <div className="settings-card-content">
-            <form>
+              </div>
               <div className="setting-item">
                 <div className="setting-info">
                   <div className="setting-label">Chemin des logs du système</div>
@@ -204,33 +196,15 @@ const Settings = () => {
                 </div>
                 <input type="text" value={entitiesDataPath} onChange={e => setEntitiesDataPath(e.target.value)} />
               </div>
-              <div className="setting-item">
-                <div className="setting-info">
-                  <div className="setting-label">Chemin des logs de l'entité</div>
-                </div>
-                <input type="text" value={entityLogPath} onChange={e => setEntityLogPath(e.target.value)} />
+              <div style={{textAlign: 'center', marginTop: '4rem'}}>
+                {successMessage && (
+                  <div className="alert alert-success" style={{marginBottom: '1rem', fontWeight: 600}}>{successMessage}</div>
+                )}
+                <button className="btn btn-primary" onClick={handleSubmit}>Enregistrer</button>
               </div>
-              <div className="setting-item">
-                <div className="setting-info">
-                  <div className="setting-label">Chemin des données des entités externes</div>
-                </div>
-                <input type="text" value={externalEntitiesDataPath} onChange={e => setExternalEntitiesDataPath(e.target.value)} />
-              </div>
-              <div className="setting-item">
-                <div className="setting-info">
-                  <div className="setting-label">Chemin des logs des entités externes</div>
-                  </div>
-                <input type="text" value={externalEntitiesLogPath} onChange={e => setExternalEntitiesLogPath(e.target.value)} />
-            </div>
             </form>
           </div>
         </div>
-      </div>
-      <div style={{textAlign: 'center', marginTop: '2rem'}}>
-        {successMessage && (
-          <div className="alert alert-success" style={{marginBottom: '1rem', fontWeight: 600}}>{successMessage}</div>
-        )}
-        <button className="btn btn-primary" onClick={handleSubmit}>Enregistrer</button>
       </div>
     </div>
   );

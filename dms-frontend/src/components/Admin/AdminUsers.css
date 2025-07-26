@@ -193,12 +193,12 @@
 }
 
 .btn-edit {
-  background-color: darkgreen;
+  background-color: orangered;
   color: white;
 }
 
 .btn-edit:hover {
-  background-color: rgb(2, 115, 2);
+  background-color: rgb(249, 101, 47);
 }
 
 .btn-delete {

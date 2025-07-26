@@ -75,6 +75,10 @@ const DmsTempUploadModal = ({ onClose, onSuccess }) => {
       await API.tempDocuments.upload(files);
       setUploadStatus('completed');
       setUploadProgress(100);
+      
+      // Dispatch event to refresh TempDocumentArchive table
+      window.dispatchEvent(new Event('TempDocumentsUploaded'));
+      
       if (onSuccess) onSuccess();
       setTimeout(() => {
         onClose();
@@ -107,10 +111,10 @@ const DmsTempUploadModal = ({ onClose, onSuccess }) => {
   };
 
   return (
-    <div className="upload-modal-overlay" style={{top: '400px'}}>
+    <div className="upload-modal-overlay">
       <div className="upload-modal">
         <div className="upload-header">
-          <h3>Upload to DMS (Temp)</h3>
+          <h3>Téléchargement temporaire vers DMS</h3>
           <button className="close-btn" onClick={onClose}>&times;</button>
         </div>
         <div className="upload-content">

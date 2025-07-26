@@ -566,12 +566,7 @@ const AdminPartners = ({ user }) => {
                           >
                             Modify
                           </button>
-                          <button
-                            className="btn-delete"
-                            onClick={() => handleDelete(partner.id)}
-                          >
-                            Delete
-                          </button>
+                          
                         </div>
                       </td>
                     </tr>

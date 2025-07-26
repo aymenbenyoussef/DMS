@@ -106,6 +106,12 @@ def log_activity(actor, action, resource_type, resource_data):
             f"email={resource_data.get('email','')}, username={resource_data.get('username','')}, "
             f"date={resource_data.get('date','')}"
         )
+    elif resource_type == "tempdocument":
+        log_entry = (
+            f"{timestamp} - {actor} - {action} TempDocument : "
+            f"{resource_data['id']}, {resource_data['filename']}, "
+            f"company_id={resource_data['company_id']}"
+        )
     else:
         return  # Unsupported resource type
     
@@ -2719,8 +2725,21 @@ def upload_temp_documents():
         filename = secure_filename(file.filename)
         file_path = os.path.join(upload_dir, filename)
         file.save(file_path)
-        db.create_temp_document(filename, file_path, owner_id, company_id)
-        saved_files.append({"filename": filename, "file_path": file_path})
+        temp_doc_id = db.create_temp_document(filename, file_path, owner_id, company_id)
+        
+        # Log the temporary document creation
+        log_activity(
+            actor=current_user_claims['username'],
+            action="Create",
+            resource_type="tempdocument",
+            resource_data={
+                'id': temp_doc_id,
+                'filename': filename,
+                'company_id': company_id
+            }
+        )
+        
+        saved_files.append({"filename": filename, "file_path": file_path, "id": temp_doc_id})
     return jsonify({"msg": "Files uploaded to temp_documents.", "files": saved_files}), 201
 
 @app.route('/temp_documents', methods=['GET'])
@@ -2737,12 +2756,28 @@ def get_temp_documents():
 @app.route('/temp_documents/<int:doc_id>', methods=['DELETE'])
 @jwt_required()
 def delete_temp_document(doc_id):
+    current_user_claims = get_jwt()
     try:
         # Get file path before deleting
         temp_doc = db.execute_query("SELECT * FROM temp_documents WHERE id = %s", (doc_id,), fetch=True)
         if not temp_doc:
             return jsonify({'msg': 'Document not found'}), 404
-        file_path = temp_doc[0]['file_path']
+        
+        temp_doc_data = temp_doc[0]
+        file_path = temp_doc_data['file_path']
+        
+        # Log the temporary document deletion before deleting
+        log_activity(
+            actor=current_user_claims['username'],
+            action="Delete",
+            resource_type="tempdocument",
+            resource_data={
+                'id': doc_id,
+                'filename': temp_doc_data['filename'],
+                'company_id': temp_doc_data['company_id']
+            }
+        )
+        
         db.execute_query("DELETE FROM temp_documents WHERE id = %s", (doc_id,))
         # Optionally delete the file from disk
         if file_path and os.path.exists(file_path):

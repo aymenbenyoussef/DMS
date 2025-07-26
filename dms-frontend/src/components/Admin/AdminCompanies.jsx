@@ -404,12 +404,7 @@ const AdminCompanies = ({ user }) => {
                           >
                             Modifier
                           </button>
-                          <button
-                            className="btn-delete"
-                            onClick={() => handleDelete(company.id)}
-                          >
-                            Supprimer
-                          </button>
+                          
                         </div>
                       </td>
                     </tr>

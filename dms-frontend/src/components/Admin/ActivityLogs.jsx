@@ -3,11 +3,32 @@ import api from '../../api';
 import './ActivityLogs.css';
 
 const ActivityLogs = () => {
+  // Get first day of current month and today's date
+  const getFirstDayOfMonth = () => {
+    const now = new Date();
+    // Ensure we're working with local time to avoid timezone issues
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+    const year = firstDay.getFullYear();
+    const month = String(firstDay.getMonth() + 1).padStart(2, '0');
+    const day = String(firstDay.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const getTodayDate = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const [logs, setLogs] = useState([]);
   const [filteredLogs, setFilteredLogs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [filters, setFilters] = useState({
+    startDate: getFirstDayOfMonth(),
+    endDate: getTodayDate(),
     role: '',
     action: '',
     resource: ''
@@ -102,22 +123,75 @@ const ActivityLogs = () => {
 
   const applyFilters = () => {
     const filtered = logs.filter(log => {
-      return (
-        (filters.role === '' || log.admin === filters.role) &&
-        (filters.action === '' || log.action === filters.action) &&
-        (filters.resource === '' || log.resource === filters.resource)
-      );
+      // Safely parse the log date
+      let logDate = null;
+      try {
+        // Handle different timestamp formats
+        let dateObj;
+        
+        // Check if timestamp is a string that needs parsing
+        if (typeof log.timestamp === 'string') {
+          // Handle European date format: "18/07/2025 19:33:41"
+          if (log.timestamp.includes('/') && log.timestamp.includes(':')) {
+            // Format: "DD/MM/YYYY HH:MM:SS"
+            const [datePart, timePart] = log.timestamp.split(' ');
+            const [day, month, year] = datePart.split('/');
+            // Create date in YYYY-MM-DD format for proper parsing
+            const isoDateString = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${timePart}`;
+            dateObj = new Date(isoDateString);
+          } else if (log.timestamp.includes(' - ')) {
+            // Format: "2024-01-15 10:30:45 - admin - action"
+            const timestampPart = log.timestamp.split(' - ')[0];
+            dateObj = new Date(timestampPart);
+          } else if (log.timestamp.includes('T')) {
+            // ISO format: "2024-01-15T10:30:45.000Z"
+            dateObj = new Date(log.timestamp);
+          } else {
+            // Try direct parsing
+            dateObj = new Date(log.timestamp);
+          }
+        } else {
+          // If it's already a Date object
+          dateObj = new Date(log.timestamp);
+        }
+        
+        // Validate the date
+        if (isNaN(dateObj.getTime())) {
+          console.warn('Invalid date for log:', log.timestamp);
+          return false;
+        }
+        
+        // Convert to YYYY-MM-DD format for comparison
+        const year = dateObj.getFullYear();
+        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const day = String(dateObj.getDate()).padStart(2, '0');
+        logDate = `${year}-${month}-${day}`;
+        
+      } catch (error) {
+        console.error('Error parsing log date:', log.timestamp, error);
+        return false;
+      }
+
+      const dateInRange = logDate >= filters.startDate && logDate <= filters.endDate;
+      const roleMatch = filters.role === '' || log.admin === filters.role;
+      const actionMatch = filters.action === '' || log.action === filters.action;
+      const resourceMatch = filters.resource === '' || log.resource === filters.resource;
+
+      return dateInRange && roleMatch && actionMatch && resourceMatch;
     });
+    
     setFilteredLogs(filtered);
   };
 
   const resetFilters = () => {
     setFilters({
+      startDate: getFirstDayOfMonth(),
+      endDate: getTodayDate(),
       role: '',
       action: '',
       resource: ''
     });
-    setFilteredLogs(logs);
+    // The useEffect will automatically call applyFilters when filters change
   };
 
   return (
@@ -151,6 +225,27 @@ const ActivityLogs = () => {
       )}
       
       <div className="filters-container">
+        <div className="filter-group">
+          <label htmlFor="start-date-filter">Start Date</label>
+          <input
+            type="date"
+            id="start-date-filter"
+            name="startDate"
+            value={filters.startDate}
+            onChange={handleFilterChange}
+          />
+        </div>
+        <div className="filter-group">
+          <label htmlFor="end-date-filter">End Date</label>
+          <input
+            type="date"
+            id="end-date-filter"
+            name="endDate"
+            value={filters.endDate}
+            onChange={handleFilterChange}
+          />
+        </div>
+        
         <div className="filter-group">
           <label htmlFor="role-filter">Role</label>
           <select 
@@ -199,7 +294,7 @@ const ActivityLogs = () => {
         <button 
           className="reset-button"
           onClick={resetFilters}
-          disabled={filters.role === '' && filters.action === '' && filters.resource === ''}
+          disabled={filters.startDate === getFirstDayOfMonth() && filters.endDate === getTodayDate() && filters.role === '' && filters.action === '' && filters.resource === ''}
         >
           Reset Filters
         </button>
