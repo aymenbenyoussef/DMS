@@ -78,6 +78,10 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
   const [previewText, setPreviewText] = useState('');
   const [currentDocument, setCurrentDocument] = useState(null); // Store full document info
   const [relatedDocuments, setRelatedDocuments] = useState([]); // Documents in same group
+  const [activeTab, setActiveTab] = useState('report'); // 'report', 'ocr', 'actions'
+  const [ocrText, setOcrText] = useState('');
+  const [documentFileUrl, setDocumentFileUrl] = useState(''); // For File tab
+  const [documentFileType, setDocumentFileType] = useState(''); // For File tab
 
   // Email sending states
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
@@ -113,7 +117,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (openDropdownId && !event.target.closest('.dropdown')) {
+      if (!event.target.closest('.dropdown')) {
         setOpenDropdownId(null);
       }
     };
@@ -122,7 +126,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     return () => {
       document.removeEventListener('click', handleClickOutside);
     };
-  }, [openDropdownId]);
+  }, []);
 
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => {
@@ -633,6 +637,22 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  // Function to format currency values
+  const formatCurrency = (value) => {
+    if (!value || isNaN(parseFloat(value))) return '-';
+    return parseFloat(value).toFixed(2) + '€';
+  };
+
+  // Function to format date
+  const formatDate = (dateString) => {
+    if (!dateString) return '-';
+    try {
+      return new Date(dateString).toLocaleDateString('fr-FR');
+    } catch {
+      return '-';
+    }
+  };
+
   const getFileIconClass = (filename) => {
     const extension = filename.split('.').pop().toLowerCase();
     switch(extension) {
@@ -715,6 +735,8 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
       setPreviewTitle(doc.filename);
       setPreviewText('');
       setCurrentDocument(doc);
+      setActiveTab('report'); // Reset to default tab
+      setOcrText(''); // Clear OCR text
       
       // Fetch related documents
       await fetchRelatedDocuments(doc.id);
@@ -726,25 +748,57 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     }
   };
 
-  // Update handleViewRapport to open enhanced modal
+  // Update handleViewRapport to open enhanced modal with tabs
   const handleViewRapport = async (doc) => {
     try {
-      const response = await API.documents.getRapport(doc.id);
-      if (response.status !== 200) {
-        if (response.status === 404) {
+      const [rapportResponse, ocrResponse, documentResponse] = await Promise.all([
+        API.documents.getRapport(doc.id),
+        API.documents.getOcrText(doc.id).catch(() => null), // Don't fail if OCR not available
+        API.documents.download(doc.id).catch(() => null) // Don't fail if document not available
+      ]);
+      
+      if (rapportResponse.status !== 200) {
+        if (rapportResponse.status === 404) {
           alert('Rapport non disponible pour ce document.');
           return;
         }
         throw new Error('Network response was not ok');
       }
-      const blob = response.data;
-      const url = window.URL.createObjectURL(blob);
       
+      const rapportBlob = rapportResponse.data;
+      const rapportUrl = window.URL.createObjectURL(rapportBlob);
+      
+      // Handle OCR text if available
+      if (ocrResponse && ocrResponse.status === 200) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          setOcrText(e.target.result);
+        };
+        reader.readAsText(ocrResponse.data);
+      }
+      
+      // Handle document file if available (for File tab)
+      if (documentResponse && documentResponse.status === 200) {
+        const documentBlob = documentResponse.data;
+        const documentUrl = window.URL.createObjectURL(documentBlob);
+        const ext = doc.filename.split('.').pop().toLowerCase();
+        let type = '';
+        if (["pdf"].includes(ext)) type = 'pdf';
+        else if (["jpg","jpeg","png","gif","tiff","bmp","webp"].includes(ext)) type = 'image';
+        else if (["txt"].includes(ext)) type = 'text';
+        else type = 'other';
+        
+        setDocumentFileType(type);
+        setDocumentFileUrl(documentUrl);
+      }
+      
+      // Set report data for the main display
       setPreviewType('pdf');
-      setPreviewUrl(url + '#toolbar=0&navpanes=0&scrollbar=0');
+      setPreviewUrl(rapportUrl + '#toolbar=0&navpanes=0&scrollbar=0');
       setPreviewTitle(doc.filename.replace(/\.[^/.]+$/, '') + '_rapport.pdf');
       setPreviewText('');
       setCurrentDocument(doc);
+      setActiveTab('report');
       
       // Fetch related documents
       await fetchRelatedDocuments(doc.id);
@@ -875,6 +929,31 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     } catch (error) {
       console.error('Download failed:', error);
       alert('Échec du téléchargement. Veuillez réessayer.');
+    }
+  };
+
+  // New function to handle context-aware downloads based on active tab
+  const handleContextDownload = async () => {
+    if (!currentDocument) return;
+    
+    // If viewing a report (has tabs), download based on active tab
+    if (previewTitle.includes('_rapport.pdf')) {
+      switch (activeTab) {
+        case 'report':
+          await handleRapportDownload(currentDocument);
+          break;
+        case 'ocr':
+          await handleOcrTextDownload(currentDocument);
+          break;
+        case 'actions':
+          await handleDownload(currentDocument);
+          break;
+        default:
+          await handleDownload(currentDocument);
+      }
+    } else {
+      // For regular documents, download the document
+      await handleDownload(currentDocument);
     }
   };
 
@@ -1288,8 +1367,8 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
               <table className="table table-hover stylish-table">
                 <thead className="table-header-sticky">
                   <tr>
-                    {isGroupMode && (
                       <th style={{ width: '50px' }}>
+                      {isGroupMode && (
                         <input 
                           type="checkbox" 
                           className="form-check-input"
@@ -1302,155 +1381,58 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                           }}
                           checked={selectedDocuments.length === filteredDocuments.length && filteredDocuments.length > 0}
                         />
-                      </th>
                     )}
+                    </th>
                     <th>ID</th>
-                    <th>Document</th>
-                    <th>Partner</th>
-                    <th>Facture</th>
-                    <th>Rapport</th>
-                    <th>OCR extrait</th>
-                    <th>Date d'upload</th>
                     <th>Actions</th>
-                    <th>Plus d'actions</th>
+                    <th>Document</th>
+                    <th>Rapport</th>
+                    <th>Partner</th>
+                    <th>Date Facture</th>
+                    <th>Date Upload</th>
+                    <th>TVA</th>
+                    <th>HT</th>
+                    <th>TTC</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredDocuments.map((doc) => (
-                    <tr key={doc.id} className="table-row-hover">
-                      {isGroupMode && (
+                    <tr key={doc.id} className={selectedDocuments.includes(doc.id) ? 'selected' : ''}>
                         <td>
+                        {isGroupMode && (
+                          <div className="form-check">
                           <input 
-                            type="checkbox" 
                             className="form-check-input"
+                              type="checkbox"
                             checked={selectedDocuments.includes(doc.id)}
                             onChange={() => handleDocumentSelection(doc.id)}
                           />
-                        </td>
-                      )}
-                      <td className="text-muted">{doc.id}</td>
-                      <td>
-                        <div className="d-flex align-items-center">
-                          <i className={`bi ${getFileIconClass(doc.filename)} me-2`}></i>
-                          <div style={{ maxWidth: '400px', wordBreak: 'break-word', whiteSpace: 'normal' }}>
-                            <div className="fw-medium document-filename">{doc.filename}</div>
-                            <small className="text-muted">
-                              {getFileType(doc.filename)} • {formatFileSize(doc.file_size || doc.size || 0)}
-                            </small>
                           </div>
-                        </div>
-                      </td>
-                      <td>{doc.partner_name || '-'}</td>
-                      <td>
-                        {doc.is_invoice ? (
-                          <span style={{
-                            display: 'inline-block',
-                            background: '#dcfce7',
-                            color: '#16a34a',
-                            fontWeight: 'bold',
-                            borderRadius: '999px',
-                            padding: '2px 14px',
-                            fontSize: '0.95em',
-                            border: '1px solid #bbf7d0',
-                          }}>oui</span>
-                        ) : (
-                          <span style={{
-                            display: 'inline-block',
-                            background: '#fee2e2',
-                            color: '#dc2626',
-                            fontWeight: 'bold',
-                            borderRadius: '999px',
-                            padding: '2px 14px',
-                            fontSize: '0.95em',
-                            border: '1px solid #fecaca',
-                          }}>non</span>
                         )}
                       </td>
+                      <td className="text-muted">{doc.id}</td>
                       <td>
-                        <div className="extracted-data-cell">
-                          {doc.rapport ? (
-                            <div className="btn-group" role="group">
-                              <button
-                                className="btn btn-sm btn-outline-blue"
-                                style={{ padding: '10px 24px', fontSize: '1.15em', fontWeight: 600 }}
-                                onClick={() => handleViewRapport(doc)}
-                                title="Voir le rapport PDF"
-                              >
-                                Voir
-                              </button>
-                            </div>
-                          ) : (
-                            <span className="text-muted">-</span>
-                          )}
-                        </div>
-                      </td>
-                      <td>
-                        <div className="ocr-text-cell">
-                          {doc.ocr_text ? (
-                            <div className="btn-group" role="group">
-                              <button
-                                className="btn btn-sm btn-outline-blue"
-                                style={{ padding: '10px 24px', fontSize: '1.15em', fontWeight: 600 }}
-                                onClick={() => handleViewOcrText(doc)}
-                                title="Voir le texte OCR"
-                              >
-                                Voir
-                              </button>
-                            </div>
-                          ) : (
-                            <span className="text-muted">Aucun texte OCR</span>
-                          )}
-                        </div>
-                      </td>
-                      <td>
-                        {doc.created_at ? new Date(doc.created_at).toLocaleDateString('fr-FR') : '-'}
-                      </td>
-                      <td>
-                        <div className="btn-group" role="group">
-                          <button
-                            className="btn btn-sm btn-outline-blue"
-                            style={{ padding: '10px 24px', fontSize: '1.15em', fontWeight: 600 }}
-                            onClick={() => handleViewDocument(doc)}
-                            title="Voir le document"
-                          >
-                            Voir <i className="bi bi-eye"></i>
-                          </button>
-                        </div>
-                      </td>
-                      <td>
-                        <div className="dropdown">
+                        <div className="dropdown dropdown-up">
                           <button 
                             className="btn btn-sm btn-outline-secondary dropdown-toggle"
                             type="button" 
-                            id={`dropdownMenuButton${doc.id}`}
-                            aria-expanded={openDropdownId === doc.id ? "true" : "false"}
-                            onClick={(e) => {
-                              e.stopPropagation(); // Prevent global click handler from firing
-                              setOpenDropdownId(openDropdownId === doc.id ? null : doc.id);
-                            }}
-                            style={{ 
-                              border: 'none', 
-                              background: 'transparent',
-                              padding: '8px 12px',
-                              fontSize: '16px',
-                              color: '#6c757d'
-                            }}
+                            onClick={() => setOpenDropdownId(openDropdownId === doc.id ? null : doc.id)}
+                            style={{ fontSize: '12px', padding: '4px 8px' }}
                           >
-                            <i className="bi bi-three-dots-vertical"></i>
+                            Actions
                           </button>
-                          <ul 
-                            className={`dropdown-menu ${openDropdownId === doc.id ? 'show' : ''}`}
-                            aria-labelledby={`dropdownMenuButton${doc.id}`}
-                            onClick={e => e.stopPropagation()} // Prevent closing when clicking inside
-                            style={{ zIndex: 1050, position: 'absolute' }}
-                          >
+                          <ul className={`dropdown-menu ${openDropdownId === doc.id ? 'show' : ''}`} style={{ 
+                            fontSize: '12px', 
+                            minWidth: '150px',
+                            top: 'auto',
+                            bottom: '100%',
+                            marginBottom: '5px',
+                            zIndex: 9999
+                          }}>
                             <li>
                               <button 
                                 className="dropdown-item d-flex align-items-center"
-                                onClick={() => {
-                                  setIsPreviewModalOpen(false); // Close any open modal first
-                                  handleSendEmail(doc);
-                                }}
+                                onClick={() => { setIsPreviewModalOpen(false); handleSendEmail(doc); }}
                               >
                                 <i className="bi bi-envelope me-2"></i>
                                 Envoyer
@@ -1478,9 +1460,67 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                           </ul>
                         </div>
                       </td>
+                      <td>
+                        <div className="d-flex align-items-center">
+                          <i className={`bi ${getFileIconClass(doc.filename)} me-2`}></i>
+                          <div style={{ maxWidth: '400px', wordBreak: 'break-word', whiteSpace: 'normal' }}>
+                            <div className="fw-medium document-filename">{doc.filename}</div>
+                            <small className="text-muted">
+                              {getFileType(doc.filename)} • {formatFileSize(doc.file_size || doc.size || 0)}
+                            </small>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="extracted-data-cell">
+                          {doc.rapport ? (
+                            <div className="btn-group" role="group">
+                              <button
+                                className="btn btn-sm btn-outline-blue"
+                                style={{ padding: '10px 24px', fontSize: '1.15em', fontWeight: 600 }}
+                                onClick={() => handleViewRapport(doc)}
+                                title="Voir le rapport PDF"
+                              >
+                                Voir
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-muted">-</span>
+                          )}
+                        </div>
+                      </td>
+                      <td>{doc.partner_name || '-'}</td>
+                      <td>{formatDate(doc.invoice_date)}</td>
+                      <td>{formatDate(doc.created_at)}</td>
+                      <td>{formatCurrency(doc.tva)}</td>
+                      <td>{formatCurrency(doc.total_ht)}</td>
+                      <td>{formatCurrency(doc.total_ttc)}</td>
                     </tr>
                   ))}
                 </tbody>
+                <tfoot>
+                  <tr style={{ 
+                    backgroundColor: '#f8f9fa', 
+                    borderTop: '2px solid #dee2e6',
+                    fontWeight: 'bold'
+                  }}>
+                    <td colSpan="7" style={{ textAlign: 'right', padding: '12px 16px' }}>
+                      <strong>Total TTC:</strong>
+                    </td>
+                    <td style={{ padding: '12px 16px' }}>-</td>
+                    <td style={{ padding: '12px 16px' }}>-</td>
+                    <td style={{ 
+                      padding: '12px 16px', 
+                      color: '#2563eb',
+                      fontSize: '1.1em'
+                    }}>
+                      {formatCurrency(filteredDocuments
+                        .filter(doc => doc.total_ttc && !isNaN(parseFloat(doc.total_ttc)))
+                        .reduce((sum, doc) => sum + parseFloat(doc.total_ttc), 0)
+                      )}
+                    </td>
+                  </tr>
+                </tfoot>
               </table>
             </div>
           ) : (
@@ -1679,8 +1719,13 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                 onClick={() => {
                   setIsPreviewModalOpen(false);
                   if (previewUrl) window.URL.revokeObjectURL(previewUrl);
+                  if (documentFileUrl) window.URL.revokeObjectURL(documentFileUrl);
                   setCurrentDocument(null);
                   setRelatedDocuments([]);
+                  setActiveTab('report');
+                  setOcrText('');
+                  setDocumentFileUrl('');
+                  setDocumentFileType('');
                 }}
                 style={{
                   background: 'none',
@@ -1711,16 +1756,254 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
               display: 'flex',
               overflow: 'hidden'
             }}>
-              {/* Left Column - File Display */}
+              {/* Left Column - File Display with Tabs */}
               <div className="file-display-column" style={{
                 flex: '1',
                 backgroundColor: '#f8fafc',
                 display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '24px',
+                flexDirection: 'column',
                 borderRight: '1px solid #e5e7eb'
               }}>
+                {/* Tabs Navigation - Only show for reports */}
+                {previewTitle.includes('_rapport.pdf') && (
+                  <div className="tabs-navigation" style={{
+                    padding: '16px 24px 0 24px',
+                    borderBottom: '1px solid #e5e7eb',
+                    backgroundColor: 'white'
+                  }}>
+                    <ul className="nav nav-tabs" style={{ borderBottom: 'none' }}>
+                      <li className="nav-item">
+                        <button
+                          className={`nav-link ${activeTab === 'report' ? 'active' : ''}`}
+                          onClick={() => setActiveTab('report')}
+                          style={{
+                            border: 'none',
+                            backgroundColor: 'transparent',
+                            color: activeTab === 'report' ? '#2563eb' : '#6b7280',
+                            fontWeight: activeTab === 'report' ? '600' : '400',
+                            padding: '12px 16px',
+                            borderBottom: activeTab === 'report' ? '2px solid #2563eb' : '2px solid transparent'
+                          }}
+                        >
+                          <i className="bi bi-file-earmark-pdf me-2"></i>
+                          Rapport
+                        </button>
+                      </li>
+                      <li className="nav-item">
+                        <button
+                          className={`nav-link ${activeTab === 'ocr' ? 'active' : ''}`}
+                          onClick={() => setActiveTab('ocr')}
+                          style={{
+                            border: 'none',
+                            backgroundColor: 'transparent',
+                            color: activeTab === 'ocr' ? '#2563eb' : '#6b7280',
+                            fontWeight: activeTab === 'ocr' ? '600' : '400',
+                            padding: '12px 16px',
+                            borderBottom: activeTab === 'ocr' ? '2px solid #2563eb' : '2px solid transparent'
+                          }}
+                        >
+                          <i className="bi bi-file-text me-2"></i>
+                          OCR Extraits
+                        </button>
+                      </li>
+                      <li className="nav-item">
+                        <button
+                          className={`nav-link ${activeTab === 'actions' ? 'active' : ''}`}
+                          onClick={() => setActiveTab('actions')}
+                          style={{
+                            border: 'none',
+                            backgroundColor: 'transparent',
+                            color: activeTab === 'actions' ? '#2563eb' : '#6b7280',
+                            fontWeight: activeTab === 'actions' ? '600' : '400',
+                            padding: '12px 16px',
+                            borderBottom: activeTab === 'actions' ? '2px solid #2563eb' : '2px solid transparent'
+                          }}
+                        >
+                          <i className="bi bi-file-earmark me-2"></i>
+                          File
+                        </button>
+                      </li>
+                    </ul>
+                  </div>
+                )}
+
+                {/* Tab Content */}
+                <div className="tab-content" style={{
+                  flex: 1,
+                  padding: '24px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  overflow: 'hidden'
+                }}>
+                  {/* For reports: Show tabbed content */}
+                  {previewTitle.includes('_rapport.pdf') ? (
+                    <>
+                      {/* Report Tab */}
+                      {activeTab === 'report' && (
+                        <div className="tab-pane active" style={{ 
+                          width: '100%', 
+                          height: '100%',
+                          display: 'flex',
+                          flexDirection: 'column'
+                        }}>
+                          <div style={{ flex: 1, overflow: 'hidden' }}>
+                            {previewType === 'pdf' && previewUrl && (
+                              <iframe
+                                src={previewUrl + (previewUrl.includes('#') ? '' : '#toolbar=0&navpanes=0&scrollbar=0')}
+                                title="PDF Preview"
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  border: 'none',
+                                  borderRadius: '8px',
+                                  backgroundColor: 'white',
+                                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                                }}
+                              />
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* OCR Tab */}
+                      {activeTab === 'ocr' && (
+                        <div className="tab-pane active" style={{ 
+                          width: '100%', 
+                          height: '100%',
+                          display: 'flex',
+                          flexDirection: 'column'
+                        }}>
+                          <div style={{ flex: 1, overflow: 'hidden' }}>
+                            {ocrText ? (
+                              <textarea
+                                value={ocrText}
+                                readOnly
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  border: '1px solid #e5e7eb',
+                                  borderRadius: '8px',
+                                  padding: '16px',
+                                  fontSize: '14px',
+                                  backgroundColor: 'white',
+                                  color: '#1e293b',
+                                  resize: 'none',
+                                  fontFamily: 'monospace',
+                                  minHeight: '400px'
+                                }}
+                              />
+                            ) : (
+                              <div style={{
+                                textAlign: 'center',
+                                color: '#64748b',
+                                padding: '40px'
+                              }}>
+                                <i className="bi bi-file-text" style={{
+                                  fontSize: '64px',
+                                  marginBottom: '16px',
+                                  display: 'block'
+                                }}></i>
+                                <p style={{ fontSize: '18px', marginBottom: '24px' }}>
+                                  Aucun texte OCR disponible pour ce document
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* File Tab */}
+                      {activeTab === 'actions' && (
+                        <div className="tab-pane active" style={{ 
+                          width: '100%', 
+                          height: '100%',
+                          display: 'flex',
+                          flexDirection: 'column'
+                        }}>
+                          <div style={{ flex: 1, overflow: 'auto' }}>
+                            {/* Document file display - same as regular document view */}
+                            {documentFileType === 'pdf' && documentFileUrl && (
+                              <iframe
+                                src={documentFileUrl + (documentFileUrl.includes('#') ? '' : '#toolbar=0&navpanes=0&scrollbar=0')}
+                                title="PDF Preview"
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  border: 'none',
+                                  borderRadius: '8px',
+                                  backgroundColor: 'white',
+                                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                                  minHeight: '600px'
+                                }}
+                              />
+                            )}
+                            {documentFileType === 'image' && documentFileUrl && (
+                              <div style={{
+                                display: 'flex',
+                                justifyContent: 'center',
+                alignItems: 'center',
+                                minHeight: '600px'
+                              }}>
+                                <img
+                                  src={documentFileUrl}
+                                  alt={currentDocument?.filename}
+                                  style={{
+                                    maxWidth: '100%',
+                                    maxHeight: '100%',
+                                    borderRadius: '8px',
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                                    backgroundColor: 'white'
+                                  }}
+                                />
+                              </div>
+                            )}
+                            {documentFileType === 'text' && (
+                              <textarea
+                                value={previewText}
+                                readOnly
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  border: '1px solid #e5e7eb',
+                                  borderRadius: '8px',
+                                  padding: '16px',
+                                  fontSize: '14px',
+                                  backgroundColor: 'white',
+                                  color: '#1e293b',
+                                  resize: 'none',
+                                  fontFamily: 'monospace',
+                                  minHeight: '600px'
+                                }}
+                              />
+                            )}
+                            {documentFileType === 'other' && (
+                              <div style={{
+                                textAlign: 'center',
+                                color: '#64748b',
+                                padding: '40px',
+                                minHeight: '600px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                justifyContent: 'center',
+                                alignItems: 'center'
+                              }}>
+                                <i className="bi bi-file-earmark-text" style={{
+                                  fontSize: '64px',
+                                  marginBottom: '16px',
+                                  display: 'block'
+                                }}></i>
+                                <p style={{ fontSize: '18px', marginBottom: '24px' }}>
+                                  Prévisualisation non supportée pour ce type de fichier
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    /* For regular documents: Show original content */
+                    <>
                 {previewType === 'pdf' && previewUrl && (
                   <iframe
                     src={previewUrl + (previewUrl.includes('#') ? '' : '#toolbar=0&navpanes=0&scrollbar=0')}
@@ -1781,7 +2064,10 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                       Prévisualisation non supportée pour ce type de fichier
                     </p>
                   </div>
+                      )}
+                    </>
                 )}
+                </div>
               </div>
 
               {/* Right Column - Document Information */}
@@ -1910,7 +2196,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                     }}>
                       <button
                         className="btn btn-blue"
-                        onClick={() => handleDownload(currentDocument)}
+                        onClick={handleContextDownload}
                         style={{
                           width: '100%',
                           marginBottom: '12px',
