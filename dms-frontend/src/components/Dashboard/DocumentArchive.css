@@ -11,6 +11,27 @@
   position: relative;
 }
 
+/* Ensure dropdowns are visible above all content */
+.dropdown-up .dropdown-menu {
+  top: auto !important;
+  bottom: 100% !important;
+  margin-bottom: 5px !important;
+  transform: none !important;
+  z-index: 9999 !important;
+  position: absolute !important;
+}
+
+.dropdown-up .dropdown-menu.show {
+  display: block !important;
+  visibility: visible !important;
+}
+
+/* Special handling for first row dropdowns */
+.table tbody tr:first-child .dropdown-up .dropdown-menu {
+  bottom: 100% !important;
+  margin-bottom: 10px !important;
+}
+
 .dropdown-menu {
   position: absolute !important;
   z-index: 9999 !important;
@@ -32,6 +53,7 @@
 
 /* Ensure table container allows dropdown overflow */
 .documents-table-container {
+  position: relative;
   overflow: visible !important;
   max-height: 500px !important;
   overflow-y: auto !important;
@@ -65,11 +87,12 @@
 
 /* 2. Make the table container the main scrolling area */
 .documents-table-container {
-  height: 60vh;
+  height: 70vh;
   overflow-y: auto;
   padding-bottom: 80px;
   border-radius: 8px;
-  max-height: 500px;
+  max-height: 70vh;
+  position: relative;
 }
 
 /* 3. Make the table header sticky */
@@ -89,10 +112,10 @@
 .table-header-sticky {
   position: sticky !important;
   top: 0 !important;
-  z-index: 20 !important;
+  z-index: 1000 !important;
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
   border-bottom: 2px solid #e5e7eb !important;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
 }
 
 .table-header-sticky th {
@@ -107,7 +130,8 @@
   letter-spacing: 0.025em !important;
   position: sticky !important;
   top: 0 !important;
-  z-index: 20 !important;
+  z-index: 1000 !important;
+  white-space: nowrap !important;
 }
 
 /* --- NEW SEARCH & FILTER CONTAINER STYLES --- */
@@ -248,12 +272,18 @@
   transition: all 0.2s ease-in-out;
 }
 
+/* Voir button hover effect */
 .btn-outline-blue:hover {
-  background: #2563eb;
-  border-color: #2563eb;
-  color: white;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+  background-color: #2563eb !important;
+  border-color: #2563eb !important;
+  color: white !important;
+}
+
+.btn-outline-blue:focus {
+  background-color: #2563eb !important;
+  border-color: #2563eb !important;
+  color: white !important;
+  box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.25) !important;
 }
 
 .btn-outline-blue:active {
