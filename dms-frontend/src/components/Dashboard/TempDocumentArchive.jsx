@@ -430,6 +430,7 @@ const TempDocumentArchive = () => {
                 <button 
                   className="btn btn-blue btn-sm d-flex align-items-center"
                   onClick={() => setExportMenuOpen(v => !v)}
+                  style={{ backgroundColor: '#1976d2', color: 'white' }}
                 >
                   <i className="bi bi-download me-1"></i> Export ▼
                 </button>
@@ -506,69 +507,69 @@ const TempDocumentArchive = () => {
                 <tbody>
                   {filteredDocuments.length > 0 ? (
                     filteredDocuments.map((doc) => (
-                      <tr key={doc.id} className="table-row-hover">
-                        <td className="text-muted">{doc.id}</td>
-                        <td>{doc.filename}</td>
-                        <td>{doc.created_at ? new Date(doc.created_at).toLocaleDateString('fr-FR') : '-'}</td>
-                        <td>
-                          <div className="d-flex gap-2">
-                            <button
-                              className="btn btn-outline-primary d-flex align-items-center justify-content-center"
-                              onClick={() => handleViewDocument(doc)}
-                              title="Voir"
-                              style={{
-                                padding: '8px 12px',
-                                fontSize: '14px',
-                                minWidth: '80px'
-                              }}
-                            >
-                              <i className="bi bi-eye me-1"></i>
-                              Voir
-                            </button>
-                            <button
-                              className="btn btn-outline-info d-flex align-items-center justify-content-center"
-                              onClick={() => handleSend(doc)}
-                              disabled={processingDocId === doc.id}
-                              title="Envoyer"
-                              style={{
-                                padding: '8px 12px',
-                                fontSize: '14px',
-                                minWidth: '80px',
-                                ...(processingDocId === doc.id && {
+                    <tr key={doc.id} className="table-row-hover">
+                      <td className="text-muted">{doc.id}</td>
+                      <td>{doc.filename}</td>
+                      <td>{doc.created_at ? new Date(doc.created_at).toLocaleDateString('fr-FR') : '-'}</td>
+                                            <td>
+                        <div className="d-flex gap-2">
+                          <button
+                            className="btn btn-outline-primary d-flex align-items-center justify-content-center"
+                            onClick={() => handleViewDocument(doc)}
+                            title="Voir"
+                            style={{
+                              padding: '8px 12px',
+                              fontSize: '14px',
+                              minWidth: '80px'
+                            }}
+                          >
+                            <i className="bi bi-eye me-1"></i>
+                            Voir
+                          </button>
+                          <button
+                            className="btn btn-outline-info d-flex align-items-center justify-content-center"
+                            onClick={() => handleSend(doc)}
+                            disabled={processingDocId === doc.id}
+                            title="Envoyer"
+                            style={{
+                              padding: '8px 12px',
+                              fontSize: '14px',
+                              minWidth: '80px',
+                              ...(processingDocId === doc.id && {
+                              
+                                color: 'white',
                                 
-                                  color: 'white',
-                                  
-                                })
-                              }}
-                            >
-                              {processingDocId === doc.id ? (
-                                'Traitement...'
-                              ) : (
-                                <>
-                                  <i className="bi bi-send me-1"></i>
-                                  déplacer
-                                </>
-                              )}
-                            </button>
-                            <button
-                              className="btn btn-outline-warning d-flex align-items-center justify-content-center"
-                              onClick={() => handleDeleteDocument(doc)}
-                              disabled={isDeleting}
-                              title="Supprimer"
-                              style={{
-                                padding: '8px 12px',
-                                fontSize: '14px',
-                                minWidth: '80px',
-                                backgroundColor: 'orangered',
-                                color: 'white'
-                              }}
-                            >
-                              <i className="bi bi-trash me-1"></i>
-                              Supprimer
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
+                              })
+                            }}
+                          >
+                            {processingDocId === doc.id ? (
+                              'Traitement...'
+                            ) : (
+                              <>
+                                <i className="bi bi-send me-1"></i>
+                                déplacer
+                              </>
+                            )}
+                          </button>
+                          <button
+                            className="btn btn-outline-warning d-flex align-items-center justify-content-center"
+                            onClick={() => handleDeleteDocument(doc)}
+                            disabled={isDeleting}
+                            title="Supprimer"
+                            style={{
+                              padding: '8px 12px',
+                              fontSize: '14px',
+                              minWidth: '80px',
+                              backgroundColor: 'orangered',
+                              color: 'white'
+                            }}
+                          >
+                            <i className="bi bi-trash me-1"></i>
+                            Supprimer
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
                     ))
                   ) : (
                     <tr>

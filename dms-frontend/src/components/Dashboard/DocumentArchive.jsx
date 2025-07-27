@@ -63,7 +63,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
   const [billableFilter, setBillableFilter] = useState('all'); // 'all', 'billable', 'non-billable'
   const [selectedGroupFilters, setSelectedGroupFilters] = useState([]);
   const [documentsByGroup, setDocumentsByGroup] = useState({}); // Store documents by group ID
-  
+
   // Column filter states
   const [columnFilters, setColumnFilters] = useState({
     id: '',
@@ -1510,10 +1510,10 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
           </div>
           
           {/* All Filters Displayed Next to Each Other */}
-          <div className="d-flex gap-4 flex-wrap">
+          <div className="d-flex gap-4 flex-wrap" style={{width:'1000px'}}>
           {/* Document Type Filters - Only show when no specific doctype is selected */}
           {!selectedDoctype && availableDoctypes.length > 0 && (
-            <div>
+              <div style={{ width: '300px', minWidth: '300px' }} className="mb-3">
                   <h6 className="mb-2 small">Types de documents</h6>
                   <div className="d-flex flex-wrap gap-2">
                 {availableDoctypes.map((doctype) => (
@@ -1539,7 +1539,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
 
             {/* Billable Filter - Show for both company and doctype archives */}
             {(selectedCompany || selectedDoctype) && (
-              <div>
+              <div style={{ width: '300px', minWidth: '300px' }} className="mb-3">
                 <h6 className="mb-2 small">Statut de facturation</h6>
                 <div className="d-flex flex-wrap gap-2">
                   <div className="form-check form-check-sm">
@@ -1599,7 +1599,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
 
             {/* Groups Filter - Show for both company and doctype archives */}
             {(selectedCompany || selectedDoctype) && (
-              <div>
+              <div style={{ width: '300px', minWidth: '300px' }} className="mb-3">
                 <h6 className="mb-2 small">Groupes</h6>
                 <div className="d-flex flex-wrap gap-2">
                   {groups.map((group) => (
@@ -1695,6 +1695,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                       <button 
                         className="btn btn-blue btn-sm d-flex align-items-center"
                         onClick={() => setExportMenuOpen(v => !v)}
+                        style={{ backgroundColor: '#1976d2', color: 'white' }}
                       >
                         <i className="bi bi-download me-1"></i> Export ▼
                       </button>
@@ -1804,7 +1805,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
               <table className="table table-hover stylish-table">
                 <thead className="table-header-sticky">
                   <tr>
-                      <th style={{ width: '50px' }}>
+                      <th style={{ width: '30px', minWidth: '30px' }}>
                       {isGroupMode && (
                         <input 
                           type="checkbox" 
@@ -1844,13 +1845,13 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                     <th style={{cursor:'pointer', background: sortConfig.key === 'total_ht' ? '#f0f4fa' : undefined, color: sortConfig.key === 'total_ht' ? '#1976d2' : undefined}} onClick={() => handleSort('total_ht')}>
                       HT <span style={{fontSize:'1em'}}>{sortConfig.key === 'total_ht' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
                     </th>
-                    <th style={{cursor:'pointer', background: sortConfig.key === 'total_ttc' ? '#f0f4fa' : undefined, color: sortConfig.key === 'total_ttc' ? '#1976d2' : undefined}} onClick={() => handleSort('total_ttc')}>
+                    <th style={{cursor:'pointer', background: sortConfig.key === 'total_ttc' ? '#f0f4fa' : undefined, color: sortConfig.key === 'total_ttc' ? '#1976d2' : undefined, textAlign: 'right'}} onClick={() => handleSort('total_ttc')}>
                       TTC <span style={{fontSize:'1em'}}>{sortConfig.key === 'total_ttc' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
                     </th>
                   </tr>
                   {/* Filter Row */}
                   <tr style={{ backgroundColor: '#f8f9fa' }}>
-                    <th style={{ width: '50px' }}></th>
+                    <th style={{ width: '30px', minWidth: '30px' }}></th>
                     <th>
                       <input
                         type="text"
@@ -1915,156 +1916,159 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                 <tbody>
                   {filteredDocuments.length > 0 ? (
                     <>
-                      {filteredDocuments.map((doc) => (
-                        <tr key={doc.id} className={selectedDocuments.includes(doc.id) ? 'selected' : ''}>
-                            <td>
-                            {isGroupMode && (
-                              <div className="form-check">
-                              <input 
-                                className="form-check-input"
-                                  type="checkbox"
-                                checked={selectedDocuments.includes(doc.id)}
-                                onChange={() => handleDocumentSelection(doc.id)}
-                              />
-                              </div>
-                            )}
-                          </td>
-                          <td className="text-muted">{doc.id}</td>
-                          <td>
-                            <div className="dropdown dropdown-up">
-                              <button 
-                                className="btn btn-sm btn-outline-secondary dropdown-toggle"
-                                type="button" 
-                                onClick={() => setOpenDropdownId(openDropdownId === doc.id ? null : doc.id)}
-                                style={{ fontSize: '12px', padding: '4px 8px' }}
-                              >
-                                Actions
-                              </button>
-                              <ul className={`dropdown-menu ${openDropdownId === doc.id ? 'show' : ''}`} style={{ 
-                                fontSize: '12px', 
-                                minWidth: '150px',
-                                top: 'auto',
-                                bottom: '100%',
-                                marginBottom: '5px',
-                                zIndex: 9999
-                              }}>
-                                <li>
-                                  <button 
-                                    className="dropdown-item d-flex align-items-center"
-                                    onClick={() => { setIsPreviewModalOpen(false); handleSendEmail(doc); }}
-                                  >
-                                    <i className="bi bi-envelope me-2"></i>
-                                    Envoyer
-                                  </button>
-                                </li>
-                                <li>
-                                  <button 
-                                    className="dropdown-item d-flex align-items-center"
-                                    onClick={() => handleEditDocument(doc)}
-                                  >
-                                    <i className="bi bi-pencil-square me-2"></i>
-                                    Modifier
-                                  </button>
-                                </li>
-                                <li><hr className="dropdown-divider" /></li>
-                                <li>
-                                  <button 
-                                    className="dropdown-item d-flex align-items-center text-danger"
-                                    onClick={() => handleDeleteDocument(doc)}
-                                  >
-                                    <i className="bi bi-trash me-2"></i>
-                                    Supprimer
-                                  </button>
-                                </li>
-                              </ul>
-                            </div>
-                          </td>
-                          <td>
-                            <div className="d-flex align-items-center">
-                              <i className={`bi ${getFileIconClass(doc.filename)} me-2`}></i>
-                              <div style={{ maxWidth: '400px', wordBreak: 'break-word', whiteSpace: 'normal' }}>
-                                <div className="fw-medium document-filename">{doc.filename}</div>
-                                <small className="text-muted">
-                                  {getFileType(doc.filename)} • {formatFileSize(doc.file_size || doc.size || 0)}
-                                </small>
-                              </div>
-                            </div>
-                          </td>
-                          <td>
-                            <span 
-                              style={{ 
-                                color: doc.is_invoice ? '#28a745' : '#dc3545',
-                                fontWeight: 'bold'
-                              }}
-                            >
-                              {doc.is_invoice ? 'Oui' : 'Non'}
-                            </span>
-                          </td>
-                          <td>
-                            <div className="extracted-data-cell">
-                              {doc.rapport ? (
-                                <div className="btn-group" role="group">
-                                  <button
-                                    className="btn btn-sm btn-outline-blue"
-                                    style={{ padding: '10px 24px', fontSize: '1.15em', fontWeight: 600 }}
-                                    onClick={() => handleViewRapport(doc)}
-                                    title="Voir le rapport PDF"
-                                  >
-                                    Voir
-                                  </button>
-                                </div>
-                              ) : (
-                                <span className="text-muted">-</span>
-                              )}
-                            </div>
-                          </td>
-                          <td>{doc.partner_name || '-'}</td>
-                          <td>{formatDate(doc.invoice_date)}</td>
-                          <td>{formatDate(doc.created_at)}</td>
-                          <td>{formatCurrency(doc.tva)}</td>
-                          <td>{formatCurrency(doc.total_ht)}</td>
-                          <td>{formatCurrency(doc.total_ttc)}</td>
-                        </tr>
-                      ))}
-                      <tfoot>
-                        <tr style={{ 
-                          backgroundColor: '#f8f9fa', 
-                          borderTop: '2px solid #dee2e6',
-                          fontWeight: 'bold'
-                        }}>
-                          <td colSpan="11" style={{ textAlign: 'right', padding: '12px 16px' }}>
-                            <strong>Total TTC:</strong>
-                          </td>
-                          <td style={{ 
-                            padding: '12px 16px', 
-                            color: '#2563eb',
-                            fontSize: '1.1em'
+                  {filteredDocuments.map((doc) => (
+                    <tr key={doc.id} className={selectedDocuments.includes(doc.id) ? 'selected' : ''}>
+                        <td>
+                        {isGroupMode && (
+                          <div className="form-check">
+                          <input 
+                            className="form-check-input"
+                              type="checkbox"
+                            checked={selectedDocuments.includes(doc.id)}
+                            onChange={() => handleDocumentSelection(doc.id)}
+                          />
+                          </div>
+                        )}
+                      </td>
+                      <td className="text-muted">{doc.id}</td>
+                      <td>
+                        <div className="dropdown dropdown-up">
+                          <button 
+                            className="btn btn-sm btn-outline-secondary dropdown-toggle"
+                            type="button" 
+                            onClick={() => setOpenDropdownId(openDropdownId === doc.id ? null : doc.id)}
+                            style={{ fontSize: '12px', padding: '4px 8px' }}
+                          >
+                            Actions
+                          </button>
+                          <ul className={`dropdown-menu ${openDropdownId === doc.id ? 'show' : ''}`} style={{ 
+                            fontSize: '12px', 
+                            minWidth: '150px',
+                            top: 'auto',
+                            bottom: '100%',
+                            marginBottom: '5px',
+                            zIndex: 9999
                           }}>
-                            {formatCurrency(filteredDocuments
-                              .filter(doc => doc.total_ttc && !isNaN(parseFloat(doc.total_ttc)))
-                              .reduce((sum, doc) => sum + parseFloat(doc.total_ttc), 0)
-                            )}
-                          </td>
-                        </tr>
-                      </tfoot>
+                            <li>
+                              <button 
+                                className="dropdown-item d-flex align-items-center"
+                                onClick={() => { setIsPreviewModalOpen(false); handleSendEmail(doc); }}
+                              >
+                                <i className="bi bi-envelope me-2"></i>
+                                Envoyer
+                              </button>
+                            </li>
+                            <li>
+                              <button 
+                                className="dropdown-item d-flex align-items-center"
+                                onClick={() => handleEditDocument(doc)}
+                              >
+                                <i className="bi bi-pencil-square me-2"></i>
+                                Modifier
+                              </button>
+                            </li>
+                            <li><hr className="dropdown-divider" /></li>
+                            <li>
+                              <button 
+                                className="dropdown-item d-flex align-items-center text-danger"
+                                onClick={() => handleDeleteDocument(doc)}
+                              >
+                                <i className="bi bi-trash me-2"></i>
+                                Supprimer
+                              </button>
+                            </li>
+                          </ul>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="d-flex align-items-center">
+                          <i className={`bi ${getFileIconClass(doc.filename)} me-2`}></i>
+                          <div style={{ maxWidth: '400px', wordBreak: 'break-word', whiteSpace: 'normal' }}>
+                            <div className="fw-medium document-filename">{doc.filename}</div>
+                            <small className="text-muted">
+                              {getFileType(doc.filename)} • {formatFileSize(doc.file_size || doc.size || 0)}
+                            </small>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <span 
+                          style={{ 
+                            color: doc.is_invoice ? '#28a745' : '#dc3545',
+                            fontWeight: 'bold'
+                          }}
+                        >
+                          {doc.is_invoice ? 'Oui' : 'Non'}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="extracted-data-cell">
+                          {doc.rapport ? (
+                            <div className="btn-group" role="group">
+                              <button
+                                className="btn btn-sm btn-outline-blue"
+                                style={{ padding: '10px 24px', fontSize: '1.15em', fontWeight: 600 }}
+                                onClick={() => handleViewRapport(doc)}
+                                title="Voir le rapport PDF"
+                              >
+                                Voir
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-muted">-</span>
+                          )}
+                        </div>
+                      </td>
+                      <td>{doc.partner_name || '-'}</td>
+                      <td>{formatDate(doc.invoice_date)}</td>
+                      <td>{formatDate(doc.created_at)}</td>
+                      <td>{formatCurrency(doc.tva)}</td>
+                      <td>{formatCurrency(doc.total_ht)}</td>
+                      <td style={{ textAlign: 'right' }}>{formatCurrency(doc.total_ttc)}</td>
+                    </tr>
+                  ))}
+                <tfoot>
+                  <tr style={{ 
+                    backgroundColor: '#f8f9fa', 
+                    borderTop: '2px solid #dee2e6',
+                    fontWeight: 'bold'
+                  }}>
+                    <td colSpan="11" style={{ textAlign: 'right', padding: '12px 16px' }}>
+                      <strong>Total TTC:</strong>
+                    </td>
+                    <td style={{ 
+                      padding: '12px 16px', 
+                      color: '#2563eb',
+                      fontSize: '1.1em',
+                      textAlign: 'right'
+                    }}
+                   
+                    >
+                      {formatCurrency(filteredDocuments
+                        .filter(doc => doc.total_ttc && !isNaN(parseFloat(doc.total_ttc)))
+                        .reduce((sum, doc) => sum + parseFloat(doc.total_ttc), 0)
+                      )}
+                    </td>
+                  </tr>
+                </tfoot>
                     </>
-                  ) : (
+          ) : (
                     <tr>
                       <td colSpan="12" className="text-center py-5">
                         <div className="empty-state">
                           <i className="bi bi-search text-muted mb-3" style={{ fontSize: '3rem' }}></i>
                           <p className="text-muted mb-3">Aucune donnée ne correspond aux filtres actuels</p>
-                          <button 
+              <button 
                             className="btn btn-blue btn-sm"
                             onClick={handleResetFilters}
-                          >
+              >
                             <i className="bi bi-arrow-clockwise me-1"></i>
                             Réinitialiser les filtres
-                          </button>
-                        </div>
+              </button>
+            </div>
                       </td>
                     </tr>
-                  )}
+          )}       
                 </tbody>
               </table>
             </div>
