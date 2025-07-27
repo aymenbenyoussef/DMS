@@ -136,7 +136,7 @@ const Login = ({ onLogin, error }) => {
         {showForgot ? (
           <form onSubmit={handleForgotSubmit} className="forgot-form">
             <h2 className="login-title">Mot de passe oublié</h2>
-            <p className="login-subtitle">Entrez votre e-mail pour réinitialiser votre mot de passe</p>
+            <p className="login-subtitle">Service fourni par RAN ESMERALD</p>
             <div className="form-group">
               <label className="form-label">E-mail</label>
               <input
