@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import API from '../../api';
 import './AdminUsers.css';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import { exportToCSV, exportToJSON, exportToTXT, exportToExcel } from './exportUtils';
 
 const AdminCompanies = ({ user }) => {
   const [companies, setCompanies] = useState([]);
@@ -39,6 +40,9 @@ const AdminCompanies = ({ user }) => {
   const [notificationMessage, setNotificationMessage] = useState('');
   const [maxEntities, setMaxEntities] = useState(null);
   const [globalLimitError, setGlobalLimitError] = useState('');
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const exportMenuRef = useRef(null);
 
   useEffect(() => {
     fetchCompanies();
@@ -57,6 +61,23 @@ const AdminCompanies = ({ user }) => {
       return () => clearTimeout(timer);
     }
   }, [globalLimitError]);
+
+  // Close export menu on outside click
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
+        setExportMenuOpen(false);
+      }
+    }
+    if (exportMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    } else {
+      document.removeEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [exportMenuOpen]);
 
   const fetchCompanies = async () => {
     try {
@@ -247,6 +268,42 @@ const AdminCompanies = ({ user }) => {
     setEditingCompany(null);
   };
 
+  // Sorting logic
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+    const sorted = [...filteredCompanies].sort((a, b) => {
+      if (a[key] === undefined || b[key] === undefined) return 0;
+      if (a[key] < b[key]) return direction === 'asc' ? -1 : 1;
+      if (a[key] > b[key]) return direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+    setFilteredCompanies(sorted);
+  };
+
+  // Export logic
+  const columns = [
+    { key: 'id', label: 'ID' },
+    { key: 'name', label: "Nom de l'entité" },
+    { key: 'address', label: 'Adresse' },
+    { key: 'email', label: 'Email' }
+  ];
+  const handleExport = (type) => {
+    const data = filteredCompanies.map(c => ({
+      id: c.id,
+      name: c.name,
+      address: c.address,
+      email: c.email
+    }));
+    if (type === 'csv') exportToCSV(data, columns, 'companies.csv');
+    if (type === 'json') exportToJSON(data, 'companies.json');
+    if (type === 'txt') exportToTXT(data, columns, 'companies.txt');
+    if (type === 'excel') exportToExcel(data, columns, 'companies.xls');
+  };
+
   return (
     <div className="admin-users">
       <div className="admin-header">
@@ -290,6 +347,34 @@ const AdminCompanies = ({ user }) => {
 
       {activeTab === 'list' && (
         <div className="users-list">
+          {/* Export dropdown */}
+          <div style={{ position: 'relative', display: 'inline-block', marginBottom: '8px' }}>
+            <button className="export-dropdown-btn" onClick={() => setExportMenuOpen(v => !v)}>
+              Export ▼
+            </button>
+            {exportMenuOpen && (
+              <ul ref={exportMenuRef} style={{
+                position: 'absolute',
+                top: '110%',
+                left: 0,
+                background: '#fff',
+                border: '1px solid #ddd',
+                borderRadius: '4px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                zIndex: 10,
+                minWidth: '140px',
+                padding: 0,
+                margin: 0,
+                listStyle: 'none',
+              }}>
+                <li style={{padding: '8px 16px', cursor: 'pointer'}} onClick={() => { handleExport('csv'); setExportMenuOpen(false); }}>CSV</li>
+                <li style={{padding: '8px 16px', cursor: 'pointer'}} onClick={() => { handleExport('json'); setExportMenuOpen(false); }}>JSON</li>
+                <li style={{padding: '8px 16px', cursor: 'pointer'}} onClick={() => { handleExport('txt'); setExportMenuOpen(false); }}>TXT</li>
+                <li style={{padding: '8px 16px', cursor: 'pointer'}} onClick={() => { handleExport('excel'); setExportMenuOpen(false); }}>Excel</li>
+              </ul>
+            )}
+          </div>
+
           {loading && (
             <div className="loading-message">
               Chargement des entités...
@@ -338,10 +423,18 @@ const AdminCompanies = ({ user }) => {
               <thead>
                 <tr>
                   <th></th>
-                  <th>ID</th>
-                  <th>Nom de l'entité</th>
-                  <th>Adresse</th>
-                  <th>Email</th>
+                  <th style={{cursor:'pointer', background: sortConfig.key === 'id' ? '#f0f4fa' : undefined, color: sortConfig.key === 'id' ? '#1976d2' : undefined}} onClick={() => handleSort('id')}>
+                    ID <span style={{fontSize:'1em'}}>{sortConfig.key === 'id' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  </th>
+                  <th style={{cursor:'pointer', background: sortConfig.key === 'name' ? '#f0f4fa' : undefined, color: sortConfig.key === 'name' ? '#1976d2' : undefined}} onClick={() => handleSort('name')}>
+                    Nom de l'entité <span style={{fontSize:'1em'}}>{sortConfig.key === 'name' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  </th>
+                  <th style={{cursor:'pointer', background: sortConfig.key === 'address' ? '#f0f4fa' : undefined, color: sortConfig.key === 'address' ? '#1976d2' : undefined}} onClick={() => handleSort('address')}>
+                    Adresse <span style={{fontSize:'1em'}}>{sortConfig.key === 'address' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  </th>
+                  <th style={{cursor:'pointer', background: sortConfig.key === 'email' ? '#f0f4fa' : undefined, color: sortConfig.key === 'email' ? '#1976d2' : undefined}} onClick={() => handleSort('email')}>
+                    Email <span style={{fontSize:'1em'}}>{sortConfig.key === 'email' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  </th>
                   <th>Actions</th>
                 </tr>
                 <tr className="filter-row">

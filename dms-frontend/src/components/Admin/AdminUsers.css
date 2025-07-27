@@ -799,3 +799,69 @@
   background: #d1d5db;
   color: #374151;
 }
+
+.export-dropdown-container {
+  position: absolute;
+  top: 0;
+  right: 180px; /* Adjust this value to align with 'Ajouter un utilisateur' */
+  margin-bottom: 8px;
+  z-index: 21;
+}
+@media (max-width: 900px) {
+  .export-dropdown-container {
+    right: 0;
+  }
+}
+.export-dropdown-btn {
+  background: #fff;
+  border: 2px solid #27ae60;
+  color: #27ae60;
+  border-radius: 6px;
+  padding: 8px 20px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border 0.15s;
+  outline: none;
+  box-shadow: none;
+}
+.export-dropdown-btn:hover, .export-dropdown-btn:focus {
+  background: #eafaf1;
+  color: #219150;
+  border-color: #219150;
+}
+.export-dropdown-list {
+  position: absolute;
+  top: 110%;
+  right: 0;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12), 0 1.5px 4px rgba(0,0,0,0.08);
+  z-index: 20;
+  min-width: 160px;
+  padding: 8px 0;
+  margin: 0;
+  list-style: none;
+  animation: dropdown-fade-in 0.18s cubic-bezier(.4,0,.2,1);
+  transition: box-shadow 0.2s;
+}
+.export-dropdown-list li {
+  padding: 12px 24px;
+  cursor: pointer;
+  font-size: 1rem;
+  color: #222;
+  background: none;
+  border: none;
+  text-align: left;
+  transition: background 0.15s, color 0.15s;
+  font-family: inherit;
+}
+.export-dropdown-list li:hover {
+  background: #f5f7fa;
+  color: #1976d2;
+}
+@keyframes dropdown-fade-in {
+  0% { opacity: 0; transform: translateY(-10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
