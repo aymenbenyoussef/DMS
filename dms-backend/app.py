@@ -2587,7 +2587,7 @@ L'équipe RAN ESMERALD
         # Send email to each recipient
         smtp_host = "smtp.gmail.com"
         smtp_port = 587
-        smtp_user = "ranesmerald358@gmail.com"
+        smtp_user = "ranesmerald@gmail.com"
         smtp_pass = "tvkw cnff wpge eccz"
         
         successful_sends = []
