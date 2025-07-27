@@ -186,7 +186,7 @@ class DatabaseManager:
                     owner_id INT NOT NULL,
                     company_id INT,
                     doctype_id INT,
-                    partner_id INT,
+                    partner_id INT NULL,
                     file_path VARCHAR(500),
                     ocr_text varchar(500),
                     extracted_data JSON,

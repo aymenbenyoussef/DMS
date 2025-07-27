@@ -106,9 +106,7 @@ const DocumentConfirmationForm = ({
       if (field === 'is_invoice') {
         updated[idx].is_invoice = value;
         updated[idx].confirmed_data.is_invoice = value;
-        // Reset partner selection when toggling invoice status
-        updated[idx].confirmed_data.partner_id = '';
-        updated[idx].confirmed_data.partner = '';
+        // Don't reset partner selection when toggling invoice status - partner is optional
       } else if (field === 'company_id') {
         updated[idx].company_id = value;
       } else if (field === 'doctype_id') {
@@ -157,9 +155,7 @@ const DocumentConfirmationForm = ({
     if (!currentDoctype) {
         errs.doctype_id = 'Veuillez sélectionner un type de document';
       }
-      if (!doc.confirmed_data.partner_id) {
-        errs.partner_id = 'Veuillez sélectionner un partenaire';
-      }
+      // Partner is optional - removed validation
       if (doc.is_invoice) {
         const invData = doc.confirmed_data;
         if (!invData.invoice_number) {
@@ -264,7 +260,7 @@ const DocumentConfirmationForm = ({
         {/* Second row: Partner Selection (full width) */}
         <div className="form-row">
           <div className="form-group" style={{ gridColumn: '1 / span 2' }}>
-            <label>Partenaire externe *:</label>
+            <label>Partenaire externe:</label>
             <select
                 value={doc.confirmed_data.partner_id || ''}
                 onChange={e => handlePartnerChange(0, e)}
@@ -430,7 +426,7 @@ const DocumentConfirmationForm = ({
             {/* Second row: Partner Selection (full width) */}
             <div className="form-row">
               <div className="form-group" style={{ gridColumn: '1 / span 2' }}>
-                <label>Partenaire externe *:</label>
+                <label>Partenaire externe:</label>
                 <select
                   value={confirmedDocuments[idx].confirmed_data.partner_id || ''}
                   onChange={e => handlePartnerChange(idx, e)}
