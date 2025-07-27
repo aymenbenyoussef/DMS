@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import API from '../../api';
 import { AppContext } from '../context';
 import TempDocumentConfirmationForm from './TempDocumentConfirmationForm';
 import DmsTempUploadModal from './DmsTempUploadModal';
+import { exportToCSV, exportToJSON, exportToTXT, exportToExcel } from '../Admin/exportUtils';
 import './TempDocumentArchive.css';
 
 const TempDocumentArchive = () => {
@@ -29,6 +30,7 @@ const TempDocumentArchive = () => {
   };
 
   const [documents, setDocuments] = useState([]);
+  const [filteredDocuments, setFilteredDocuments] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [startDate, setStartDate] = useState(getFirstDayOfMonth());
   const [endDate, setEndDate] = useState(getToday());
@@ -47,14 +49,48 @@ const TempDocumentArchive = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   
+  // Column filter states
+  const [columnFilters, setColumnFilters] = useState({
+    id: '',
+    filename: ''
+  });
+  
   // Delete confirmation modal state
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deletingDocument, setDeletingDocument] = useState(null);
+
+  // Sorting and export states
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const exportMenuRef = useRef(null);
 
   useEffect(() => {
     fetchDocuments();
     // eslint-disable-next-line
   }, [startDate, endDate]);
+
+  // Filter documents based on column filters
+  useEffect(() => {
+    let filtered = [...documents];
+    
+    // Filter by column filters
+    Object.keys(columnFilters).forEach(column => {
+      const filterValue = columnFilters[column];
+      if (filterValue && filterValue.trim() !== '') {
+        filtered = filtered.filter(doc => {
+          const docValue = doc[column];
+          if (docValue === null || docValue === undefined) return false;
+          
+          const lowerFilterValue = filterValue.toLowerCase();
+          const lowerDocValue = String(docValue).toLowerCase();
+          
+          return lowerDocValue.includes(lowerFilterValue);
+        });
+      }
+    });
+    
+    setFilteredDocuments(filtered);
+  }, [documents, columnFilters]);
 
   // Add event listener for temporary document uploads
   useEffect(() => {
@@ -76,8 +112,10 @@ const TempDocumentArchive = () => {
     try {
       const response = await API.tempDocuments.getAll(startDate, endDate);
       setDocuments(response.data || []);
+      setFilteredDocuments(response.data || []);
     } catch (error) {
       setDocuments([]);
+      setFilteredDocuments([]);
     } finally {
       setIsLoading(false);
     }
@@ -118,6 +156,7 @@ const TempDocumentArchive = () => {
     try {
       await API.tempDocuments.delete(deletingDocument.id);
       setDocuments(prev => prev.filter(d => d.id !== deletingDocument.id));
+      setFilteredDocuments(prev => prev.filter(d => d.id !== deletingDocument.id));
       
       // Dispatch event to refresh the table (in case other components need to know)
       window.dispatchEvent(new Event('TempDocumentsUploaded'));
@@ -195,6 +234,7 @@ const TempDocumentArchive = () => {
         if (savedDoc && !savedDoc.error) {
           // Remove the temporary document from the list since it's now confirmed
           setDocuments(prev => prev.filter(d => d.id !== currentDocument?.id));
+          setFilteredDocuments(prev => prev.filter(d => d.id !== currentDocument?.id));
           
           // Dispatch event to refresh the table
           window.dispatchEvent(new Event('TempDocumentsUploaded'));
@@ -239,6 +279,98 @@ const TempDocumentArchive = () => {
     setOriginalCompany(null);
     setOriginalDoctype(null);
   };
+
+  // Sorting function
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+
+    const sortedDocuments = [...filteredDocuments].sort((a, b) => {
+      let aValue = a[key];
+      let bValue = b[key];
+
+      // Handle different data types
+      if (key === 'id') {
+        aValue = parseInt(aValue) || 0;
+        bValue = parseInt(bValue) || 0;
+      } else if (key === 'created_at') {
+        aValue = new Date(aValue || 0);
+        bValue = new Date(bValue || 0);
+      } else {
+        aValue = String(aValue || '').toLowerCase();
+        bValue = String(bValue || '').toLowerCase();
+      }
+
+      if (aValue < bValue) {
+        return direction === 'asc' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return direction === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+
+    setFilteredDocuments(sortedDocuments);
+  };
+
+  // Export function
+  const handleExport = (type) => {
+    const columns = [
+      { key: 'id', label: 'ID' },
+      { key: 'filename', label: 'Document' },
+      { key: 'created_at', label: 'Date d\'upload' }
+    ];
+
+    const data = filteredDocuments.map(doc => ({
+      id: doc.id,
+      filename: doc.filename,
+      created_at: doc.created_at ? new Date(doc.created_at).toLocaleDateString('fr-FR') : '-'
+    }));
+
+    if (type === 'csv') exportToCSV(data, columns, 'temp_documents.csv');
+    if (type === 'json') exportToJSON(data, 'temp_documents.json');
+    if (type === 'txt') exportToTXT(data, columns, 'temp_documents.txt');
+    if (type === 'excel') exportToExcel(data, columns, 'temp_documents.xls');
+  };
+
+  // Reset all filters and sorting
+  const handleResetFilters = () => {
+    setStartDate(getFirstDayOfMonth());
+    setEndDate(getToday());
+    setColumnFilters({
+      id: '',
+      filename: ''
+    });
+    setSortConfig({ key: null, direction: 'asc' });
+  };
+
+  // Handle column filter change
+  const handleColumnFilterChange = (column, value) => {
+    setColumnFilters(prev => ({
+      ...prev,
+      [column]: value
+    }));
+  };
+
+  // Close export menu on outside click
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
+        setExportMenuOpen(false);
+      }
+    }
+    if (exportMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    } else {
+      document.removeEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [exportMenuOpen]);
 
   return (
     <div className="container-fluid py-4">
@@ -285,7 +417,45 @@ const TempDocumentArchive = () => {
         <div className="card-body">
           <div className="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
             <h2 className="h6 mb-0">Documents temporaires</h2>
-            <span className="text-muted items-count">{documents.length} items</span>
+            <div className="d-flex align-items-center gap-3">
+              <span className="text-muted items-count">{filteredDocuments.length} items</span>
+              <button 
+                className="btn btn-secondary btn-sm d-flex align-items-center"
+                onClick={handleResetFilters}
+                style={{ backgroundColor: 'gray', color: 'white' }}
+              >
+                <i className="bi bi-arrow-clockwise me-1"></i> Reset Filter
+              </button>
+              <div style={{ position: 'relative' }}>
+                <button 
+                  className="btn btn-blue btn-sm d-flex align-items-center"
+                  onClick={() => setExportMenuOpen(v => !v)}
+                >
+                  <i className="bi bi-download me-1"></i> Export ▼
+                </button>
+                {exportMenuOpen && (
+                  <ul ref={exportMenuRef} style={{
+                    position: 'absolute',
+                    top: '110%',
+                    right: 0,
+                    background: '#fff',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                    zIndex: 99999,
+                    minWidth: '140px',
+                    padding: 0,
+                    margin: 0,
+                    listStyle: 'none',
+                  }}>
+                    <li style={{padding: '8px 16px', cursor: 'pointer', transition: 'background-color 0.2s ease, color 0.2s ease'}} onMouseOver={(e) => { e.target.style.backgroundColor = '#f8f9fa'; e.target.style.color = '#1976d2'; }} onMouseOut={(e) => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = 'inherit'; }} onClick={() => { handleExport('csv'); setExportMenuOpen(false); }}>CSV</li>
+                    <li style={{padding: '8px 16px', cursor: 'pointer', transition: 'background-color 0.2s ease, color 0.2s ease'}} onMouseOver={(e) => { e.target.style.backgroundColor = '#f8f9fa'; e.target.style.color = '#1976d2'; }} onMouseOut={(e) => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = 'inherit'; }} onClick={() => { handleExport('json'); setExportMenuOpen(false); }}>JSON</li>
+                    <li style={{padding: '8px 16px', cursor: 'pointer', transition: 'background-color 0.2s ease, color 0.2s ease'}} onMouseOver={(e) => { e.target.style.backgroundColor = '#f8f9fa'; e.target.style.color = '#1976d2'; }} onMouseOut={(e) => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = 'inherit'; }} onClick={() => { handleExport('txt'); setExportMenuOpen(false); }}>TXT</li>
+                    <li style={{padding: '8px 16px', cursor: 'pointer', transition: 'background-color 0.2s ease, color 0.2s ease'}} onMouseOver={(e) => { e.target.style.backgroundColor = '#f8f9fa'; e.target.style.color = '#1976d2'; }} onMouseOut={(e) => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = 'inherit'; }} onClick={() => { handleExport('excel'); setExportMenuOpen(false); }}>Excel</li>
+                  </ul>
+                )}
+              </div>
+            </div>
           </div>
           {isLoading ? (
             <div className="text-center py-5">
@@ -293,90 +463,132 @@ const TempDocumentArchive = () => {
                 <span className="visually-hidden">Loading...</span>
               </div>
             </div>
-          ) : documents.length > 0 ? (
+          ) : (
             <div className="table-responsive documents-table-container">
               <table className="table table-hover stylish-table">
                 <thead className="table-header-sticky">
                   <tr>
-                    <th>ID</th>
-                    <th>Document</th>
-                    <th>Date d'upload</th>
+                    <th style={{cursor:'pointer', background: sortConfig.key === 'id' ? '#f0f4fa' : undefined, color: sortConfig.key === 'id' ? '#1976d2' : undefined}} onClick={() => handleSort('id')}>
+                      ID <span style={{fontSize:'1em'}}>{sortConfig.key === 'id' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                    </th>
+                    <th style={{cursor:'pointer', background: sortConfig.key === 'filename' ? '#f0f4fa' : undefined, color: sortConfig.key === 'filename' ? '#1976d2' : undefined}} onClick={() => handleSort('filename')}>
+                      Document <span style={{fontSize:'1em'}}>{sortConfig.key === 'filename' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                    </th>
+                    <th style={{cursor:'pointer', background: sortConfig.key === 'created_at' ? '#f0f4fa' : undefined, color: sortConfig.key === 'created_at' ? '#1976d2' : undefined}} onClick={() => handleSort('created_at')}>
+                      Date d'upload <span style={{fontSize:'1em'}}>{sortConfig.key === 'created_at' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                    </th>
                     <th>Action</th>
+                  </tr>
+                  {/* Filter Row */}
+                  <tr style={{ backgroundColor: '#f8f9fa' }}>
+                    <th>
+                      <input
+                        type="text"
+                        className="form-control form-control-sm"
+                        placeholder="Filter ID..."
+                        value={columnFilters.id}
+                        onChange={(e) => handleColumnFilterChange('id', e.target.value)}
+                      />
+                    </th>
+                    <th>
+                      <input
+                        type="text"
+                        className="form-control form-control-sm"
+                        placeholder="Filter Document..."
+                        value={columnFilters.filename}
+                        onChange={(e) => handleColumnFilterChange('filename', e.target.value)}
+                      />
+                    </th>
+                    <th></th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {documents.map((doc) => (
-                    <tr key={doc.id} className="table-row-hover">
-                      <td className="text-muted">{doc.id}</td>
-                      <td>{doc.filename}</td>
-                      <td>{doc.created_at ? new Date(doc.created_at).toLocaleDateString('fr-FR') : '-'}</td>
-                                            <td>
-                        <div className="d-flex gap-2">
-                          <button
-                            className="btn btn-outline-primary d-flex align-items-center justify-content-center"
-                            onClick={() => handleViewDocument(doc)}
-                            title="Voir"
-                            style={{
-                              padding: '8px 12px',
-                              fontSize: '14px',
-                              minWidth: '80px'
-                            }}
-                          >
-                            <i className="bi bi-eye me-1"></i>
-                            Voir
-                          </button>
-                          <button
-                            className="btn btn-outline-info d-flex align-items-center justify-content-center"
-                            onClick={() => handleSend(doc)}
-                            disabled={processingDocId === doc.id}
-                            title="Envoyer"
-                            style={{
-                              padding: '8px 12px',
-                              fontSize: '14px',
-                              minWidth: '80px',
-                              ...(processingDocId === doc.id && {
-                              
-                                color: 'white',
+                  {filteredDocuments.length > 0 ? (
+                    filteredDocuments.map((doc) => (
+                      <tr key={doc.id} className="table-row-hover">
+                        <td className="text-muted">{doc.id}</td>
+                        <td>{doc.filename}</td>
+                        <td>{doc.created_at ? new Date(doc.created_at).toLocaleDateString('fr-FR') : '-'}</td>
+                        <td>
+                          <div className="d-flex gap-2">
+                            <button
+                              className="btn btn-outline-primary d-flex align-items-center justify-content-center"
+                              onClick={() => handleViewDocument(doc)}
+                              title="Voir"
+                              style={{
+                                padding: '8px 12px',
+                                fontSize: '14px',
+                                minWidth: '80px'
+                              }}
+                            >
+                              <i className="bi bi-eye me-1"></i>
+                              Voir
+                            </button>
+                            <button
+                              className="btn btn-outline-info d-flex align-items-center justify-content-center"
+                              onClick={() => handleSend(doc)}
+                              disabled={processingDocId === doc.id}
+                              title="Envoyer"
+                              style={{
+                                padding: '8px 12px',
+                                fontSize: '14px',
+                                minWidth: '80px',
+                                ...(processingDocId === doc.id && {
                                 
-                              })
-                            }}
+                                  color: 'white',
+                                  
+                                })
+                              }}
+                            >
+                              {processingDocId === doc.id ? (
+                                'Traitement...'
+                              ) : (
+                                <>
+                                  <i className="bi bi-send me-1"></i>
+                                  déplacer
+                                </>
+                              )}
+                            </button>
+                            <button
+                              className="btn btn-outline-warning d-flex align-items-center justify-content-center"
+                              onClick={() => handleDeleteDocument(doc)}
+                              disabled={isDeleting}
+                              title="Supprimer"
+                              style={{
+                                padding: '8px 12px',
+                                fontSize: '14px',
+                                minWidth: '80px',
+                                backgroundColor: 'orangered',
+                                color: 'white'
+                              }}
+                            >
+                              <i className="bi bi-trash me-1"></i>
+                              Supprimer
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="4" className="text-center py-5">
+                        <div className="empty-state">
+                          <i className="bi bi-search text-muted mb-3" style={{ fontSize: '3rem' }}></i>
+                          <p className="text-muted mb-3">Aucune donnée ne correspond aux filtres actuels</p>
+                          <button 
+                            className="btn btn-blue btn-sm"
+                            onClick={handleResetFilters}
                           >
-                            {processingDocId === doc.id ? (
-                              'Traitement...'
-                            ) : (
-                              <>
-                                <i className="bi bi-send me-1"></i>
-                                déplacer
-                              </>
-                            )}
-                          </button>
-                          <button
-                            className="btn btn-outline-warning d-flex align-items-center justify-content-center"
-                            onClick={() => handleDeleteDocument(doc)}
-                            disabled={isDeleting}
-                            title="Supprimer"
-                            style={{
-                              padding: '8px 12px',
-                              fontSize: '14px',
-                              minWidth: '80px',
-                              backgroundColor: 'orangered',
-                              color: 'white'
-                            }}
-                          >
-                            <i className="bi bi-trash me-1"></i>
-                            Supprimer
+                            <i className="bi bi-arrow-clockwise me-1"></i>
+                            Réinitialiser les filtres
                           </button>
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
-            </div>
-          ) : (
-            <div className="text-center py-5 border rounded empty-state">
-              <i className="bi bi-folder2-open text-muted mb-3" style={{ fontSize: '3rem' }}></i>
-              <p className="text-muted mb-3">Aucun document trouvé</p>
             </div>
           )}
         </div>

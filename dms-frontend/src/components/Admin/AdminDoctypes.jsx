@@ -285,6 +285,19 @@ const AdminDoctypes = ({ user }) => {
     if (type === 'excel') exportToExcel(data, columns, 'doctypes.xls');
   };
 
+  const handleResetFilters = () => {
+    // Reset all filters
+    setFilters({
+      id: '',
+      name: '',
+      companies: ''
+    });
+    // Reset sorting
+    setSortConfig({ key: null, direction: 'asc' });
+    // Reset filtered doctypes to show all doctypes
+    setFilteredDoctypes(doctypes);
+  };
+
   // Close export menu on outside click
   useEffect(() => {
     function handleClickOutside(event) {
@@ -335,7 +348,22 @@ const AdminDoctypes = ({ user }) => {
       {activeTab === 'list' && (
         <div className="users-list">
           {/* Export dropdown */}
-          <div style={{ position: 'relative', display: 'inline-block', marginBottom: '8px' }}>
+          <div style={{ position: 'relative', display: 'flex', justifyContent: 'flex-end', marginBottom: '8px', gap: '8px' }}>
+            <button 
+              style={{
+                backgroundColor: '#6c757d',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                padding: '8px 16px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '500'
+              }}
+              onClick={handleResetFilters}
+            >
+              Reset Filter
+            </button>
             <button className="export-dropdown-btn" onClick={() => setExportMenuOpen(v => !v)}>
               Export ▼
             </button>
@@ -343,7 +371,7 @@ const AdminDoctypes = ({ user }) => {
               <ul ref={exportMenuRef} style={{
                 position: 'absolute',
                 top: '110%',
-                left: 0,
+                right: 0,
                 background: '#fff',
                 border: '1px solid #ddd',
                 borderRadius: '4px',
@@ -354,10 +382,10 @@ const AdminDoctypes = ({ user }) => {
                 margin: 0,
                 listStyle: 'none',
               }}>
-                <li style={{padding: '8px 16px', cursor: 'pointer'}} onClick={() => { handleExport('csv'); setExportMenuOpen(false); }}>CSV</li>
-                <li style={{padding: '8px 16px', cursor: 'pointer'}} onClick={() => { handleExport('json'); setExportMenuOpen(false); }}>JSON</li>
-                <li style={{padding: '8px 16px', cursor: 'pointer'}} onClick={() => { handleExport('txt'); setExportMenuOpen(false); }}>TXT</li>
-                <li style={{padding: '8px 16px', cursor: 'pointer'}} onClick={() => { handleExport('excel'); setExportMenuOpen(false); }}>Excel</li>
+                <li style={{padding: '8px 16px', cursor: 'pointer', transition: 'background-color 0.2s ease, color 0.2s ease'}} onMouseOver={(e) => { e.target.style.backgroundColor = '#f8f9fa'; e.target.style.color = '#1976d2'; }} onMouseOut={(e) => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = 'inherit'; }} onClick={() => { handleExport('csv'); setExportMenuOpen(false); }}>CSV</li>
+                <li style={{padding: '8px 16px', cursor: 'pointer', transition: 'background-color 0.2s ease, color 0.2s ease'}} onMouseOver={(e) => { e.target.style.backgroundColor = '#f8f9fa'; e.target.style.color = '#1976d2'; }} onMouseOut={(e) => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = 'inherit'; }} onClick={() => { handleExport('json'); setExportMenuOpen(false); }}>JSON</li>
+                <li style={{padding: '8px 16px', cursor: 'pointer', transition: 'background-color 0.2s ease, color 0.2s ease'}} onMouseOver={(e) => { e.target.style.backgroundColor = '#f8f9fa'; e.target.style.color = '#1976d2'; }} onMouseOut={(e) => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = 'inherit'; }} onClick={() => { handleExport('txt'); setExportMenuOpen(false); }}>TXT</li>
+                <li style={{padding: '8px 16px', cursor: 'pointer', transition: 'background-color 0.2s ease, color 0.2s ease'}} onMouseOver={(e) => { e.target.style.backgroundColor = '#f8f9fa'; e.target.style.color = '#1976d2'; }} onMouseOut={(e) => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = 'inherit'; }} onClick={() => { handleExport('excel'); setExportMenuOpen(false); }}>Excel</li>
               </ul>
             )}
           </div>
