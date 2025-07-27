@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import DragDropUpload from './DragDropUpload';
 import API from '../../api';
 import { AppContext } from '../context';
 import WelcomePanel from './WelcomePanel';
 import { useNavigate } from 'react-router-dom';
 import EditDocumentForm from './EditDocumentForm';
+import { exportToCSV, exportToJSON, exportToTXT, exportToExcel } from '../Admin/exportUtils';
 import './DocumentArchive.css';
 // Remove: import path from 'path-browserify';
 
@@ -59,6 +60,19 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
   const [endDate, setEndDate] = useState(getToday());
   const [searchTerm, setSearchTerm] = useState('');
   const [availableDoctypes, setAvailableDoctypes] = useState([]);
+  const [billableFilter, setBillableFilter] = useState('all'); // 'all', 'billable', 'non-billable'
+  const [selectedGroupFilters, setSelectedGroupFilters] = useState([]);
+  const [documentsByGroup, setDocumentsByGroup] = useState({}); // Store documents by group ID
+  
+  // Column filter states
+  const [columnFilters, setColumnFilters] = useState({
+    id: '',
+    filename: '',
+    partner_name: '',
+    tva: '',
+    total_ht: '',
+    total_ttc: ''
+  });
 
   // Group management states
   const [groups, setGroups] = useState([]);
@@ -94,6 +108,11 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
   const [emailError, setEmailError] = useState('');
   const [emailSuccess, setEmailSuccess] = useState('');
   const [isEmailSending, setIsEmailSending] = useState(false);
+
+  // Sorting and export states
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const exportMenuRef = useRef(null);
 
   // Add a state to hold the displayed filename for the email modal
   const [displayedEmailFilename, setDisplayedEmailFilename] = useState('');
@@ -214,12 +233,14 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     try {
       // Use the groups API to get documents in the same group
       const response = await API.groups.getByDocument(documentId);
-      if (response.data && response.data.length > 0) {
+      if (response.data?.groups && response.data.groups.length > 0) {
         // Get documents from the first group (assuming a document belongs to one main group)
-        const groupId = response.data[0].id;
+        const groupId = response.data.groups[0].id;
         const groupDocsResponse = await API.groups.getDocuments(groupId);
+        // Fix: The backend returns { group, documents, count }, so we need to access response.data.documents
+        const groupDocs = groupDocsResponse.data?.documents || [];
         // Filter out the current document
-        const relatedDocs = groupDocsResponse.data.filter(doc => doc.id !== documentId);
+        const relatedDocs = groupDocs.filter(doc => doc.id !== documentId);
         setRelatedDocuments(relatedDocs || []);
       } else {
         setRelatedDocuments([]);
@@ -287,6 +308,45 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
       }, 2000);
     } catch (error) {
       setGroupError(error.response?.data?.msg || 'Erreur lors de l\'ajout des documents au groupe');
+    }
+  };
+
+  // Handler for when group selection changes in the dropdown
+  const handleGroupSelectionChange = async (groupId) => {
+    setSelectedGroup(groupId);
+    
+    if (groupId) {
+      try {
+        // Fetch documents for the selected group
+        const response = await API.groups.getDocuments(groupId);
+        // Fix: The backend returns { group, documents, count }, so we need to access response.data.documents
+        const groupDocs = response.data?.documents || [];
+        const groupDocIds = groupDocs.map(doc => doc.id);
+        
+        // Update documentsByGroup state
+        setDocumentsByGroup(prev => ({
+          ...prev,
+          [groupId]: groupDocs
+        }));
+        
+        // Auto-check only documents from this group that are currently visible
+        const visibleDocIds = filteredDocuments.map(doc => doc.id);
+        const checkableDocIds = groupDocIds.filter(id => visibleDocIds.includes(id));
+        
+        if (checkableDocIds.length > 0) {
+          setSelectedDocuments(checkableDocIds);
+        } else {
+          // If no documents from this group are visible, clear selection
+          setSelectedDocuments([]);
+        }
+      } catch (error) {
+        console.error('Error fetching documents for group:', groupId, error);
+        // If API fails, clear selection
+        setSelectedDocuments([]);
+      }
+    } else {
+      // If no group selected, clear selected documents
+      setSelectedDocuments([]);
     }
   };
 
@@ -451,6 +511,15 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     }
   }, [selectedCompany]);
 
+  // Pre-fetch documents for all groups when groups are loaded
+  useEffect(() => {
+    if (groups.length > 0) {
+      groups.forEach(group => {
+        fetchDocumentsByGroup(group.id);
+      });
+    }
+  }, [groups]);
+
   // Fetch documents when company, doctype, or date filters change
   useEffect(() => {
     fetchDocuments();
@@ -512,9 +581,49 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
         return docDate >= start && docDate <= end;
       });
     }
+
+    // Filter by billable status
+    if (billableFilter !== 'all') {
+      filtered = filtered.filter(doc => {
+        const isBillable = doc.is_invoice === true || doc.is_invoice === 1;
+        if (billableFilter === 'billable') {
+          return isBillable;
+        } else if (billableFilter === 'non-billable') {
+          return !isBillable;
+        }
+        return true;
+      });
+    }
+
+    // Filter by groups
+    if (selectedGroupFilters.length > 0) {
+      filtered = filtered.filter(doc => {
+        // Check if document exists in any of the selected groups
+        return selectedGroupFilters.some(groupId => {
+          const groupDocs = documentsByGroup[groupId] || [];
+          return groupDocs.some(groupDoc => groupDoc.id === doc.id);
+        });
+        });
+    }
+
+    // Filter by column filters
+    Object.keys(columnFilters).forEach(column => {
+      const filterValue = columnFilters[column];
+      if (filterValue && filterValue.trim() !== '') {
+        filtered = filtered.filter(doc => {
+          const docValue = doc[column];
+          if (docValue === null || docValue === undefined) return false;
+          
+          const lowerFilterValue = filterValue.toLowerCase();
+          const lowerDocValue = String(docValue).toLowerCase();
+          
+          return lowerDocValue.includes(lowerFilterValue);
+        });
+      }
+    });
     
     setFilteredDocuments(filtered);
-  }, [documents, searchTerm, selectedDoctypeFilters, selectedDoctype, startDate, endDate]);
+  }, [documents, searchTerm, selectedDoctypeFilters, selectedDoctype, startDate, endDate, billableFilter, selectedGroupFilters, documentsByGroup, columnFilters]);
 
   const createFolder = async () => {
     if (folderName.trim() === '') {
@@ -593,6 +702,121 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
         return [...prev, doctypeId];
       }
     });
+  };
+
+  const handleBillableFilterChange = (value) => {
+    setBillableFilter(value);
+  };
+
+  const handleGroupFilterChange = async (groupId) => {
+    const isAdding = !selectedGroupFilters.includes(groupId);
+    
+    // Update selected group filters
+    setSelectedGroupFilters(prev => 
+      isAdding 
+        ? [...prev, groupId]
+        : prev.filter(id => id !== groupId)
+    );
+    
+    // If adding a group, fetch its documents
+    if (isAdding) {
+      try {
+        const response = await API.groups.getDocuments(groupId);
+        const groupDocs = response.data?.documents || [];
+        
+        // Update documentsByGroup state
+        setDocumentsByGroup(prev => ({
+          ...prev,
+          [groupId]: groupDocs
+        }));
+        
+        // Auto-check documents from this group that are currently visible
+        const visibleDocIds = filteredDocuments.map(doc => doc.id);
+        const checkableDocIds = groupDocs
+          .map(doc => doc.id)
+          .filter(id => visibleDocIds.includes(id));
+        
+        setSelectedDocuments(prev => [
+          ...new Set([...prev, ...checkableDocIds])
+        ]);
+      } catch (error) {
+        console.error('Error fetching documents for group:', error);
+      }
+    }
+  };
+
+  // Reset all filters and sorting
+  const handleResetFilters = () => {
+    setSearchTerm('');
+    setSelectedDoctypeFilters([]);
+    setStartDate(getFirstDayOfMonth());
+    setEndDate(getToday());
+    setBillableFilter('all');
+    setSelectedGroupFilters([]);
+    setColumnFilters({
+      id: '',
+      filename: '',
+      partner_name: '',
+      tva: '',
+      total_ht: '',
+      total_ttc: ''
+    });
+    setSortConfig({ key: null, direction: 'asc' });
+  };
+
+  // Handle column filter change
+  const handleColumnFilterChange = (column, value) => {
+    setColumnFilters(prev => ({
+      ...prev,
+      [column]: value
+    }));
+  };
+
+  // Function to fetch documents by group
+  const fetchDocumentsByGroup = async (groupId) => {
+    try {
+      console.log(`Fetching documents for group ${groupId}...`);
+      
+      // Check if the group exists first
+      const groupExists = groups.find(g => g.id === groupId);
+      if (!groupExists) {
+        console.warn(`Group ${groupId} does not exist in the groups list`);
+        setDocumentsByGroup(prev => ({
+          ...prev,
+          [groupId]: []
+        }));
+        return;
+      }
+      
+      const response = await API.groups.getDocuments(groupId);
+      // Fix: The backend returns { group, documents, count }, so we need to access response.data.documents
+      const groupDocs = response.data?.documents || [];
+      console.log(`Group ${groupId} has ${groupDocs.length} documents:`, groupDocs.map(doc => ({ id: doc.id, filename: doc.filename })));
+      
+      setDocumentsByGroup(prev => ({
+        ...prev,
+        [groupId]: groupDocs
+      }));
+    } catch (error) {
+      console.error('Error fetching documents for group:', groupId, error);
+      
+      // Log more detailed error information
+      if (error.response) {
+        console.error('Error response status:', error.response.status);
+        console.error('Error response data:', error.response.data);
+        console.error('Error response headers:', error.response.headers);
+      } else if (error.request) {
+        console.error('Error request:', error.request);
+      } else {
+        console.error('Error message:', error.message);
+      }
+      
+      // Set empty array for this group to prevent further errors
+      setDocumentsByGroup(prev => ({
+        ...prev,
+        [groupId]: []
+      }));
+    }
   };
 
   const handleCreateDocType = async (e) => {
@@ -992,11 +1216,11 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     if (types.length === 0) return doc.filename;
     if (types.length === 1) {
       if (types.includes('rapport') && doc.rapport) {
-        return doc.rapport.split(/[\\/]/).pop();
+      return doc.rapport.split(/[\\/]/).pop();
       } else if (types.includes('ocr_text') && doc.ocr_text) {
-        return doc.ocr_text.split(/[\\/]/).pop();
-      } else {
-        return doc.filename;
+      return doc.ocr_text.split(/[\\/]/).pop();
+    } else {
+      return doc.filename;
       }
     } else {
       // Multiple types selected - show a summary
@@ -1130,6 +1354,92 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     }
   };
 
+  // Sorting function
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+
+    const sortedDocuments = [...filteredDocuments].sort((a, b) => {
+      let aValue = a[key];
+      let bValue = b[key];
+
+      // Handle different data types
+      if (key === 'id') {
+        aValue = parseInt(aValue) || 0;
+        bValue = parseInt(bValue) || 0;
+      } else if (key === 'total_ttc' || key === 'total_ht' || key === 'tva') {
+        aValue = parseFloat(aValue) || 0;
+        bValue = parseFloat(bValue) || 0;
+      } else if (key === 'date_facture' || key === 'upload_date') {
+        aValue = new Date(aValue || 0);
+        bValue = new Date(bValue || 0);
+      } else {
+        aValue = String(aValue || '').toLowerCase();
+        bValue = String(bValue || '').toLowerCase();
+      }
+
+      if (aValue < bValue) {
+        return direction === 'asc' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return direction === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+
+    setFilteredDocuments(sortedDocuments);
+  };
+
+  // Export function
+  const handleExport = (type) => {
+    const columns = [
+      { key: 'id', label: 'ID' },
+      { key: 'filename', label: 'Document' },
+      { key: 'partner_name', label: 'Partner' },
+      { key: 'date_facture', label: 'Date Facture' },
+      { key: 'upload_date', label: 'Date Upload' },
+      { key: 'tva', label: 'TVA' },
+      { key: 'total_ht', label: 'HT' },
+      { key: 'total_ttc', label: 'TTC' }
+    ];
+
+    const data = filteredDocuments.map(doc => ({
+      id: doc.id,
+      filename: doc.filename,
+      partner_name: doc.partner_name || '',
+      date_facture: doc.date_facture ? formatDate(doc.date_facture) : '',
+      upload_date: doc.upload_date ? formatDate(doc.upload_date) : '',
+      tva: doc.tva ? formatCurrency(doc.tva) : '',
+      total_ht: doc.total_ht ? formatCurrency(doc.total_ht) : '',
+      total_ttc: doc.total_ttc ? formatCurrency(doc.total_ttc) : ''
+    }));
+
+    if (type === 'csv') exportToCSV(data, columns, 'documents.csv');
+    if (type === 'json') exportToJSON(data, 'documents.json');
+    if (type === 'txt') exportToTXT(data, columns, 'documents.txt');
+    if (type === 'excel') exportToExcel(data, columns, 'documents.xls');
+  };
+
+  // Close export menu on outside click
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
+        setExportMenuOpen(false);
+      }
+    }
+    if (exportMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    } else {
+      document.removeEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [exportMenuOpen]);
+
   if (!selectedCompany && !selectedDoctype) {
     return <WelcomePanel user={user} />;
   }
@@ -1138,6 +1448,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     <div className="container-fluid py-4">
       {/* Upload Modal */}
       {isUploadModalOpen && (
+        <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
           <div className="modal-dialog modal-lg">
             <div className="modal-content">
               <div className="modal-body">
@@ -1146,6 +1457,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                   onUpload={handleUploadDocuments}
                 />
                 {uploadError && <p className="text-danger mt-3">{uploadError}</p>}
+              </div>
               </div>
             </div>
           </div>
@@ -1197,6 +1509,8 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
             </div>
           </div>
           
+          {/* All Filters Displayed Next to Each Other */}
+          <div className="d-flex gap-4 flex-wrap">
           {/* Document Type Filters - Only show when no specific doctype is selected */}
           {!selectedDoctype && availableDoctypes.length > 0 && (
             <div>
@@ -1219,9 +1533,96 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                     </label>
                   </div>
                 ))}
+                </div>
+              </div>
+            )}
+
+            {/* Billable Filter - Show for both company and doctype archives */}
+            {(selectedCompany || selectedDoctype) && (
+              <div>
+                <h6 className="mb-2 small">Statut de facturation</h6>
+                <div className="d-flex flex-wrap gap-2">
+                  <div className="form-check form-check-sm">
+                    <input 
+                      type="radio" 
+                      className="form-check-input" 
+                      id="filter-billable-all"
+                      name="billableFilter"
+                      value="all"
+                      checked={billableFilter === 'all'}
+                      onChange={(e) => handleBillableFilterChange(e.target.value)}
+                    />
+                    <label 
+                      className="form-check-label text-muted small" 
+                      htmlFor="filter-billable-all"
+                    >
+                      Tous
+                    </label>
+                  </div>
+                  <div className="form-check form-check-sm">
+                    <input 
+                      type="radio" 
+                      className="form-check-input" 
+                      id="filter-billable-billable"
+                      name="billableFilter"
+                      value="billable"
+                      checked={billableFilter === 'billable'}
+                      onChange={(e) => handleBillableFilterChange(e.target.value)}
+                    />
+                    <label 
+                      className="form-check-label text-muted small" 
+                      htmlFor="filter-billable-billable"
+                    >
+                      Facturable
+                    </label>
+                  </div>
+                  <div className="form-check form-check-sm">
+                    <input 
+                      type="radio" 
+                      className="form-check-input" 
+                      id="filter-billable-non-billable"
+                      name="billableFilter"
+                      value="non-billable"
+                      checked={billableFilter === 'non-billable'}
+                      onChange={(e) => handleBillableFilterChange(e.target.value)}
+                    />
+                    <label 
+                      className="form-check-label text-muted small" 
+                      htmlFor="filter-billable-non-billable"
+                    >
+                      Non facturable
+                    </label>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Groups Filter - Show for both company and doctype archives */}
+            {(selectedCompany || selectedDoctype) && (
+              <div>
+                <h6 className="mb-2 small">Groupes</h6>
+                <div className="d-flex flex-wrap gap-2">
+                  {groups.map((group) => (
+                    <div key={group.id} className="form-check form-check-sm">
+                      <input 
+                        type="checkbox" 
+                        className="form-check-input" 
+                        id={`filter-group-${group.id}`}
+                        checked={selectedGroupFilters.includes(group.id)}
+                        onChange={() => handleGroupFilterChange(group.id)}
+                      />
+                      <label 
+                        className="form-check-label text-muted small" 
+                        htmlFor={`filter-group-${group.id}`}
+                      >
+                        {group.name}
+                      </label>
+                    </div>
+                  ))}
               </div>
             </div>
           )}
+          </div>
             </div>
             
             {/* Right Column - Search */}
@@ -1283,6 +1684,42 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                     >
                       <i className="bi bi-folder-plus me-1"></i> Créer groupe
                     </button>
+                    <button 
+                      className="btn btn-secondary btn-sm d-flex align-items-center"
+                      onClick={handleResetFilters}
+                      style={{ backgroundColor: 'gray', color: 'white' }}
+                    >
+                      <i className="bi bi-arrow-clockwise me-1"></i> Reset Filter
+                    </button>
+                    <div style={{ position: 'relative' }}>
+                      <button 
+                        className="btn btn-blue btn-sm d-flex align-items-center"
+                        onClick={() => setExportMenuOpen(v => !v)}
+                      >
+                        <i className="bi bi-download me-1"></i> Export ▼
+                      </button>
+                      {exportMenuOpen && (
+                        <ul ref={exportMenuRef} style={{
+                          position: 'absolute',
+                          top: '110%',
+                          right: 0,
+                          background: '#fff',
+                          border: '1px solid #ddd',
+                          borderRadius: '4px',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                          zIndex: 99999,
+                          minWidth: '140px',
+                          padding: 0,
+                          margin: 0,
+                          listStyle: 'none',
+                        }}>
+                          <li style={{padding: '8px 16px', cursor: 'pointer', transition: 'background-color 0.2s ease, color 0.2s ease'}} onMouseOver={(e) => { e.target.style.backgroundColor = '#f8f9fa'; e.target.style.color = '#1976d2'; }} onMouseOut={(e) => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = 'inherit'; }} onClick={() => { handleExport('csv'); setExportMenuOpen(false); }}>CSV</li>
+                          <li style={{padding: '8px 16px', cursor: 'pointer', transition: 'background-color 0.2s ease, color 0.2s ease'}} onMouseOver={(e) => { e.target.style.backgroundColor = '#f8f9fa'; e.target.style.color = '#1976d2'; }} onMouseOut={(e) => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = 'inherit'; }} onClick={() => { handleExport('json'); setExportMenuOpen(false); }}>JSON</li>
+                          <li style={{padding: '8px 16px', cursor: 'pointer', transition: 'background-color 0.2s ease, color 0.2s ease'}} onMouseOver={(e) => { e.target.style.backgroundColor = '#f8f9fa'; e.target.style.color = '#1976d2'; }} onMouseOut={(e) => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = 'inherit'; }} onClick={() => { handleExport('txt'); setExportMenuOpen(false); }}>TXT</li>
+                          <li style={{padding: '8px 16px', cursor: 'pointer', transition: 'background-color 0.2s ease, color 0.2s ease'}} onMouseOver={(e) => { e.target.style.backgroundColor = '#f8f9fa'; e.target.style.color = '#1976d2'; }} onMouseOut={(e) => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = 'inherit'; }} onClick={() => { handleExport('excel'); setExportMenuOpen(false); }}>Excel</li>
+                        </ul>
+                      )}
+                    </div>
                   </>
                 )}
                 
@@ -1295,7 +1732,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                           className="form-select form-select-sm" 
                           style={{ width: '200px' }}
                           value={selectedGroup}
-                          onChange={(e) => setSelectedGroup(e.target.value)}
+                          onChange={(e) => handleGroupSelectionChange(e.target.value)}
                           required
                         >
                           <option value="">Sélectionner un groupe</option>
@@ -1362,7 +1799,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                 <span className="visually-hidden">Loading...</span>
               </div>
             </div>
-          ) : filteredDocuments.length > 0 ? (
+          ) : (
             <div className="table-responsive documents-table-container">
               <table className="table table-hover stylish-table">
                 <thead className="table-header-sticky">
@@ -1383,159 +1820,255 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                         />
                     )}
                     </th>
-                    <th>ID</th>
+                    <th style={{cursor:'pointer', background: sortConfig.key === 'id' ? '#f0f4fa' : undefined, color: sortConfig.key === 'id' ? '#1976d2' : undefined}} onClick={() => handleSort('id')}>
+                      ID <span style={{fontSize:'1em'}}>{sortConfig.key === 'id' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                    </th>
                     <th>Actions</th>
-                    <th>Document</th>
+                    <th style={{cursor:'pointer', background: sortConfig.key === 'filename' ? '#f0f4fa' : undefined, color: sortConfig.key === 'filename' ? '#1976d2' : undefined}} onClick={() => handleSort('filename')}>
+                      Document <span style={{fontSize:'1em'}}>{sortConfig.key === 'filename' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                    </th>
+                    <th>Facturable</th>
                     <th>Rapport</th>
-                    <th>Partner</th>
-                    <th>Date Facture</th>
-                    <th>Date Upload</th>
-                    <th>TVA</th>
-                    <th>HT</th>
-                    <th>TTC</th>
+                    <th style={{cursor:'pointer', background: sortConfig.key === 'partner_name' ? '#f0f4fa' : undefined, color: sortConfig.key === 'partner_name' ? '#1976d2' : undefined}} onClick={() => handleSort('partner_name')}>
+                      Partner <span style={{fontSize:'1em'}}>{sortConfig.key === 'partner_name' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                    </th>
+                    <th style={{cursor:'pointer', background: sortConfig.key === 'date_facture' ? '#f0f4fa' : undefined, color: sortConfig.key === 'date_facture' ? '#1976d2' : undefined}} onClick={() => handleSort('date_facture')}>
+                      Date Facture <span style={{fontSize:'1em'}}>{sortConfig.key === 'date_facture' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                    </th>
+                    <th style={{cursor:'pointer', background: sortConfig.key === 'upload_date' ? '#f0f4fa' : undefined, color: sortConfig.key === 'upload_date' ? '#1976d2' : undefined}} onClick={() => handleSort('upload_date')}>
+                      Date Upload <span style={{fontSize:'1em'}}>{sortConfig.key === 'upload_date' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                    </th>
+                    <th style={{cursor:'pointer', background: sortConfig.key === 'tva' ? '#f0f4fa' : undefined, color: sortConfig.key === 'tva' ? '#1976d2' : undefined}} onClick={() => handleSort('tva')}>
+                      TVA <span style={{fontSize:'1em'}}>{sortConfig.key === 'tva' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                    </th>
+                    <th style={{cursor:'pointer', background: sortConfig.key === 'total_ht' ? '#f0f4fa' : undefined, color: sortConfig.key === 'total_ht' ? '#1976d2' : undefined}} onClick={() => handleSort('total_ht')}>
+                      HT <span style={{fontSize:'1em'}}>{sortConfig.key === 'total_ht' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                    </th>
+                    <th style={{cursor:'pointer', background: sortConfig.key === 'total_ttc' ? '#f0f4fa' : undefined, color: sortConfig.key === 'total_ttc' ? '#1976d2' : undefined}} onClick={() => handleSort('total_ttc')}>
+                      TTC <span style={{fontSize:'1em'}}>{sortConfig.key === 'total_ttc' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                    </th>
+                  </tr>
+                  {/* Filter Row */}
+                  <tr style={{ backgroundColor: '#f8f9fa' }}>
+                    <th style={{ width: '50px' }}></th>
+                    <th>
+                      <input
+                        type="text"
+                        className="form-control form-control-sm"
+                        placeholder="Filter ID..."
+                        value={columnFilters.id}
+                        onChange={(e) => handleColumnFilterChange('id', e.target.value)}
+                      />
+                    </th>
+                    <th></th>
+                    <th>
+                      <input
+                        type="text"
+                        className="form-control form-control-sm"
+                        placeholder="Filter Document..."
+                        value={columnFilters.filename}
+                        onChange={(e) => handleColumnFilterChange('filename', e.target.value)}
+                      />
+                    </th>
+                    <th></th>
+                    <th></th>
+                    <th>
+                      <input
+                        type="text"
+                        className="form-control form-control-sm"
+                        placeholder="Filter Partner..."
+                        value={columnFilters.partner_name}
+                        onChange={(e) => handleColumnFilterChange('partner_name', e.target.value)}
+                      />
+                    </th>
+                    <th></th>
+                    <th></th>
+                    <th>
+                      <input
+                        type="text"
+                        className="form-control form-control-sm"
+                        placeholder="Filter TVA..."
+                        value={columnFilters.tva}
+                        onChange={(e) => handleColumnFilterChange('tva', e.target.value)}
+                      />
+                    </th>
+                    <th>
+                      <input
+                        type="text"
+                        className="form-control form-control-sm"
+                        placeholder="Filter HT..."
+                        value={columnFilters.total_ht}
+                        onChange={(e) => handleColumnFilterChange('total_ht', e.target.value)}
+                      />
+                    </th>
+                    <th>
+                      <input
+                        type="text"
+                        className="form-control form-control-sm"
+                        placeholder="Filter TTC..."
+                        value={columnFilters.total_ttc}
+                        onChange={(e) => handleColumnFilterChange('total_ttc', e.target.value)}
+                      />
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredDocuments.map((doc) => (
-                    <tr key={doc.id} className={selectedDocuments.includes(doc.id) ? 'selected' : ''}>
-                        <td>
-                        {isGroupMode && (
-                          <div className="form-check">
-                          <input 
-                            className="form-check-input"
-                              type="checkbox"
-                            checked={selectedDocuments.includes(doc.id)}
-                            onChange={() => handleDocumentSelection(doc.id)}
-                          />
-                          </div>
-                        )}
-                      </td>
-                      <td className="text-muted">{doc.id}</td>
-                      <td>
-                        <div className="dropdown dropdown-up">
-                          <button 
-                            className="btn btn-sm btn-outline-secondary dropdown-toggle"
-                            type="button" 
-                            onClick={() => setOpenDropdownId(openDropdownId === doc.id ? null : doc.id)}
-                            style={{ fontSize: '12px', padding: '4px 8px' }}
-                          >
-                            Actions
-                          </button>
-                          <ul className={`dropdown-menu ${openDropdownId === doc.id ? 'show' : ''}`} style={{ 
-                            fontSize: '12px', 
-                            minWidth: '150px',
-                            top: 'auto',
-                            bottom: '100%',
-                            marginBottom: '5px',
-                            zIndex: 9999
-                          }}>
-                            <li>
+                  {filteredDocuments.length > 0 ? (
+                    <>
+                      {filteredDocuments.map((doc) => (
+                        <tr key={doc.id} className={selectedDocuments.includes(doc.id) ? 'selected' : ''}>
+                            <td>
+                            {isGroupMode && (
+                              <div className="form-check">
+                              <input 
+                                className="form-check-input"
+                                  type="checkbox"
+                                checked={selectedDocuments.includes(doc.id)}
+                                onChange={() => handleDocumentSelection(doc.id)}
+                              />
+                              </div>
+                            )}
+                          </td>
+                          <td className="text-muted">{doc.id}</td>
+                          <td>
+                            <div className="dropdown dropdown-up">
                               <button 
-                                className="dropdown-item d-flex align-items-center"
-                                onClick={() => { setIsPreviewModalOpen(false); handleSendEmail(doc); }}
+                                className="btn btn-sm btn-outline-secondary dropdown-toggle"
+                                type="button" 
+                                onClick={() => setOpenDropdownId(openDropdownId === doc.id ? null : doc.id)}
+                                style={{ fontSize: '12px', padding: '4px 8px' }}
                               >
-                                <i className="bi bi-envelope me-2"></i>
-                                Envoyer
+                                Actions
                               </button>
-                            </li>
-                            <li>
-                              <button 
-                                className="dropdown-item d-flex align-items-center"
-                                onClick={() => handleEditDocument(doc)}
-                              >
-                                <i className="bi bi-pencil-square me-2"></i>
-                                Modifier
-                              </button>
-                            </li>
-                            <li><hr className="dropdown-divider" /></li>
-                            <li>
-                              <button 
-                                className="dropdown-item d-flex align-items-center text-danger"
-                                onClick={() => handleDeleteDocument(doc)}
-                              >
-                                <i className="bi bi-trash me-2"></i>
-                                Supprimer
-                              </button>
-                            </li>
-                          </ul>
-                        </div>
-                      </td>
-                      <td>
-                        <div className="d-flex align-items-center">
-                          <i className={`bi ${getFileIconClass(doc.filename)} me-2`}></i>
-                          <div style={{ maxWidth: '400px', wordBreak: 'break-word', whiteSpace: 'normal' }}>
-                            <div className="fw-medium document-filename">{doc.filename}</div>
-                            <small className="text-muted">
-                              {getFileType(doc.filename)} • {formatFileSize(doc.file_size || doc.size || 0)}
-                            </small>
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <div className="extracted-data-cell">
-                          {doc.rapport ? (
-                            <div className="btn-group" role="group">
-                              <button
-                                className="btn btn-sm btn-outline-blue"
-                                style={{ padding: '10px 24px', fontSize: '1.15em', fontWeight: 600 }}
-                                onClick={() => handleViewRapport(doc)}
-                                title="Voir le rapport PDF"
-                              >
-                                Voir
-                              </button>
+                              <ul className={`dropdown-menu ${openDropdownId === doc.id ? 'show' : ''}`} style={{ 
+                                fontSize: '12px', 
+                                minWidth: '150px',
+                                top: 'auto',
+                                bottom: '100%',
+                                marginBottom: '5px',
+                                zIndex: 9999
+                              }}>
+                                <li>
+                                  <button 
+                                    className="dropdown-item d-flex align-items-center"
+                                    onClick={() => { setIsPreviewModalOpen(false); handleSendEmail(doc); }}
+                                  >
+                                    <i className="bi bi-envelope me-2"></i>
+                                    Envoyer
+                                  </button>
+                                </li>
+                                <li>
+                                  <button 
+                                    className="dropdown-item d-flex align-items-center"
+                                    onClick={() => handleEditDocument(doc)}
+                                  >
+                                    <i className="bi bi-pencil-square me-2"></i>
+                                    Modifier
+                                  </button>
+                                </li>
+                                <li><hr className="dropdown-divider" /></li>
+                                <li>
+                                  <button 
+                                    className="dropdown-item d-flex align-items-center text-danger"
+                                    onClick={() => handleDeleteDocument(doc)}
+                                  >
+                                    <i className="bi bi-trash me-2"></i>
+                                    Supprimer
+                                  </button>
+                                </li>
+                              </ul>
                             </div>
-                          ) : (
-                            <span className="text-muted">-</span>
-                          )}
+                          </td>
+                          <td>
+                            <div className="d-flex align-items-center">
+                              <i className={`bi ${getFileIconClass(doc.filename)} me-2`}></i>
+                              <div style={{ maxWidth: '400px', wordBreak: 'break-word', whiteSpace: 'normal' }}>
+                                <div className="fw-medium document-filename">{doc.filename}</div>
+                                <small className="text-muted">
+                                  {getFileType(doc.filename)} • {formatFileSize(doc.file_size || doc.size || 0)}
+                                </small>
+                              </div>
+                            </div>
+                          </td>
+                          <td>
+                            <span 
+                              style={{ 
+                                color: doc.is_invoice ? '#28a745' : '#dc3545',
+                                fontWeight: 'bold'
+                              }}
+                            >
+                              {doc.is_invoice ? 'Oui' : 'Non'}
+                            </span>
+                          </td>
+                          <td>
+                            <div className="extracted-data-cell">
+                              {doc.rapport ? (
+                                <div className="btn-group" role="group">
+                                  <button
+                                    className="btn btn-sm btn-outline-blue"
+                                    style={{ padding: '10px 24px', fontSize: '1.15em', fontWeight: 600 }}
+                                    onClick={() => handleViewRapport(doc)}
+                                    title="Voir le rapport PDF"
+                                  >
+                                    Voir
+                                  </button>
+                                </div>
+                              ) : (
+                                <span className="text-muted">-</span>
+                              )}
+                            </div>
+                          </td>
+                          <td>{doc.partner_name || '-'}</td>
+                          <td>{formatDate(doc.invoice_date)}</td>
+                          <td>{formatDate(doc.created_at)}</td>
+                          <td>{formatCurrency(doc.tva)}</td>
+                          <td>{formatCurrency(doc.total_ht)}</td>
+                          <td>{formatCurrency(doc.total_ttc)}</td>
+                        </tr>
+                      ))}
+                      <tfoot>
+                        <tr style={{ 
+                          backgroundColor: '#f8f9fa', 
+                          borderTop: '2px solid #dee2e6',
+                          fontWeight: 'bold'
+                        }}>
+                          <td colSpan="11" style={{ textAlign: 'right', padding: '12px 16px' }}>
+                            <strong>Total TTC:</strong>
+                          </td>
+                          <td style={{ 
+                            padding: '12px 16px', 
+                            color: '#2563eb',
+                            fontSize: '1.1em'
+                          }}>
+                            {formatCurrency(filteredDocuments
+                              .filter(doc => doc.total_ttc && !isNaN(parseFloat(doc.total_ttc)))
+                              .reduce((sum, doc) => sum + parseFloat(doc.total_ttc), 0)
+                            )}
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </>
+                  ) : (
+                    <tr>
+                      <td colSpan="12" className="text-center py-5">
+                        <div className="empty-state">
+                          <i className="bi bi-search text-muted mb-3" style={{ fontSize: '3rem' }}></i>
+                          <p className="text-muted mb-3">Aucune donnée ne correspond aux filtres actuels</p>
+                          <button 
+                            className="btn btn-blue btn-sm"
+                            onClick={handleResetFilters}
+                          >
+                            <i className="bi bi-arrow-clockwise me-1"></i>
+                            Réinitialiser les filtres
+                          </button>
                         </div>
                       </td>
-                      <td>{doc.partner_name || '-'}</td>
-                      <td>{formatDate(doc.invoice_date)}</td>
-                      <td>{formatDate(doc.created_at)}</td>
-                      <td>{formatCurrency(doc.tva)}</td>
-                      <td>{formatCurrency(doc.total_ht)}</td>
-                      <td>{formatCurrency(doc.total_ttc)}</td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
-                <tfoot>
-                  <tr style={{ 
-                    backgroundColor: '#f8f9fa', 
-                    borderTop: '2px solid #dee2e6',
-                    fontWeight: 'bold'
-                  }}>
-                    <td colSpan="7" style={{ textAlign: 'right', padding: '12px 16px' }}>
-                      <strong>Total TTC:</strong>
-                    </td>
-                    <td style={{ padding: '12px 16px' }}>-</td>
-                    <td style={{ padding: '12px 16px' }}>-</td>
-                    <td style={{ 
-                      padding: '12px 16px', 
-                      color: '#2563eb',
-                      fontSize: '1.1em'
-                    }}>
-                      {formatCurrency(filteredDocuments
-                        .filter(doc => doc.total_ttc && !isNaN(parseFloat(doc.total_ttc)))
-                        .reduce((sum, doc) => sum + parseFloat(doc.total_ttc), 0)
-                      )}
-                    </td>
-                  </tr>
-                </tfoot>
               </table>
             </div>
-          ) : (
-            <div className="text-center py-5 border rounded empty-state">
-              <i className="bi bi-folder2-open text-muted mb-3" style={{ fontSize: '3rem' }}></i>
-              <p className="text-muted mb-3">Aucun document trouvé</p>
-              <button 
-                className="btn btn-blue"
-                onClick={openUploadModal}
-              >
-                <i className="bi bi-plus me-1"></i>
-                Télécharger des documents pour commencer
-              </button>
-            </div>
-          )}       
+          )}
         </div>
       </div>
 

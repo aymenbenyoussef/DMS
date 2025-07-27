@@ -230,9 +230,9 @@ const NavBar = ({ user, onLogout }) => {
         </div>
       </div>
     </nav>
-    {showDmsTempModal && (
-      <DmsTempUploadModal onClose={() => setShowDmsTempModal(false)} />
-    )}
+      {showDmsTempModal && (
+        <DmsTempUploadModal onClose={() => setShowDmsTempModal(false)} />
+      )}
   </>
   );
 };

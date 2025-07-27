@@ -443,6 +443,22 @@ const AdminUsers = ({user ,loadingUser}) => {
     if (type === 'excel') exportToExcel(data, columns, 'users.xls');
   };
 
+  const handleResetFilters = () => {
+    // Reset all filters
+    setFilters({
+      id: '',
+      username: '',
+      surname: '',
+      email: '',
+      role: '',
+      companies: ''
+    });
+    // Reset sorting
+    setSortConfig({ key: null, direction: 'asc' });
+    // Reset filtered users to show all users
+    setFilteredUsers(users);
+  };
+
   const handleAddUser = (e) => {
     setGlobalLimitError('');
     if (maxUsers !== null && users.length >= maxUsers) {
@@ -519,16 +535,31 @@ const AdminUsers = ({user ,loadingUser}) => {
 
       {activeTab === 'list' && (
         <div className="users-list">
-          <div style={{ position: 'relative', display: 'inline-block', marginBottom: '8px' }}>
+          <div style={{ position: 'relative', display: 'flex', justifyContent: 'flex-end', marginBottom: '8px', gap: '8px' }}>
+            <button 
+              style={{
+                backgroundColor: '#6c757d',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                padding: '8px 16px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '500'
+              }}
+              onClick={handleResetFilters}
+            >
+              Reset Filter
+            </button>
             <button className="export-dropdown-btn" onClick={() => setExportMenuOpen(v => !v)}>
               Export ▼
             </button>
             {exportMenuOpen && (
               <ul ref={exportMenuRef} className="export-dropdown-list">
-                <li onClick={() => { handleExport('csv'); setExportMenuOpen(false); }}>CSV</li>
-                <li onClick={() => { handleExport('json'); setExportMenuOpen(false); }}>JSON</li>
-                <li onClick={() => { handleExport('txt'); setExportMenuOpen(false); }}>TXT</li>
-                <li onClick={() => { handleExport('excel'); setExportMenuOpen(false); }}>Excel</li>
+                <li onClick={() => { handleExport('csv'); setExportMenuOpen(false); }} style={{padding: '8px 16px', cursor: 'pointer', transition: 'background-color 0.2s ease, color 0.2s ease'}} onMouseOver={(e) => { e.target.style.backgroundColor = '#f8f9fa'; e.target.style.color = '#1976d2'; }} onMouseOut={(e) => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = 'inherit'; }}>CSV</li>
+                <li onClick={() => { handleExport('json'); setExportMenuOpen(false); }} style={{padding: '8px 16px', cursor: 'pointer', transition: 'background-color 0.2s ease, color 0.2s ease'}} onMouseOver={(e) => { e.target.style.backgroundColor = '#f8f9fa'; e.target.style.color = '#1976d2'; }} onMouseOut={(e) => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = 'inherit'; }}>JSON</li>
+                <li onClick={() => { handleExport('txt'); setExportMenuOpen(false); }} style={{padding: '8px 16px', cursor: 'pointer', transition: 'background-color 0.2s ease, color 0.2s ease'}} onMouseOver={(e) => { e.target.style.backgroundColor = '#f8f9fa'; e.target.style.color = '#1976d2'; }} onMouseOut={(e) => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = 'inherit'; }}>TXT</li>
+                <li onClick={() => { handleExport('excel'); setExportMenuOpen(false); }} style={{padding: '8px 16px', cursor: 'pointer', transition: 'background-color 0.2s ease, color 0.2s ease'}} onMouseOver={(e) => { e.target.style.backgroundColor = '#f8f9fa'; e.target.style.color = '#1976d2'; }} onMouseOut={(e) => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = 'inherit'; }}>Excel</li>
               </ul>
             )}
           </div>
@@ -589,23 +620,23 @@ const AdminUsers = ({user ,loadingUser}) => {
                   <thead>
                     <tr>
                       <th></th>
-                      <th className={sortConfig.key === 'id' ? 'sorted-header' : ''} style={{cursor:'pointer'}} onClick={() => handleSort('id')}>
+                      <th style={{cursor:'pointer', background: sortConfig.key === 'id' ? '#f0f4fa' : undefined, color: sortConfig.key === 'id' ? '#1976d2' : undefined}} onClick={() => handleSort('id')}>
                         Id <span style={{fontSize:'1em'}}>{sortConfig.key === 'id' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
                       </th>
-                      <th className={sortConfig.key === 'username' ? 'sorted-header' : ''} style={{cursor:'pointer'}} onClick={() => handleSort('username')}>
+                      <th style={{cursor:'pointer', background: sortConfig.key === 'username' ? '#f0f4fa' : undefined, color: sortConfig.key === 'username' ? '#1976d2' : undefined}} onClick={() => handleSort('username')}>
                         Nom complet <span style={{fontSize:'1em'}}>{sortConfig.key === 'username' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
                       </th>
                       
-                      <th className={sortConfig.key === 'email' ? 'sorted-header' : ''} style={{cursor:'pointer'}} onClick={() => handleSort('email')}>
+                      <th style={{cursor:'pointer', background: sortConfig.key === 'email' ? '#f0f4fa' : undefined, color: sortConfig.key === 'email' ? '#1976d2' : undefined}} onClick={() => handleSort('email')}>
                         Email <span style={{fontSize:'1em'}}>{sortConfig.key === 'email' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
                       </th>
-                      <th className={sortConfig.key === 'role' ? 'sorted-header' : ''} style={{cursor:'pointer'}} onClick={() => handleSort('role')}>
+                      <th style={{cursor:'pointer', background: sortConfig.key === 'role' ? '#f0f4fa' : undefined, color: sortConfig.key === 'role' ? '#1976d2' : undefined}} onClick={() => handleSort('role')}>
                         Rôle <span style={{fontSize:'1em'}}>{sortConfig.key === 'role' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
                       </th>
-                      <th className={sortConfig.key === 'companies' ? 'sorted-header' : ''} style={{cursor:'pointer'}} onClick={() => handleSort('companies')}>
+                      <th style={{cursor:'pointer', background: sortConfig.key === 'companies' ? '#f0f4fa' : undefined, color: sortConfig.key === 'companies' ? '#1976d2' : undefined}} onClick={() => handleSort('companies')}>
                         Entités <span style={{fontSize:'1em'}}>{sortConfig.key === 'companies' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
                       </th>
-                      <th className={sortConfig.key === 'created_at' ? 'sorted-header' : ''} style={{cursor:'pointer'}} onClick={() => handleSort('created_at')}>
+                      <th style={{cursor:'pointer', background: sortConfig.key === 'created_at' ? '#f0f4fa' : undefined, color: sortConfig.key === 'created_at' ? '#1976d2' : undefined}} onClick={() => handleSort('created_at')}>
                         Date de création <span style={{fontSize:'1em'}}>{sortConfig.key === 'created_at' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
                       </th>
                       <th>Actions</th>
