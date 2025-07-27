@@ -1514,7 +1514,7 @@ class DatabaseManager:
         """Get all documents in a specific group"""
         try:
             query = """
-                SELECT d.*, dg.created_at as added_to_group_at
+                SELECT d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size, d.file_path, d.is_invoice, d.ocr_text, d.extracted_text, d.rapport, d.invoice_date, d.total_ht, d.tva, d.total_ttc, dg.created_at as added_to_group_at
                 FROM documents d
                 JOIN documents_group dg ON d.id = dg.document_id
                 WHERE dg.group_id = %s AND d.flag = TRUE

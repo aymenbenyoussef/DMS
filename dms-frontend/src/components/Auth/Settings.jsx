@@ -130,7 +130,7 @@ const Settings = () => {
                   <div className="setting-label">Mot de passe de la base de données</div>
                 </div>
                 <input type="password" value={dbPassword} onChange={e => setDbPassword(e.target.value)} />
-              </div>
+            </div>
               <div className="setting-item">
                 <div className="setting-info">
                   <div className="setting-label">Chemin des logs de l'entité</div>
@@ -173,17 +173,17 @@ const Settings = () => {
                 <input type="number" value={maxEntities} onChange={e => setMaxEntities(e.target.value)} min={1} />
               </div>
               <div className="setting-item">
-                <div className="setting-info">
+                  <div className="setting-info">
                   <div className="setting-label">Nombre maximal d'entités externes</div>
                 </div>
                 <input type="number" value={maxExternalEntities} onChange={e => setMaxExternalEntities(e.target.value)} min={1} />
-              </div>
+                  </div>
               <div className="setting-item">
                 <div className="setting-info">
                   <div className="setting-label">Taille maximale de fichier (Mo)</div>
                 </div>
                 <input type="number" value={maxFileSize} onChange={e => setMaxFileSize(e.target.value)} min={1} />
-              </div>
+            </div>
               <div className="setting-item">
                 <div className="setting-info">
                   <div className="setting-label">Chemin des logs du système</div>
@@ -201,7 +201,7 @@ const Settings = () => {
                   <div className="alert alert-success" style={{marginBottom: '1rem', fontWeight: 600}}>{successMessage}</div>
                 )}
                 <button className="btn btn-primary" onClick={handleSubmit}>Enregistrer</button>
-              </div>
+            </div>
             </form>
           </div>
         </div>

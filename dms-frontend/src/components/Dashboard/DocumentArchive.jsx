@@ -59,6 +59,9 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
   const [endDate, setEndDate] = useState(getToday());
   const [searchTerm, setSearchTerm] = useState('');
   const [availableDoctypes, setAvailableDoctypes] = useState([]);
+  const [billableFilter, setBillableFilter] = useState('all'); // 'all', 'billable', 'non-billable'
+  const [selectedGroupFilters, setSelectedGroupFilters] = useState([]);
+  const [documentsByGroup, setDocumentsByGroup] = useState({}); // Store documents by group ID
 
   // Group management states
   const [groups, setGroups] = useState([]);
@@ -214,12 +217,14 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     try {
       // Use the groups API to get documents in the same group
       const response = await API.groups.getByDocument(documentId);
-      if (response.data && response.data.length > 0) {
+      if (response.data?.groups && response.data.groups.length > 0) {
         // Get documents from the first group (assuming a document belongs to one main group)
-        const groupId = response.data[0].id;
+        const groupId = response.data.groups[0].id;
         const groupDocsResponse = await API.groups.getDocuments(groupId);
+        // Fix: The backend returns { group, documents, count }, so we need to access response.data.documents
+        const groupDocs = groupDocsResponse.data?.documents || [];
         // Filter out the current document
-        const relatedDocs = groupDocsResponse.data.filter(doc => doc.id !== documentId);
+        const relatedDocs = groupDocs.filter(doc => doc.id !== documentId);
         setRelatedDocuments(relatedDocs || []);
       } else {
         setRelatedDocuments([]);
@@ -287,6 +292,45 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
       }, 2000);
     } catch (error) {
       setGroupError(error.response?.data?.msg || 'Erreur lors de l\'ajout des documents au groupe');
+    }
+  };
+
+  // Handler for when group selection changes in the dropdown
+  const handleGroupSelectionChange = async (groupId) => {
+    setSelectedGroup(groupId);
+    
+    if (groupId) {
+      try {
+        // Fetch documents for the selected group
+        const response = await API.groups.getDocuments(groupId);
+        // Fix: The backend returns { group, documents, count }, so we need to access response.data.documents
+        const groupDocs = response.data?.documents || [];
+        const groupDocIds = groupDocs.map(doc => doc.id);
+        
+        // Update documentsByGroup state
+        setDocumentsByGroup(prev => ({
+          ...prev,
+          [groupId]: groupDocs
+        }));
+        
+        // Auto-check only documents from this group that are currently visible
+        const visibleDocIds = filteredDocuments.map(doc => doc.id);
+        const checkableDocIds = groupDocIds.filter(id => visibleDocIds.includes(id));
+        
+        if (checkableDocIds.length > 0) {
+          setSelectedDocuments(checkableDocIds);
+        } else {
+          // If no documents from this group are visible, clear selection
+          setSelectedDocuments([]);
+        }
+      } catch (error) {
+        console.error('Error fetching documents for group:', groupId, error);
+        // If API fails, clear selection
+        setSelectedDocuments([]);
+      }
+    } else {
+      // If no group selected, clear selected documents
+      setSelectedDocuments([]);
     }
   };
 
@@ -451,6 +495,15 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     }
   }, [selectedCompany]);
 
+  // Pre-fetch documents for all groups when groups are loaded
+  useEffect(() => {
+    if (groups.length > 0) {
+      groups.forEach(group => {
+        fetchDocumentsByGroup(group.id);
+      });
+    }
+  }, [groups]);
+
   // Fetch documents when company, doctype, or date filters change
   useEffect(() => {
     fetchDocuments();
@@ -512,9 +565,33 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
         return docDate >= start && docDate <= end;
       });
     }
+
+    // Filter by billable status
+    if (billableFilter !== 'all') {
+      filtered = filtered.filter(doc => {
+        const isBillable = doc.is_invoice === true || doc.is_invoice === 1;
+        if (billableFilter === 'billable') {
+          return isBillable;
+        } else if (billableFilter === 'non-billable') {
+          return !isBillable;
+        }
+        return true;
+      });
+    }
+
+    // Filter by groups
+    if (selectedGroupFilters.length > 0) {
+      filtered = filtered.filter(doc => {
+        // Check if document exists in any of the selected groups
+        return selectedGroupFilters.some(groupId => {
+          const groupDocs = documentsByGroup[groupId] || [];
+          return groupDocs.some(groupDoc => groupDoc.id === doc.id);
+        });
+      });
+    }
     
     setFilteredDocuments(filtered);
-  }, [documents, searchTerm, selectedDoctypeFilters, selectedDoctype, startDate, endDate]);
+  }, [documents, searchTerm, selectedDoctypeFilters, selectedDoctype, startDate, endDate, billableFilter, selectedGroupFilters, documentsByGroup]);
 
   const createFolder = async () => {
     if (folderName.trim() === '') {
@@ -593,6 +670,94 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
         return [...prev, doctypeId];
       }
     });
+  };
+
+  const handleBillableFilterChange = (value) => {
+    setBillableFilter(value);
+  };
+
+  const handleGroupFilterChange = async (groupId) => {
+    const isAdding = !selectedGroupFilters.includes(groupId);
+    
+    // Update selected group filters
+    setSelectedGroupFilters(prev => 
+      isAdding 
+        ? [...prev, groupId]
+        : prev.filter(id => id !== groupId)
+    );
+  
+    // If adding a group, fetch its documents
+    if (isAdding) {
+      try {
+        const response = await API.groups.getDocuments(groupId);
+        const groupDocs = response.data?.documents || [];
+        
+        // Update documentsByGroup state
+        setDocumentsByGroup(prev => ({
+          ...prev,
+          [groupId]: groupDocs
+        }));
+        
+        // Auto-check documents from this group that are currently visible
+        const visibleDocIds = filteredDocuments.map(doc => doc.id);
+        const checkableDocIds = groupDocs
+          .map(doc => doc.id)
+          .filter(id => visibleDocIds.includes(id));
+        
+        setSelectedDocuments(prev => [
+          ...new Set([...prev, ...checkableDocIds])
+        ]);
+      } catch (error) {
+        console.error('Error fetching documents for group:', error);
+      }
+    }
+  };
+
+  // Function to fetch documents by group
+  const fetchDocumentsByGroup = async (groupId) => {
+    try {
+      console.log(`Fetching documents for group ${groupId}...`);
+      
+      // Check if the group exists first
+      const groupExists = groups.find(g => g.id === groupId);
+      if (!groupExists) {
+        console.warn(`Group ${groupId} does not exist in the groups list`);
+        setDocumentsByGroup(prev => ({
+          ...prev,
+          [groupId]: []
+        }));
+        return;
+      }
+      
+      const response = await API.groups.getDocuments(groupId);
+      // Fix: The backend returns { group, documents, count }, so we need to access response.data.documents
+      const groupDocs = response.data?.documents || [];
+      console.log(`Group ${groupId} has ${groupDocs.length} documents:`, groupDocs.map(doc => ({ id: doc.id, filename: doc.filename })));
+      
+      setDocumentsByGroup(prev => ({
+        ...prev,
+        [groupId]: groupDocs
+      }));
+    } catch (error) {
+      console.error('Error fetching documents for group:', groupId, error);
+      
+      // Log more detailed error information
+      if (error.response) {
+        console.error('Error response status:', error.response.status);
+        console.error('Error response data:', error.response.data);
+        console.error('Error response headers:', error.response.headers);
+      } else if (error.request) {
+        console.error('Error request:', error.request);
+      } else {
+        console.error('Error message:', error.message);
+      }
+      
+      // Set empty array for this group to prevent further errors
+      setDocumentsByGroup(prev => ({
+        ...prev,
+        [groupId]: []
+      }));
+    }
   };
 
   const handleCreateDocType = async (e) => {
@@ -992,11 +1157,11 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     if (types.length === 0) return doc.filename;
     if (types.length === 1) {
       if (types.includes('rapport') && doc.rapport) {
-        return doc.rapport.split(/[\\/]/).pop();
+      return doc.rapport.split(/[\\/]/).pop();
       } else if (types.includes('ocr_text') && doc.ocr_text) {
-        return doc.ocr_text.split(/[\\/]/).pop();
-      } else {
-        return doc.filename;
+      return doc.ocr_text.split(/[\\/]/).pop();
+    } else {
+      return doc.filename;
       }
     } else {
       // Multiple types selected - show a summary
@@ -1138,6 +1303,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     <div className="container-fluid py-4">
       {/* Upload Modal */}
       {isUploadModalOpen && (
+        <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
           <div className="modal-dialog modal-lg">
             <div className="modal-content">
               <div className="modal-body">
@@ -1146,6 +1312,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                   onUpload={handleUploadDocuments}
                 />
                 {uploadError && <p className="text-danger mt-3">{uploadError}</p>}
+              </div>
               </div>
             </div>
           </div>
@@ -1197,31 +1364,120 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
             </div>
           </div>
           
-          {/* Document Type Filters - Only show when no specific doctype is selected */}
-          {!selectedDoctype && availableDoctypes.length > 0 && (
-            <div>
-                  <h6 className="mb-2 small">Types de documents</h6>
-                  <div className="d-flex flex-wrap gap-2">
-                {availableDoctypes.map((doctype) => (
-                      <div key={doctype.id} className="form-check form-check-sm">
+          {/* All Filters Displayed Next to Each Other */}
+          <div className="d-flex gap-4 flex-wrap">
+            {/* Document Type Filters - Only show when no specific doctype is selected */}
+            {!selectedDoctype && availableDoctypes.length > 0 && (
+              <div>
+                <h6 className="mb-2 small">Types de documents</h6>
+                <div className="d-flex flex-wrap gap-2">
+                  {availableDoctypes.map((doctype) => (
+                    <div key={doctype.id} className="form-check form-check-sm">
+                      <input 
+                        type="checkbox" 
+                        className="form-check-input" 
+                        id={`filter-doctype-${doctype.id}`}
+                        checked={selectedDoctypeFilters.includes(doctype.id)}
+                        onChange={() => handleDoctypeFilterChange(doctype.id)}
+                      />
+                      <label 
+                        className="form-check-label text-muted small" 
+                        htmlFor={`filter-doctype-${doctype.id}`}
+                      >
+                        {doctype.name}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Billable Filter - Show for both company and doctype archives */}
+            {(selectedCompany || selectedDoctype) && (
+              <div>
+                <h6 className="mb-2 small">Statut de facturation</h6>
+                <div className="d-flex flex-wrap gap-2">
+                  <div className="form-check form-check-sm">
                     <input 
-                      type="checkbox" 
+                      type="radio" 
                       className="form-check-input" 
-                      id={`filter-doctype-${doctype.id}`}
-                      checked={selectedDoctypeFilters.includes(doctype.id)}
-                      onChange={() => handleDoctypeFilterChange(doctype.id)}
+                      id="filter-billable-all"
+                      name="billableFilter"
+                      value="all"
+                      checked={billableFilter === 'all'}
+                      onChange={(e) => handleBillableFilterChange(e.target.value)}
                     />
                     <label 
-                          className="form-check-label text-muted small" 
-                      htmlFor={`filter-doctype-${doctype.id}`}
+                      className="form-check-label text-muted small" 
+                      htmlFor="filter-billable-all"
                     >
-                      {doctype.name}
+                      Tous
                     </label>
                   </div>
-                ))}
+                  <div className="form-check form-check-sm">
+                    <input 
+                      type="radio" 
+                      className="form-check-input" 
+                      id="filter-billable-billable"
+                      name="billableFilter"
+                      value="billable"
+                      checked={billableFilter === 'billable'}
+                      onChange={(e) => handleBillableFilterChange(e.target.value)}
+                    />
+                    <label 
+                      className="form-check-label text-muted small" 
+                      htmlFor="filter-billable-billable"
+                    >
+                      Facturable
+                    </label>
+                  </div>
+                  <div className="form-check form-check-sm">
+                    <input 
+                      type="radio" 
+                      className="form-check-input" 
+                      id="filter-billable-non-billable"
+                      name="billableFilter"
+                      value="non-billable"
+                      checked={billableFilter === 'non-billable'}
+                      onChange={(e) => handleBillableFilterChange(e.target.value)}
+                    />
+                    <label 
+                      className="form-check-label text-muted small" 
+                      htmlFor="filter-billable-non-billable"
+                    >
+                      Non facturable
+                    </label>
+                  </div>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+
+            {/* Groups Filter - Show for both company and doctype archives */}
+            {(selectedCompany || selectedDoctype) && (
+              <div>
+                <h6 className="mb-2 small">Groupes</h6>
+                <div className="d-flex flex-wrap gap-2">
+                  {groups.map((group) => (
+                    <div key={group.id} className="form-check form-check-sm">
+                      <input 
+                        type="checkbox" 
+                        className="form-check-input" 
+                        id={`filter-group-${group.id}`}
+                        checked={selectedGroupFilters.includes(group.id)}
+                        onChange={() => handleGroupFilterChange(group.id)}
+                      />
+                      <label 
+                        className="form-check-label text-muted small" 
+                        htmlFor={`filter-group-${group.id}`}
+                      >
+                        {group.name}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
             </div>
             
             {/* Right Column - Search */}
@@ -1295,7 +1551,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                           className="form-select form-select-sm" 
                           style={{ width: '200px' }}
                           value={selectedGroup}
-                          onChange={(e) => setSelectedGroup(e.target.value)}
+                          onChange={(e) => handleGroupSelectionChange(e.target.value)}
                           required
                         >
                           <option value="">Sélectionner un groupe</option>
@@ -1386,6 +1642,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                     <th>ID</th>
                     <th>Actions</th>
                     <th>Document</th>
+                    <th>Facturable</th>
                     <th>Rapport</th>
                     <th>Partner</th>
                     <th>Date Facture</th>
@@ -1472,6 +1729,16 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                         </div>
                       </td>
                       <td>
+                        <span 
+                          style={{ 
+                            color: doc.is_invoice ? '#28a745' : '#dc3545',
+                            fontWeight: 'bold'
+                          }}
+                        >
+                          {doc.is_invoice ? 'Oui' : 'Non'}
+                        </span>
+                      </td>
+                      <td>
                         <div className="extracted-data-cell">
                           {doc.rapport ? (
                             <div className="btn-group" role="group">
@@ -1504,11 +1771,9 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                     borderTop: '2px solid #dee2e6',
                     fontWeight: 'bold'
                   }}>
-                    <td colSpan="7" style={{ textAlign: 'right', padding: '12px 16px' }}>
+                    <td colSpan="11" style={{ textAlign: 'right', padding: '12px 16px' }}>
                       <strong>Total TTC:</strong>
                     </td>
-                    <td style={{ padding: '12px 16px' }}>-</td>
-                    <td style={{ padding: '12px 16px' }}>-</td>
                     <td style={{ 
                       padding: '12px 16px', 
                       color: '#2563eb',
