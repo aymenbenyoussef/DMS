@@ -17,16 +17,16 @@ const DocumentConfirmationForm = ({
   const [companies, setCompanies] = useState([]);
   const [doctypes, setDoctypes] = useState([]);
   const [partners, setPartners] = useState([]);
-  const [currentCompany, setCurrentCompany] = useState(initialCompany || selectedCompany);
-  const [currentDoctype, setCurrentDoctype] = useState(initialDoctype || selectedDoctype);
+  const [currentCompany, setCurrentCompany] = useState(null);
+  const [currentDoctype, setCurrentDoctype] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   // Array of confirmedDocuments and errors, one per file
   const [confirmedDocuments, setConfirmedDocuments] = useState(() => files.map(f => ({
     filename: f.filename,
-    company_id: (initialCompany || selectedCompany)?.id,
-    doctype_id: (initialDoctype || selectedDoctype)?.id,
+    company_id: null,
+    doctype_id: null,
     is_invoice: f.extractedData?.is_invoice || false,
     confirmed_data: {
       invoice_number: f.extractedData?.invoice_number || '',
@@ -60,10 +60,10 @@ const DocumentConfirmationForm = ({
   }, [currentCompany]);
 
   useEffect(() => {
-    const companyChanged = currentCompany?.id !== (initialCompany || selectedCompany)?.id;
-    const doctypeChanged = currentDoctype?.id !== (initialDoctype || selectedDoctype)?.id;
+    const companyChanged = currentCompany?.id !== null;
+    const doctypeChanged = currentDoctype?.id !== null;
     setHasChanges(companyChanged || doctypeChanged);
-  }, [currentCompany, currentDoctype, initialCompany, initialDoctype, selectedCompany, selectedDoctype]);
+  }, [currentCompany, currentDoctype]);
 
   // If hideConfirmButton, call onConfirm on every change
   useEffect(() => {
