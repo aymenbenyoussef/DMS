@@ -312,7 +312,8 @@
 
 /* Ensure the main form container uses flexbox */
 .document-confirmation-form {
-  max-width: 800px;
+  
+  width: 95%;
   margin: 0 auto;
   padding: 20px;
   background: #fff;

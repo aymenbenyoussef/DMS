@@ -1440,6 +1440,35 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     };
   }, [exportMenuOpen]);
 
+  // Check if there are any active filters
+  const hasActiveFilters = () => {
+    // Check column filters
+    const hasColumnFilters = Object.values(columnFilters).some(value => value && value.trim() !== '');
+    
+    // Check date filters (if they're different from default)
+    const defaultStartDate = getFirstDayOfMonth();
+    const defaultEndDate = getToday();
+    const hasDateFilters = startDate !== defaultStartDate || endDate !== defaultEndDate;
+    
+    // Check other filters
+    const hasOtherFilters = selectedDoctypeFilters.length > 0 || 
+                           (billableFilter !== '' && billableFilter !== 'all') || 
+                           selectedGroupFilters.length > 0;
+    
+    return hasColumnFilters || hasDateFilters || hasOtherFilters;
+  };
+
+  // Get the appropriate no data message
+  const getNoDataMessage = () => {
+    if (documents.length === 0) {
+      return "Il n'y a pas de données";
+    } else if (hasActiveFilters()) {
+      return "Aucune donnée ne correspond aux filtres actuels";
+    } else {
+      return "Il n'y a pas de données";
+    }
+  };
+
   if (!selectedCompany && !selectedDoctype) {
     return <WelcomePanel user={user} />;
   }
@@ -1458,9 +1487,9 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                 />
                 {uploadError && <p className="text-danger mt-3">{uploadError}</p>}
               </div>
-              </div>
             </div>
           </div>
+        </div>
       )}
 
       {successMessage && (
@@ -1636,10 +1665,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
-                <button className="btn btn-primary btn-sm">
-                  <i className="bi bi-search me-1"></i>
-                  Recherche
-                </button>
+                
               </div>
             </div>
           </div>
@@ -1805,7 +1831,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
               <table className="table table-hover stylish-table">
                 <thead className="table-header-sticky">
                   <tr>
-                      <th style={{ width: '30px', minWidth: '30px' }}>
+                      <th style={{ width: '20px', minWidth: '20px', maxWidth: '20px' }}>
                       {isGroupMode && (
                         <input 
                           type="checkbox" 
@@ -1851,7 +1877,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                   </tr>
                   {/* Filter Row */}
                   <tr style={{ backgroundColor: '#f8f9fa' }}>
-                    <th style={{ width: '30px', minWidth: '30px' }}></th>
+                    <th style={{ width: '20px', minWidth: '20px', maxWidth: '20px' }}></th>
                     <th>
                       <input
                         type="text"
@@ -1932,12 +1958,12 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                       </td>
                       <td className="text-muted">{doc.id}</td>
                       <td>
-                        <div className="dropdown dropdown-up">
+                        <div className="dropdown dropdown-up" style={{ position: 'relative', zIndex: 99999 }}>
                           <button 
                             className="btn btn-sm btn-outline-secondary dropdown-toggle"
                             type="button" 
                             onClick={() => setOpenDropdownId(openDropdownId === doc.id ? null : doc.id)}
-                            style={{ fontSize: '12px', padding: '4px 8px' }}
+                            style={{ fontSize: '12px', padding: '4px 8px' ,zIndex:0}}
                           >
                             Actions
                           </button>
@@ -1947,12 +1973,18 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                             top: 'auto',
                             bottom: '100%',
                             marginBottom: '5px',
-                            zIndex: 9999
+                            zIndex: 99999,
+                            position: 'absolute',
+                            transform: 'none'
                           }}>
                             <li>
                               <button 
                                 className="dropdown-item d-flex align-items-center"
-                                onClick={() => { setIsPreviewModalOpen(false); handleSendEmail(doc); }}
+                                onClick={() => { 
+                                  setOpenDropdownId(null);
+                                  setIsPreviewModalOpen(false); 
+                                  handleSendEmail(doc); 
+                                }}
                               >
                                 <i className="bi bi-envelope me-2"></i>
                                 Envoyer
@@ -1961,7 +1993,10 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                             <li>
                               <button 
                                 className="dropdown-item d-flex align-items-center"
-                                onClick={() => handleEditDocument(doc)}
+                                onClick={() => { 
+                                  setOpenDropdownId(null);
+                                  handleEditDocument(doc); 
+                                }}
                               >
                                 <i className="bi bi-pencil-square me-2"></i>
                                 Modifier
@@ -1971,7 +2006,10 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                             <li>
                               <button 
                                 className="dropdown-item d-flex align-items-center text-danger"
-                                onClick={() => handleDeleteDocument(doc)}
+                                onClick={() => { 
+                                  setOpenDropdownId(null);
+                                  handleDeleteDocument(doc); 
+                                }}
                               >
                                 <i className="bi bi-trash me-2"></i>
                                 Supprimer
@@ -2027,7 +2065,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                       <td style={{ textAlign: 'right' }}>{formatCurrency(doc.total_ttc)}</td>
                     </tr>
                   ))}
-                <tfoot>
+                
                   <tr style={{ 
                     backgroundColor: '#f8f9fa', 
                     borderTop: '2px solid #dee2e6',
@@ -2041,31 +2079,39 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                       color: '#2563eb',
                       fontSize: '1.1em',
                       textAlign: 'right'
-                    }}
-                   
-                    >
+                    }}>
                       {formatCurrency(filteredDocuments
                         .filter(doc => doc.total_ttc && !isNaN(parseFloat(doc.total_ttc)))
                         .reduce((sum, doc) => sum + parseFloat(doc.total_ttc), 0)
                       )}
                     </td>
                   </tr>
-                </tfoot>
+                
                     </>
           ) : (
                     <tr>
                       <td colSpan="12" className="text-center py-5">
                         <div className="empty-state">
                           <i className="bi bi-search text-muted mb-3" style={{ fontSize: '3rem' }}></i>
-                          <p className="text-muted mb-3">Aucune donnée ne correspond aux filtres actuels</p>
-              <button 
-                            className="btn btn-blue btn-sm"
-                            onClick={handleResetFilters}
-              >
-                            <i className="bi bi-arrow-clockwise me-1"></i>
-                            Réinitialiser les filtres
-              </button>
-            </div>
+                          <p className="text-muted mb-3">{getNoDataMessage()}</p>
+                          {hasActiveFilters() ? (
+                            <button 
+                              className="btn btn-blue btn-sm"
+                              onClick={handleResetFilters}
+                            >
+                              <i className="bi bi-arrow-clockwise me-1"></i>
+                              Réinitialiser les filtres
+                            </button>
+                          ) : (
+                            <button 
+                              className="btn btn-blue btn-sm"
+                              onClick={openUploadModal}
+                            >
+                              <i className="bi bi-download me-1"></i>
+                              Télécharger
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
           )}       

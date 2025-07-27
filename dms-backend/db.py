@@ -240,7 +240,6 @@ class DatabaseManager:
                     filename VARCHAR(255) NOT NULL,
                     file_path VARCHAR(500) NOT NULL,
                     owner_id INT NOT NULL,
-                    company_id INT NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
                     FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
@@ -263,21 +262,7 @@ class DatabaseManager:
             # Create default users if they don\'t exist
             self.create_default_users()
 
-            # Create company 'À verifier' if it does not exist
-            company_name = "À verifier"
-            company_email = "a-verifier@dms.local"
-            check = self.check_company_exist(company_name, company_email)
-            if not check["name_exists"] and not check["email_exists"]:
-                self.create_company({
-                    "name": company_name,
-                    "address": "",
-                    "email": company_email,
-                    "phone": "",
-                    "is_active": True,
-                    "description": "Company to verify documents"
-                })
-                
-
+          
             cursor.close()
             print("Database initialized successfully")
 
@@ -1642,24 +1627,35 @@ class DatabaseManager:
         except Exception as e:
             print(f"Error creating email_logs table: {e}")
 
-    def create_temp_document(self, filename, file_path, owner_id, company_id):
+    def create_temp_document(self, filename, file_path, owner_id):
         query = """
-            INSERT INTO temp_documents (filename, file_path, owner_id, company_id)
-            VALUES (%s, %s, %s, %s)
+            INSERT INTO temp_documents (filename, file_path, owner_id)
+            VALUES (%s, %s, %s)
         """
-        params = (filename, file_path, owner_id, company_id)
+        params = (filename, file_path, owner_id)
         return self.execute_query(query, params)
 
-    def get_all_temp_documents(self, start_date=None, end_date=None):
-        query = "SELECT * FROM temp_documents WHERE 1=1"
+    def get_all_temp_documents(self, start_date=None, end_date=None, owner_id=None, user_role=None):
+        query = """
+            SELECT td.*, u.username as owner_name 
+            FROM temp_documents td 
+            LEFT JOIN users u ON td.owner_id = u.id 
+            WHERE 1=1
+        """
         params = []
+        
+        # Filter by owner_id for regular users (not admin or superuser)
+        if owner_id and user_role and user_role not in ['admin', 'superuser']:
+            query += " AND td.owner_id = %s"
+            params.append(owner_id)
+            
         if start_date:
-            query += " AND DATE(created_at) >= %s"
+            query += " AND DATE(td.created_at) >= %s"
             params.append(start_date)
         if end_date:
-            query += " AND DATE(created_at) <= %s"
+            query += " AND DATE(td.created_at) <= %s"
             params.append(end_date)
-        query += " ORDER BY created_at DESC"
+        query += " ORDER BY td.created_at DESC"
         return self.execute_query(query, params, fetch=True)
 
 
