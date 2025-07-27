@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import API from '../../api';
 import './AdminUsers.css'; // Changed from AdminDashboard.css
 import { Link, useNavigate } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
+import { exportToCSV, exportToJSON, exportToTXT, exportToExcel } from './exportUtils';
 
 const AdminUsers = ({user ,loadingUser}) => {
   const [users, setUsers] = useState([]);
@@ -49,6 +50,9 @@ const AdminUsers = ({user ,loadingUser}) => {
   const [companiesTimeout, setCompaniesTimeout] = useState(false);
   const [maxUsers, setMaxUsers] = useState(null);
   const [globalLimitError, setGlobalLimitError] = useState('');
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const exportMenuRef = useRef(null);
 
   const navigate = useNavigate();
 
@@ -399,6 +403,46 @@ const AdminUsers = ({user ,loadingUser}) => {
   const errorMsg = error || (timeoutError && 'Le chargement prend trop de temps.');
   const canShowList = !loading && !timeoutError && !error;
 
+  // Sorting logic
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+    const sorted = [...filteredUsers].sort((a, b) => {
+      if (a[key] === undefined || b[key] === undefined) return 0;
+      if (a[key] < b[key]) return direction === 'asc' ? -1 : 1;
+      if (a[key] > b[key]) return direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+    setFilteredUsers(sorted);
+  };
+
+  // Export logic
+  const columns = [
+    { key: 'id', label: 'Id' },
+    { key: 'username', label: 'Nom complet' },
+    { key: 'email', label: 'Email' },
+    { key: 'role', label: 'Rôle' },
+    { key: 'companies', label: 'Entités' },
+    { key: 'created_at', label: 'Date de création' }
+  ];
+  const handleExport = (type) => {
+    const data = filteredUsers.map(u => ({
+      id: u.id,
+      username: `${u.username} ${u.surname}`,
+      email: u.email,
+      role: u.role,
+      companies: Array.isArray(u.companies) ? u.companies.map(c => c.name).join('; ') : '',
+      created_at: u.created_at ? new Date(u.created_at).toLocaleDateString() : ''
+    }));
+    if (type === 'csv') exportToCSV(data, columns, 'users.csv');
+    if (type === 'json') exportToJSON(data, 'users.json');
+    if (type === 'txt') exportToTXT(data, columns, 'users.txt');
+    if (type === 'excel') exportToExcel(data, columns, 'users.xls');
+  };
+
   const handleAddUser = (e) => {
     setGlobalLimitError('');
     if (maxUsers !== null && users.length >= maxUsers) {
@@ -407,6 +451,23 @@ const AdminUsers = ({user ,loadingUser}) => {
     }
     navigate('/AddUsers');
   };
+
+  // Close export menu on outside click
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
+        setExportMenuOpen(false);
+      }
+    }
+    if (exportMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    } else {
+      document.removeEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [exportMenuOpen]);
 
   return (
     <div className="admin-users">
@@ -458,6 +519,20 @@ const AdminUsers = ({user ,loadingUser}) => {
 
       {activeTab === 'list' && (
         <div className="users-list">
+          <div style={{ position: 'relative', display: 'inline-block', marginBottom: '8px' }}>
+            <button className="export-dropdown-btn" onClick={() => setExportMenuOpen(v => !v)}>
+              Export ▼
+            </button>
+            {exportMenuOpen && (
+              <ul ref={exportMenuRef} className="export-dropdown-list">
+                <li onClick={() => { handleExport('csv'); setExportMenuOpen(false); }}>CSV</li>
+                <li onClick={() => { handleExport('json'); setExportMenuOpen(false); }}>JSON</li>
+                <li onClick={() => { handleExport('txt'); setExportMenuOpen(false); }}>TXT</li>
+                <li onClick={() => { handleExport('excel'); setExportMenuOpen(false); }}>Excel</li>
+              </ul>
+            )}
+          </div>
+          
           {success && (
             <div className="alert alert-success" style={{marginBottom: '16px', textAlign: 'left'}}>
               {success}
@@ -514,13 +589,25 @@ const AdminUsers = ({user ,loadingUser}) => {
                   <thead>
                     <tr>
                       <th></th>
-                      <th>Id</th>
-                      <th>Nom complet</th>
-
-                      <th>Email</th>
-                      <th>Rôle</th>
-                      <th>Entités</th>
-                      <th>Date de création</th>
+                      <th className={sortConfig.key === 'id' ? 'sorted-header' : ''} style={{cursor:'pointer'}} onClick={() => handleSort('id')}>
+                        Id <span style={{fontSize:'1em'}}>{sortConfig.key === 'id' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                      </th>
+                      <th className={sortConfig.key === 'username' ? 'sorted-header' : ''} style={{cursor:'pointer'}} onClick={() => handleSort('username')}>
+                        Nom complet <span style={{fontSize:'1em'}}>{sortConfig.key === 'username' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                      </th>
+                      
+                      <th className={sortConfig.key === 'email' ? 'sorted-header' : ''} style={{cursor:'pointer'}} onClick={() => handleSort('email')}>
+                        Email <span style={{fontSize:'1em'}}>{sortConfig.key === 'email' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                      </th>
+                      <th className={sortConfig.key === 'role' ? 'sorted-header' : ''} style={{cursor:'pointer'}} onClick={() => handleSort('role')}>
+                        Rôle <span style={{fontSize:'1em'}}>{sortConfig.key === 'role' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                      </th>
+                      <th className={sortConfig.key === 'companies' ? 'sorted-header' : ''} style={{cursor:'pointer'}} onClick={() => handleSort('companies')}>
+                        Entités <span style={{fontSize:'1em'}}>{sortConfig.key === 'companies' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                      </th>
+                      <th className={sortConfig.key === 'created_at' ? 'sorted-header' : ''} style={{cursor:'pointer'}} onClick={() => handleSort('created_at')}>
+                        Date de création <span style={{fontSize:'1em'}}>{sortConfig.key === 'created_at' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                      </th>
                       <th>Actions</th>
                     </tr>
                     <tr className="filter-row">
@@ -763,3 +850,4 @@ const AdminUsers = ({user ,loadingUser}) => {
 
 export default AdminUsers;
 
+ 

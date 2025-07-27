@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import API from '../../api';
 import './AdminUsers.css';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
+import { exportToCSV, exportToJSON, exportToTXT, exportToExcel } from './exportUtils';
 
 const AdminDoctypes = ({ user }) => {
   const [doctypes, setDoctypes] = useState([]);
@@ -33,6 +34,9 @@ const AdminDoctypes = ({ user }) => {
 
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const exportMenuRef = useRef(null);
 
   useEffect(() => {
     fetchDoctypes();
@@ -247,6 +251,57 @@ const AdminDoctypes = ({ user }) => {
     setShowNotification(false);
   };
 
+  // Sorting logic
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+    const sorted = [...filteredDoctypes].sort((a, b) => {
+      if (a[key] === undefined || b[key] === undefined) return 0;
+      if (a[key] < b[key]) return direction === 'asc' ? -1 : 1;
+      if (a[key] > b[key]) return direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+    setFilteredDoctypes(sorted);
+  };
+
+  // Export logic
+  const columns = [
+    { key: 'id', label: 'ID' },
+    { key: 'name', label: 'Nom' },
+    { key: 'companies', label: 'Entités' }
+  ];
+  const handleExport = (type) => {
+    const data = filteredDoctypes.map(dt => ({
+      id: dt.id,
+      name: dt.name,
+      companies: Array.isArray(dt.companies) ? dt.companies.map(c => c.name).join('; ') : ''
+    }));
+    if (type === 'csv') exportToCSV(data, columns, 'doctypes.csv');
+    if (type === 'json') exportToJSON(data, 'doctypes.json');
+    if (type === 'txt') exportToTXT(data, columns, 'doctypes.txt');
+    if (type === 'excel') exportToExcel(data, columns, 'doctypes.xls');
+  };
+
+  // Close export menu on outside click
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
+        setExportMenuOpen(false);
+      }
+    }
+    if (exportMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    } else {
+      document.removeEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [exportMenuOpen]);
+
   return (
     <div className="admin-users">
       <div className="admin-header">
@@ -279,6 +334,33 @@ const AdminDoctypes = ({ user }) => {
       {success && <div className="alert alert-success">{success}</div>}
       {activeTab === 'list' && (
         <div className="users-list">
+          {/* Export dropdown */}
+          <div style={{ position: 'relative', display: 'inline-block', marginBottom: '8px' }}>
+            <button className="export-dropdown-btn" onClick={() => setExportMenuOpen(v => !v)}>
+              Export ▼
+            </button>
+            {exportMenuOpen && (
+              <ul ref={exportMenuRef} style={{
+                position: 'absolute',
+                top: '110%',
+                left: 0,
+                background: '#fff',
+                border: '1px solid #ddd',
+                borderRadius: '4px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                zIndex: 10,
+                minWidth: '140px',
+                padding: 0,
+                margin: 0,
+                listStyle: 'none',
+              }}>
+                <li style={{padding: '8px 16px', cursor: 'pointer'}} onClick={() => { handleExport('csv'); setExportMenuOpen(false); }}>CSV</li>
+                <li style={{padding: '8px 16px', cursor: 'pointer'}} onClick={() => { handleExport('json'); setExportMenuOpen(false); }}>JSON</li>
+                <li style={{padding: '8px 16px', cursor: 'pointer'}} onClick={() => { handleExport('txt'); setExportMenuOpen(false); }}>TXT</li>
+                <li style={{padding: '8px 16px', cursor: 'pointer'}} onClick={() => { handleExport('excel'); setExportMenuOpen(false); }}>Excel</li>
+              </ul>
+            )}
+          </div>
           {loading && (
             <div className="loading-message">
               Chargement des types de documents...
@@ -325,9 +407,15 @@ const AdminDoctypes = ({ user }) => {
               <thead>
                 <tr>
                   <th></th>
-                  <th>ID</th>
-                  <th>Nom</th>
-                  <th>Entités</th>
+                  <th style={{cursor:'pointer', background: sortConfig.key === 'id' ? '#f0f4fa' : undefined, color: sortConfig.key === 'id' ? '#1976d2' : undefined}} onClick={() => handleSort('id')}>
+                    ID <span style={{fontSize:'1em'}}>{sortConfig.key === 'id' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  </th>
+                  <th style={{cursor:'pointer', background: sortConfig.key === 'name' ? '#f0f4fa' : undefined, color: sortConfig.key === 'name' ? '#1976d2' : undefined}} onClick={() => handleSort('name')}>
+                    Nom <span style={{fontSize:'1em'}}>{sortConfig.key === 'name' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  </th>
+                  <th style={{cursor:'pointer', background: sortConfig.key === 'companies' ? '#f0f4fa' : undefined, color: sortConfig.key === 'companies' ? '#1976d2' : undefined}} onClick={() => handleSort('companies')}>
+                    Entités <span style={{fontSize:'1em'}}>{sortConfig.key === 'companies' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  </th>
                   <th>Actions</th>
                 </tr>
                 <tr className="filter-row">

@@ -269,7 +269,7 @@
 }
 
 .tab-btn.active {
-  background: darkgreen;
+  background: #0f5132;
   color: white;
   border-color: darkgreen;
 }

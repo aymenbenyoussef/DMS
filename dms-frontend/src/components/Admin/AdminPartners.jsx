@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import API from '../../api';
 import './AdminUsers.css';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import { exportToCSV, exportToJSON, exportToTXT, exportToExcel } from './exportUtils';
 
 const AdminPartners = ({ user }) => {
   const [partners, setPartners] = useState([]);
@@ -30,6 +31,9 @@ const AdminPartners = ({ user }) => {
   const navigate = useNavigate();
   const [maxExternalEntities, setMaxExternalEntities] = useState(null);
   const [globalLimitError, setGlobalLimitError] = useState('');
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const exportMenuRef = useRef(null);
 
   const [formData, setFormData] = useState({
     company_name: '',
@@ -69,6 +73,23 @@ const AdminPartners = ({ user }) => {
       return () => clearTimeout(timer);
     }
   }, [globalLimitError]);
+
+  // Close export menu on outside click
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
+        setExportMenuOpen(false);
+      }
+    }
+    if (exportMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    } else {
+      document.removeEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [exportMenuOpen]);
 
   // Fetch data on component mount
   useEffect(() => {
@@ -379,6 +400,46 @@ const AdminPartners = ({ user }) => {
     navigate('/AddPartner');
   };
 
+  // Sorting logic
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+    const sorted = [...filteredPartners].sort((a, b) => {
+      if (a[key] === undefined || b[key] === undefined) return 0;
+      if (a[key] < b[key]) return direction === 'asc' ? -1 : 1;
+      if (a[key] > b[key]) return direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+    setFilteredPartners(sorted);
+  };
+
+  // Export logic
+  const columns = [
+    { key: 'unique_identifier', label: 'Unique Identifier' },
+    { key: 'company_name', label: 'Company Name' },
+    { key: 'companies', label: 'Entities' },
+    { key: 'partnertypes', label: 'Partner Types' },
+    { key: 'phone1', label: 'Phone' },
+    { key: 'email', label: 'Email' }
+  ];
+  const handleExport = (type) => {
+    const data = filteredPartners.map(p => ({
+      unique_identifier: p.unique_identifier,
+      company_name: p.company_name,
+      companies: Array.isArray(p.companies) ? p.companies.map(c => c.name).join('; ') : '',
+      partnertypes: Array.isArray(p.partnertypes) ? p.partnertypes.map(pt => pt.name).join('; ') : '',
+      phone1: p.phone1,
+      email: p.email
+    }));
+    if (type === 'csv') exportToCSV(data, columns, 'partners.csv');
+    if (type === 'json') exportToJSON(data, 'partners.json');
+    if (type === 'txt') exportToTXT(data, columns, 'partners.txt');
+    if (type === 'excel') exportToExcel(data, columns, 'partners.xls');
+  };
+
   return (
     <div className="admin-users">
       <div className="admin-header">
@@ -416,6 +477,34 @@ const AdminPartners = ({ user }) => {
 
       {activeTab === 'list' && (
         <div className="users-list">
+          {/* Export dropdown */}
+          <div style={{ position: 'relative', display: 'inline-block', marginBottom: '8px' }}>
+            <button className="export-dropdown-btn" onClick={() => setExportMenuOpen(v => !v)}>
+              Export ▼
+            </button>
+            {exportMenuOpen && (
+              <ul ref={exportMenuRef} style={{
+                position: 'absolute',
+                top: '110%',
+                left: 0,
+                background: '#fff',
+                border: '1px solid #ddd',
+                borderRadius: '4px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                zIndex: 10,
+                minWidth: '140px',
+                padding: 0,
+                margin: 0,
+                listStyle: 'none',
+              }}>
+                <li style={{padding: '8px 16px', cursor: 'pointer'}} onClick={() => { handleExport('csv'); setExportMenuOpen(false); }}>CSV</li>
+                <li style={{padding: '8px 16px', cursor: 'pointer'}} onClick={() => { handleExport('json'); setExportMenuOpen(false); }}>JSON</li>
+                <li style={{padding: '8px 16px', cursor: 'pointer'}} onClick={() => { handleExport('txt'); setExportMenuOpen(false); }}>TXT</li>
+                <li style={{padding: '8px 16px', cursor: 'pointer'}} onClick={() => { handleExport('excel'); setExportMenuOpen(false); }}>Excel</li>
+              </ul>
+            )}
+          </div>
+
           {loading && (
             <div className="loading-message">
               Chargement des partenaires...
@@ -466,13 +555,25 @@ const AdminPartners = ({ user }) => {
                 <tr>
                   <th></th>
                   
-                  <th style={{ width: '150px' }}>Unique Identifier</th>
-                  <th style={{ width: '200px' }}>Company Name</th>
-                  <th style={{ width: '200px' }}>Entities</th>
-                  <th style={{ width: '150px' }}>Partner Types</th>
-                  <th style={{ width: '80px' }}>Phone</th>
-                  <th style={{ width: '250px' }}>Email</th>
-                  <th style={{ width: '100px' }}>Actions</th>
+                  <th style={{cursor:'pointer', background: sortConfig.key === 'unique_identifier' ? '#f0f4fa' : undefined, color: sortConfig.key === 'unique_identifier' ? '#1976d2' : undefined}} onClick={() => handleSort('unique_identifier')}>
+                    Unique Identifier <span style={{fontSize:'1em'}}>{sortConfig.key === 'unique_identifier' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  </th>
+                  <th style={{cursor:'pointer', background: sortConfig.key === 'company_name' ? '#f0f4fa' : undefined, color: sortConfig.key === 'company_name' ? '#1976d2' : undefined}} onClick={() => handleSort('company_name')}>
+                    Company Name <span style={{fontSize:'1em'}}>{sortConfig.key === 'company_name' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  </th>
+                  <th style={{cursor:'pointer', background: sortConfig.key === 'companies' ? '#f0f4fa' : undefined, color: sortConfig.key === 'companies' ? '#1976d2' : undefined}} onClick={() => handleSort('companies')}>
+                    Entities <span style={{fontSize:'1em'}}>{sortConfig.key === 'companies' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  </th>
+                  <th style={{cursor:'pointer', background: sortConfig.key === 'partnertypes' ? '#f0f4fa' : undefined, color: sortConfig.key === 'partnertypes' ? '#1976d2' : undefined}} onClick={() => handleSort('partnertypes')}>
+                    Partner Types <span style={{fontSize:'1em'}}>{sortConfig.key === 'partnertypes' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  </th>
+                  <th style={{cursor:'pointer', background: sortConfig.key === 'phone1' ? '#f0f4fa' : undefined, color: sortConfig.key === 'phone1' ? '#1976d2' : undefined}} onClick={() => handleSort('phone1')}>
+                    Phone <span style={{fontSize:'1em'}}>{sortConfig.key === 'phone1' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  </th>
+                  <th style={{cursor:'pointer', background: sortConfig.key === 'email' ? '#f0f4fa' : undefined, color: sortConfig.key === 'email' ? '#1976d2' : undefined}} onClick={() => handleSort('email')}>
+                    Email <span style={{fontSize:'1em'}}>{sortConfig.key === 'email' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  </th>
+                  <th>Actions</th>
                 </tr>
                 <tr className="filter-row">
                   <td></td>
