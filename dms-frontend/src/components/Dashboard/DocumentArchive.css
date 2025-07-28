@@ -110,9 +110,46 @@
 /* 3. Make the table header sticky */
 .table-responsive {
   overflow-x: auto; /* Enable horizontal scrolling for the table */
+  overflow-y: auto; /* Enable vertical scrolling for the table */
   -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
   height: auto !important;
   max-height: none !important;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Ensure table has minimum width for horizontal scrolling */
+.table {
+  min-width: 1200px; /* Set minimum width to force horizontal scroll */
+  width: 100%;
+  margin-bottom: 0;
+}
+
+/* Ensure table cells don't wrap unnecessarily */
+.table th,
+.table td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px; /* Limit cell width */
+}
+
+/* Allow document filename to wrap */
+.table th:nth-child(4),
+.table td:nth-child(4) {
+  white-space: normal;
+  word-wrap: break-word;
+  min-width: 300px;
+  max-width: 400px;
+}
+
+/* Ensure actions column doesn't wrap */
+.table th:nth-child(3),
+.table td:nth-child(3) {
+  white-space: nowrap;
+  min-width: 120px;
+  max-width: 120px;
 }
 
 .table thead {
@@ -725,6 +762,7 @@
 .table {
   margin-bottom: 0;
   max-width: 100%;
+  min-width: 1200px; /* Ensure minimum width for horizontal scrolling */
 }
 
 .table th {
@@ -875,7 +913,7 @@
   .table td {
     padding: 8px;
   }
-  
+
   /* Make filter row even smaller on medium screens */
   .table thead tr:nth-child(2) th {
     padding: 0.25rem 0.375rem !important;
@@ -1499,3 +1537,49 @@
 
 
 /* Group management modal styles */
+
+/* Enhanced horizontal scrolling for table */
+@media (max-width: 1200px) {
+  .table-responsive {
+    overflow-x: auto;
+    overflow-y: auto;
+  }
+  
+  .table {
+    min-width: 1200px;
+  }
+}
+
+@media (max-width: 768px) {
+  .table-responsive {
+    overflow-x: auto;
+    overflow-y: auto;
+    font-size: 0.875rem;
+  }
+  
+  .table {
+    min-width: 1000px;
+  }
+  
+  .table th,
+  .table td {
+    padding: 6px;
+  }
+}
+
+@media (max-width: 576px) {
+  .table-responsive {
+    overflow-x: auto;
+    overflow-y: auto;
+  }
+  
+  .table {
+    min-width: 800px;
+  }
+  
+  .table th,
+  .table td {
+    padding: 4px;
+    font-size: 0.75rem;
+  }
+}
