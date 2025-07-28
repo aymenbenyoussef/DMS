@@ -5,6 +5,7 @@ import { jwtDecode } from 'jwt-decode';
 import Layout from './components/layout/layout';
 import Login from './components/Auth/login';
 import Dashboard from './components/Dashboard/Dashboard';
+import TempDocumentArchive from './components/Dashboard/TempDocumentArchive';
 import AdminUsers from './components/Admin/AdminUsers';
 import AdminCompanies from './components/Admin/AdminCompanies';
 import AdminTools from './components/Admin/Admin_Tools';
@@ -223,6 +224,8 @@ function App() {
               path="/AddPartnerType" element={<AddPartnerType user={user}/>} />
               <Route 
               path="/AddPartner" element={<AddPartner user={user}/>} />
+              <Route 
+              path="/temp-documents" element={<TempDocumentArchive user={user}/>} />
           </Routes>
         </Layout>
       </Router>

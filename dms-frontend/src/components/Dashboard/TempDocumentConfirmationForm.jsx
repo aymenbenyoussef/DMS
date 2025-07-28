@@ -17,16 +17,16 @@ const DocumentConfirmationForm = ({
   const [companies, setCompanies] = useState([]);
   const [doctypes, setDoctypes] = useState([]);
   const [partners, setPartners] = useState([]);
-  const [currentCompany, setCurrentCompany] = useState(initialCompany || selectedCompany);
-  const [currentDoctype, setCurrentDoctype] = useState(initialDoctype || selectedDoctype);
+  const [currentCompany, setCurrentCompany] = useState(null);
+  const [currentDoctype, setCurrentDoctype] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   // Array of confirmedDocuments and errors, one per file
   const [confirmedDocuments, setConfirmedDocuments] = useState(() => files.map(f => ({
     filename: f.filename,
-    company_id: (initialCompany || selectedCompany)?.id,
-    doctype_id: (initialDoctype || selectedDoctype)?.id,
+    company_id: null,
+    doctype_id: null,
     is_invoice: f.extractedData?.is_invoice || false,
     confirmed_data: {
       invoice_number: f.extractedData?.invoice_number || '',
@@ -60,10 +60,10 @@ const DocumentConfirmationForm = ({
   }, [currentCompany]);
 
   useEffect(() => {
-    const companyChanged = currentCompany?.id !== (initialCompany || selectedCompany)?.id;
-    const doctypeChanged = currentDoctype?.id !== (initialDoctype || selectedDoctype)?.id;
+    const companyChanged = currentCompany?.id !== null;
+    const doctypeChanged = currentDoctype?.id !== null;
     setHasChanges(companyChanged || doctypeChanged);
-  }, [currentCompany, currentDoctype, initialCompany, initialDoctype, selectedCompany, selectedDoctype]);
+  }, [currentCompany, currentDoctype]);
 
   // If hideConfirmButton, call onConfirm on every change
   useEffect(() => {
@@ -109,9 +109,7 @@ const DocumentConfirmationForm = ({
       if (field === 'is_invoice') {
         updated[idx].is_invoice = value;
         updated[idx].confirmed_data.is_invoice = value;
-        // Reset partner selection when toggling invoice status
-        updated[idx].confirmed_data.partner_id = '';
-        updated[idx].confirmed_data.partner = '';
+        // Don't reset partner selection when toggling invoice status - partner is optional
       } else if (field === 'company_id') {
         updated[idx].company_id = value;
       } else if (field === 'doctype_id') {
@@ -160,9 +158,7 @@ const DocumentConfirmationForm = ({
     if (!currentDoctype) {
         errs.doctype_id = 'Veuillez sélectionner un type de document';
       }
-      if (!doc.confirmed_data.partner_id) {
-        errs.partner_id = 'Veuillez sélectionner un partenaire';
-      }
+      // Partner is optional - removed validation
       if (doc.is_invoice) {
         const invData = doc.confirmed_data;
         if (!invData.invoice_number) {
@@ -287,7 +283,7 @@ const DocumentConfirmationForm = ({
         {/* Second row: Partner Selection (full width) */}
         <div className="form-row">
           <div className="form-group" style={{ gridColumn: '1 / span 2' }}>
-            <label>Partenaire externe *:</label>
+            <label>Partenaire externe:</label>
             <select
                 value={doc.confirmed_data.partner_id || ''}
                 onChange={e => handlePartnerChange(0, e)}
@@ -454,7 +450,7 @@ const DocumentConfirmationForm = ({
             {/* Second row: Partner Selection (full width) */}
             <div className="form-row">
               <div className="form-group" style={{ gridColumn: '1 / span 2' }}>
-                <label>Partenaire externe *:</label>
+                <label>Partenaire externe:</label>
                 <select
                   value={confirmedDocuments[idx].confirmed_data.partner_id || ''}
                   onChange={e => handlePartnerChange(idx, e)}

@@ -6,9 +6,12 @@ import DmsTempUploadModal from './DmsTempUploadModal';
 import { exportToCSV, exportToJSON, exportToTXT, exportToExcel } from '../Admin/exportUtils';
 import './TempDocumentArchive.css';
 
-const TempDocumentArchive = () => {
+const TempDocumentArchive = ({ user }) => {
   const { selectedCompany, selectedDoctype, setSelectedCompany, setSelectedDoctype } = useContext(AppContext);
   
+  // Note: User-based filtering is handled automatically by the backend
+  // Regular users only see their own temp documents, while admins and superusers see all documents
+
   // Helper function to get first day of current month
   const getFirstDayOfMonth = () => {
     const now = new Date();
@@ -49,10 +52,14 @@ const TempDocumentArchive = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   
+  // Search state
+  const [searchTerm, setSearchTerm] = useState('');
+  
   // Column filter states
   const [columnFilters, setColumnFilters] = useState({
     id: '',
-    filename: ''
+    filename: '',
+    owner: ''
   });
   
   // Delete confirmation modal state
@@ -73,6 +80,25 @@ const TempDocumentArchive = () => {
   useEffect(() => {
     let filtered = [...documents];
     
+    // Filter by search term (searches across all data)
+    if (searchTerm && searchTerm.trim() !== '') {
+      filtered = filtered.filter(doc => {
+        const searchLower = searchTerm.toLowerCase();
+        const searchFields = [
+          String(doc.id).toLowerCase(),
+          String(doc.filename).toLowerCase(),
+          String(doc.created_at).toLowerCase()
+        ];
+        
+        // Add owner field to search for admin and superuser
+        if (user?.role === 'admin' || user?.role === 'superuser') {
+          searchFields.push(String(doc.owner_name || doc.owner || '').toLowerCase());
+        }
+        
+        return searchFields.some(field => field.includes(searchLower));
+      });
+    }
+    
     // Filter by column filters
     Object.keys(columnFilters).forEach(column => {
       const filterValue = columnFilters[column];
@@ -90,7 +116,7 @@ const TempDocumentArchive = () => {
     });
     
     setFilteredDocuments(filtered);
-  }, [documents, columnFilters]);
+  }, [documents, columnFilters, searchTerm, user?.role]);
 
   // Add event listener for temporary document uploads
   useEffect(() => {
@@ -121,6 +147,32 @@ const TempDocumentArchive = () => {
     }
   };
 
+  // Check if there are any active filters
+  const hasActiveFilters = () => {
+    // Check column filters
+    const hasColumnFilters = Object.values(columnFilters).some(value => value && value.trim() !== '');
+    
+    // Check date filters (if they're different from default)
+    const defaultStartDate = getFirstDayOfMonth();
+    const defaultEndDate = getToday();
+    const hasDateFilters = startDate !== defaultStartDate || endDate !== defaultEndDate;
+    
+    // Check search term
+    const hasSearchTerm = searchTerm && searchTerm.trim() !== '';
+    
+    return hasColumnFilters || hasDateFilters || hasSearchTerm;
+  };
+
+  // Get the appropriate no data message
+  const getNoDataMessage = () => {
+    if (documents.length === 0) {
+      return "Il n'y a pas de données";
+    } else if (hasActiveFilters()) {
+      return "Aucune donnée ne correspond aux filtres actuels";
+    } else {
+      return "Il n'y a pas de données";
+    }
+  };
 
 
   const handleViewDocument = async (doc) => {
@@ -340,9 +392,11 @@ const TempDocumentArchive = () => {
   const handleResetFilters = () => {
     setStartDate(getFirstDayOfMonth());
     setEndDate(getToday());
+    setSearchTerm('');
     setColumnFilters({
       id: '',
-      filename: ''
+      filename: '',
+      owner: ''
     });
     setSortConfig({ key: null, direction: 'asc' });
   };
@@ -410,6 +464,16 @@ const TempDocumentArchive = () => {
                 </div>
               </div>
             </div>
+            <div className="col-md-6">
+              <label className="form-label small">Rechercher</label>
+              <input
+                type="text"
+                className="form-control form-control-sm"
+                placeholder="Rechercher dans les données..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -430,6 +494,7 @@ const TempDocumentArchive = () => {
                 <button 
                   className="btn btn-blue btn-sm d-flex align-items-center"
                   onClick={() => setExportMenuOpen(v => !v)}
+                  style={{ backgroundColor: '#1976d2', color: 'white' }}
                 >
                   <i className="bi bi-download me-1"></i> Export ▼
                 </button>
@@ -474,6 +539,11 @@ const TempDocumentArchive = () => {
                     <th style={{cursor:'pointer', background: sortConfig.key === 'filename' ? '#f0f4fa' : undefined, color: sortConfig.key === 'filename' ? '#1976d2' : undefined}} onClick={() => handleSort('filename')}>
                       Document <span style={{fontSize:'1em'}}>{sortConfig.key === 'filename' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
                     </th>
+                    {(user?.role === 'admin' || user?.role === 'superuser') && (
+                      <th style={{cursor:'pointer', background: sortConfig.key === 'owner' ? '#f0f4fa' : undefined, color: sortConfig.key === 'owner' ? '#1976d2' : undefined}} onClick={() => handleSort('owner')}>
+                        Owner <span style={{fontSize:'1em'}}>{sortConfig.key === 'owner' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                      </th>
+                    )}
                     <th style={{cursor:'pointer', background: sortConfig.key === 'created_at' ? '#f0f4fa' : undefined, color: sortConfig.key === 'created_at' ? '#1976d2' : undefined}} onClick={() => handleSort('created_at')}>
                       Date d'upload <span style={{fontSize:'1em'}}>{sortConfig.key === 'created_at' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
                     </th>
@@ -499,6 +569,17 @@ const TempDocumentArchive = () => {
                         onChange={(e) => handleColumnFilterChange('filename', e.target.value)}
                       />
                     </th>
+                    {(user?.role === 'admin' || user?.role === 'superuser') && (
+                      <th>
+                        <input
+                          type="text"
+                          className="form-control form-control-sm"
+                          placeholder="Filter Owner..."
+                          value={columnFilters.owner}
+                          onChange={(e) => handleColumnFilterChange('owner', e.target.value)}
+                        />
+                      </th>
+                    )}
                     <th></th>
                     <th></th>
                   </tr>
@@ -506,83 +587,96 @@ const TempDocumentArchive = () => {
                 <tbody>
                   {filteredDocuments.length > 0 ? (
                     filteredDocuments.map((doc) => (
-                      <tr key={doc.id} className="table-row-hover">
-                        <td className="text-muted">{doc.id}</td>
-                        <td>{doc.filename}</td>
-                        <td>{doc.created_at ? new Date(doc.created_at).toLocaleDateString('fr-FR') : '-'}</td>
-                        <td>
-                          <div className="d-flex gap-2">
-                            <button
-                              className="btn btn-outline-primary d-flex align-items-center justify-content-center"
-                              onClick={() => handleViewDocument(doc)}
-                              title="Voir"
-                              style={{
-                                padding: '8px 12px',
-                                fontSize: '14px',
-                                minWidth: '80px'
-                              }}
-                            >
-                              <i className="bi bi-eye me-1"></i>
-                              Voir
-                            </button>
-                            <button
-                              className="btn btn-outline-info d-flex align-items-center justify-content-center"
-                              onClick={() => handleSend(doc)}
-                              disabled={processingDocId === doc.id}
-                              title="Envoyer"
-                              style={{
-                                padding: '8px 12px',
-                                fontSize: '14px',
-                                minWidth: '80px',
-                                ...(processingDocId === doc.id && {
+                    <tr key={doc.id} className="table-row-hover">
+                      <td className="text-muted">{doc.id}</td>
+                      <td>{doc.filename}</td>
+                      {(user?.role === 'admin' || user?.role === 'superuser') && (
+                        <td>{doc.owner_name || doc.owner || '-'}</td>
+                      )}
+                      <td>{doc.created_at ? new Date(doc.created_at).toLocaleDateString('fr-FR') : '-'}</td>
+                                            <td>
+                        <div className="d-flex gap-2">
+                          <button
+                            className="btn btn-outline-primary d-flex align-items-center justify-content-center"
+                            onClick={() => handleViewDocument(doc)}
+                            title="Voir"
+                            style={{
+                              padding: '8px 12px',
+                              fontSize: '14px',
+                              minWidth: '80px'
+                            }}
+                          >
+                            <i className="bi bi-eye me-1"></i>
+                            Voir
+                          </button>
+                          <button
+                            className="btn btn-outline-info d-flex align-items-center justify-content-center"
+                            onClick={() => handleSend(doc)}
+                            disabled={processingDocId === doc.id}
+                            title="Envoyer"
+                            style={{
+                              padding: '8px 12px',
+                              fontSize: '14px',
+                              minWidth: '80px',
+                              ...(processingDocId === doc.id && {
+                              
+                                color: 'white',
                                 
-                                  color: 'white',
-                                  
-                                })
-                              }}
-                            >
-                              {processingDocId === doc.id ? (
-                                'Traitement...'
-                              ) : (
-                                <>
-                                  <i className="bi bi-send me-1"></i>
-                                  déplacer
-                                </>
-                              )}
-                            </button>
-                            <button
-                              className="btn btn-outline-warning d-flex align-items-center justify-content-center"
-                              onClick={() => handleDeleteDocument(doc)}
-                              disabled={isDeleting}
-                              title="Supprimer"
-                              style={{
-                                padding: '8px 12px',
-                                fontSize: '14px',
-                                minWidth: '80px',
-                                backgroundColor: 'orangered',
-                                color: 'white'
-                              }}
-                            >
-                              <i className="bi bi-trash me-1"></i>
-                              Supprimer
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
+                              })
+                            }}
+                          >
+                            {processingDocId === doc.id ? (
+                              'Traitement...'
+                            ) : (
+                              <>
+                                <i className="bi bi-send me-1"></i>
+                                déplacer
+                              </>
+                            )}
+                          </button>
+                          <button
+                            className="btn btn-outline-warning d-flex align-items-center justify-content-center"
+                            onClick={() => handleDeleteDocument(doc)}
+                            disabled={isDeleting}
+                            title="Supprimer"
+                            style={{
+                              padding: '8px 12px',
+                              fontSize: '14px',
+                              minWidth: '80px',
+                              backgroundColor: 'orangered',
+                              color: 'white'
+                            }}
+                          >
+                            <i className="bi bi-trash me-1"></i>
+                            Supprimer
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="4" className="text-center py-5">
+                      <td colSpan={(user?.role === 'admin' || user?.role === 'superuser') ? 5 : 4} className="text-center py-5">
                         <div className="empty-state">
                           <i className="bi bi-search text-muted mb-3" style={{ fontSize: '3rem' }}></i>
-                          <p className="text-muted mb-3">Aucune donnée ne correspond aux filtres actuels</p>
-                          <button 
-                            className="btn btn-blue btn-sm"
-                            onClick={handleResetFilters}
-                          >
-                            <i className="bi bi-arrow-clockwise me-1"></i>
-                            Réinitialiser les filtres
-                          </button>
+                          <p className="text-muted mb-3">{getNoDataMessage()}</p>
+                          {hasActiveFilters() ? (
+                            <button 
+                              className="btn btn-blue btn-sm"
+                              onClick={handleResetFilters}
+                            >
+                              <i className="bi bi-arrow-clockwise me-1"></i>
+                              Réinitialiser les filtres
+                            </button>
+                          ) : (
+                            <button 
+                              className="btn btn-blue btn-sm"
+                              onClick={() => setIsUploadModalOpen(true)}
+                            >
+                              <i className="bi bi-download me-1"></i>
+                              Télécharger
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
