@@ -55,16 +55,17 @@
 .documents-table-container {
   position: relative;
   overflow: visible !important;
-  max-height: 500px !important;
+  max-height: 250px !important;
   overflow-y: auto !important;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  padding-bottom: 15px !important;
 }
 
 .table-responsive {
   overflow: visible !important;
-  max-height: 500px !important;
+  max-height: 250px !important;
   overflow-y: auto !important;
 }
 
@@ -80,18 +81,18 @@
 .document-archive-container {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 40px); /* Full viewport height minus padding */
+  height: auto; /* Remove fixed height constraint */
   padding: 20px;
-  overflow: hidden; /* Disable scrolling on the main container */
+  overflow: visible; /* Allow scrolling */
 }
 
 /* 2. Make the table container the main scrolling area */
 .documents-table-container {
-  height: 70vh;
+  height: 300px;
   overflow-y: auto;
-  padding-bottom: 80px;
+  padding-bottom: 15px;
   border-radius: 8px;
-  max-height: 70vh;
+  max-height: 500px;
   position: relative;
 }
 
@@ -99,6 +100,7 @@
 .table-responsive {
   overflow-x: auto; /* Enable horizontal scrolling for the table */
   -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  max-height: 500px !important;
 }
 
 .table thead {
@@ -140,15 +142,37 @@
 .search-filter-container {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   border: 1px solid #e5e7eb;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
+  height: auto;
+  max-height: none;
+}
+
+/* Additional compact styling for filter sections */
+.search-filter-container .mb-3 {
+  margin-bottom: 0.5rem !important;
+}
+
+.search-filter-container h6 {
+  font-size: 0.75rem !important;
+  margin-bottom: 0.25rem !important;
+  font-weight: 600;
+}
+
+.search-filter-container .d-flex.flex-wrap.gap-2 {
+  gap: 0.25rem !important;
+}
+
+.search-filter-container .d-flex.flex-wrap.gap-4 {
+  gap: 0.5rem !important;
 }
 
 .search-filter-container .card-body {
-  padding: 1rem !important; /* Reduced padding */
+  padding: 0.5rem !important; /* Further reduced padding */
+
 }
 
 .search-filter-container h2 {
-  font-size: 1rem !important; /* Smaller title */
+  font-size: 0.875rem !important; /* Even smaller title */
   font-weight: 600;
   color: #374151;
   margin-bottom: 0 !important;
@@ -175,30 +199,31 @@
 /* Header section with upload button */
 .search-filter-container .d-flex.justify-content-between {
   align-items: flex-start;
-  gap: 1rem;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem !important;
 }
 
 /* Compact form controls */
 .search-filter-container .form-control-sm {
-  padding: 0.375rem 0.5rem;
-  font-size: 0.875rem;
+  padding: 0.25rem 0.375rem;
+  font-size: 0.75rem;
   border-radius: 0.375rem;
 }
 
 .search-filter-container .form-label {
-  font-size: 0.75rem !important;
+  font-size: 0.625rem !important;
   font-weight: 500;
   color: #6b7280;
-  margin-bottom: 0.25rem !important;
+  margin-bottom: 0.125rem !important;
 }
 
 .search-filter-container .form-label.small {
-  font-size: 0.75rem;
+  font-size: 0.625rem;
 }
 
 /* Compact checkboxes */
 .search-filter-container .form-check-sm {
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.125rem;
 }
 
 .search-filter-container .form-check-sm .form-check-input {
@@ -207,8 +232,8 @@
 }
 
 .search-filter-container .form-check-sm .form-check-label {
-  font-size: 0.75rem;
-  padding-left: 0.25rem;
+  font-size: 0.625rem;
+  padding-left: 0.125rem;
 }
 
 /* Search input group styling */
@@ -256,9 +281,10 @@
 }
 
 .btn-blue.btn-sm {
-  padding: 0.375rem 0.75rem;
-  font-size: 0.875rem;
+  padding: 0.625rem 1rem;
+  font-size: 0.95rem;
   border-radius: 6px;
+  min-height: 2.5rem;
 }
 
 /* Outline blue button style */
@@ -294,9 +320,10 @@
 }
 
 .btn-outline-blue.btn-sm {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.75rem;
-  border-radius: 4px;
+  padding: 0.625rem 1rem;
+  font-size: 0.95rem;
+  border-radius: 6px;
+  min-height: 2.5rem;
 }
 
 /* --- ENHANCED DOCUMENTS ACTIONS SECTION --- */
@@ -437,11 +464,11 @@
 /* Responsive adjustments for search & filter */
 @media (max-width: 768px) {
   .search-filter-container .row.g-3 {
-    --bs-gutter-x: 1rem;
+    --bs-gutter-x: 0.5rem;
   }
   
   .search-filter-container .col-md-6 {
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.25rem;
   }
   
   .search-filter-container .d-flex.flex-wrap.gap-2 {
@@ -451,7 +478,7 @@
   .search-filter-container .d-flex.justify-content-between {
     flex-direction: column;
     align-items: stretch;
-    gap: 0.75rem;
+    gap: 0.25rem;
   }
   
   .search-filter-container .btn-primary {
@@ -472,13 +499,13 @@
 
 /* Ensure proper spacing between sections */
 .search-filter-container .row.g-2 {
-  --bs-gutter-x: 0.5rem;
-  --bs-gutter-y: 0.5rem;
+  --bs-gutter-x: 0.25rem;
+  --bs-gutter-y: 0.25rem;
 }
 
 .search-filter-container .row.g-3 {
-  --bs-gutter-x: 1rem;
-  --bs-gutter-y: 1rem;
+  --bs-gutter-x: 0.5rem;
+  --bs-gutter-y: 0.5rem;
 }
 
 /* --- BREADCRUMB AND TITLE SECTION STYLES --- */
@@ -486,8 +513,24 @@
 /* Enhanced breadcrumb and title layout */
 .documents-header {
   border-bottom: 1px solid #dee2e6;
-  padding-bottom: 0.75rem;
-  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+/* Compact document table header */
+.documents-table-container .card-body .d-flex.justify-content-between {
+  padding: 0.5rem 0;
+  min-height: auto;
+}
+
+.documents-table-container .breadcrumb {
+  margin-bottom: 0;
+  padding: 0;
+}
+
+.documents-table-container .items-count {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
 }
 
 .documents-header .d-flex {
@@ -696,6 +739,37 @@
   word-wrap: break-word;
 }
 
+/* Make document column wider */
+.table th:nth-child(4),
+.table td:nth-child(4) {
+  min-width: 450px !important;
+  max-width: 600px !important;
+  width: 450px !important;
+}
+
+/* Make filter row smaller */
+.table thead tr:nth-child(2) th {
+  padding: 0.375rem 0.5rem !important;
+  background-color: #f8f9fa !important;
+}
+
+.table thead tr:nth-child(2) th .form-control-sm {
+  padding: 0.25rem 0.375rem !important;
+  font-size: 0.75rem !important;
+  height: 1.75rem !important;
+  line-height: 1.2 !important;
+}
+
+/* Ensure document filename has proper width */
+.document-filename {
+  color: #1f2937;
+  font-weight: 600;
+  font-size: 0.875rem;
+  max-width: 400px;
+  word-wrap: break-word;
+  white-space: normal;
+}
+
 .extracted-data-preview {
   font-size: 0.875rem;
 }
@@ -789,8 +863,25 @@
   .table td {
     padding: 8px;
   }
-
   
+  /* Make filter row even smaller on medium screens */
+  .table thead tr:nth-child(2) th {
+    padding: 0.25rem 0.375rem !important;
+  }
+  
+  .table thead tr:nth-child(2) th .form-control-sm {
+    padding: 0.25rem 0.375rem !important;
+    font-size: 0.75rem !important;
+    height: 1.5rem !important;
+  }
+  
+  /* Adjust document column width for medium screens */
+  .table th:nth-child(4),
+  .table td:nth-child(4) {
+    min-width: 300px !important;
+    max-width: 400px !important;
+    width: 300px !important;
+  }
 
   .btn-group .btn {
     padding: 4px 8px;
@@ -908,6 +999,25 @@
   .table td {
     padding: 6px;
     font-size: 0.75rem;
+  }
+  
+  /* Make filter row even smaller on small screens */
+  .table thead tr:nth-child(2) th {
+    padding: 0.25rem 0.25rem !important;
+  }
+  
+  .table thead tr:nth-child(2) th .form-control-sm {
+    padding: 0.25rem 0.375rem !important;
+    font-size: 0.75rem !important;
+    height: 1.375rem !important;
+  }
+  
+  /* Adjust document column width for small screens */
+  .table th:nth-child(4),
+  .table td:nth-child(4) {
+    min-width: 200px !important;
+    max-width: 250px !important;
+    width: 200px !important;
   }
 
   .table thead {
