@@ -139,6 +139,21 @@ const documents = {
     });
   },
   
+  // NEW: Temporary file upload function (no company/doctype required)
+  uploadTempFile: (file) => {
+    const formData = new FormData();
+    
+    // Add the single file to FormData
+    formData.append("files", file);
+    
+    return API.post('/upload_temp', formData, {
+      headers: { 
+        'Content-Type': 'multipart/form-data',
+      },
+      timeout: 60000, // 60 seconds timeout for large files
+    });
+  },
+  
   // Enhanced upload function for multiple files with OCR processing
   uploadMultipleFiles: (files, company_id, doctype_id) => {
     const formData = new FormData();
