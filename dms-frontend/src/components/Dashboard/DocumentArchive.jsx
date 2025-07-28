@@ -1492,7 +1492,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     <div className="container-fluid py-4">
       {/* Upload Modal */}
       {isUploadModalOpen && (
-        <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+        <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
           <div className="modal-dialog modal-lg">
             <div className="modal-content">
               <div className="modal-body">
@@ -1998,7 +1998,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                             top: 'auto',
                             bottom: '100%',
                             marginBottom: '5px',
-                            zIndex: 99999,
+                            zIndex: 1000,
                             position: 'absolute',
                             transform: 'none'
                           }}>
@@ -2790,9 +2790,9 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
 
       {/* Email Sending Modal */}
       {isEmailModalOpen && (
-        <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog modal-lg" style={{ height: '80vh', maxHeight: '80vh', display: 'flex', alignItems: 'center' }}>
-            <div className="modal-content" style={{ height: '80vh', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
+        <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
+          <div className="modal-dialog modal-lg" style={{ height: '90vh', maxHeight: '90vh', display: 'flex', alignItems: 'center' }}>
+            <div className="modal-content" style={{ height: '90vh', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
               <div className="modal-header">
                 <h5 className="modal-title">
                   <i className="bi bi-envelope me-2"></i>
@@ -2835,14 +2835,16 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                       <div className="mb-2">
                         <button 
                           type="button" 
-                          className="btn btn-sm btn-outline-primary me-2"
+                          className="btn btn-sm btn-primary me-2"
+                          style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' , backgroundColor:'blue'}}
                           onClick={() => setSelectedEmailTypes(availableEmailTypes.map(type => type.type))}
                         >
                           Tout sélectionner
                         </button>
                         <button 
                           type="button" 
-                          className="btn btn-sm btn-outline-secondary"
+                          className="btn btn-sm btn-primary"
+                          style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' , backgroundColor:'blue'}}
                           onClick={() => setSelectedEmailTypes([])}
                         >
                           Tout désélectionner
@@ -2899,14 +2901,16 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                             <div className="mb-2">
                               <button 
                                 type="button" 
-                                className="btn btn-sm btn-outline-primary me-2"
+                                className="btn btn-sm btn-primary me-2"
+                                style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' , backgroundColor:'blue'}}
                                 onClick={() => setSelectedRecipients(emailUsers.map(u => u.email))}
                               >
                                 Tout sélectionner
                               </button>
                               <button 
                                 type="button" 
-                                className="btn btn-sm btn-outline-secondary"
+                                className="btn btn-sm btn-primary"
+                                style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' , backgroundColor:'blue'}}
                                 onClick={() => setSelectedRecipients([])}
                               >
                                 Tout désélectionner
