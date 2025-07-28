@@ -1390,8 +1390,12 @@ def upload_single_file():
     company_id = request.form.get('company_id')
     doctype_id = request.form.get('doctype_id')
     
-    if not company_id or not doctype_id:
-        return jsonify({"msg": "Company ID and document type ID are required"}), 400
+    if not company_id:
+        return jsonify({"msg": "Company ID is required"}), 400
+    
+    # doctype_id is optional, can be null/empty
+    if doctype_id == '':
+        doctype_id = None
     
     # Get uploaded file
     if 'file' not in request.files:
