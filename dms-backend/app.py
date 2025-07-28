@@ -112,7 +112,7 @@ def log_activity(actor, action, resource_type, resource_data):
         log_entry = (
             f"{timestamp} - {actor} - {action} TempDocument : "
             f"{resource_data['id']}, {resource_data['filename']}, "
-            f"company_id={resource_data['company_id']}"
+            
         )
     else:
         return  # Unsupported resource type
@@ -2729,13 +2729,8 @@ def home():
 def upload_temp_documents():
     current_user_claims = get_jwt()
     owner_id = current_user_claims.get('id')
-    # Find the company_id for 'À verifier'
-    verifier_company = db.get_company_by_id(
-        db.execute_query("SELECT id FROM companies WHERE name = %s LIMIT 1", ("À verifier",), fetch=True)[0]['id']
-    )
-    if not verifier_company:
-        return jsonify({"msg": "Company 'À verifier' not found."}), 400
-    company_id = verifier_company['id']
+    
+    
 
     if 'files' not in request.files:
         return jsonify({"msg": "No files part in the request."}), 400
@@ -2750,7 +2745,7 @@ def upload_temp_documents():
         filename = secure_filename(file.filename)
         file_path = os.path.join(upload_dir, filename)
         file.save(file_path)
-        temp_doc_id = db.create_temp_document(filename, file_path, owner_id, company_id)
+        temp_doc_id = db.create_temp_document(filename, file_path, owner_id)
         
         # Log the temporary document creation
         log_activity(
@@ -2760,7 +2755,7 @@ def upload_temp_documents():
             resource_data={
                 'id': temp_doc_id,
                 'filename': filename,
-                'company_id': company_id
+                
             }
         )
         
@@ -2770,10 +2765,16 @@ def upload_temp_documents():
 @app.route('/temp_documents', methods=['GET'])
 @jwt_required()
 def get_temp_documents():
+    current_user_claims = get_jwt()
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
+    
     try:
-        temp_docs = db.get_all_temp_documents(start_date, end_date)
+        # Get user information from JWT claims
+        user_id = current_user_claims.get('id')
+        user_role = current_user_claims.get('role')
+        
+        temp_docs = db.get_all_temp_documents(start_date, end_date, user_id, user_role)
         return jsonify(temp_docs), 200
     except Exception as e:
         return jsonify({'msg': str(e)}), 500
@@ -2799,7 +2800,7 @@ def delete_temp_document(doc_id):
             resource_data={
                 'id': doc_id,
                 'filename': temp_doc_data['filename'],
-                'company_id': temp_doc_data['company_id']
+                
             }
         )
         

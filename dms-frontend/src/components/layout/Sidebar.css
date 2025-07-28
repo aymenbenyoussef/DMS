@@ -174,7 +174,26 @@
 .folder-item:hover {
   background-color: #aadfa9;
 }
+.folder-item2 {
+  
+  align-items: center;
+  gap: 12px;
+  padding-left: 60px;
+ padding-top: 8px;
+ padding-bottom: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+  
+}
 
+.folder-item2:hover {
+  background-color: #aadfa9;
+}
+.folder-name2{
+  font-size: 1.1rem;
+}
 .folder-name {
   font-size: 0.9rem;
 }

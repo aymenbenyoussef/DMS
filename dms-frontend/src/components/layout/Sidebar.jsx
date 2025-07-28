@@ -23,6 +23,17 @@ const Sidebar = ({ user, loadingUser }) => {
     resetSelection
   } = useContext(AppContext);
   const [expandedCompany, setExpandedCompany] = useState(null);
+  const [tempDocumentsCount, setTempDocumentsCount] = useState(0);
+
+  const fetchTempDocumentsCount = async () => {
+    try {
+      const response = await API.tempDocuments.getAll();
+      setTempDocumentsCount(response.data?.length || 0);
+    } catch (error) {
+      console.error('Error fetching temp documents count:', error);
+      setTempDocumentsCount(0);
+    }
+  };
 
   useEffect(() => {
     if (loadingUser || !user?.id) return;
@@ -66,6 +77,7 @@ const Sidebar = ({ user, loadingUser }) => {
     };
 
     fetchCompanies();
+    fetchTempDocumentsCount();
 
     // Event listeners
     const companyHandler = () => fetchCompanies();
@@ -105,6 +117,21 @@ const Sidebar = ({ user, loadingUser }) => {
       clearTimeout(timeoutId);
     };
   }, [user, folders, loadingUser, retryCount]);
+
+  // Add event listener for temporary document uploads
+  useEffect(() => {
+    const handleTempDocumentUpload = () => {
+      fetchTempDocumentsCount();
+    };
+
+    // Listen for temporary document uploads
+    window.addEventListener('TempDocumentsUploaded', handleTempDocumentUpload);
+    
+    // Cleanup event listener on component unmount
+    return () => {
+      window.removeEventListener('TempDocumentsUploaded', handleTempDocumentUpload);
+    };
+  }, []);
 
   useEffect(() => {
     if (!selectedCompany) {
@@ -196,14 +223,24 @@ const Sidebar = ({ user, loadingUser }) => {
         <h2>Entités</h2>
       </header>
 
+      {/* A verifier button */}
+      
+
       {(error || timeoutError) && (
         <div className="error-message" style={{display:'flex',flexDirection:'column',alignItems:'center',gap:'8px'}}>
           {error || (timeoutError && 'Le chargement prend trop de temps.')}<br/>
           <button className="btn btn-primary" onClick={handleRetry} style={{marginTop:'8px'}}>Réessayer</button>
         </div>
       )}
-
+      <li 
+          className="folder-item2"
+          onClick={() => navigate('/temp-documents')}
+          style={{ listStyle: 'none' }}
+        >
+          <span className="folder-name2">À verifier ({tempDocumentsCount})</span>
+        </li>
       <ul className="folder-list" role="list">
+        
         {loadingStates.companies && !timeoutError ? (
           <div className="loading-container">
             <div className="loading-spinner"></div>
@@ -218,13 +255,13 @@ const Sidebar = ({ user, loadingUser }) => {
                 className={`folder-item ${selectedCompany?.id === company.id ? 'selected' : ''}`}
                 onClick={() => handleCompanyClick(company)}
               >
-                {company.name !== 'À verifier' && (
+                {company.name  && (
                   <svg xmlns="http://www.w3.org/2000/svg" className="company-icon" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M3 21v-2h18v2H3zm2-3V3h6v15H5zm8 0V7h6v11h-6z" />
                   </svg>
                 )}
                 <span className="company-name">{company.name}</span>
-                {company.name !== 'À verifier' && (
+                {company.name  && (
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className={`expand-icon ${expandedCompany === company.id ? 'expanded' : ''}`}
