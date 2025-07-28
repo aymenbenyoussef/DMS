@@ -1779,7 +1779,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
       </div>
 
       {/* Documents Table */}
-      <div className="card">
+      <div className="card" >
         <div className="card-body">
           {/* Breadcrumb and Title Section */}
           <div className="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
