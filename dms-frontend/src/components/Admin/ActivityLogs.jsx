@@ -180,7 +180,7 @@ const ActivityLogs = () => {
       return dateInRange && roleMatch && actionMatch && resourceMatch;
     });
     
-    setFilteredLogs(filtered);
+    setFilteredLogs(filtered.reverse());
   };
 
   const resetFilters = () => {

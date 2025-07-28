@@ -193,6 +193,38 @@
   border: 1px solid rgba(251, 191, 36, 0.2);
 }
 
+/* Nouvelle section pour les fichiers téléchargés */
+.uploaded-files-section {
+  margin-top: 24px;
+  padding: 20px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  animation: fadeIn 0.3s ease-out;
+}
+
+.uploaded-files-title {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.uploaded-files-title::before {
+  content: '📁';
+  font-size: 18px;
+}
+
+.uploaded-files-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .file-preview {
   display: flex;
   align-items: center;
@@ -202,8 +234,12 @@
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   border: 1px solid #e5e7eb;
-  width: 100%;
-  max-width: 400px;
+  transition: all 0.2s ease;
+}
+
+.file-preview:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
 }
 
 .file-icon {
@@ -609,6 +645,19 @@
   
   .drop-zone {
     padding: 32px 16px;
+  }
+  
+  .uploaded-files-section {
+    padding: 16px;
+  }
+  
+  .file-preview {
+    padding: 12px;
+    gap: 12px;
+  }
+  
+  .file-icon {
+    font-size: 28px;
   }
   
   .upload-icon {

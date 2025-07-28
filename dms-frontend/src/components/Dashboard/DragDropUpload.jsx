@@ -363,47 +363,51 @@ const DragDropUpload = ({ onUpload, onClose }) => {
             onDrop={handleDrop}
           >
             <div className="drop-zone-content">
-                <>
-                  <div className="upload-icon">📄</div>
-                <p>Upload Your File(s) Here</p>
-                  <label className="file-input-label">
-                    <input
-                      type="file"
-                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.tiff"
-                      onChange={handleFileChange}
-                      className="file-input"
-                    multiple
-                    />
-                    Browse Files
-                  </label>
-                  <p className="file-types">
-                    Accepted Format : PDF, JPG, PNG, TIFF, DOC, DOCX
-                  </p>
-              </>
-              {files.length > 0 && (
-                <div className="multi-file-preview">
-                  {files.map((f, idx) => (
-                    <div className="file-preview" key={idx}>
-                  <div className="file-icon">📄</div>
-                  <div className="file-info">
-                        <span className="file-name">{f.name}</span>
-                    <span className="file-size">
-                          ({(f.size / 1024 / 1024).toFixed(2)} MB)
-                    </span>
-                  </div>
-                  <button 
-                    className="remove-file-btn"
-                        onClick={() => removeFile(idx)}
-                    disabled={isUploading}
-                  >
-                    ×
-                  </button>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <div className="upload-icon">📄</div>
+              <p>Upload Your File(s) Here</p>
+              <label className="file-input-label">
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.tiff"
+                  onChange={handleFileChange}
+                  className="file-input"
+                  multiple
+                />
+                Browse Files
+              </label>
+              <p className="file-types">
+                Accepted Format : PDF, JPG, PNG, TIFF, DOC, DOCX
+              </p>
             </div>
           </div>
+          
+          {/* Section des fichiers téléchargés - maintenant en dehors de la drop-zone */}
+          {files.length > 0 && (
+            <div className="uploaded-files-section">
+              <h4 className="uploaded-files-title">Fichiers sélectionnés ({files.length})</h4>
+              <div className="uploaded-files-list">
+                {files.map((file, idx) => (
+                  <div className="file-preview" key={idx}>
+                    <div className="file-icon">📄</div>
+                    <div className="file-info">
+                      <span className="file-name">{file.name}</span>
+                      <span className="file-size">
+                        ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                      </span>
+                    </div>
+                    <button 
+                      className="remove-file-btn"
+                      onClick={() => removeFile(idx)}
+                      disabled={isUploading}
+                      title="Supprimer ce fichier"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           
           {isUploading && (
             <div className="upload-progress">
