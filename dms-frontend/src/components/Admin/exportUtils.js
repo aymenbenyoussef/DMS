@@ -40,7 +40,7 @@ export function exportToTXT(data, columns, filename = 'export.txt') {
 }
 
 // Export to Excel (simple xls format)
-export function exportToExcel(data, columns, filename = 'export.xls') {
+export function exportToExcel(data, columns, filename = 'export.xlsx') {
   let table = '<table><tr>' +
     columns.map(col => `<th>${col.label || col}</th>`).join('') +
     '</tr>' +

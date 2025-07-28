@@ -130,6 +130,9 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
   const [deleteError, setDeleteError] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Fullscreen modal state
+  const [isFullscreenModalOpen, setIsFullscreenModalOpen] = useState(false);
+
   // Dropdown menu states
   const [openDropdownId, setOpenDropdownId] = useState(null);
 
@@ -1352,6 +1355,16 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     setDeleteError('');
     setIsDeleting(false);
   };
+
+  // Fullscreen modal functions
+  const openFullscreenModal = () => {
+    setIsFullscreenModalOpen(true);
+  };
+
+  const closeFullscreenModal = () => {
+    setIsFullscreenModalOpen(false);
+  };
+
   const handleConfirmDeleteDocument = async () => {
     if (!deletingDocument) return;
     setIsDeleting(true);
@@ -1779,7 +1792,17 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
       </div>
 
       {/* Documents Table */}
-      <div className="card">
+      <div className="card" style={{ position: 'relative' }}>
+        {/* Fullscreen/Maximize Button */}
+        <button 
+          className="table-fullscreen-btn"
+          onClick={openFullscreenModal}
+          title="Afficher en plein écran"
+          aria-label="Afficher en plein écran"
+        >
+          <i className="bi bi-arrows-fullscreen"></i>
+        </button>
+        
         <div className="card-body">
           {/* Breadcrumb and Title Section */}
           <div className="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
@@ -3154,6 +3177,318 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                   )}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Fullscreen Modal */}
+      {isFullscreenModalOpen && (
+        <div className="fullscreen-modal" onClick={closeFullscreenModal}>
+          <div className="fullscreen-modal-content" onClick={(e) => e.stopPropagation()}>
+            <button 
+              className="fullscreen-modal-close"
+              onClick={closeFullscreenModal}
+              title="Fermer le plein écran"
+              aria-label="Fermer le plein écran"
+            >
+              <i className="bi bi-x-lg"></i>
+            </button>
+            <div className="fullscreen-modal-body">
+              {isLoading ? (
+                <div className="text-center py-5">
+                  <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="table-responsive documents-table-container">
+                  <table className="table table-hover stylish-table">
+                    <thead className="table-header-sticky">
+                      <tr>
+                        <th style={{ width: '20px', minWidth: '20px', maxWidth: '20px' }}>
+                          {isGroupMode && (
+                            <input 
+                              type="checkbox" 
+                              className="form-check-input"
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedDocuments(filteredDocuments.map(doc => doc.id));
+                                } else {
+                                  setSelectedDocuments([]);
+                                }
+                              }}
+                              checked={selectedDocuments.length === filteredDocuments.length && filteredDocuments.length > 0}
+                            />
+                          )}
+                        </th>
+                        <th style={{cursor:'pointer', background: sortConfig.key === 'id' ? '#f0f4fa' : undefined, color: sortConfig.key === 'id' ? '#1976d2' : undefined}} onClick={() => handleSort('id')}>
+                          ID <span style={{fontSize:'1em'}}>{sortConfig.key === 'id' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                        </th>
+                        <th>Actions</th>
+                        <th style={{cursor:'pointer', background: sortConfig.key === 'filename' ? '#f0f4fa' : undefined, color: sortConfig.key === 'filename' ? '#1976d2' : undefined}} onClick={() => handleSort('filename')}>
+                          Document <span style={{fontSize:'1em'}}>{sortConfig.key === 'filename' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                        </th>
+                        <th>Facturable</th>
+                        <th>Rapport</th>
+                        <th style={{cursor:'pointer', background: sortConfig.key === 'partner_name' ? '#f0f4fa' : undefined, color: sortConfig.key === 'partner_name' ? '#1976d2' : undefined}} onClick={() => handleSort('partner_name')}>
+                          Partner <span style={{fontSize:'1em'}}>{sortConfig.key === 'partner_name' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                        </th>
+                        <th style={{cursor:'pointer', background: sortConfig.key === 'date_facture' ? '#f0f4fa' : undefined, color: sortConfig.key === 'date_facture' ? '#1976d2' : undefined}} onClick={() => handleSort('date_facture')}>
+                          Date Facture <span style={{fontSize:'1em'}}>{sortConfig.key === 'date_facture' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                        </th>
+                        <th style={{cursor:'pointer', background: sortConfig.key === 'upload_date' ? '#f0f4fa' : undefined, color: sortConfig.key === 'upload_date' ? '#1976d2' : undefined}} onClick={() => handleSort('upload_date')}>
+                          Date Upload <span style={{fontSize:'1em'}}>{sortConfig.key === 'upload_date' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                        </th>
+                        <th style={{cursor:'pointer', background: sortConfig.key === 'tva' ? '#f0f4fa' : undefined, color: sortConfig.key === 'tva' ? '#1976d2' : undefined}} onClick={() => handleSort('tva')}>
+                          TVA <span style={{fontSize:'1em'}}>{sortConfig.key === 'tva' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                        </th>
+                        <th style={{cursor:'pointer', background: sortConfig.key === 'total_ht' ? '#f0f4fa' : undefined, color: sortConfig.key === 'total_ht' ? '#1976d2' : undefined}} onClick={() => handleSort('total_ht')}>
+                          HT <span style={{fontSize:'1em'}}>{sortConfig.key === 'total_ht' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                        </th>
+                        <th style={{cursor:'pointer', background: sortConfig.key === 'total_ttc' ? '#f0f4fa' : undefined, color: sortConfig.key === 'total_ttc' ? '#1976d2' : undefined, textAlign: 'right'}} onClick={() => handleSort('total_ttc')}>
+                          TTC <span style={{fontSize:'1em'}}>{sortConfig.key === 'total_ttc' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                        </th>
+                      </tr>
+                      {/* Filter Row */}
+                      <tr style={{ backgroundColor: '#f8f9fa' }}>
+                        <th style={{ width: '20px', minWidth: '20px', maxWidth: '20px' }}></th>
+                        <th>
+                          <input
+                            type="text"
+                            className="form-control form-control-sm"
+                            placeholder="Filter ID..."
+                            value={columnFilters.id}
+                            onChange={(e) => handleColumnFilterChange('id', e.target.value)}
+                          />
+                        </th>
+                        <th></th>
+                        <th>
+                          <input
+                            type="text"
+                            className="form-control form-control-sm"
+                            placeholder="Filter Document..."
+                            value={columnFilters.filename}
+                            onChange={(e) => handleColumnFilterChange('filename', e.target.value)}
+                          />
+                        </th>
+                        <th></th>
+                        <th></th>
+                        <th>
+                          <input
+                            type="text"
+                            className="form-control form-control-sm"
+                            placeholder="Filter Partner..."
+                            value={columnFilters.partner_name}
+                            onChange={(e) => handleColumnFilterChange('partner_name', e.target.value)}
+                          />
+                        </th>
+                        <th></th>
+                        <th></th>
+                        <th>
+                          <input
+                            type="text"
+                            className="form-control form-control-sm"
+                            placeholder="Filter TVA..."
+                            value={columnFilters.tva}
+                            onChange={(e) => handleColumnFilterChange('tva', e.target.value)}
+                          />
+                        </th>
+                        <th>
+                          <input
+                            type="text"
+                            className="form-control form-control-sm"
+                            placeholder="Filter HT..."
+                            value={columnFilters.total_ht}
+                            onChange={(e) => handleColumnFilterChange('total_ht', e.target.value)}
+                          />
+                        </th>
+                        <th>
+                          <input
+                            type="text"
+                            className="form-control form-control-sm"
+                            placeholder="Filter TTC..."
+                            value={columnFilters.total_ttc}
+                            onChange={(e) => handleColumnFilterChange('total_ttc', e.target.value)}
+                          />
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredDocuments.length > 0 ? (
+                        <>
+                          {filteredDocuments.map((doc) => (
+                            <tr key={doc.id} className={selectedDocuments.includes(doc.id) ? 'selected' : ''}>
+                              <td>
+                                {isGroupMode && (
+                                  <div className="form-check">
+                                    <input 
+                                      className="form-check-input"
+                                      type="checkbox"
+                                      checked={selectedDocuments.includes(doc.id)}
+                                      onChange={() => handleDocumentSelection(doc.id)}
+                                    />
+                                  </div>
+                                )}
+                              </td>
+                              <td className="text-muted">{doc.id}</td>
+                              <td>
+                                <div className="dropdown dropdown-up" style={{ position: 'relative', zIndex: 99999 }}>
+                                  <button 
+                                    className="btn btn-sm btn-outline-secondary dropdown-toggle"
+                                    type="button" 
+                                    onClick={() => setOpenDropdownId(openDropdownId === doc.id ? null : doc.id)}
+                                    style={{ fontSize: '12px', padding: '4px 8px' ,zIndex:0}}
+                                  >
+                                    Actions
+                                  </button>
+                                  <ul className={`dropdown-menu ${openDropdownId === doc.id ? 'show' : ''}`} style={{ 
+                                    fontSize: '12px', 
+                                    minWidth: '150px',
+                                    top: 'auto',
+                                    bottom: '100%',
+                                    marginBottom: '5px',
+                                    zIndex: 1000,
+                                    position: 'absolute',
+                                    transform: 'none'
+                                  }}>
+                                    <li>
+                                      <button 
+                                        className="dropdown-item d-flex align-items-center"
+                                        onClick={() => { 
+                                          setOpenDropdownId(null);
+                                          setIsPreviewModalOpen(false); 
+                                          handleSendEmail(doc); 
+                                        }}
+                                      >
+                                        <i className="bi bi-envelope me-2"></i>
+                                        Envoyer
+                                      </button>
+                                    </li>
+                                    <li>
+                                      <button 
+                                        className="dropdown-item d-flex align-items-center"
+                                        onClick={() => { 
+                                          setOpenDropdownId(null);
+                                          handleEditDocument(doc); 
+                                        }}
+                                      >
+                                        <i className="bi bi-pencil-square me-2"></i>
+                                        Modifier
+                                      </button>
+                                    </li>
+                                    <li><hr className="dropdown-divider" /></li>
+                                    <li>
+                                      <button 
+                                        className="dropdown-item d-flex align-items-center text-danger"
+                                        onClick={() => { 
+                                          setOpenDropdownId(null);
+                                          handleDeleteDocument(doc); 
+                                        }}
+                                      >
+                                        <i className="bi bi-trash me-2"></i>
+                                        Supprimer
+                                      </button>
+                                    </li>
+                                  </ul>
+                                </div>
+                              </td>
+                              <td>
+                                <div className="d-flex align-items-center">
+                                  <i className={`bi ${getFileIconClass(doc.filename)} me-2`}></i>
+                                  <div style={{ maxWidth: '400px', wordBreak: 'break-word', whiteSpace: 'normal' }}>
+                                    <div className="fw-medium document-filename">{doc.filename}</div>
+                                    <small className="text-muted">
+                                      {getFileType(doc.filename)} • {formatFileSize(doc.file_size || doc.size || 0)}
+                                    </small>
+                                  </div>
+                                </div>
+                              </td>
+                              <td>
+                                <span 
+                                  style={{ 
+                                    color: doc.is_invoice ? '#28a745' : '#dc3545',
+                                    fontWeight: 'bold'
+                                  }}
+                                >
+                                  {doc.is_invoice ? 'Oui' : 'Non'}
+                                </span>
+                              </td>
+                              <td>
+                                <div className="extracted-data-cell">
+                                  <div className="btn-group" role="group">
+                                    <button
+                                      className="btn btn-sm btn-outline-blue"
+                                      style={{ padding: '10px 24px', fontSize: '1.15em', fontWeight: 600 }}
+                                      onClick={() => doc.rapport ? handleViewRapport(doc) : handleViewDocument(doc)}
+                                      title={doc.rapport ? "Voir le rapport PDF" : "Voir le document"}
+                                    >
+                                      Voir
+                                    </button>
+                                  </div>
+                                </div>
+                              </td>
+                              <td>{doc.partner_name || '-'}</td>
+                              <td>{formatDate(doc.invoice_date)}</td>
+                              <td>{formatDate(doc.created_at)}</td>
+                              <td>{formatCurrency(doc.tva)}</td>
+                              <td>{formatCurrency(doc.total_ht)}</td>
+                              <td style={{ textAlign: 'right' }}>{formatCurrency(doc.total_ttc)}</td>
+                            </tr>
+                          ))}
+                          
+                          <tr style={{ 
+                            backgroundColor: '#f8f9fa', 
+                            borderTop: '2px solid #dee2e6',
+                            fontWeight: 'bold'
+                          }}>
+                            <td colSpan="11" style={{ textAlign: 'right', padding: '12px 16px' }}>
+                              <strong>Total TTC:</strong>
+                            </td>
+                            <td style={{ 
+                              padding: '12px 16px', 
+                              color: '#2563eb',
+                              fontSize: '1.1em',
+                              textAlign: 'right'
+                            }}>
+                              {formatCurrency(filteredDocuments
+                                .filter(doc => doc.total_ttc && !isNaN(parseFloat(doc.total_ttc)))
+                                .reduce((sum, doc) => sum + parseFloat(doc.total_ttc), 0)
+                              )}
+                            </td>
+                          </tr>
+                        </>
+                      ) : (
+                        <tr>
+                          <td colSpan="12" className="text-center py-5">
+                            <div className="empty-state">
+                              <i className="bi bi-search text-muted mb-3" style={{ fontSize: '3rem' }}></i>
+                              <p className="mt-3 text-muted">{getNoDataMessage()}</p>
+                              {hasActiveFilters() ? (
+                                <button 
+                                  className="btn btn-blue btn-sm"
+                                  onClick={handleResetFilters}
+                                >
+                                  <i className="bi bi-arrow-clockwise me-1"></i>
+                                  Réinitialiser les filtres
+                                </button>
+                              ) : (
+                                <button 
+                                  className="btn btn-blue btn-sm"
+                                  onClick={openUploadModal}
+                                >
+                                  <i className="bi bi-download me-1"></i>
+                                  Télécharger
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
         </div>
