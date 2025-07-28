@@ -14,7 +14,7 @@
   
   .dropdown-menu {
     position: absolute !important;
-    z-index: 9999 !important;
+    z-index: 1000 !important;
     top: 100% !important;
     right: 0 !important;
     left: auto !important;
@@ -987,7 +987,7 @@
     width: 100vw;
     height: 100vh;
     background: rgba(30, 32, 38, 0.88);
-    z-index: 9999;
+    z-index: 1050;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1365,7 +1365,7 @@
   display: flex !important;
   justify-content: center !important;
   align-items: center !important;
-  z-index: 9999 !important;
+  z-index: 1050 !important;
   backdrop-filter: blur(2px) !important;
 }
 
@@ -1379,7 +1379,7 @@
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
   animation: modalSlideIn 0.3s ease-out !important;
   position: relative !important;
-  z-index: 10000 !important;
+  z-index: 1060 !important;
 }
 
 @keyframes modalSlideIn {
