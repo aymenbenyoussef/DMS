@@ -937,15 +937,20 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
   // Update handleViewDocument to open enhanced modal
   const handleViewDocument = async (doc) => {
     try {
-      const response = await API.documents.download(doc.id);
-      if (response.status !== 200) {
-        if (response.status === 404) {
+      const [documentResponse, ocrResponse] = await Promise.all([
+        API.documents.download(doc.id),
+        API.documents.getOcrText(doc.id).catch(() => null) // Don't fail if OCR not available
+      ]);
+      
+      if (documentResponse.status !== 200) {
+        if (documentResponse.status === 404) {
           alert('Document non disponible.');
           return;
         }
         throw new Error('Network response was not ok');
       }
-      const blob = response.data;
+      
+      const blob = documentResponse.data;
       const url = window.URL.createObjectURL(blob);
       const ext = doc.filename.split('.').pop().toLowerCase();
       let type = '';
@@ -954,13 +959,23 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
       else if (["txt"].includes(ext)) type = 'text';
       else type = 'other';
       
+      // Handle OCR text if available
+      if (ocrResponse && ocrResponse.status === 200) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          setOcrText(e.target.result);
+        };
+        reader.readAsText(ocrResponse.data);
+      } else {
+        setOcrText(''); // Clear OCR text if not available
+      }
+      
       setPreviewType(type);
       setPreviewUrl(url);
       setPreviewTitle(doc.filename);
       setPreviewText('');
       setCurrentDocument(doc);
       setActiveTab('report'); // Reset to default tab
-      setOcrText(''); // Clear OCR text
       
       // Fetch related documents
       await fetchRelatedDocuments(doc.id);
@@ -1838,7 +1853,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
             </div>
           ) : (
             <div className="table-responsive documents-table-container">
-              <table className="table table-hover stylish-table" style={{height:'300px',maxHeight:'500px'}}>
+              <table className="table table-hover stylish-table" >
                 <thead className="table-header-sticky">
                   <tr>
                       <th style={{ width: '20px', minWidth: '20px', maxWidth: '20px' }}>
@@ -2051,20 +2066,16 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                       </td>
                       <td>
                         <div className="extracted-data-cell">
-                          {doc.rapport ? (
                             <div className="btn-group" role="group">
                               <button
                                 className="btn btn-sm btn-outline-blue"
                                 style={{ padding: '10px 24px', fontSize: '1.15em', fontWeight: 600 }}
-                                onClick={() => handleViewRapport(doc)}
-                                title="Voir le rapport PDF"
+                              onClick={() => doc.rapport ? handleViewRapport(doc) : handleViewDocument(doc)}
+                              title={doc.rapport ? "Voir le rapport PDF" : "Voir le document"}
                               >
                                 Voir
                               </button>
                             </div>
-                          ) : (
-                            <span className="text-muted">-</span>
-                          )}
                         </div>
                       </td>
                       <td>{doc.partner_name || '-'}</td>
@@ -2357,8 +2368,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                 flexDirection: 'column',
                 borderRight: '1px solid #e5e7eb'
               }}>
-                {/* Tabs Navigation - Only show for reports */}
-                {previewTitle.includes('_rapport.pdf') && (
+                {/* Tabs Navigation - Show for all documents */}
                   <div className="tabs-navigation" style={{
                     padding: '16px 24px 0 24px',
                     borderBottom: '1px solid #e5e7eb',
@@ -2379,7 +2389,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                           }}
                         >
                           <i className="bi bi-file-earmark-pdf me-2"></i>
-                          Rapport
+                        {previewTitle.includes('_rapport.pdf') ? 'Rapport' : 'Document'}
                         </button>
                       </li>
                       <li className="nav-item">
@@ -2399,6 +2409,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                           OCR Extraits
                         </button>
                       </li>
+                    {previewTitle.includes('_rapport.pdf') && (
                       <li className="nav-item">
                         <button
                           className={`nav-link ${activeTab === 'actions' ? 'active' : ''}`}
@@ -2416,9 +2427,9 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                           File
                         </button>
                       </li>
+                    )}
                     </ul>
                   </div>
-                )}
 
                 {/* Tab Content */}
                 <div className="tab-content" style={{
@@ -2428,10 +2439,9 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                   flexDirection: 'column',
                   overflow: 'hidden'
                 }}>
-                  {/* For reports: Show tabbed content */}
-                  {previewTitle.includes('_rapport.pdf') ? (
+                  {/* Show tabbed content for all documents */}
                     <>
-                      {/* Report Tab */}
+                    {/* Document/Report Tab */}
                       {activeTab === 'report' && (
                         <div className="tab-pane active" style={{ 
                           width: '100%', 
@@ -2454,6 +2464,53 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                                 }}
                               />
                             )}
+                          {previewType === 'image' && previewUrl && (
+                            <img
+                              src={previewUrl}
+                              alt={previewTitle}
+                              style={{
+                                maxWidth: '100%',
+                                maxHeight: '100%',
+                                borderRadius: '8px',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                                backgroundColor: 'white'
+                              }}
+                            />
+                          )}
+                          {previewType === 'text' && (
+                            <textarea
+                              value={previewText}
+                              readOnly
+                              style={{
+                                width: '100%',
+                                height: '100%',
+                                border: '1px solid #e5e7eb',
+                                borderRadius: '8px',
+                                padding: '16px',
+                                fontSize: '14px',
+                                backgroundColor: 'white',
+                                color: '#1e293b',
+                                resize: 'none',
+                                fontFamily: 'monospace'
+                              }}
+                            />
+                          )}
+                          {previewType === 'other' && (
+                            <div style={{
+                              textAlign: 'center',
+                              color: '#64748b',
+                              padding: '40px'
+                            }}>
+                              <i className="bi bi-file-earmark-text" style={{
+                                fontSize: '64px',
+                                marginBottom: '16px',
+                                display: 'block'
+                              }}></i>
+                              <p style={{ fontSize: '18px', marginBottom: '24px' }}>
+                                Prévisualisation non supportée pour ce type de fichier
+                              </p>
+                            </div>
+                          )}
                           </div>
                         </div>
                       )}
@@ -2505,8 +2562,8 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                         </div>
                       )}
 
-                      {/* File Tab */}
-                      {activeTab === 'actions' && (
+                    {/* File Tab - Only for invoice documents */}
+                    {activeTab === 'actions' && previewTitle.includes('_rapport.pdf') && (
                         <div className="tab-pane active" style={{ 
                           width: '100%', 
                           height: '100%',
@@ -2594,72 +2651,6 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                         </div>
                       )}
                     </>
-                  ) : (
-                    /* For regular documents: Show original content */
-                    <>
-                {previewType === 'pdf' && previewUrl && (
-                  <iframe
-                    src={previewUrl + (previewUrl.includes('#') ? '' : '#toolbar=0&navpanes=0&scrollbar=0')}
-                    title="PDF Preview"
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      border: 'none',
-                      borderRadius: '8px',
-                      backgroundColor: 'white',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                    }}
-                  />
-                )}
-                {previewType === 'image' && previewUrl && (
-                  <img
-                    src={previewUrl}
-                    alt={previewTitle}
-                    style={{
-                      maxWidth: '100%',
-                      maxHeight: '100%',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                      backgroundColor: 'white'
-                    }}
-                  />
-                )}
-                {previewType === 'text' && (
-                  <textarea
-                    value={previewText}
-                    readOnly
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      padding: '16px',
-                      fontSize: '14px',
-                      backgroundColor: 'white',
-                      color: '#1e293b',
-                      resize: 'none',
-                      fontFamily: 'monospace'
-                    }}
-                  />
-                )}
-                {previewType === 'other' && (
-                  <div style={{
-                    textAlign: 'center',
-                    color: '#64748b',
-                    padding: '40px'
-                  }}>
-                    <i className="bi bi-file-earmark-text" style={{
-                      fontSize: '64px',
-                      marginBottom: '16px',
-                      display: 'block'
-                    }}></i>
-                    <p style={{ fontSize: '18px', marginBottom: '24px' }}>
-                      Prévisualisation non supportée pour ce type de fichier
-                    </p>
-                  </div>
-                      )}
-                    </>
-                )}
                 </div>
               </div>
 
@@ -2730,56 +2721,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                       </div>
                     </div>
 
-                    {/* Related Documents Section */}
-                    <div className="info-section" style={{ marginBottom: '24px' }}>
-                      <h4 style={{
-                        fontSize: '16px',
-                        fontWeight: 600,
-                        color: '#1f2937',
-                        marginBottom: '16px',
-                        borderBottom: '2px solid #e5e7eb',
-                        paddingBottom: '8px'
-                      }}>
-                        Documents reliés
-                      </h4>
-                      
-                      {relatedDocuments.length > 0 ? (
-                        <div className="related-docs-list">
-                          {relatedDocuments.map((relDoc) => (
-                            <div key={relDoc.id} style={{
-                              padding: '8px 12px',
-                              backgroundColor: '#f8fafc',
-                              borderRadius: '6px',
-                              marginBottom: '8px',
-                              border: '1px solid #e5e7eb'
-                            }}>
-                              <div style={{
-                                fontSize: '13px',
-                                fontWeight: 500,
-                                color: '#374151',
-                                marginBottom: '4px'
-                              }}>
-                                {relDoc.filename}
-                              </div>
-                              <div style={{
-                                fontSize: '12px',
-                                color: '#6b7280'
-                              }}>
-                                {getFileType(relDoc.filename)} • {formatFileSize(relDoc.file_size || 0)}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p style={{
-                          color: '#6b7280',
-                          fontSize: '14px',
-                          fontStyle: 'italic'
-                        }}>
-                          Aucun document relié
-                        </p>
-                      )}
-                    </div>
+
 
                     {/* Action Buttons Section */}
                     <div className="action-buttons" style={{

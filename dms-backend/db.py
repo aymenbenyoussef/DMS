@@ -1585,6 +1585,19 @@ class DatabaseManager:
         except Exception as e:
             raise Exception(f"Error fetching document details: {str(e)}")
 
+    def check_document_exists(self, document_id):
+        """Check if document exists regardless of flag status"""
+        try:
+            query = """
+                SELECT d.id, d.flag, d.filename
+                FROM documents d
+                WHERE d.id = %s
+            """
+            result = self.execute_query(query, (document_id,), fetch=True)
+            return result[0] if result else None
+        except Exception as e:
+            raise Exception(f"Error checking document existence: {str(e)}")
+
     def log_email_activity(self, document_id, sender_id, recipients, email_types, status):
         """Log email sending activity"""
         try:
