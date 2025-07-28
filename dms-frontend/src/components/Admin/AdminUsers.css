@@ -118,7 +118,7 @@
 }
 
 .users-table-fixed th {
-  background-color: #f8f9fa;
+  background-color: #f8f9fa !important;
   font-weight: 600;
   color: #495057;
   font-size: 1rem;
@@ -128,8 +128,8 @@
 }
 
 .users-table-fixed .filter-row td {
-  padding-top: 0;
-  padding-bottom: 0;
+  background-color: #f8f9fa !important;
+  padding: 8px 12px;
 }
 
 .table-body-scrollable {
@@ -881,4 +881,13 @@
 .users-table-fixed th.email-col {
   width: 1%;
   white-space: nowrap;
+}
+
+/* Remove border between header and filter */
+.users-table-fixed thead tr:first-child {
+  border-bottom: none;
+}
+
+.users-table-fixed thead tr:nth-child(2) {
+  border-top: none;
 }
