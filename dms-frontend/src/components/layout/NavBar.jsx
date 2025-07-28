@@ -14,7 +14,8 @@ import {
   BiBuildings,
   BiCollection,
   BiFile,
-  BiData
+  BiData,
+  BiLock
 } from 'react-icons/bi';
 import DmsTempUploadModal from '../Dashboard/DmsTempUploadModal';
 
@@ -85,7 +86,7 @@ const NavBar = ({ user, onLogout }) => {
           </Link>
         </div>
 
-        {/* Search Bar */}
+        {/* Search Bar 
         <div className="search-container">
           <div className="search-bar">
             <span className="search-icon"><BiSearch size={18} /></span>
@@ -96,7 +97,7 @@ const NavBar = ({ user, onLogout }) => {
             />
           </div>
         </div>
-
+        */}
         {/* Navigation Links */}
         <div className="navbar-links">
           {/* Dashboard link */}
@@ -215,17 +216,71 @@ const NavBar = ({ user, onLogout }) => {
               )}
             </div>
           )}
-         
 
-          {/* Logout button for non-admin users */}
+          {/* User Tools Dropdown */}
           {user && user.role !== 'admin' && user.role !== 'superuser' && (
-            <button
-              onClick={onLogout}
-              className="nav-link logout-nav-button"
-            >
-              <span className="nav-icon"><BiLogOut size={20} /></span>
-              <span>Déconnexion</span>
-            </button>
+            <div className="admin-tools-container" ref={adminToolsRef}>
+              <button 
+                className={`nav-link ${isActive('/User/tools')}`}
+                onClick={() => setShowAdminTools(!showAdminTools)}
+              >
+                <span className="nav-icon"><BiGroup size={20} /></span>
+                <span>Outils</span>
+                <span className={`dropdown-icon ${showAdminTools ? 'open' : ''}`}> <BiChevronDown size={14} /> </span>
+              </button>
+              {showAdminTools && (
+                <div className="admin-tools-dropdown">
+                  <div className="dropdown-columns">
+                    {/* Document Management (same as admin) */}
+                    <div className="dropdown-column">
+                      <div className="category-header">
+                        <span className="category-icon"><BiData size={16} /></span>
+                        <span className="category-title">Document management</span>
+                      </div>
+                      <div className="category-items">
+                        {/* Remove the Documents link for users */}
+                        {/* <Link to="/temp-documents" className="dropdown-item" onClick={() => setShowAdminTools(false)}>
+                          <span className="dropdown-icon"><BiFile size={16} /></span>
+                          <span>Documents</span>
+                        </Link> */}
+                        <button className="dropdown-item" onClick={() => { setShowDmsTempModal(true); setShowAdminTools(false); }}>
+                          <span className="dropdown-icon"><BiFile size={16} /></span>
+                          <span>Upload File</span>
+                        </button>
+                        <Link to="/dms/rapports" className="dropdown-item" onClick={() => setShowAdminTools(false)}>
+                          <span className="dropdown-icon"><BiBarChart size={16} /></span>
+                          <span>Rapports</span>
+                        </Link>
+                        {/* Add more items if users have access, e.g., Rapports */}
+                      </div>
+                      {/* Password Reset Section */}
+                      <div className="category-header" style={{marginTop: '2rem'}}>
+                        <span className="category-icon"><BiLock size={16} /></span>
+                        <span className="category-title">Sécurité</span>
+                      </div>
+                      <div className="category-items">
+                        <Link to="/settings-users" className="dropdown-item" onClick={() => setShowAdminTools(false)}>
+                          <span className="dropdown-icon"><BiLock size={16} /></span>
+                          <span>Réinitialiser le mot de passe</span>
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="dropdown-footer">
+                    <button
+                      onClick={() => {
+                        setShowAdminTools(false);
+                        onLogout();
+                      }}
+                      className="logout-button"
+                    >
+                      <BiLogOut size={16} />
+                      <span>Déconnexion</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>

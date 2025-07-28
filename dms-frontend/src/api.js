@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Create axios instance with base configuration
-const API_BASE_URL = 'http://192.168.1.28:5000';
+const API_BASE_URL = 'http://192.168.1.115:5000';
 
 const API = axios.create({
   baseURL: API_BASE_URL,
@@ -55,6 +55,7 @@ const users = {
   login: (credentials) => API.post('/login', credentials),
   verifyToken: () => API.get('/verify'),
   forgotPassword: (email) => API.post('/forgot-password', { email }),
+  changePassword: (newPassword) => API.post('/change-password', { newPassword }),
 };
 
 // Admin user management endpoints

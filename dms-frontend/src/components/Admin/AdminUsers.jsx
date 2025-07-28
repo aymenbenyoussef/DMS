@@ -627,7 +627,7 @@ const AdminUsers = ({user ,loadingUser}) => {
                         Nom complet <span style={{fontSize:'1em'}}>{sortConfig.key === 'username' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
                       </th>
                       
-                      <th style={{cursor:'pointer', background: sortConfig.key === 'email' ? '#f0f4fa' : undefined, color: sortConfig.key === 'email' ? '#1976d2' : undefined}} onClick={() => handleSort('email')}>
+                      <th className="email-col" style={{cursor:'pointer', background: sortConfig.key === 'email' ? '#f0f4fa' : undefined, color: sortConfig.key === 'email' ? '#1976d2' : undefined}} onClick={() => handleSort('email')}>
                         Email <span style={{fontSize:'1em'}}>{sortConfig.key === 'email' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
                       </th>
                       <th style={{cursor:'pointer', background: sortConfig.key === 'role' ? '#f0f4fa' : undefined, color: sortConfig.key === 'role' ? '#1976d2' : undefined}} onClick={() => handleSort('role')}>
@@ -696,24 +696,27 @@ const AdminUsers = ({user ,loadingUser}) => {
                   <tbody className="table-body-scrollable">
                     
                     {!loading && filteredUsers.length > 0 && (
-                      filteredUsers.map(user => (
-                        <tr key={user.id}>
+                      filteredUsers.map(rowUser => (
+                        <tr
+                          key={rowUser.id}
+                          className={rowUser.role === 'superuser' && user.role !== 'superuser' ? 'row-disabled' : ''}
+                        >
                           <td>
-                            <div className={`status-led ${user.is_active ? 'status-led-active' : 'status-led-inactive'}`}></div>
+                            <div className={`status-led ${rowUser.is_active ? 'status-led-active' : 'status-led-inactive'}`}></div>
                           </td>
-                          <td>{user.id}</td>
-                          <td>{`${user.username} ${user.surname}`}</td>
+                          <td>{rowUser.id}</td>
+                          <td>{`${rowUser.username} ${rowUser.surname}`}</td>
                           
-                          <td>{user.email}</td>
+                          <td className="email-col">{rowUser.email}</td>
                           <td>
                             <span >
-                              {user.role === 'user' ? 'utilisateur' : user.role}
+                              {rowUser.role === 'user' ? 'utilisateur' : rowUser.role}
                             </span>
                           </td>
                           <td>
-                            {user.companies && user.companies.length > 0 ? (
+                            {rowUser.companies && rowUser.companies.length > 0 ? (
                               <ul className="company-tokens">
-                                  {user.companies.map(company => (
+                                  {rowUser.companies.map(company => (
                                     <li key={company.id} className="company-token">{company.name}</li>
                                   ))}
                               </ul>
@@ -721,18 +724,21 @@ const AdminUsers = ({user ,loadingUser}) => {
                               <span></span>
                             )}
                           </td>
-                          <td>{new Date(user.created_at).toLocaleDateString()}</td>
+                          <td>{new Date(rowUser.created_at).toLocaleDateString()}</td>
                           <td>
-                           {user.role === 'user' && ( 
-                            <div className="action-buttons">
-                              <button
-                                className="btn-edit"
-                                onClick={() => handleEdit(user)}
-                              >
-                                Modifier
-                              </button>
-                              
-                            </div>)}
+                            {(user && (
+                              (user.role === 'superuser') ||
+                              (user.role === 'admin' && rowUser.role !== 'superuser')
+                            )) && (
+                              <div className="action-buttons">
+                                <button
+                                  className="btn-edit"
+                                  onClick={() => handleEdit(rowUser)}
+                                >
+                                  Modifier
+                                </button>
+                              </div>
+                            )}
                           </td>
                         </tr>
                       ))

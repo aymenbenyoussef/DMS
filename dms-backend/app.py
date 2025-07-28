@@ -2827,6 +2827,30 @@ def download_temp_document(doc_id):
     except Exception as e:
         return jsonify({'msg': str(e)}), 500
 
+# --- Change Password Endpoint ---
+@app.route('/change-password', methods=['POST'])
+@jwt_required()
+def change_password():
+    from flask_jwt_extended import get_jwt
+    data = request.get_json()
+    if not data or 'newPassword' not in data:
+        return jsonify({'message': 'Le nouveau mot de passe est requis.'}), 400
+    new_password = data['newPassword']
+    if len(new_password) < 6:
+        return jsonify({'message': 'Le mot de passe doit contenir au moins 6 caractères.'}), 400
+
+    claims = get_jwt()
+    user_id = claims.get('id')
+    user = db.get_user_by_id(user_id)
+    if not user:
+        return jsonify({'message': "Utilisateur non trouvé."}), 404
+
+    try:
+        db.update_user(user_id, password=new_password)
+        return jsonify({'message': 'Mot de passe mis à jour avec succès.'}), 200
+    except Exception as e:
+        return jsonify({'message': f'Erreur lors de la mise à jour du mot de passe: {str(e)}'}), 500
+
 if __name__ == '__main__':
     # Ensure log directory exists when app starts
     ensure_log_dir()

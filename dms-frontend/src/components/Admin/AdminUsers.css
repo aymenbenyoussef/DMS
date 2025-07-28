@@ -141,6 +141,12 @@
   background-color: #f8f9fa;
 }
 
+.row-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+  background: #f0f0f0;
+}
+
 .role-badge {
   padding: 4px 12px;
   border-radius: 20px;
@@ -864,4 +870,15 @@
 @keyframes dropdown-fade-in {
   0% { opacity: 0; transform: translateY(-10px); }
   100% { opacity: 1; transform: translateY(0); }
+}
+
+.users-table-fixed td,
+.users-table-fixed th {
+  white-space: nowrap;
+}
+
+.users-table-fixed td.email-col,
+.users-table-fixed th.email-col {
+  width: 1%;
+  white-space: nowrap;
 }

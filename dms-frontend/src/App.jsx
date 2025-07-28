@@ -23,6 +23,7 @@ import AddPartnerType from './components/Admin/AddPartnerType';
 import AddPartner from './components/Admin/AddPartner';
 import { AppProvider } from './components/context';  
 import './App.css';
+import SettingsUsers from './components/Auth/SettingsUsers';
 
 // API configuration remains the same as in your original file
 const API_BASE = 'http://192.168.1.115:5000';
@@ -214,6 +215,8 @@ function App() {
               path="/profile" element={<Profile user={user}/>} /> 
             <Route 
               path="/settings" element={<Settings user={user}/>} /> 
+            <Route 
+              path="/settings-users" element={<SettingsUsers />} />
             <Route 
               path="/AddComp" element={<AddComp user={user}/>} />
               <Route 
