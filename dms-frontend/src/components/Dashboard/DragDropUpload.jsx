@@ -74,11 +74,43 @@ const DragDropUpload = ({ onUpload, onClose }) => {
 
   const handleUpload = useCallback(async () => {
     if (!files.length) return;
-    if (!selectedCompany || !selectedDoctype) {
-      setUploadStatus('error');
-      alert('Veuillez sélectionner une entreprise et un type de document.');
+    
+    // Check if company is selected (doctype is optional)
+    const hasCompany = selectedCompany;
+    
+    if (!hasCompany) {
+      // Use temp upload if no company selected
+      setIsUploading(true);
+      setUploadStatus('pending');
+      setUploadProgress(0);
+      let confirmations = [];
+      
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        try {
+          const response = await API.documents.uploadTempFile(file);
+          confirmations.push({
+            sessionId: null, // No session for temp uploads
+            extractedData: null, // No OCR processing for temp uploads
+            file,
+            isTempUpload: true,
+            tempDocId: response.data?.files?.[0]?.id
+          });
+        } catch (error) {
+          console.error('Temp upload failed:', error);
+          confirmations.push({ error, file, isTempUpload: true });
+        }
+        setUploadProgress(Math.round(((i + 1) / files.length) * 100));
+      }
+      
+      setShowConfirmations(confirmations);
+      setConfirmationData(confirmations.map(conf => ({ confirmedDocument: null, errors: {} })));
+      setUploadStatus('processed');
+      setIsUploading(false);
       return;
     }
+    
+    // Logic for when company is selected (doctype optional)
     setIsUploading(true);
     setUploadStatus('pending');
     setUploadProgress(0);
@@ -89,7 +121,7 @@ const DragDropUpload = ({ onUpload, onClose }) => {
       const response = await API.documents.uploadSingleFile(
         file, 
         selectedCompany.id, 
-        selectedDoctype.id
+        selectedDoctype?.id || null // Use null if doctype not selected
       );
         confirmations.push({
           sessionId: response.data?.session_id,
@@ -120,6 +152,19 @@ const DragDropUpload = ({ onUpload, onClose }) => {
 
   // Validate all forms and confirm all
   const handleConfirmAll = async () => {
+    // Check if we have temp uploads (no company/doctype selected)
+    const hasTempUploads = showConfirmations.some(conf => conf.isTempUpload);
+    
+    if (hasTempUploads) {
+      // For temp uploads, just show success and close
+      setUploadStatus('completed');
+      setTimeout(() => {
+        onClose();
+      }, 2000);
+      return;
+    }
+    
+    // Original logic for regular uploads with company/doctype
     let hasError = false;
     // Check for errors in all forms
     for (let i = 0; i < confirmationData.length; i++) {
@@ -182,10 +227,19 @@ const DragDropUpload = ({ onUpload, onClose }) => {
       case 'pending':
         return 'Processing file...';
       case 'processed':
+        // Check if we have temp uploads
+        const hasTempUploads = showConfirmations.some(conf => conf.isTempUpload);
+        if (hasTempUploads) {
+          return 'Files uploaded successfully to temporary storage.';
+        }
         return 'File processed successfully. Please verify the information below.';
       case 'confirming':
         return 'Confirming...';
       case 'completed':
+        const hasTempUploadsCompleted = showConfirmations.some(conf => conf.isTempUpload);
+        if (hasTempUploadsCompleted) {
+          return 'Files uploaded to temporary storage successfully!';
+        }
         return 'Document confirmed and saved successfully!';
       case 'error':
         return 'Error during processing.';
@@ -380,7 +434,7 @@ const DragDropUpload = ({ onUpload, onClose }) => {
             <button 
               className="btn-primary" 
               onClick={handleUpload}
-              disabled={!files.length || isUploading || !selectedCompany || !selectedDoctype}
+              disabled={!files.length || isUploading || !selectedCompany}
             >
               {isUploading ? 'Treatment...' : 'Upload'}
             </button>
