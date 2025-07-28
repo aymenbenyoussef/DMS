@@ -358,7 +358,7 @@ class DatabaseManager:
 
     def get_all_users(self):
     # First get all users
-        users_query = "SELECT * FROM users where role!='superuser' ORDER BY created_at DESC"
+        users_query = "SELECT * FROM users ORDER BY created_at DESC"
         users = self.execute_query(users_query, fetch=True)
     
         if not users:
