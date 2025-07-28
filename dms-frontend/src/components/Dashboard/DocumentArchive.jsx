@@ -1497,11 +1497,11 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
       )}
       
       {/* Search and Filter Section - MODIFIED to include Upload Button */}
-      <div className="card mb-4 search-filter-container">
+      <div className="card mb-4 search-filter-container" style={{height:'210px', maxHeight: '210px', marginTop: '-20px'}}>
         <div className="card-body p-3">
           <div className="d-flex justify-content-between align-items-start mb-3">
             <h2 className="h6 mb-0">Recherche & Filtres</h2>
-            <div className="d-flex gap-2">
+            <div className="d-flex gap-2" style={{ marginTop: '0.5rem' }}>
         {(selectedDoctype || selectedCompany) && (
           <button 
                   className="btn btn-blue btn-sm d-flex align-items-center"
@@ -1666,35 +1666,12 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
                 
-              </div>
-            </div>
           </div>
         </div>
       </div>
 
-      {/* Documents Table */}
-      <div className="card">
-        <div className="card-body">
-          {/* Breadcrumb and Title Section */}
-          <div className="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
-            <div className="d-flex align-items-center">
-              <nav className="breadcrumb mb-0 me-3">
-                <ol className="breadcrumb">
-                  {getBreadcrumb().split(' > ').map((item, index, arr) => (
-                    <li 
-                      key={index} 
-                      className={`breadcrumb-item ${index === arr.length - 1 ? 'active' : ''}`}
-                    >
-                      {item}
-                    </li>
-                  ))}
-                </ol>
-              </nav>
-          </div>
-            <div className="d-flex align-items-center gap-3">
-              <span className="text-muted items-count">{filteredDocuments.length} items</span>
-              
-              {/* Group management buttons - moved to extreme right */}
+          {/* Group management buttons - moved higher */}
+          <div className="d-flex justify-content-end" style={{ marginTop: '-3rem' }}>
               <div className="d-flex gap-2">
                 {!isGroupMode && (
                   <>
@@ -1710,43 +1687,6 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                     >
                       <i className="bi bi-folder-plus me-1"></i> Créer groupe
                     </button>
-                    <button 
-                      className="btn btn-secondary btn-sm d-flex align-items-center"
-                      onClick={handleResetFilters}
-                      style={{ backgroundColor: 'gray', color: 'white' }}
-                    >
-                      <i className="bi bi-arrow-clockwise me-1"></i> Reset Filter
-                    </button>
-                    <div style={{ position: 'relative' }}>
-                      <button 
-                        className="btn btn-blue btn-sm d-flex align-items-center"
-                        onClick={() => setExportMenuOpen(v => !v)}
-                        style={{ backgroundColor: '#1976d2', color: 'white' }}
-                      >
-                        <i className="bi bi-download me-1"></i> Export ▼
-                      </button>
-                      {exportMenuOpen && (
-                        <ul ref={exportMenuRef} style={{
-                          position: 'absolute',
-                          top: '110%',
-                          right: 0,
-                          background: '#fff',
-                          border: '1px solid #ddd',
-                          borderRadius: '4px',
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                          zIndex: 99999,
-                          minWidth: '140px',
-                          padding: 0,
-                          margin: 0,
-                          listStyle: 'none',
-                        }}>
-                          <li style={{padding: '8px 16px', cursor: 'pointer', transition: 'background-color 0.2s ease, color 0.2s ease'}} onMouseOver={(e) => { e.target.style.backgroundColor = '#f8f9fa'; e.target.style.color = '#1976d2'; }} onMouseOut={(e) => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = 'inherit'; }} onClick={() => { handleExport('csv'); setExportMenuOpen(false); }}>CSV</li>
-                          <li style={{padding: '8px 16px', cursor: 'pointer', transition: 'background-color 0.2s ease, color 0.2s ease'}} onMouseOver={(e) => { e.target.style.backgroundColor = '#f8f9fa'; e.target.style.color = '#1976d2'; }} onMouseOut={(e) => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = 'inherit'; }} onClick={() => { handleExport('json'); setExportMenuOpen(false); }}>JSON</li>
-                          <li style={{padding: '8px 16px', cursor: 'pointer', transition: 'background-color 0.2s ease, color 0.2s ease'}} onMouseOver={(e) => { e.target.style.backgroundColor = '#f8f9fa'; e.target.style.color = '#1976d2'; }} onMouseOut={(e) => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = 'inherit'; }} onClick={() => { handleExport('txt'); setExportMenuOpen(false); }}>TXT</li>
-                          <li style={{padding: '8px 16px', cursor: 'pointer', transition: 'background-color 0.2s ease, color 0.2s ease'}} onMouseOver={(e) => { e.target.style.backgroundColor = '#f8f9fa'; e.target.style.color = '#1976d2'; }} onMouseOut={(e) => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = 'inherit'; }} onClick={() => { handleExport('excel'); setExportMenuOpen(false); }}>Excel</li>
-                        </ul>
-                      )}
-                    </div>
                   </>
                 )}
                 
@@ -1804,13 +1744,12 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                     </button>
                   </div>
                 )}
-              </div>
             </div>
           </div>
           
           {/* Group action messages */}
           {isGroupMode && (
-            <div className="mb-3">
+            <div className="mt-2">
               {groupError && (
                 <div className="alert alert-danger alert-sm py-2">{groupError}</div>
               )}
@@ -1820,6 +1759,77 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
             </div>
           )}
           
+
+        </div>
+      </div>
+
+      {/* Documents Table */}
+      <div className="card">
+        <div className="card-body">
+          {/* Breadcrumb and Title Section */}
+          <div className="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
+            <div className="d-flex align-items-center">
+              <nav className="breadcrumb mb-0 me-3">
+                <ol className="breadcrumb">
+                  {getBreadcrumb().split(' > ').map((item, index, arr) => (
+                    <li 
+                      key={index} 
+                      className={`breadcrumb-item ${index === arr.length - 1 ? 'active' : ''}`}
+                    >
+                      {item}
+                    </li>
+                  ))}
+                </ol>
+              </nav>
+          </div>
+            <div className="d-flex align-items-center gap-3">
+              <span className="text-muted items-count">{filteredDocuments.length} items</span>
+              
+              {/* Export and Reset buttons */}
+              <div className="d-flex gap-2">
+                <button 
+                  className="btn btn-secondary btn-sm d-flex align-items-center"
+                  onClick={handleResetFilters}
+                  style={{ backgroundColor: 'gray', color: 'white' }}
+                >
+                  <i className="bi bi-arrow-clockwise me-1"></i> Reset Filter
+                </button>
+                <div style={{ position: 'relative' }}>
+                  <button 
+                    className="btn btn-blue btn-sm d-flex align-items-center"
+                    onClick={() => setExportMenuOpen(v => !v)}
+                    style={{ backgroundColor: '#1976d2', color: 'white' }}
+                  >
+                    <i className="bi bi-download me-1"></i> Export ▼
+                  </button>
+                  {exportMenuOpen && (
+                    <ul ref={exportMenuRef} style={{
+                      position: 'absolute',
+                      top: '110%',
+                      right: 0,
+                      background: '#fff',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                      zIndex: 99999,
+                      minWidth: '140px',
+                      padding: 0,
+                      margin: 0,
+                      listStyle: 'none',
+                    }}>
+                      <li style={{padding: '8px 16px', cursor: 'pointer', transition: 'background-color 0.2s ease, color 0.2s ease'}} onMouseOver={(e) => { e.target.style.backgroundColor = '#f8f9fa'; e.target.style.color = '#1976d2'; }} onMouseOut={(e) => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = 'inherit'; }} onClick={() => { handleExport('csv'); setExportMenuOpen(false); }}>CSV</li>
+                      <li style={{padding: '8px 16px', cursor: 'pointer', transition: 'background-color 0.2s ease, color 0.2s ease'}} onMouseOver={(e) => { e.target.style.backgroundColor = '#f8f9fa'; e.target.style.color = '#1976d2'; }} onMouseOut={(e) => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = 'inherit'; }} onClick={() => { handleExport('json'); setExportMenuOpen(false); }}>JSON</li>
+                      <li style={{padding: '8px 16px', cursor: 'pointer', transition: 'background-color 0.2s ease, color 0.2s ease'}} onMouseOver={(e) => { e.target.style.backgroundColor = '#f8f9fa'; e.target.style.color = '#1976d2'; }} onMouseOut={(e) => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = 'inherit'; }} onClick={() => { handleExport('txt'); setExportMenuOpen(false); }}>TXT</li>
+                      <li style={{padding: '8px 16px', cursor: 'pointer', transition: 'background-color 0.2s ease, color 0.2s ease'}} onMouseOver={(e) => { e.target.style.backgroundColor = '#f8f9fa'; e.target.style.color = '#1976d2'; }} onMouseOut={(e) => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = 'inherit'; }} onClick={() => { handleExport('excel'); setExportMenuOpen(false); }}>Excel</li>
+                    </ul>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+          
+
+          
           {isLoading ? (
             <div className="text-center py-5">
               <div className="spinner-border text-primary" role="status">
@@ -1828,7 +1838,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
             </div>
           ) : (
             <div className="table-responsive documents-table-container">
-              <table className="table table-hover stylish-table">
+              <table className="table table-hover stylish-table" style={{height:'300px',maxHeight:'500px'}}>
                 <thead className="table-header-sticky">
                   <tr>
                       <th style={{ width: '20px', minWidth: '20px', maxWidth: '20px' }}>
