@@ -55,17 +55,19 @@
 .documents-table-container {
   position: relative;
   overflow: visible !important;
-  max-height: 250px !important;
+  height: auto !important;
+  max-height: 800px !important;
   overflow-y: auto !important;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  padding-bottom: 15px !important;
+  padding-bottom: 500px !important;
 }
 
 .table-responsive {
   overflow: visible !important;
-  max-height: 250px !important;
+  height: auto !important;
+  max-height: 800px !important;
   overflow-y: auto !important;
 }
 
@@ -81,18 +83,18 @@
 .document-archive-container {
   display: flex;
   flex-direction: column;
-  height: auto; /* Remove fixed height constraint */
+ /* height: 100%;  Remove fixed height constraint */
   padding: 20px;
   overflow: visible; /* Allow scrolling */
 }
 
 /* 2. Make the table container the main scrolling area */
 .documents-table-container {
-  height: 300px;
+  height: auto;
   overflow-y: auto;
-  padding-bottom: 15px;
+  padding-bottom: 500px;
   border-radius: 8px;
-  max-height: 500px;
+  max-height: 800px;
   position: relative;
 }
 
@@ -100,7 +102,8 @@
 .table-responsive {
   overflow-x: auto; /* Enable horizontal scrolling for the table */
   -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
-  max-height: 500px !important;
+  height: auto !important;
+  max-height: none !important;
 }
 
 .table thead {

@@ -2517,10 +2517,23 @@ def send_document_email(document_id):
             if email_type not in valid_types:
                 return jsonify({"msg": f"Invalid email type: {email_type}"}), 400
         
-        # Get document details
-        document = db.get_document_with_details(document_id)
-        if not document:
-            return jsonify({"msg": "Document not found"}), 404
+        # Get document details with better error handling
+        try:
+            document = db.get_document_with_details(document_id)
+            if not document:
+                    # Try to get document without flag restriction to see if it exists but is inactive
+                    try:
+                        doc_check = db.check_document_exists(document_id)
+                        if doc_check:
+                            return jsonify({"msg": "Document trouvé mais inactif. Impossible d'envoyer l'email."}), 400
+                        else:
+                            return jsonify({"msg": "Document non trouvé"}), 404
+                    except Exception as db_error:
+                        print(f"Database error checking document: {db_error}")
+                        return jsonify({"msg": "Erreur lors de la vérification du document"}), 500
+        except Exception as doc_error:
+            print(f"Error fetching document details: {doc_error}")
+            return jsonify({"msg": "Erreur lors de la récupération des détails du document"}), 500
         
         # Determine attachment paths based on email types
         for email_type in email_types:
@@ -2537,12 +2550,16 @@ def send_document_email(document_id):
                 attachment_path = document['ocr_text']
                 attachment_name = f"{os.path.splitext(document['filename'])[0]}_ocr.txt"
             
-            if attachment_path and os.path.exists(attachment_path):
-                attachments.append({
-                    'path': attachment_path,
-                    'name': attachment_name,
-                    'type': email_type
-                })
+            if attachment_path:
+                # Check if file exists before adding to attachments
+                if os.path.exists(attachment_path):
+                    attachments.append({
+                        'path': attachment_path,
+                        'name': attachment_name,
+                        'type': email_type
+                    })
+                else:
+                    print(f"Warning: File not found at path: {attachment_path}")
         
         if not attachments:
             return jsonify({"msg": "Aucun fichier disponible pour les types sélectionnés"}), 404
@@ -2605,15 +2622,22 @@ L'équipe RAN ESMERALD
                 
                 # Attach files
                 for attachment in attachments:
-                    with open(attachment['path'], "rb") as attachment_file:
-                        part = MIMEBase('application', 'octet-stream')
-                        part.set_payload(attachment_file.read())
-                        encoders.encode_base64(part)
-                        part.add_header(
-                            'Content-Disposition',
-                            f'attachment; filename= {attachment["name"]}'
-                        )
-                        msg.attach(part)
+                    try:
+                        with open(attachment['path'], "rb") as attachment_file:
+                            part = MIMEBase('application', 'octet-stream')
+                            part.set_payload(attachment_file.read())
+                            encoders.encode_base64(part)
+                            part.add_header(
+                                'Content-Disposition',
+                                f'attachment; filename= {attachment["name"]}'
+                            )
+                            msg.attach(part)
+                    except FileNotFoundError:
+                        failed_sends.append({"email": recipient_email, "error": f"Fichier non trouvé: {attachment['path']}"})
+                        continue
+                    except Exception as file_error:
+                        failed_sends.append({"email": recipient_email, "error": f"Erreur lors de l'attachement du fichier: {str(file_error)}"})
+                        continue
                 
                 # Send email
                 server = smtplib.SMTP(smtp_host, smtp_port)
@@ -2625,6 +2649,7 @@ L'équipe RAN ESMERALD
                 successful_sends.append(recipient_email)
                 
             except Exception as e:
+                print(f"Error sending email to {recipient_email}: {e}")
                 failed_sends.append({"email": recipient_email, "error": str(e)})
         
         # Log email activity
@@ -2850,6 +2875,59 @@ def change_password():
         return jsonify({'message': 'Mot de passe mis à jour avec succès.'}), 200
     except Exception as e:
         return jsonify({'message': f'Erreur lors de la mise à jour du mot de passe: {str(e)}'}), 500
+
+@app.route('/debug/document/<int:document_id>', methods=['GET'])
+@jwt_required()
+def debug_document(document_id):
+    """Debug endpoint to check document status"""
+    try:
+        # Check if document exists without flag restriction
+        doc_check = db.check_document_exists(document_id)
+        if not doc_check:
+            return jsonify({
+                "document_id": document_id,
+                "exists": False,
+                "message": "Document not found in database"
+            }), 404
+        
+        # Get full document details
+        document = db.get_document_with_details(document_id)
+        
+        # Check file paths
+        file_exists = False
+        rapport_exists = False
+        ocr_exists = False
+        
+        if document and document.get('file_path'):
+            file_exists = os.path.exists(document['file_path'])
+        
+        if document and document.get('rapport'):
+            rapport_exists = os.path.exists(document['rapport'])
+            
+        if document and document.get('ocr_text'):
+            ocr_exists = os.path.exists(document['ocr_text'])
+        
+        return jsonify({
+            "document_id": document_id,
+            "exists": True,
+            "flag": doc_check.get('flag'),
+            "active": document is not None,
+            "filename": doc_check.get('filename'),
+            "file_path": document.get('file_path') if document else None,
+            "file_exists": file_exists,
+            "rapport_path": document.get('rapport') if document else None,
+            "rapport_exists": rapport_exists,
+            "ocr_path": document.get('ocr_text') if document else None,
+            "ocr_exists": ocr_exists,
+            "message": "Document found" if document else "Document found but inactive"
+        })
+        
+    except Exception as e:
+        print(f"Debug error: {e}")
+        return jsonify({
+            "document_id": document_id,
+            "error": str(e)
+        }), 500
 
 if __name__ == '__main__':
     # Ensure log directory exists when app starts
