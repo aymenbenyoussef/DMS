@@ -16,9 +16,11 @@ const DocumentConfirmationForm = ({
   const { selectedCompany, selectedDoctype, setSelectedCompany, setSelectedDoctype } = useContext(AppContext);
   const [companies, setCompanies] = useState([]);
   const [doctypes, setDoctypes] = useState([]);
+  const [currentCompany, setCurrentCompany] = useState(initialCompany);
+  const [currentDoctype, setCurrentDoctype] = useState(initialDoctype);
+  const [currentPartner, setCurrentPartner] = useState(null); // Added this
   const [partners, setPartners] = useState([]);
-  const [currentCompany, setCurrentCompany] = useState(null);
-  const [currentDoctype, setCurrentDoctype] = useState(null);
+  const [groups, setGroups] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
@@ -33,17 +35,19 @@ const DocumentConfirmationForm = ({
       date: f.extractedData?.date || '',
       partner: f.extractedData?.partner || '',
       partner_id: f.extractedData?.partner_id || '',
+      group_id: f.extractedData?.group_id || '',
       total_ht: f.extractedData?.total_ht || '',
       tva: f.extractedData?.tva || '',
       total_ttc: f.extractedData?.total_ttc || '',
       is_invoice: f.extractedData?.is_invoice || false
     }
   })));
-  const [errors, setErrors] = useState(() => files.map(() => ({})));
+  const [errors, setErrors] = useState(files.map(() => ({})));
 
   // Load companies on component mount
   useEffect(() => {
     loadCompanies();
+    loadGroups();
     if (currentCompany?.id) {
       loadPartners(currentCompany.id);
     }
@@ -102,63 +106,66 @@ const DocumentConfirmationForm = ({
     }
   };
 
-  // Update a field for a specific file index
+  const loadGroups = async () => {
+    try {
+      const response = await API.groups.getAll();
+      setGroups(response.data);
+    } catch (error) {
+      console.error('Error loading groups:', error);
+      setGroups([]);
+    }
+  };
+
+  // Update confirmed document data
   const updateConfirmedDocument = (idx, field, value) => {
+    console.log(`updateConfirmedDocument: idx=${idx}, field="${field}", value="${value}"`);
     setConfirmedDocuments(prev => {
       const updated = [...prev];
       if (field === 'is_invoice') {
         updated[idx].is_invoice = value;
         updated[idx].confirmed_data.is_invoice = value;
-        // Don't reset partner selection when toggling invoice status - partner is optional
       } else if (field === 'company_id') {
         updated[idx].company_id = value;
       } else if (field === 'doctype_id') {
         updated[idx].doctype_id = value;
+      } else if (field === 'partner_id') {
+        updated[idx].confirmed_data.partner_id = value;
+        console.log(`Stored partner_id for file ${idx}: "${value}"`);
+      } else if (field === 'group_id') {
+        updated[idx].confirmed_data.group_id = value;
       } else {
         updated[idx].confirmed_data[field] = value;
       }
       return updated;
     });
-    // Always clear only the error for this field and this file
-      setErrors(prev => {
+    setErrors(prev => {
       const newErrors = [...prev];
       if (newErrors[idx] && newErrors[idx][field]) {
         newErrors[idx] = { ...newErrors[idx] };
         delete newErrors[idx][field];
       }
-      // Also clear partner_id error if toggling is_invoice
-      if (field === 'is_invoice' && newErrors[idx] && newErrors[idx]['partner_id']) {
-        newErrors[idx] = { ...newErrors[idx] };
-        delete newErrors[idx]['partner_id'];
-      }
-        return newErrors;
-      });
-  };
-
-  const handlePartnerChange = (idx, e) => {
-    const partnerId = e.target.value;
-    const partner = partners.find(p => p.id === parseInt(partnerId));
-    updateConfirmedDocument(idx, 'partner_id', partnerId);
-    if (partner) {
-      updateConfirmedDocument(idx, 'partner', partner.company_name);
-    } else {
-      updateConfirmedDocument(idx, 'partner', '');
-    }
-    // No need to clear error here, handled in updateConfirmedDocument
+      return newErrors;
+    });
   };
 
   // Validate all forms
   const validateAll = () => {
+    console.log('=== Starting validation ===');
     const newErrors = files.map((f, idx) => {
       const doc = confirmedDocuments[idx];
+      console.log(`Validating file ${idx}:`, doc);
       const errs = {};
-    if (!currentCompany) {
+      
+      if (!currentCompany) {
         errs.company_id = 'Veuillez sélectionner une entité';
-    }
-    if (!currentDoctype) {
+      }
+      if (!currentDoctype) {
         errs.doctype_id = 'Veuillez sélectionner un type de document';
       }
-      // Partner is optional - removed validation
+      if (!currentPartner) {
+        errs.partner_id = 'Veuillez sélectionner un partenaire';
+      }
+      
       if (doc.is_invoice) {
         const invData = doc.confirmed_data;
         if (!invData.invoice_number) {
@@ -167,29 +174,53 @@ const DocumentConfirmationForm = ({
         if (!invData.date) {
           errs.date = 'La date est requise';
         }
-      if (invData.total_ht === '' || isNaN(invData.total_ht) || invData.total_ht <= 0) {
+        if (invData.total_ht === '' || isNaN(invData.total_ht) || invData.total_ht <= 0) {
           errs.total_ht = 'Total HT doit être un nombre supérieur à 0';
-      }
-      if (invData.tva === '' || isNaN(invData.tva) || invData.tva < 0) {
+        }
+        if (invData.tva === '' || isNaN(invData.tva) || invData.tva < 0) {
           errs.tva = 'TVA doit être un nombre positif ou nul';
-      }
-      if (invData.total_ttc === '' || isNaN(invData.total_ttc) || invData.total_ttc <= 0) {
+        }
+        if (invData.total_ttc === '' || isNaN(invData.total_ttc) || invData.total_ttc <= 0) {
           errs.total_ttc = 'Total TTC doit être un nombre supérieur à 0';
         }
       }
+      
+      console.log(`File ${idx} errors:`, errs);
       return errs;
     });
+    console.log('=== Validation complete ===');
     setErrors(newErrors);
     // Return true if all error objects are empty
     return newErrors.every(err => Object.keys(err).length === 0);
   };
 
   const handleConfirm = async () => {
+    console.log('=== handleConfirm called ===');
+    console.log('Current confirmedDocuments:', confirmedDocuments);
     const isValid = validateAll();
-    if (!isValid) return;
+    console.log('Validation result:', isValid);
+    if (!isValid) {
+      console.log('Validation failed, not proceeding with submission');
+      return;
+    }
+    console.log('Validation passed, proceeding with submission');
     setIsLoading(true);
     try {
       await onConfirm(confirmedDocuments, errors);
+      
+      // Add documents to selected groups
+      for (let i = 0; i < confirmedDocuments.length; i++) {
+        const doc = confirmedDocuments[i];
+        if (doc.confirmed_data.group_id) {
+          try {
+            // Get the document ID from the response (assuming onConfirm returns document IDs)
+            // For now, we'll need to handle this in the parent component
+            console.log(`Document should be added to group ${doc.confirmed_data.group_id}`);
+          } catch (groupError) {
+            console.error('Error adding document to group:', groupError);
+          }
+        }
+      }
       
       // Delete temp document if ID is provided
       if (tempDocumentId) {
@@ -282,12 +313,23 @@ const DocumentConfirmationForm = ({
           </div>
         {/* Second row: Partner Selection (full width) */}
         <div className="form-row">
-          <div className="form-group" style={{ gridColumn: '1 / span 2' }}>
-            <label>Partenaire externe:</label>
+          <div className="form-group">
+            <label>Partenaire externe *:</label>
             <select
-                value={doc.confirmed_data.partner_id || ''}
-                onChange={e => handlePartnerChange(0, e)}
+                value={currentPartner?.id || ''}
+                onChange={e => { 
+                  const partnerId = parseInt(e.target.value);
+                  const partner = partners.find(p => p.id === partnerId);
+                  setCurrentPartner(partner);
+                  updateConfirmedDocument(0, 'partner_id', partnerId);
+                  if (partner) {
+                    updateConfirmedDocument(0, 'partner', partner.company_name);
+                  } else {
+                    updateConfirmedDocument(0, 'partner', '');
+                  }
+                }}
                 className={err.partner_id ? 'error' : ''}
+                required
             >
               <option value="">Sélectionner un partenaire externe</option>
               {partners.map(partner => (
@@ -296,13 +338,37 @@ const DocumentConfirmationForm = ({
             </select>
               {err.partner_id && <div className="error-message">{err.partner_id}</div>}
             </div>
+          <div className="form-group">
+            <label>Groupe:</label>
+            <select
+                value={doc.confirmed_data.group_id || ''}
+                onChange={e => updateConfirmedDocument(0, 'group_id', e.target.value)}
+                className={err.group_id ? 'error' : ''}
+            >
+              <option value="">Sélectionner un groupe (optionnel)</option>
+              {groups.map(group => (
+                  <option key={group.id} value={group.id}>{group.name}</option>
+              ))}
+            </select>
+              {err.group_id && <div className="error-message">{err.group_id}</div>}
+            </div>
           </div>
         <div className="form-group checkbox-group">
           <label>
             <input
               type="checkbox"
                 checked={doc.is_invoice || false}
-                onChange={e => updateConfirmedDocument(0, 'is_invoice', e.target.checked)}
+                onChange={e => {
+                  const isInvoice = e.target.checked;
+                  console.log(`Invoice checkbox toggled: ${isInvoice}`);
+                  updateConfirmedDocument(0, 'is_invoice', isInvoice);
+                  // Trigger validation immediately after toggling invoice status
+                  setTimeout(() => {
+                    console.log('Running validation after invoice toggle...');
+                    const newErrors = validateAll();
+                    console.log('Validation after invoice toggle:', newErrors);
+                  }, 50);
+                }}
             />
             Ce fichier est une facture
           </label>
@@ -449,12 +515,23 @@ const DocumentConfirmationForm = ({
             </div>
             {/* Second row: Partner Selection (full width) */}
             <div className="form-row">
-              <div className="form-group" style={{ gridColumn: '1 / span 2' }}>
-                <label>Partenaire externe:</label>
+              <div className="form-group">
+                <label>Partenaire externe *:</label>
                 <select
-                  value={confirmedDocuments[idx].confirmed_data.partner_id || ''}
-                  onChange={e => handlePartnerChange(idx, e)}
+                  value={currentPartner?.id || ''}
+                  onChange={e => { 
+                    const partnerId = parseInt(e.target.value);
+                    const partner = partners.find(p => p.id === partnerId);
+                    setCurrentPartner(partner);
+                    updateConfirmedDocument(idx, 'partner_id', partnerId);
+                    if (partner) {
+                      updateConfirmedDocument(idx, 'partner', partner.company_name);
+                    } else {
+                      updateConfirmedDocument(idx, 'partner', '');
+                    }
+                  }}
                   className={errors[idx].partner_id ? 'error' : ''}
+                  required
                 >
                   <option value="">Sélectionner un partenaire externe</option>
                   {partners.map(partner => (
@@ -463,13 +540,37 @@ const DocumentConfirmationForm = ({
                 </select>
                 {errors[idx].partner_id && <div className="error-message">{errors[idx].partner_id}</div>}
               </div>
+              <div className="form-group">
+                <label>Groupe:</label>
+                <select
+                  value={confirmedDocuments[idx].confirmed_data.group_id || ''}
+                  onChange={e => updateConfirmedDocument(idx, 'group_id', e.target.value)}
+                  className={errors[idx].group_id ? 'error' : ''}
+                >
+                  <option value="">Sélectionner un groupe (optionnel)</option>
+                  {groups.map(group => (
+                    <option key={group.id} value={group.id}>{group.name}</option>
+                  ))}
+                </select>
+                {errors[idx].group_id && <div className="error-message">{errors[idx].group_id}</div>}
+              </div>
             </div>
             <div className="form-group checkbox-group">
               <label>
                 <input
                   type="checkbox"
                   checked={confirmedDocuments[idx].is_invoice || false}
-                  onChange={e => updateConfirmedDocument(idx, 'is_invoice', e.target.checked)}
+                  onChange={e => {
+                    const isInvoice = e.target.checked;
+                    console.log(`Invoice checkbox toggled for file ${idx}: ${isInvoice}`);
+                    updateConfirmedDocument(idx, 'is_invoice', isInvoice);
+                    // Trigger validation immediately after toggling invoice status
+                    setTimeout(() => {
+                      console.log('Running validation after invoice toggle...');
+                      const newErrors = validateAll();
+                      console.log('Validation after invoice toggle:', newErrors);
+                    }, 50);
+                  }}
                 />
                 Ce fichier est une facture
               </label>
