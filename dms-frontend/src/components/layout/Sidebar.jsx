@@ -239,17 +239,19 @@ const Sidebar = ({ user, loadingUser }) => {
         >
           <span className="folder-name2">À verifier ({tempDocumentsCount})</span>
         </li>
-      <ul className="folder-list" role="list">
-        
-        {loadingStates.companies && !timeoutError ? (
-          <div className="loading-container">
-            <div className="loading-spinner"></div>
-            <span>Chargement des entreprises...</span>
-          </div>
-        ) : (!error && !timeoutError && companies.length === 0) ? (
-          <div className="no-results">Aucune entreprise trouvée</div>
-        ) : (!error && !timeoutError && companies.map) ? (
-          companies.filter(company => company.is_active).map(company => (
+      {/* Show companies and doctypes only for admin and superuser */}
+      {(user?.role === 'admin' || user?.role === 'superuser') ? (
+        <ul className="folder-list" role="list">
+          
+          {loadingStates.companies && !timeoutError ? (
+            <div className="loading-container">
+              <div className="loading-spinner"></div>
+              <span>Chargement des entreprises...</span>
+            </div>
+          ) : (!error && !timeoutError && companies.length === 0) ? (
+            <div className="no-results">Aucune entreprise trouvée</div>
+          ) : (!error && !timeoutError && companies.map) ? (
+            companies.filter(company => company.is_active).map(company => (
             <React.Fragment key={company.id}>
               <li
                 className={`folder-item ${selectedCompany?.id === company.id ? 'selected' : ''}`}
@@ -305,7 +307,20 @@ const Sidebar = ({ user, loadingUser }) => {
             </React.Fragment>
           ))
         ) : null}
-      </ul>
+        </ul>
+      ) : (
+        /* Regular users don't see companies and doctypes */
+        <div className="user-message" style={{
+          padding: '20px',
+          textAlign: 'center',
+          color: '#666',
+          fontSize: '14px',
+          fontStyle: 'italic'
+        }}>
+          <p>Les entités et types de documents sont gérés par les administrateurs.</p>
+          <p>Utilisez la barre de recherche pour accéder aux documents.</p>
+        </div>
+      )}
     </aside>
   );
 };

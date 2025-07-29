@@ -1,12 +1,15 @@
 // src/components/Settings/Settings.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
+import { AppContext } from '../context';
 import './Settings.css';
 
 const Settings = () => {
+  const { systemName, setSystemName } = useContext(AppContext);
+  
   // System Settings
   const [systemEnabled, setSystemEnabled] = useState(true);
-  const [systemName, setSystemName] = useState('test1');
+  const [localSystemName, setLocalSystemName] = useState(systemName);
 
   // Database Settings
   const [dbHost, setDbHost] = useState('localhost');
@@ -30,13 +33,19 @@ const Settings = () => {
   const [loading, setLoading] = useState(true);
   const [successMessage, setSuccessMessage] = useState('');
 
+  // Update local system name when context system name changes
+  useEffect(() => {
+    setLocalSystemName(systemName);
+  }, [systemName]);
+
   useEffect(() => {
     const fetchSettings = async () => {
       try {
         const res = await axios.get('http://localhost:5000/api/settings');
         const data = res.data;
         setSystemEnabled(data.systemEnabled);
-        setSystemName(data.systemName);
+        setLocalSystemName(data.systemName);
+        setSystemName(data.systemName); // Update context
         setDbHost(data.dbHost);
         setDbUsername(data.dbUsername);
         setDbPassword(data.dbPassword);
@@ -55,14 +64,14 @@ const Settings = () => {
       }
     };
     fetchSettings();
-  }, []);
+  }, [setSystemName]);
 
   // Update browser title when system name changes
   useEffect(() => {
-    if (systemName) {
-      document.title = systemName;
+    if (localSystemName) {
+      document.title = localSystemName;
     }
-  }, [systemName]);
+  }, [localSystemName]);
 
   if (loading) {
     return <div className="settings-container"><div className="settings-header"><h1 className="settings-title">Paramètres du système</h1></div><div style={{textAlign: 'center', marginTop: '3rem'}}>Chargement...</div></div>;
@@ -72,7 +81,7 @@ const Settings = () => {
     e.preventDefault();
     const payload = {
       systemEnabled,
-      systemName,
+      systemName: localSystemName,
       dbHost,
       dbUsername,
       dbPassword,
@@ -87,6 +96,7 @@ const Settings = () => {
     };
     try {
       await axios.post('http://localhost:5000/api/settings', payload);
+      setSystemName(localSystemName); // Update context with new system name
       setSuccessMessage('Les paramètres ont été enregistrés avec succès.');
       setTimeout(() => setSuccessMessage(''), 5000);
     } catch (err) {
@@ -117,7 +127,7 @@ const Settings = () => {
                 <div className="setting-info">
                   <div className="setting-label">Nom du système</div>
                 </div>
-                <input type="text" value={systemName} onChange={e => setSystemName(e.target.value)} />
+                <input type="text" value={localSystemName} onChange={e => setLocalSystemName(e.target.value)} />
               </div>
               <div className="setting-item">
                 <div className="setting-info">

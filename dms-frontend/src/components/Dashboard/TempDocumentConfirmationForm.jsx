@@ -138,14 +138,14 @@ const DocumentConfirmationForm = ({
       }
       return updated;
     });
-    setErrors(prev => {
+      setErrors(prev => {
       const newErrors = [...prev];
       if (newErrors[idx] && newErrors[idx][field]) {
         newErrors[idx] = { ...newErrors[idx] };
         delete newErrors[idx][field];
       }
-      return newErrors;
-    });
+        return newErrors;
+      });
   };
 
   // Validate all forms
@@ -156,10 +156,10 @@ const DocumentConfirmationForm = ({
       console.log(`Validating file ${idx}:`, doc);
       const errs = {};
       
-      if (!currentCompany) {
+    if (!currentCompany) {
         errs.company_id = 'Veuillez sélectionner une entité';
-      }
-      if (!currentDoctype) {
+    }
+    if (!currentDoctype) {
         errs.doctype_id = 'Veuillez sélectionner un type de document';
       }
       if (!currentPartner) {
@@ -174,13 +174,13 @@ const DocumentConfirmationForm = ({
         if (!invData.date) {
           errs.date = 'La date est requise';
         }
-        if (invData.total_ht === '' || isNaN(invData.total_ht) || invData.total_ht <= 0) {
+      if (invData.total_ht === '' || isNaN(invData.total_ht) || invData.total_ht <= 0) {
           errs.total_ht = 'Total HT doit être un nombre supérieur à 0';
-        }
-        if (invData.tva === '' || isNaN(invData.tva) || invData.tva < 0) {
+      }
+      if (invData.tva === '' || isNaN(invData.tva) || invData.tva < 0) {
           errs.tva = 'TVA doit être un nombre positif ou nul';
-        }
-        if (invData.total_ttc === '' || isNaN(invData.total_ttc) || invData.total_ttc <= 0) {
+      }
+      if (invData.total_ttc === '' || isNaN(invData.total_ttc) || invData.total_ttc <= 0) {
           errs.total_ttc = 'Total TTC doit être un nombre supérieur à 0';
         }
       }
