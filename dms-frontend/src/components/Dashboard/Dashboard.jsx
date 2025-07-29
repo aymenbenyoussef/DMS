@@ -8,7 +8,7 @@ const Dashboard = ({ user }) => {
   const { selectedCompany, selectedDoctype } = useContext(AppContext);
 
   if (!selectedCompany && !selectedDoctype) {
-    return <WelcomePanel user={user} />;
+    return <TempDocumentArchive user={user} />;
   }
 
   if (selectedCompany && selectedCompany.name === 'À verifier') {

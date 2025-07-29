@@ -309,7 +309,7 @@
 /* --- NEW BLUE BUTTON STYLES --- */
 
 /* Primary blue button style */
-.btn-blue {
+/*.btn-blue {
   background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
   border: 1px solid #2563eb;
   color: white;
@@ -319,7 +319,7 @@
   transition: all 0.2s ease-in-out;
   box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
 }
-
+*/
 .btn-blue:hover {
   background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
   border-color: #1d4ed8;

@@ -1672,6 +1672,37 @@ class DatabaseManager:
         return self.execute_query(query, params, fetch=True)
 
 
+
+
+
+    def search_documents_filtered(self, company_id=None, doctype_id=None, is_invoice=None, filename_search=None):
+        query = """
+            SELECT d.id, d.filename, c.name as company_name, dt.name as doctype_name, d.is_invoice
+            FROM documents d
+            LEFT JOIN companies c ON d.company_id = c.id
+            LEFT JOIN doctype dt ON d.doctype_id = dt.id
+            WHERE 1=1
+        """
+        params = []
+
+        if company_id:
+            query += " AND d.company_id = %s"
+            params.append(company_id)
+        if doctype_id:
+            query += " AND d.doctype_id = %s"
+            params.append(doctype_id)
+        if is_invoice is not None:
+            query += " AND d.is_invoice = %s"
+            params.append(is_invoice)
+        if filename_search:
+            query += " AND d.filename LIKE %s"
+            params.append(f"%{filename_search}%")
+            
+        query += " ORDER BY d.created_at DESC"
+        return self.execute_query(query, tuple(params), fetch=True)
+
+
+
 # Create global database instance
 db = DatabaseManager()
 db.init_database()

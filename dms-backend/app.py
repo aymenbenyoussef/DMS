@@ -2960,6 +2960,31 @@ def debug_document(document_id):
             "error": str(e)
         }), 500
 
+
+
+@app.route("/documents/search_filtered", methods=["GET"])
+@jwt_required()
+def search_documents_filtered():
+    company_id = request.args.get("company_id", type=int)
+    doctype_id = request.args.get("doctype_id", type=int)
+    is_invoice_str = request.args.get("is_invoice")
+    filename_search = request.args.get("filename_search")
+
+    is_invoice = None
+    if is_invoice_str == "true":
+        is_invoice = True
+    elif is_invoice_str == "false":
+        is_invoice = False
+
+    try:
+        documents = db.search_documents_filtered(company_id, doctype_id, is_invoice, filename_search)
+        return jsonify(documents), 200
+    except Exception as e:
+        app.logger.error(f"Error searching documents: {str(e)}")
+        return jsonify({"msg": f"Error searching documents: {str(e)}"}), 500
+
+
+
 if __name__ == '__main__':
     # Ensure log directory exists when app starts
     ensure_log_dir()
