@@ -603,7 +603,10 @@ const TempDocumentArchive = ({ user }) => {
                             style={{
                               padding: '8px 12px',
                               fontSize: '14px',
-                              minWidth: '80px'
+                              minWidth: '80px',
+                              backgroundColor: '#2563eb',
+                              color: 'white',
+                              border: '1px solid #2563eb'
                             }}
                           >
                             <i className="bi bi-eye me-1"></i>
@@ -618,10 +621,11 @@ const TempDocumentArchive = ({ user }) => {
                               padding: '8px 12px',
                               fontSize: '14px',
                               minWidth: '80px',
+                              backgroundColor: '#198754',
+                              color: 'white',
+                              border: '1px solid #198754',
                               ...(processingDocId === doc.id && {
-                              
                                 color: 'white',
-                                
                               })
                             }}
                           >
@@ -1045,7 +1049,7 @@ const TempDocumentArchive = ({ user }) => {
                   className="btn btn-secondary"
                   onClick={handleCancelDelete}
                   disabled={isDeleting}
-                  style={{backgroundColor: 'gray'}}
+                  style={{backgroundColor: '#6c757d', color: 'white'}}
                 >
                   Annuler
                 </button>
