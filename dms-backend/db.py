@@ -1486,6 +1486,18 @@ class DatabaseManager:
         except Exception as e:
             raise Exception(f"Error adding documents to group: {str(e)}")
 
+    def add_document_to_group(self, document_id, group_id):
+        """Add a single document to a group"""
+        try:
+            query = """
+                INSERT IGNORE INTO documents_group (document_id, group_id) 
+                VALUES (%s, %s)
+            """
+            self.execute_query(query, (document_id, group_id))
+            return True
+        except Exception as e:
+            raise Exception(f"Error adding document to group: {str(e)}")
+
     def remove_document_from_group(self, document_id, group_id):
         """Remove a document from a group"""
         try:

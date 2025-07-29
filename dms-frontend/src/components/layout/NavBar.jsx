@@ -31,9 +31,11 @@ const NavBar = ({ user, onLogout }) => {
   const [doctypes, setDoctypes] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
   const location = useLocation();
   const adminToolsRef = useRef(null);
   const searchDropdownRef = useRef(null);
+  const searchTimeoutRef = useRef(null);
   
   // Admin tools links grouped by category
   const adminToolsCategories = {
@@ -82,6 +84,15 @@ const NavBar = ({ user, onLogout }) => {
     };
   }, []);
 
+  // Cleanup search timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Fetch companies and doctypes on component mount
   useEffect(() => {
     const fetchFilters = async () => {
@@ -98,11 +109,18 @@ const NavBar = ({ user, onLogout }) => {
   }, []);
 
   const handleSearch = async () => {
+    if (!searchTerm.trim()) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      return;
+    }
+
+    setIsSearching(true);
     try {
-      const response = await api.documents.searchDocumentsFiltered(
+      const response = await api.search.searchDocumentsFiltered(
         searchTerm,
-        selectedCompany,
-        selectedDoctype,
+        selectedCompany || null,
+        selectedDoctype || null,
         isInvoice === '' ? null : isInvoice === 'true'
       );
       setSearchResults(response.data);
@@ -110,8 +128,32 @@ const NavBar = ({ user, onLogout }) => {
     } catch (error) {
       console.error("Error searching documents:", error);
       setSearchResults([]);
-      setShowSearchResults(false);
+      setShowSearchResults(true); // Still show the dropdown to display error message
+    } finally {
+      setIsSearching(false);
     }
+  };
+
+  const handleSearchInputChange = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    
+    // Clear previous timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    
+    // If search term is empty, clear results
+    if (!value.trim()) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      return;
+    }
+    
+    // Set new timeout for debounced search
+    searchTimeoutRef.current = setTimeout(() => {
+      handleSearch();
+    }, 500); // 500ms delay
   };
 
   return (
@@ -140,10 +182,24 @@ const NavBar = ({ user, onLogout }) => {
               placeholder="Recherche par nom de fichier..." 
               className="search-input"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={handleSearchInputChange}
               onFocus={() => setShowSearchResults(true)}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  handleSearch();
+                }
+              }}
             />
-            <button onClick={handleSearch} className="search-button">Rechercher</button>
+            <button onClick={handleSearch} className="search-button" disabled={isSearching}>
+              {isSearching ? (
+                <>
+                  <i className="bi bi-arrow-clockwise me-1" style={{animation: 'spin 1s linear infinite'}}></i>
+                  Recherche...
+                </>
+              ) : (
+                'Rechercher'
+              )}
+            </button>
           </div>
 
           {showSearchResults && (
@@ -183,17 +239,49 @@ const NavBar = ({ user, onLogout }) => {
               </div>
 
               <div className="search-results">
-                {searchResults.length > 0 ? (
+                {isSearching ? (
+                  <div className="loading-results">
+                    <i className="bi bi-search me-2"></i>
+                    Recherche en cours...
+                  </div>
+                ) : searchResults.length > 0 ? (
                   searchResults.map(doc => (
-                    <div key={doc.id} className="search-result-item">
-                      <p><strong>Nom du fichier:</strong> {doc.filename}</p>
-                      <p><strong>Entreprise:</strong> {doc.company_name}</p>
-                      <p><strong>Type de document:</strong> {doc.doctype_name}</p>
-                      <p><strong>Facturable:</strong> {doc.is_invoice ? 'Oui' : 'Non'}</p>
+                    <div key={doc.id} className="search-result-item" onClick={() => {
+                      // Navigate to document archive with the document selected
+                      window.location.href = `/?company=${doc.company_id}&doctype=${doc.doctype_id}`;
+                      setShowSearchResults(false);
+                      setSearchTerm('');
+                    }}>
+                      <div className="search-result-header">
+                        <i className="bi bi-file-earmark-text me-2"></i>
+                        <strong>{doc.filename}</strong>
+                      </div>
+                      <div className="search-result-details">
+                        <span className="search-result-company">
+                          <i className="bi bi-building me-1"></i>
+                          {doc.company_name || 'N/A'}
+                        </span>
+                        <span className="search-result-doctype">
+                          <i className="bi bi-tag me-1"></i>
+                          {doc.doctype_name || 'N/A'}
+                        </span>
+                        <span className={`search-result-invoice ${doc.is_invoice ? 'invoice-yes' : 'invoice-no'}`}>
+                          <i className="bi bi-receipt me-1"></i>
+                          {doc.is_invoice ? 'Facturable' : 'Non Facturable'}
+                        </span>
+                      </div>
                     </div>
                   ))
+                ) : searchTerm.trim() ? (
+                  <div className="no-results">
+                    <i className="bi bi-search me-2"></i>
+                    Aucun document trouvé pour "{searchTerm}"
+                  </div>
                 ) : (
-                  <p className="no-results">Aucun document trouvé.</p>
+                  <div className="search-placeholder">
+                    <i className="bi bi-search me-2"></i>
+                    Entrez un terme de recherche pour commencer
+                  </div>
                 )}
               </div>
             </div>

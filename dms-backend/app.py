@@ -1551,6 +1551,7 @@ def confirm_document():
             is_invoice = doc_data.get("is_invoice", False)
             confirmed_info = doc_data.get("confirmed_data", {})
             partner_id = doc_data.get("partner_id")  # Get partner_id from form data
+            group_id = confirmed_info.get("group_id")  # Get group_id from confirmed data
             
             if not company_id or not doctype_id:
                 saved_documents.append({
@@ -1645,7 +1646,14 @@ def confirm_document():
                 if not document_id:
                     raise Exception("Failed to create document in database")
                 
-                
+                # Add document to group if group_id is provided
+                if group_id:
+                    try:
+                        db.add_document_to_group(document_id, group_id)
+                        print(f"Document {document_id} added to group {group_id}")
+                    except Exception as group_error:
+                        print(f"Error adding document to group: {group_error}")
+                        # Don't fail the entire operation if group assignment fails
                 
                 company = db.get_company_by_id(company_id)
                 doctype = db.get_doctype_by_id(doctype_id)
@@ -1694,6 +1702,7 @@ def confirm_document():
                     'original_filename': final_filename,
                     'is_invoice': is_invoice,
                     'partner_id': partner_id,
+                    'group_id': group_id,
                     'final_path': final_file_path
                 })
                 
