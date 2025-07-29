@@ -335,6 +335,23 @@ const tempDocuments = {
   download: (id) => API.get(`/temp_documents/${id}/file`, { responseType: 'blob' }),
 };
 
+
+
+
+// New search and filter endpoints
+const search = {
+  searchDocumentsFiltered: (searchTerm, companyId = null, doctypeId = null, isInvoice = null) => {
+    const params = new URLSearchParams();
+    if (searchTerm) params.append("filename_search", searchTerm);
+    if (companyId) params.append("company_id", companyId);
+    if (doctypeId) params.append("doctype_id", doctypeId);
+    if (isInvoice !== null) params.append("is_invoice", isInvoice);
+    return API.get(`/documents/search_filtered?${params.toString()}`);
+  },
+  getAllCompanies: () => API.get("/companies/all"),
+  getAllDoctypes: () => API.get("/doctypes/all"),
+};
+
 // Export the API instance and endpoint groups
 export default {
   ...API,
@@ -349,5 +366,7 @@ export default {
   ocr,
   groups,
   email,
-  tempDocuments
+  tempDocuments,
+  search, 
 };
+

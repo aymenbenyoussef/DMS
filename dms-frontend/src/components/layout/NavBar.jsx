@@ -3,12 +3,12 @@ import { Link, useLocation } from 'react-router-dom';
 import { AppContext } from '../context';
 import './NavBar.css';
 import { BiServer } from 'react-icons/bi';
-import { 
-  BiFolder, 
-  BiSearch, 
-  BiBarChart, 
-  BiGroup, 
-  BiCog, 
+import {
+  BiFolder,
+  BiSearch,
+  BiBarChart,
+  BiGroup,
+  BiCog,
   BiLogOut,
   BiChevronDown,
   BiBuildings,
@@ -18,12 +18,22 @@ import {
   BiLock
 } from 'react-icons/bi';
 import DmsTempUploadModal from '../Dashboard/DmsTempUploadModal';
+import api from '../../api'; 
 
 const NavBar = ({ user, onLogout }) => {
   const [showAdminTools, setShowAdminTools] = useState(false);
   const [showDmsTempModal, setShowDmsTempModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCompany, setSelectedCompany] = useState('');
+  const [selectedDoctype, setSelectedDoctype] = useState('');
+  const [isInvoice, setIsInvoice] = useState(''); // 'true', 'false', or ''
+  const [companies, setCompanies] = useState([]);
+  const [doctypes, setDoctypes] = useState([]);
+  const [searchResults, setSearchResults] = useState([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
   const location = useLocation();
   const adminToolsRef = useRef(null);
+  const searchDropdownRef = useRef(null);
   
   // Admin tools links grouped by category
   const adminToolsCategories = {
@@ -61,13 +71,48 @@ const NavBar = ({ user, onLogout }) => {
       if (adminToolsRef.current && !adminToolsRef.current.contains(event.target)) {
         setShowAdminTools(false);
       }
+      if (searchDropdownRef.current && !searchDropdownRef.current.contains(event.target)) {
+        setShowSearchResults(false);
+      }
     };
     
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  // Fetch companies and doctypes on component mount
+  useEffect(() => {
+    const fetchFilters = async () => {
+      try {
+        const companiesRes = await api.companies.getAll();
+        setCompanies(companiesRes.data);
+        const doctypesRes = await api.doctype.getAll();
+        setDoctypes(doctypesRes.data);
+      } catch (error) {
+        console.error("Error fetching filter data:", error);
+      }
+    };
+    fetchFilters();
+  }, []);
+
+  const handleSearch = async () => {
+    try {
+      const response = await api.documents.searchDocumentsFiltered(
+        searchTerm,
+        selectedCompany,
+        selectedDoctype,
+        isInvoice === '' ? null : isInvoice === 'true'
+      );
+      setSearchResults(response.data);
+      setShowSearchResults(true);
+    } catch (error) {
+      console.error("Error searching documents:", error);
+      setSearchResults([]);
+      setShowSearchResults(false);
+    }
+  };
 
   return (
     <>
@@ -86,18 +131,75 @@ const NavBar = ({ user, onLogout }) => {
           </Link>
         </div>
 
-        {/* Search Bar 
-        <div className="search-container">
+        {/* Search Bar*/}
+        <div className="search-container" ref={searchDropdownRef}>
           <div className="search-bar">
             <span className="search-icon"><BiSearch size={18} /></span>
             <input 
               type="text" 
-              placeholder="Recherche..." 
+              placeholder="Recherche par nom de fichier..." 
               className="search-input"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onFocus={() => setShowSearchResults(true)}
             />
+            <button onClick={handleSearch} className="search-button">Rechercher</button>
           </div>
+
+          {showSearchResults && (
+            <div className="search-dropdown">
+              <div className="search-filters">
+                <select 
+                  value={selectedCompany}
+                  onChange={(e) => setSelectedCompany(e.target.value)}
+                  className="search-filter-select"
+                >
+                  <option value="">Toutes les entreprises</option>
+                  {companies.map(company => (
+                    <option key={company.id} value={company.id}>{company.name}</option>
+                  ))}
+                </select>
+
+                <select 
+                  value={selectedDoctype}
+                  onChange={(e) => setSelectedDoctype(e.target.value)}
+                  className="search-filter-select"
+                >
+                  <option value="">Tous les types de document</option>
+                  {doctypes.map(doctype => (
+                    <option key={doctype.id} value={doctype.id}>{doctype.name}</option>
+                  ))}
+                </select>
+
+                <select 
+                  value={isInvoice}
+                  onChange={(e) => setIsInvoice(e.target.value)}
+                  className="search-filter-select"
+                >
+                  <option value="">Tous les types (Facturable/Non)</option>
+                  <option value="true">Facturable</option>
+                  <option value="false">Non Facturable</option>
+                </select>
+              </div>
+
+              <div className="search-results">
+                {searchResults.length > 0 ? (
+                  searchResults.map(doc => (
+                    <div key={doc.id} className="search-result-item">
+                      <p><strong>Nom du fichier:</strong> {doc.filename}</p>
+                      <p><strong>Entreprise:</strong> {doc.company_name}</p>
+                      <p><strong>Type de document:</strong> {doc.doctype_name}</p>
+                      <p><strong>Facturable:</strong> {doc.is_invoice ? 'Oui' : 'Non'}</p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="no-results">Aucun document trouvé.</p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
-        */}
+        
         {/* Navigation Links */}
         <div className="navbar-links">
           {/* Dashboard link */}
