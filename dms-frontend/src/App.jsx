@@ -106,6 +106,23 @@ function App() {
   const [authError, setAuthError] = useState('');
   const [loading, setLoading] = useState(true);
 
+  // Fetch system settings and set document title
+  useEffect(() => {
+    const fetchSystemSettings = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/api/settings`);
+        const settings = await response.json();
+        if (settings.systemName) {
+          document.title = settings.systemName;
+        }
+      } catch (error) {
+        console.log('Could not fetch system settings:', error);
+      }
+    };
+    
+    fetchSystemSettings();
+  }, []);
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {

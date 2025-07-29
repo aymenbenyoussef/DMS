@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useContext } from 'react';
+import React, { useState, useCallback, useContext, useEffect } from 'react';
 import API from '../../api';
 import { AppContext } from '../context';
 import DocumentConfirmationForm from './DocumentConfirmationForm';
@@ -13,6 +13,34 @@ const DragDropUpload = ({ onUpload, onClose }) => {
   const [uploadStatus, setUploadStatus] = useState(null);
   const [showConfirmations, setShowConfirmations] = useState([]); // [{sessionId, extractedData, file}]
   const [confirmationData, setConfirmationData] = useState([]); // [{confirmedDocument, errors}]
+  const [maxFileSize, setMaxFileSize] = useState(2014); // Default max file size in KB
+
+  // Fetch max file size from settings
+  useEffect(() => {
+    const fetchMaxFileSize = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/settings');
+        const settings = await response.json();
+        if (settings.maxFileSize) {
+          setMaxFileSize(settings.maxFileSize);
+        }
+      } catch (error) {
+        console.log('Could not fetch max file size from settings:', error);
+      }
+    };
+    
+    fetchMaxFileSize();
+  }, []);
+
+  // Clear size error after 5 seconds
+  useEffect(() => {
+    if (uploadStatus === 'size_error') {
+      const timer = setTimeout(() => {
+        setUploadStatus(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [uploadStatus]);
 
   const handleDragEnter = (e) => {
     e.preventDefault();
@@ -40,8 +68,16 @@ const DragDropUpload = ({ onUpload, onClose }) => {
       setUploadStatus('invalid');
       return;
     }
+    
+    // Check file sizes
+    const oversizedFiles = droppedFiles.filter(file => file.size > maxFileSize * 1024);
+    if (oversizedFiles.length > 0) {
+      setUploadStatus('size_error');
+      return;
+    }
+    
     setFiles(prev => [...prev, ...droppedFiles]);
-      setUploadStatus(null);
+    setUploadStatus(null);
   };
 
   const handleFileChange = (e) => {
@@ -50,8 +86,16 @@ const DragDropUpload = ({ onUpload, onClose }) => {
       setUploadStatus('invalid');
       return;
     }
+    
+    // Check file sizes
+    const oversizedFiles = selectedFiles.filter(file => file.size > maxFileSize * 1024);
+    if (oversizedFiles.length > 0) {
+      setUploadStatus('size_error');
+      return;
+    }
+    
     setFiles(prev => [...prev, ...selectedFiles]);
-      setUploadStatus(null);
+    setUploadStatus(null);
   };
 
   const isValidFileType = (file) => {
@@ -245,6 +289,8 @@ const DragDropUpload = ({ onUpload, onClose }) => {
         return 'Error during processing.';
       case 'invalid':
         return 'Invalid file type.';
+      case 'size_error':
+        return `La taille du fichier dépasse la limite maximale de ${maxFileSize} Ko.`;
       case 'multiple_files_error':
         return 'Please select only one file at a time.';
       default:

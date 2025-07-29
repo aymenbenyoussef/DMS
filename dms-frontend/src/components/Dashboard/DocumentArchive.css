@@ -7,6 +7,47 @@
   z-index: 1040 !important;
 }
 
+/* Modal overlay for document preview */
+.modal-overlay {
+  z-index: 1060 !important;
+}
+
+/* Enhanced modal content */
+.modal-content-enhanced {
+  z-index: 1061 !important;
+}
+
+/* Document preview modal should be above dropdowns */
+.document-preview-modal-overlay {
+  z-index: 1060 !important;
+}
+
+.document-preview-modal-content {
+  z-index: 1061 !important;
+}
+
+/* Upload modal overlay */
+.upload-modal-overlay {
+  z-index: 1060 !important;
+}
+
+.upload-modal {
+  z-index: 1061 !important;
+}
+
+/* Fullscreen modal should be above everything */
+.fullscreen-modal {
+  z-index: 2000 !important;
+}
+
+.fullscreen-modal-content {
+  z-index: 2001 !important;
+}
+
+.fullscreen-modal-close {
+  z-index: 2002 !important;
+}
+
 /* Base styles */
 .document-archive {
   padding: 20px;
@@ -26,7 +67,7 @@
   bottom: 100% !important;
   margin-bottom: 5px !important;
   transform: none !important;
-  z-index: 1000 !important;
+  z-index: 999 !important;
   position: absolute !important;
 }
 
@@ -43,7 +84,7 @@
 
 .dropdown-menu {
   position: absolute !important;
-  z-index: 1000 !important;
+  z-index: 999 !important;
   top: 100% !important;
   right: 0 !important;
   left: auto !important;
@@ -1502,42 +1543,7 @@
 
 /* --- FULLSCREEN MODAL STYLES --- */
 
-/* Fullscreen button positioned in top right corner of table container */
-.table-fullscreen-btn {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  z-index: 100;
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-  border: none;
-  color: white;
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
-  font-size: 14px;
-}
-
-.table-fullscreen-btn:hover {
-  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
-  color: white;
-}
-
-.table-fullscreen-btn:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
-}
-
-.table-fullscreen-btn i {
-  font-size: 14px;
-}
+/* Fullscreen button styles removed - now positioned in header */
 
 /* Fullscreen modal overlay */
 .fullscreen-modal {
@@ -1570,31 +1576,34 @@
 /* Fullscreen modal close button */
 .fullscreen-modal-close {
   position: absolute;
-  top: 16px;
-  right: 16px;
+  top: 20px;
+  right: 20px;
   z-index: 2001;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(220, 53, 69, 0.9);
   border: none;
   color: white;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
-  font-size: 16px;
+  font-size: 18px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .fullscreen-modal-close:hover {
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(220, 53, 69, 1);
   transform: scale(1.1);
   color: white;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
 }
 
 .fullscreen-modal-close i {
-  font-size: 16px;
+  font-size: 18px;
+  font-weight: bold;
 }
 
 /* Fullscreen modal body */
@@ -1629,17 +1638,6 @@
 
 /* Responsive adjustments for fullscreen modal */
 @media (max-width: 768px) {
-  .table-fullscreen-btn {
-    width: 32px;
-    height: 32px;
-    top: 12px;
-    right: 12px;
-    font-size: 12px;
-  }
-  
-  .table-fullscreen-btn i {
-    font-size: 12px;
-  }
   
   .fullscreen-modal-content {
     width: 98vw;
@@ -1680,5 +1678,52 @@
 .fullscreen-modal .table-responsive {
   height: 100%;
   overflow-y: auto;
+}
+
+/* Ensure dropdowns are hidden when modals are open */
+.modal.show ~ .dropdown-menu,
+.modal.show ~ * .dropdown-menu,
+.modal.show ~ * * .dropdown-menu {
+  display: none !important;
+  visibility: hidden !important;
+  z-index: -1 !important;
+}
+
+/* Force dropdowns to stay behind modals */
+.modal.show ~ .dropdown-menu.show,
+.modal.show ~ * .dropdown-menu.show,
+.modal.show ~ * * .dropdown-menu.show {
+  display: none !important;
+  visibility: hidden !important;
+  z-index: -1 !important;
+}
+
+/* Additional rule for email modal specifically */
+div[style*="zIndex: 2000"] ~ .dropdown-menu,
+div[style*="zIndex: 2000"] ~ * .dropdown-menu,
+div[style*="zIndex: 2000"] ~ * * .dropdown-menu {
+  display: none !important;
+  visibility: hidden !important;
+  z-index: -1 !important;
+}
+
+/* Comprehensive dropdown hiding when modals are present */
+body:has(.modal.show) .dropdown-menu,
+body:has(.modal.show) .dropdown-menu.show {
+  display: none !important;
+  visibility: hidden !important;
+  z-index: -9999 !important;
+  opacity: 0 !important;
+}
+
+/* Alternative approach for browsers that don't support :has() */
+.modal.show ~ * .dropdown-menu,
+.modal.show ~ * .dropdown-menu.show,
+.modal.show ~ * * .dropdown-menu,
+.modal.show ~ * * .dropdown-menu.show {
+  display: none !important;
+  visibility: hidden !important;
+  z-index: -9999 !important;
+  opacity: 0 !important;
 }
 

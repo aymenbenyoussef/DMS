@@ -22,9 +22,10 @@ const Settings = () => {
   // File & Log Paths
   const [logsPath, setLogsPath] = useState('/test1/logs');
   const [entitiesDataPath, setEntitiesDataPath] = useState('/test1/edata');
-  const [entityLogPath, setEntityLogPath] = useState('1');
-  const [externalEntitiesDataPath, setExternalEntitiesDataPath] = useState('test1/eedata');
-  const [externalEntitiesLogPath, setExternalEntitiesLogPath] = useState('');
+
+  // SMTP Settings
+  const [smtpEmail, setSmtpEmail] = useState('');
+  const [smtpPassword, setSmtpPassword] = useState('');
 
   const [loading, setLoading] = useState(true);
   const [successMessage, setSuccessMessage] = useState('');
@@ -45,9 +46,8 @@ const Settings = () => {
         setMaxFileSize(data.maxFileSize);
         setLogsPath(data.logsPath);
         setEntitiesDataPath(data.entitiesDataPath);
-        setEntityLogPath(data.entityLogPath);
-        setExternalEntitiesDataPath(data.externalEntitiesDataPath);
-        setExternalEntitiesLogPath(data.externalEntitiesLogPath);
+        setSmtpEmail(data.smtpEmail || '');
+        setSmtpPassword(data.smtpPassword || '');
       } catch (err) {
         // Optionally handle error
       } finally {
@@ -56,6 +56,13 @@ const Settings = () => {
     };
     fetchSettings();
   }, []);
+
+  // Update browser title when system name changes
+  useEffect(() => {
+    if (systemName) {
+      document.title = systemName;
+    }
+  }, [systemName]);
 
   if (loading) {
     return <div className="settings-container"><div className="settings-header"><h1 className="settings-title">Paramètres du système</h1></div><div style={{textAlign: 'center', marginTop: '3rem'}}>Chargement...</div></div>;
@@ -75,9 +82,8 @@ const Settings = () => {
       maxFileSize,
       logsPath,
       entitiesDataPath,
-      entityLogPath,
-      externalEntitiesDataPath,
-      externalEntitiesLogPath
+      smtpEmail,
+      smtpPassword
     };
     try {
       await axios.post('http://localhost:5000/api/settings', payload);
@@ -133,21 +139,15 @@ const Settings = () => {
             </div>
               <div className="setting-item">
                 <div className="setting-info">
-                  <div className="setting-label">Chemin des logs de l'entité</div>
+                  <div className="setting-label">Email SMTP</div>
                 </div>
-                <input type="text" value={entityLogPath} onChange={e => setEntityLogPath(e.target.value)} />
+                <input type="text" value={smtpEmail} onChange={e => setSmtpEmail(e.target.value)} />
               </div>
               <div className="setting-item">
                 <div className="setting-info">
-                  <div className="setting-label">Chemin des données des entités externes</div>
+                  <div className="setting-label">Mot de passe SMTP</div>
                 </div>
-                <input type="text" value={externalEntitiesDataPath} onChange={e => setExternalEntitiesDataPath(e.target.value)} />
-              </div>
-              <div className="setting-item">
-                <div className="setting-info">
-                  <div className="setting-label">Chemin des logs des entités externes</div>
-                </div>
-                <input type="text" value={externalEntitiesLogPath} onChange={e => setExternalEntitiesLogPath(e.target.value)} />
+                <input type="password" value={smtpPassword} onChange={e => setSmtpPassword(e.target.value)} />
               </div>
             </form>
           </div>
@@ -180,7 +180,7 @@ const Settings = () => {
                   </div>
               <div className="setting-item">
                 <div className="setting-info">
-                  <div className="setting-label">Taille maximale de fichier (Mo)</div>
+                  <div className="setting-label">Taille maximale de fichier (Ko)</div>
                 </div>
                 <input type="number" value={maxFileSize} onChange={e => setMaxFileSize(e.target.value)} min={1} />
             </div>
@@ -196,11 +196,24 @@ const Settings = () => {
                 </div>
                 <input type="text" value={entitiesDataPath} onChange={e => setEntitiesDataPath(e.target.value)} />
               </div>
-              <div style={{textAlign: 'center', marginTop: '4rem'}}>
+              <div style={{textAlign: 'center', marginTop: '1.7rem'}}>
                 {successMessage && (
                   <div className="alert alert-success" style={{marginBottom: '1rem', fontWeight: 600}}>{successMessage}</div>
                 )}
-                <button className="btn btn-primary" onClick={handleSubmit}>Enregistrer</button>
+                <button 
+                  className="btn btn-primary" 
+                  onClick={handleSubmit}
+                  style={{
+                    backgroundColor: 'orangered',
+                    borderColor: 'orangered',
+                    padding: '12px 24px',
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    height: '50px'
+                  }}
+                >
+                  Enregistrer
+                </button>
             </div>
             </form>
           </div>
