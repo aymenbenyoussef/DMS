@@ -6,6 +6,7 @@ import WelcomePanel from './WelcomePanel';
 import { useNavigate } from 'react-router-dom';
 import EditDocumentForm from './EditDocumentForm';
 import { exportToCSV, exportToJSON, exportToTXT, exportToExcel } from '../Admin/exportUtils';
+import { ReactComponent as FullscreenIcon } from './fullscreen.svg';
 import './DocumentArchive.css';
 // Remove: import path from 'path-browserify';
 
@@ -1859,12 +1860,27 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                 </div>
                 {/* Fullscreen Button */}
                 <button 
-                  className="btn btn-outline-secondary btn-sm d-flex align-items-center"
+                  className="btn btn-sm d-flex align-items-center"
                   onClick={openFullscreenModal}
                   title="Afficher en plein écran"
                   aria-label="Afficher en plein écran"
+                  style={{
+                    backgroundColor: 'transparent',
+                    borderColor: '#ced4da', // Bordure grise standard
+                    color: '#6c757d',       // Couleur du texte/icône grise
+                    transition: 'background-color 0.2s ease, color 0.2s ease'
+                  }}
+                  // Effet de survol
+                  onMouseOver={e => {
+                    e.currentTarget.style.backgroundColor = '#6c757d';
+                    e.currentTarget.style.color = '#ffffff';
+                  }}
+                  onMouseOut={e => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = '#6c757d';
+                  }}
                 >
-                  <i className="bi bi-fullscreen"></i>
+                  <FullscreenIcon width="16" height="16" fill="currentColor" />
                 </button>
               </div>
             </div>
@@ -2010,26 +2026,39 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                       </td>
                       <td className="text-muted">{doc.id}</td>
                       <td>
-                        <div className="dropdown dropdown-up" style={{ position: 'relative', zIndex: 99999 }}>
+                        <div className="dropdown" style={{ position: 'relative' }}>
                           <button 
-                            className="btn btn-sm btn-outline-secondary dropdown-toggle"
+                            className="btn btn-sm p-1"
                             type="button" 
                             onClick={() => setOpenDropdownId(openDropdownId === doc.id ? null : doc.id)}
-                            style={{ fontSize: '12px', padding: '4px 8px' ,zIndex:0}}
+                            style={{ 
+                              background: 'none',
+                              border: 'none',
+                              fontSize: '16px',
+                              color: '#6c757d',
+                              cursor: 'pointer'
+                            }}
+                            title="Actions"
                           >
-                            Actions
+                            ⋮
                           </button>
-                          <ul className={`dropdown-menu ${openDropdownId === doc.id ? 'show' : ''}`} style={{ 
-                            fontSize: '12px', 
-                            minWidth: '150px',
-                            top: 'auto',
-                            bottom: '100%',
-                            marginBottom: '5px',
-                            zIndex: 1000,
-                            position: 'absolute',
-                            transform: 'none'
-                          }}>
-                            <li>
+                          {openDropdownId === doc.id && (
+                            <div 
+                              className="dropdown-menu show" 
+                              style={{ 
+                                position: 'absolute',
+                                top: '100%',
+                                right: 0,
+                                left: 'auto',
+                                zIndex: 1000,
+                                minWidth: '150px',
+                                fontSize: '14px',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                                border: '1px solid #dee2e6',
+                                borderRadius: '6px',
+                                backgroundColor: 'white'
+                              }}
+                            >
                               <button 
                                 className="dropdown-item d-flex align-items-center"
                                 onClick={() => { 
@@ -2037,37 +2066,36 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                                   setIsPreviewModalOpen(false); 
                                   handleSendEmail(doc); 
                                 }}
+                                style={{ padding: '8px 16px', border: 'none', background: 'none', width: '100%', textAlign: 'left' }}
                               >
                                 <i className="bi bi-envelope me-2"></i>
                                 Envoyer
                               </button>
-                            </li>
-                            <li>
                               <button 
                                 className="dropdown-item d-flex align-items-center"
                                 onClick={() => { 
                                   setOpenDropdownId(null);
                                   handleEditDocument(doc); 
                                 }}
+                                style={{ padding: '8px 16px', border: 'none', background: 'none', width: '100%', textAlign: 'left' }}
                               >
                                 <i className="bi bi-pencil-square me-2"></i>
                                 Modifier
                               </button>
-                            </li>
-                            <li><hr className="dropdown-divider" /></li>
-                            <li>
+                              <hr className="dropdown-divider" style={{ margin: '4px 0' }} />
                               <button 
                                 className="dropdown-item d-flex align-items-center text-danger"
                                 onClick={() => { 
                                   setOpenDropdownId(null);
                                   handleDeleteDocument(doc); 
                                 }}
+                                style={{ padding: '8px 16px', border: 'none', background: 'none', width: '100%', textAlign: 'left', color: '#dc3545' }}
                               >
                                 <i className="bi bi-trash me-2"></i>
                                 Supprimer
                               </button>
-                            </li>
-                          </ul>
+                            </div>
+                          )}
                         </div>
                       </td>
                       <td>
@@ -3190,14 +3218,35 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
       {isFullscreenModalOpen && (
         <div className="fullscreen-modal" onClick={closeFullscreenModal}>
           <div className="fullscreen-modal-content" onClick={(e) => e.stopPropagation()}>
-            <button 
-              className="fullscreen-modal-close"
-              onClick={closeFullscreenModal}
-              title="Fermer le plein écran"
-              aria-label="Fermer le plein écran"
-            >
-              <i className="bi bi-x"></i>
-            </button>
+          <button 
+            className="fullscreen-modal-close" // Gardons la classe pour la structure
+            onClick={closeFullscreenModal}
+            title="Fermer le plein écran"
+            aria-label="Fermer le plein écran"
+            style={{
+              // --- Style personnalisé ---
+              position: 'absolute',
+              top: '15px',
+              right: '15px',
+              background: '#e7f5ff', // Fond bleu très clair
+              border: 'none',
+              borderRadius: '50%',   
+              width: '40px',
+              height: '40px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: '#007bff',      // Couleur de l'icône (bleu plus foncé)
+              transition: 'background-color 0.2s ease, transform 0.2s ease'
+            }}
+            // Effet de survol pour une meilleure interaction
+            onMouseOver={e => e.currentTarget.style.backgroundColor = '#d0ebff'}
+            onMouseOut={e => e.currentTarget.style.backgroundColor = '#e7f5ff'}
+          >
+            {/* Remplacez <i className="bi bi-x"></i> par le nouveau composant SVG */}
+            X
+          </button>
             <div className="fullscreen-modal-body">
               {isLoading ? (
                 <div className="text-center py-5">
@@ -3337,65 +3386,76 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                               </td>
                               <td className="text-muted">{doc.id}</td>
                               <td>
-                                <div className="dropdown dropdown-up" style={{ position: 'relative', zIndex: 99999 }}>
-                                  <button 
-                                    className="btn btn-sm btn-outline-secondary dropdown-toggle"
-                                    type="button" 
-                                    onClick={() => setOpenDropdownId(openDropdownId === doc.id ? null : doc.id)}
-                                    style={{ fontSize: '12px', padding: '4px 8px' ,zIndex:0}}
-                                  >
-                                    Actions
-                                  </button>
-                                  <ul className={`dropdown-menu ${openDropdownId === doc.id ? 'show' : ''}`} style={{ 
-                                    fontSize: '12px', 
-                                    minWidth: '150px',
-                                    top: 'auto',
-                                    bottom: '100%',
-                                    marginBottom: '5px',
-                                    zIndex: 1000,
+                              <div className="dropdown" style={{ position: 'relative' }}>
+                              <button 
+                                className="btn btn-sm p-1"
+                                type="button" 
+                                onClick={() => setOpenDropdownId(openDropdownId === doc.id ? null : doc.id)}
+                                style={{ 
+                                  background: 'none',
+                                  border: 'none',
+                                  fontSize: '16px',
+                                  color: '#6c757d',
+                                  cursor: 'pointer'
+                                }}
+                                title="Actions"
+                              >
+                                ⋮
+                              </button>
+                              {openDropdownId === doc.id && (
+                                <div 
+                                  className="dropdown-menu show" 
+                                  style={{ 
                                     position: 'absolute',
-                                    transform: 'none'
-                                  }}>
-                                    <li>
-                                      <button 
-                                        className="dropdown-item d-flex align-items-center"
-                                        onClick={() => { 
-                                          setOpenDropdownId(null);
-                                          setIsPreviewModalOpen(false); 
-                                          handleSendEmail(doc); 
-                                        }}
-                                      >
-                                        <i className="bi bi-envelope me-2"></i>
-                                        Envoyer
-                                      </button>
-                                    </li>
-                                    <li>
-                                      <button 
-                                        className="dropdown-item d-flex align-items-center"
-                                        onClick={() => { 
-                                          setOpenDropdownId(null);
-                                          handleEditDocument(doc); 
-                                        }}
-                                      >
-                                        <i className="bi bi-pencil-square me-2"></i>
-                                        Modifier
-                                      </button>
-                                    </li>
-                                    <li><hr className="dropdown-divider" /></li>
-                                    <li>
-                                      <button 
-                                        className="dropdown-item d-flex align-items-center text-danger"
-                                        onClick={() => { 
-                                          setOpenDropdownId(null);
-                                          handleDeleteDocument(doc); 
-                                        }}
-                                      >
-                                        <i className="bi bi-trash me-2"></i>
-                                        Supprimer
-                                      </button>
-                                    </li>
-                                  </ul>
+                                    top: '100%',
+                                    right: 0,
+                                    left: 'auto',
+                                    zIndex: 1000,
+                                    minWidth: '150px',
+                                    fontSize: '14px',
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                                    border: '1px solid #dee2e6',
+                                    borderRadius: '6px',
+                                    backgroundColor: 'white'
+                                  }}
+                                >
+                                  <button 
+                                    className="dropdown-item d-flex align-items-center"
+                                    onClick={() => { 
+                                      setOpenDropdownId(null);
+                                      handleSendEmail(doc); 
+                                    }}
+                                    style={{ padding: '8px 16px', border: 'none', background: 'none', width: '100%', textAlign: 'left' }}
+                                  >
+                                    <i className="bi bi-envelope me-2"></i>
+                                    Envoyer
+                                  </button>
+                                  <button 
+                                    className="dropdown-item d-flex align-items-center"
+                                    onClick={() => { 
+                                      setOpenDropdownId(null);
+                                      handleEditDocument(doc); 
+                                    }}
+                                    style={{ padding: '8px 16px', border: 'none', background: 'none', width: '100%', textAlign: 'left' }}
+                                  >
+                                    <i className="bi bi-pencil-square me-2"></i>
+                                    Modifier
+                                  </button>
+                                  <hr className="dropdown-divider" style={{ margin: '4px 0' }} />
+                                  <button 
+                                    className="dropdown-item d-flex align-items-center text-danger"
+                                    onClick={() => { 
+                                      setOpenDropdownId(null);
+                                      handleDeleteDocument(doc); 
+                                    }}
+                                    style={{ padding: '8px 16px', border: 'none', background: 'none', width: '100%', textAlign: 'left', color: '#dc3545' }}
+                                  >
+                                    <i className="bi bi-trash me-2"></i>
+                                    Supprimer
+                                  </button>
                                 </div>
+                              )}
+                            </div>
                               </td>
                               <td>
                                 <div className="d-flex align-items-center">
