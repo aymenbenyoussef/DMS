@@ -1704,14 +1704,16 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                 {!isGroupMode && (
                   <>
                     <button 
-                      className="btn btn-blue btn-sm d-flex align-items-center"
+                      className="btn btn-sm d-flex align-items-center"
                       onClick={handleAddToGroup}
+                      style={{backgroundColor: '#198754', color: 'white', border: '1px solid #198754'}}
                     >
                       <i className="bi bi-plus-circle me-1"></i> Ajouter au groupe
                     </button>
                     <button 
-                      className="btn btn-blue btn-sm d-flex align-items-center"
+                      className="btn btn-sm d-flex align-items-center"
                       onClick={handleCreateGroup}
+                      style={{backgroundColor: '#198754', color: 'white', border: '1px solid #198754'}}
                     >
                       <i className="bi bi-folder-plus me-1"></i> Créer groupe
                     </button>
@@ -1736,8 +1738,9 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                           ))}
                         </select>
                         <button 
-                          className="btn btn-blue btn-sm"
+                          className="btn btn-sm"
                           onClick={handleConfirmAddToGroup}
+                          style={{backgroundColor: '#198754', color: 'white', border: '1px solid #198754'}}
                         >
                           Confirmer
                         </button>
@@ -1756,8 +1759,9 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                           required
                         />
                         <button 
-                          className="btn btn-blue btn-sm"
+                          className="btn btn-sm"
                           onClick={handleConfirmCreateGroup}
+                          style={{backgroundColor: '#198754', color: 'white', border: '1px solid #198754'}}
                         >
                           Confirmer
                         </button>
@@ -1767,6 +1771,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                     <button 
                       className="btn btn-secondary btn-sm"
                       onClick={handleCancelGroupAction}
+                      style={{backgroundColor: '#6c757d', color: 'white'}}
                     >
                       Annuler
                     </button>
