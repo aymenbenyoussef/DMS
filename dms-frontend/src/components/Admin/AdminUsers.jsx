@@ -627,9 +627,10 @@ const AdminUsers = ({user ,loadingUser}) => {
                         Nom complet <span style={{fontSize:'1em'}}>{sortConfig.key === 'username' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
                       </th>
                       
-                      <th className="email-col" style={{cursor:'pointer', background: sortConfig.key === 'email' ? '#f0f4fa' : undefined, color: sortConfig.key === 'email' ? '#1976d2' : undefined}} onClick={() => handleSort('email')}>
-                        Email <span style={{fontSize:'1em'}}>{sortConfig.key === 'email' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                      <th className="email-col" style={{cursor:'pointer', background: sortConfig.key === 'email' ? '#f0f4fa' : undefined, color: sortConfig.key === 'email' ? '#1976d2' : undefined, wordBreak: 'break-all'}} onClick={() => handleSort('email')}>
+                                Email <span style={{fontSize:'1em'}}>{sortConfig.key === 'email' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
                       </th>
+
                       <th style={{cursor:'pointer', background: sortConfig.key === 'role' ? '#f0f4fa' : undefined, color: sortConfig.key === 'role' ? '#1976d2' : undefined}} onClick={() => handleSort('role')}>
                         Rôle <span style={{fontSize:'1em'}}>{sortConfig.key === 'role' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
                       </th>
@@ -707,7 +708,7 @@ const AdminUsers = ({user ,loadingUser}) => {
                           <td>{rowUser.id}</td>
                           <td>{`${rowUser.username} ${rowUser.surname}`}</td>
                           
-                          <td className="email-col">{rowUser.email}</td>
+                          <td className="email-col" style={{wordBreak: 'break-all'}}>{rowUser.email}</td>
                           <td>
                             <span >
                               {rowUser.role === 'user' ? 'utilisateur' : rowUser.role}

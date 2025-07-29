@@ -105,50 +105,50 @@ const AddPartner = ({ user }) => {
     // Identity tab validation
     if (tab === 'Identity') {
       if (!formData.companyName.trim()) {
-        errors.companyName = 'Company name is required';
-        errorMessages.push('Company name is required');
+        errors.companyName = 'Le nom d entite est requis';
+        errorMessages.push('Le nom d entite est requis');
       }
       if (!formData.uniqueIdentifier.trim()) {
-        errors.uniqueIdentifier = 'Unique identifier is required';
-        errorMessages.push('Unique identifier is required');
+        errors.uniqueIdentifier = 'Un identifiant unique est requis';
+        errorMessages.push('Un identifiant unique est requis');
       }
       if (formData.companies.length === 0) {
-        errors.companies = 'At least one company must be selected';
-        errorMessages.push('At least one company must be selected');
+        errors.companies = 'Au moins une entite doit être sélectionnée';
+        errorMessages.push('Au moins une entite doit être sélectionnée');
       }
       if (formData.partnertypes.length === 0) {
-        errors.partnertypes = 'At least one partner type must be selected';
-        errorMessages.push('At least one partner type must be selected');
+        errors.partnertypes = 'Au moins un type de partenaire doit être sélectionné';
+        errorMessages.push('Au moins un type de partenaire doit être sélectionné');
       }
     }
 
     // Contact tab validation
     if (tab === 'Contact') {
       if (!formData.mailingAddress.trim()) {
-        errors.mailingAddress = 'Mailing address is required';
-        errorMessages.push('Mailing address is required');
+        errors.mailingAddress = 'L adresse postale est requise';
+        errorMessages.push('L adresse postale est requise');
       }
       if (!formData.phone1.trim()) {
-        errors.phone1 = 'Primary phone is required';
-        errorMessages.push('Primary phone is required');
+        errors.phone1 = 'Le téléphone principal est requis';
+        errorMessages.push('Le téléphone principal est requis');
       } else if (!/^[0-9+\- ]+$/.test(formData.phone1)) {
-        errors.phone1 = 'Invalid phone number format';
-        errorMessages.push('Invalid primary phone number format');
+        errors.phone1 = 'Format de numéro de téléphone invalide';
+        errorMessages.push('Format de numéro de téléphone principal non valide');
       }
       if (!formData.email.trim()) {
-        errors.email = 'Email is required';
-        errorMessages.push('Email is required');
+        errors.email = 'L e-mail est requis';
+        errorMessages.push('L e-mail est requis');
       } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
-        errors.email = 'Email is invalid';
-        errorMessages.push('Email is invalid');
+        errors.email = 'L e-mail n est pas valide';
+        errorMessages.push('L e-mail n est pas valide');
       }
     }
 
     // Billing and payments tab validation
     if (tab === 'Billing and payments') {
       if (!formData.bankAccountNumber.trim()) {
-        errors.bankAccountNumber = 'Bank account number is required';
-        errorMessages.push('Bank account number is required');
+        errors.bankAccountNumber = 'Le numéro de compte bancaire est requis';
+        errorMessages.push('Le numéro de compte bancaire est requis');
       }
     }
 
@@ -163,7 +163,7 @@ const AddPartner = ({ user }) => {
         if (Array.isArray(data)) setCompanies(data);
         else if (data.companies) setCompanies(data.companies);
       } catch (err) {
-        setError('Error loading companies');
+        setError('Erreur lors du chargement des entreprises');
         console.error(err);
       }
     };
@@ -178,7 +178,7 @@ const AddPartner = ({ user }) => {
         if (Array.isArray(data)) setPartnertypes(data);
         else if (data.partnertypes) setPartnertypes(data.partnertypes);
       } catch (err) {
-        setError('Error loading partnertypes');
+        setError('Erreur lors du chargement des types de partenaires');
         console.error(err);
       }
     };
