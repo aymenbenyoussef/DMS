@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import API from '../../api';
 import './DmsTempUploadModal.css';
 
@@ -8,6 +8,34 @@ const DmsTempUploadModal = ({ onClose, onSuccess }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState(null);
+  const [maxFileSize, setMaxFileSize] = useState(2014); // Default max file size in KB
+
+  // Fetch max file size from settings
+  useEffect(() => {
+    const fetchMaxFileSize = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/settings');
+        const settings = await response.json();
+        if (settings.maxFileSize) {
+          setMaxFileSize(settings.maxFileSize);
+        }
+      } catch (error) {
+        console.log('Could not fetch max file size from settings:', error);
+      }
+    };
+    
+    fetchMaxFileSize();
+  }, []);
+
+  // Clear size error after 5 seconds
+  useEffect(() => {
+    if (uploadStatus === 'size_error') {
+      const timer = setTimeout(() => {
+        setUploadStatus(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [uploadStatus]);
 
   const handleDragEnter = (e) => {
     e.preventDefault();
@@ -35,6 +63,14 @@ const DmsTempUploadModal = ({ onClose, onSuccess }) => {
       setUploadStatus('invalid');
       return;
     }
+    
+    // Check file sizes
+    const oversizedFiles = droppedFiles.filter(file => file.size > maxFileSize * 1024);
+    if (oversizedFiles.length > 0) {
+      setUploadStatus('size_error');
+      return;
+    }
+    
     setFiles(prev => [...prev, ...droppedFiles]);
     setUploadStatus(null);
   };
@@ -45,6 +81,14 @@ const DmsTempUploadModal = ({ onClose, onSuccess }) => {
       setUploadStatus('invalid');
       return;
     }
+    
+    // Check file sizes
+    const oversizedFiles = selectedFiles.filter(file => file.size > maxFileSize * 1024);
+    if (oversizedFiles.length > 0) {
+      setUploadStatus('size_error');
+      return;
+    }
+    
     setFiles(prev => [...prev, ...selectedFiles]);
     setUploadStatus(null);
   };
@@ -105,6 +149,8 @@ const DmsTempUploadModal = ({ onClose, onSuccess }) => {
         return 'Error during upload.';
       case 'invalid':
         return 'Invalid file type.';
+      case 'size_error':
+        return `La taille du fichier dépasse la limite maximale de ${maxFileSize} Ko.`;
       default:
         return '';
     }
@@ -126,47 +172,51 @@ const DmsTempUploadModal = ({ onClose, onSuccess }) => {
             onDrop={handleDrop}
           >
             <div className="drop-zone-content">
-              <>
-                <div className="upload-icon">📄</div>
-                <p>Upload Your File(s) Here</p>
-                <label className="file-input-label">
-                  <input
-                    type="file"
-                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.tiff"
-                    onChange={handleFileChange}
-                    className="file-input"
-                    multiple
-                  />
-                  Browse Files
-                </label>
-                <p className="file-types">
-                  Accepted Format : PDF, JPG, PNG, TIFF, DOC, DOCX
-                </p>
-              </>
-              {files.length > 0 && (
-                <div className="multi-file-preview">
-                  {files.map((f, idx) => (
-                    <div className="file-preview" key={idx}>
-                      <div className="file-icon">📄</div>
-                      <div className="file-info">
-                        <span className="file-name">{f.name}</span>
-                        <span className="file-size">
-                          ({(f.size / 1024 / 1024).toFixed(2)} MB)
-                        </span>
-                      </div>
-                      <button 
-                        className="remove-file-btn"
-                        onClick={() => removeFile(idx)}
-                        disabled={isUploading}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <div className="upload-icon">📄</div>
+              <p>Upload Your File(s) Here</p>
+              <label className="file-input-label">
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.tiff"
+                  onChange={handleFileChange}
+                  className="file-input"
+                  multiple
+                />
+                Browse Files
+              </label>
+              <p className="file-types">
+                Accepted Format : PDF, JPG, PNG, TIFF, DOC, DOCX
+              </p>
             </div>
           </div>
+          
+          {/* Section des fichiers téléchargés - maintenant en dehors de la drop-zone */}
+          {files.length > 0 && (
+            <div className="uploaded-files-section">
+              <h4 className="uploaded-files-title">Fichiers temporaires sélectionnés ({files.length})</h4>
+              <div className="uploaded-files-list">
+                {files.map((file, idx) => (
+                  <div className="file-preview" key={idx}>
+                    <div className="file-icon">📄</div>
+                    <div className="file-info">
+                      <span className="file-name">{file.name}</span>
+                      <span className="file-size">
+                        ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                      </span>
+                    </div>
+                    <button 
+                      className="remove-file-btn"
+                      onClick={() => removeFile(idx)}
+                      disabled={isUploading}
+                      title="Supprimer ce fichier"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           {isUploading && (
             <div className="upload-progress">
               <div className="progress-bar">

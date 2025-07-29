@@ -300,11 +300,11 @@ def forgot_password():
         }
     )
     
-    # Send email via SMTP
+    # Send email via SMTP using .env configuration
     smtp_host = "smtp.gmail.com"  # Change as needed
     smtp_port = 587
-    smtp_user = "ranesmerald358@gmail.com"  # Change to your SMTP email
-    smtp_pass = "tvkw cnff wpge eccz"     # Change to your SMTP app password
+    smtp_user = os.environ.get('SMTP_EMAIL', 'ranesmerald358@gmail.com')  # Get from .env
+    smtp_pass = os.environ.get('SMTP_PASSWORD', 'tvkw cnff wpge eccz')     # Get from .env
 
     subject = "Réinitialisation de votre mot de passe - RAN ESMERALD"
     body = f"""
@@ -1409,6 +1409,18 @@ def upload_single_file():
     if not allowed_file(file.filename):
         return jsonify({"msg": f"Invalid file type: {file.filename}"}), 400
     
+    # Get max file size from environment
+    max_file_size_kb = int(os.environ.get('SYSTEM_MAX_FILE_SIZE', 2014))
+    max_file_size_bytes = max_file_size_kb * 1024
+    
+    # Check file size
+    file.seek(0, 2)  # Seek to end to get file size
+    file_size = file.tell()
+    file.seek(0)  # Reset to beginning
+    
+    if file_size > max_file_size_bytes:
+        return jsonify({"msg": f"File size ({file_size // 1024} KB) exceeds maximum limit of {max_file_size_kb} KB"}), 400
+    
     try:
         # Process the single file with OCR
         processed_file = process_single_file_ocr(file, company_id, doctype_id)
@@ -2406,9 +2418,8 @@ def update_settings():
         "maxFileSize": "SYSTEM_MAX_FILE_SIZE",
         "logsPath": "SYSTEM_LOGS_PATH",
         "entitiesDataPath": "ENTITIES_DATA_PATH",
-        "entityLogPath": "ENTITY_LOG_PATH",
-        "externalEntitiesDataPath": "EXTERNAL_ENTITIES_DATA_PATH",
-        "externalEntitiesLogPath": "EXTERNAL_ENTITIES_LOG_PATH"
+        "smtpEmail": "SMTP_EMAIL",
+        "smtpPassword": "SMTP_PASSWORD"
     }
     # Read current .env
     env_vars = {}
@@ -2442,9 +2453,8 @@ def get_settings():
         "maxFileSize": "SYSTEM_MAX_FILE_SIZE",
         "logsPath": "SYSTEM_LOGS_PATH",
         "entitiesDataPath": "ENTITIES_DATA_PATH",
-        "entityLogPath": "ENTITY_LOG_PATH",
-        "externalEntitiesDataPath": "EXTERNAL_ENTITIES_DATA_PATH",
-        "externalEntitiesLogPath": "EXTERNAL_ENTITIES_LOG_PATH"
+        "smtpEmail": "SMTP_EMAIL",
+        "smtpPassword": "SMTP_PASSWORD"
     }
     env_vars = {k: '' for k in env_map.keys()}
     if os.path.exists(SETTINGS_ENV_PATH):
@@ -2605,11 +2615,11 @@ Cordialement,
 L'équipe RAN ESMERALD
 """
         
-        # Send email to each recipient
+        # Send email to each recipient using .env configuration
         smtp_host = "smtp.gmail.com"
         smtp_port = 587
-        smtp_user = "ranesmerald@gmail.com"
-        smtp_pass = "tvkw cnff wpge eccz"
+        smtp_user = os.environ.get('SMTP_EMAIL', 'ranesmerald@gmail.com')
+        smtp_pass = os.environ.get('SMTP_PASSWORD', 'tvkw cnff wpge eccz')
         
         successful_sends = []
         failed_sends = []
@@ -2766,6 +2776,23 @@ def upload_temp_documents():
     files = request.files.getlist('files')
     if not files:
         return jsonify({"msg": "No files uploaded."}), 400
+
+    # Get max file size from environment
+    max_file_size_kb = int(os.environ.get('SYSTEM_MAX_FILE_SIZE', 2014))
+    max_file_size_bytes = max_file_size_kb * 1024
+    
+    # Check file sizes
+    oversized_files = []
+    for file in files:
+        file.seek(0, 2)  # Seek to end to get file size
+        file_size = file.tell()
+        file.seek(0)  # Reset to beginning
+        
+        if file_size > max_file_size_bytes:
+            oversized_files.append(f"{file.filename} ({file_size // 1024} KB)")
+    
+    if oversized_files:
+        return jsonify({"msg": f"Files exceed maximum limit of {max_file_size_kb} KB: {', '.join(oversized_files)}"}), 400
 
     saved_files = []
     upload_dir = os.path.join('uploads', 'temp_documents')

@@ -1793,16 +1793,6 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
 
       {/* Documents Table */}
       <div className="card" style={{ position: 'relative' }}>
-        {/* Fullscreen/Maximize Button */}
-        <button 
-          className="table-fullscreen-btn"
-          onClick={openFullscreenModal}
-          title="Afficher en plein écran"
-          aria-label="Afficher en plein écran"
-        >
-          <i className="bi bi-arrows-fullscreen"></i>
-        </button>
-        
         <div className="card-body">
           {/* Breadcrumb and Title Section */}
           <div className="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
@@ -1862,6 +1852,15 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                     </ul>
                   )}
                 </div>
+                {/* Fullscreen Button */}
+                <button 
+                  className="btn btn-outline-secondary btn-sm d-flex align-items-center"
+                  onClick={openFullscreenModal}
+                  title="Afficher en plein écran"
+                  aria-label="Afficher en plein écran"
+                >
+                  <i className="bi bi-fullscreen"></i>
+                </button>
               </div>
             </div>
           </div>
@@ -2813,7 +2812,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
 
       {/* Email Sending Modal */}
       {isEmailModalOpen && (
-        <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
+        <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 2000 }}>
           <div className="modal-dialog modal-lg" style={{ height: '90vh', maxHeight: '90vh', display: 'flex', alignItems: 'center' }}>
             <div className="modal-content" style={{ height: '90vh', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
               <div className="modal-header">
@@ -3192,7 +3191,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
               title="Fermer le plein écran"
               aria-label="Fermer le plein écran"
             >
-              <i className="bi bi-x-lg"></i>
+              <i className="bi bi-x"></i>
             </button>
             <div className="fullscreen-modal-body">
               {isLoading ? (
@@ -3422,9 +3421,9 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                                       style={{ padding: '10px 24px', fontSize: '1.15em', fontWeight: 600 }}
                                       onClick={() => doc.rapport ? handleViewRapport(doc) : handleViewDocument(doc)}
                                       title={doc.rapport ? "Voir le rapport PDF" : "Voir le document"}
-                                    >
-                                      Voir
-                                    </button>
+                                      >
+                                        Voir
+                                      </button>
                                   </div>
                                 </div>
                               </td>

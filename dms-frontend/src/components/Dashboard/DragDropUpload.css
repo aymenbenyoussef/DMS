@@ -409,7 +409,7 @@
   background: #10b981;
 }
 
-.status-message.error, .status-message.invalid, .status-message.multiple_files_error {
+.status-message.error, .status-message.invalid, .status-message.multiple_files_error, .status-message.size_error {
   background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
   color: #991b1b;
   border: 1px solid #ef4444;
@@ -417,7 +417,8 @@
 
 .status-message.error::before, 
 .status-message.invalid::before, 
-.status-message.multiple_files_error::before {
+.status-message.multiple_files_error::before,
+.status-message.size_error::before {
   background: #ef4444;
 }
 
