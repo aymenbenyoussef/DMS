@@ -21,6 +21,7 @@ import DmsTempUploadModal from '../Dashboard/DmsTempUploadModal';
 import api from '../../api'; 
 
 const NavBar = ({ user, onLogout }) => {
+  const { systemName } = useContext(AppContext);
   const [showAdminTools, setShowAdminTools] = useState(false);
   const [showDmsTempModal, setShowDmsTempModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -166,7 +167,7 @@ const NavBar = ({ user, onLogout }) => {
             <div className="logo">
               <span className="logo-icon"><BiData size={32} /></span>
               <div className="logo-text">
-                <span className="logo-main">DocuManager</span>
+                <span className="logo-main">{systemName}</span>
                 <span className="logo-sub">Système avancé de gestion des données</span>
               </div>
             </div> 

@@ -16,7 +16,7 @@ from datetime import datetime
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'  # Adjust path as needed
 
 def extract_invoice_data(text):
-    """Extract structured data from OCR text - Enhanced for French invoices"""
+    """Extract structured data from OCR text - Enhanced for French invoices with comprehensive patterns"""
     data = {
         "invoice_number": None,
         "date": None,
@@ -29,31 +29,78 @@ def extract_invoice_data(text):
         "is_invoice": False
     }
     
-    # Check if it's an invoice (French terms)
-    is_invoice = re.search(r'\b(?:facture|invoice|bill|receipt|devis)\b', text, re.IGNORECASE)
+    # Check if it's an invoice (French and English terms with variations)
+    invoice_indicators = [
+        r'\b(?:facture|invoice|bill|receipt|devis|quotation|estimate)\b',
+        r'\b(?:FACTURE|INVOICE|BILL|RECEIPT|DEVIS|QUOTATION|ESTIMATE)\b',
+        r'\b(?:Facture|Invoice|Bill|Receipt|Devis|Quotation|Estimate)\b',
+        r'\b(?:facture\s*d\'avoir|FACTURE\s*D\'AVOIR|Facture\s*d\'avoir)\b',
+        r'\b(?:credit\s*note|CREDIT\s*NOTE|Credit\s*Note)\b',
+        r'\b(?:avoir|AVOIR|Avoir)\b'
+    ]
+    
+    is_invoice = any(re.search(pattern, text, re.IGNORECASE) for pattern in invoice_indicators)
     data["is_invoice"] = bool(is_invoice)
     
-    # Extract invoice number (French patterns)
+    # Extract invoice number (French and English patterns with variations)
     inv_patterns = [
-        r'(?:facture|invoice)\s*(?:no\.?|n°|num[eé]ro)\s*[:#]?\s*(\w+[-\d]+)',
-        r'(?:num[eé]ro\s*de\s*facture)\s*[:#]?\s*(\w+[-\d]+)',
-        r'(?:n°\s*facture)\s*[:#]?\s*(\w+[-\d]+)',
-        r'(?:facture)\s*[:#]?\s*(\d+)'
+        # French patterns
+        r'(?:facture|FACTURE|Facture)\s*(?:no\.?|n°|num[eé]ro|N°|NUM[EÉ]RO)\s*[:#]?\s*(\w+[-\d]+)',
+        r'(?:num[eé]ro|NUM[EÉ]RO)\s*(?:de|DE)\s*(?:facture|FACTURE)\s*[:#]?\s*(\w+[-\d]+)',
+        r'(?:n°|N°)\s*(?:facture|FACTURE)\s*[:#]?\s*(\w+[-\d]+)',
+        r'(?:facture|FACTURE)\s*[:#]?\s*(\d+)',
+        r'(?:r[eé]f[eé]rence|R[EÉ]F[EÉ]RENCE)\s*[:#]?\s*(\w+[-\d]+)',
+        r'(?:num[eé]ro|NUM[EÉ]RO)\s*(?:facture|FACTURE)\s*[:#]?\s*(\w+[-\d]+)',
+        r'(?:facture|FACTURE)\s*(?:№|N°|n°)\s*(\w+[-\d]+)',
+        r'(?:facture|FACTURE)\s*(?:d\'avoir|d\'AVOIR)\s*(?:№|N°|n°)\s*(\w+[-\d]+)',
         
+        # English patterns
+        r'(?:invoice|INVOICE|Invoice)\s*(?:no\.?|number|#|num)\s*[:#]?\s*(\w+[-\d]+)',
+        r'(?:number|NUMBER|Number)\s*(?:of|OF)\s*(?:invoice|INVOICE)\s*[:#]?\s*(\w+[-\d]+)',
+        r'(?:invoice|INVOICE)\s*[:#]?\s*(\d+)',
+        r'(?:reference|REFERENCE|Reference)\s*[:#]?\s*(\w+[-\d]+)',
+        r'(?:bill|BILL|Bill)\s*(?:no\.?|number|#)\s*[:#]?\s*(\w+[-\d]+)',
+        r'(?:receipt|RECEIPT|Receipt)\s*(?:no\.?|number|#)\s*[:#]?\s*(\w+[-\d]+)',
+        
+        # Generic patterns
+        r'(?:no\.?|n°|N°|№|#|num|NUM)\s*[:#]?\s*(\w+[-\d]+)',
+        r'(?:r[eé]f|REF|Ref)\s*[:#]?\s*(\w+[-\d]+)',
+        r'(?:num[eé]ro|NUM[EÉ]RO)\s*[:#]?\s*(\w+[-\d]+)',
+        r'(?:r[eé]f[eé]rence|R[EÉ]F[EÉ]RENCE)\s*(?:de|DE)\s*(?:facture|FACTURE)\s*[:#]?\s*(\w+[-\d]+)'
     ]
     
     for pattern in inv_patterns:
         inv_match = re.search(pattern, text, re.IGNORECASE)
         if inv_match:
             data["invoice_number"] = inv_match.group(1)
-            print(pattern)
+            print(f"Found invoice number with pattern: {pattern}")
             break
     
-    # Extract date (French formats)
+    # Extract date (French and English formats with variations)
     date_patterns = [
-        r'(?:date\s*de\s*facture|date)\s*[:#]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4})',
+        # French date patterns
+        r'(?:date|DATE|Date)\s*(?:de|DE)\s*(?:facture|FACTURE|Facture)\s*[:#]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4})',
+        r'(?:date|DATE|Date)\s*(?:de|DE)\s*(?:facturation|FACTURATION)\s*[:#]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4})',
+        r'(?:date|DATE|Date)\s*[:#]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4})',
+        r'(?:du|DU)\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4})',
+        r'(?:date|DATE|Date)\s*(?:facture|FACTURE)\s*[:#]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4})',
+        r'(?:date|DATE|Date)\s*(?:vente|VENTE|prestation|PRESTATION)\s*[:#]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4})',
         r'(\d{1,2}[./]\d{1,2}[./]\d{2,4})',
-        r'(\d{1,2}\s+\w+\s+\d{4})'
+        r'(\d{1,2}\s+(?:janvier|f[eé]vrier|mars|avril|mai|juin|juillet|ao[uû]t|septembre|octobre|novembre|d[eé]cembre)\s+\d{4})',
+        r'(\d{1,2}\s+(?:JANVIER|F[EÉ]VRIER|MARS|AVRIL|MAI|JUIN|JUILLET|AO[UÛ]T|SEPTEMBRE|OCTOBRE|NOVEMBRE|D[EÉ]CEMBRE)\s+\d{4})',
+        
+        # English date patterns
+        r'(?:date|DATE|Date)\s*(?:of|OF)?\s*(?:invoice|INVOICE|Invoice)\s*[:#]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4})',
+        r'(?:date|DATE|Date)\s*[:#]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4})',
+        r'(?:issued|ISSUED|Issued)\s*[:#]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4})',
+        r'(?:due|DUE|Due)\s*(?:date|DATE|Date)\s*[:#]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4})',
+        r'(?:échéance|ÉCHÉANCE)\s*[:#]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4})',
+        r'(\d{1,2}\s+(?:january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{4})',
+        r'(\d{1,2}\s+(?:JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER)\s+\d{4})',
+        
+        # ISO format
+        r'(\d{4}-\d{2}-\d{2})',
+        r'(\d{2}-\d{2}-\d{4})'
     ]
     
     for pattern in date_patterns:
@@ -61,15 +108,31 @@ def extract_invoice_data(text):
         if date_match:
             try:
                 data["date"] = parse(date_match.group(1), dayfirst=True).strftime('%Y-%m-%d')
+                print(f"Found date with pattern: {pattern}")
                 break
             except:
                 continue
     
-    # Extract totals (French currency patterns)
-    # Total HT
+    # Extract totals (French and English currency patterns with variations)
+    # Total HT (French)
     total_ht_patterns = [
         r'total\s*ht\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*€?',
-        r'sous[-\s]*total\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*€?'
+        r'TOTAL\s*HT\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*€?',
+        r'Total\s*HT\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*€?',
+        r'sous[-\s]*total\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*€?',
+        r'SOUS[-\s]*TOTAL\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*€?',
+        r'Sous[-\s]*Total\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*€?',
+        r'montant\s*ht\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*€?',
+        r'MONTANT\s*HT\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*€?',
+        r'Montant\s*HT\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*€?',
+        
+        # English patterns
+        r'subtotal\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*\$?',
+        r'SUBTOTAL\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*\$?',
+        r'Subtotal\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*\$?',
+        r'amount\s*(?:before|excluding)\s*tax\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*\$?',
+        r'AMOUNT\s*(?:BEFORE|EXCLUDING)\s*TAX\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*\$?',
+        r'Amount\s*(?:before|excluding)\s*tax\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*\$?'
     ]
     
     for pattern in total_ht_patterns:
@@ -78,15 +141,38 @@ def extract_invoice_data(text):
             try:
                 amount_str = total_ht_match.group(1).replace(' ', '').replace(',', '.')
                 data["total_ht"] = float(amount_str)
+                print(f"Found total HT with pattern: {pattern}")
                 break
             except:
                 continue
     
-    # Total TTC
+    # Total TTC (French)
     total_ttc_patterns = [
         r'total\s*ttc\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*€?',
+        r'TOTAL\s*TTC\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*€?',
+        r'Total\s*TTC\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*€?',
         r'total\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*€?',
-        r'montant\s*total\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*€?'
+        r'TOTAL\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*€?',
+        r'Total\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*€?',
+        r'montant\s*total\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*€?',
+        r'MONTANT\s*TOTAL\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*€?',
+        r'Montant\s*Total\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*€?',
+        r'à\s*payer\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*€?',
+        r'À\s*PAYER\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*€?',
+        r'À\s*Payer\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*€?',
+        r'Total\s*TTC\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*€?',
+        r'TOTAL\s*TTC\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*€?',
+        
+        # English patterns
+        r'total\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*\$?',
+        r'TOTAL\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*\$?',
+        r'Total\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*\$?',
+        r'amount\s*due\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*\$?',
+        r'AMOUNT\s*DUE\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*\$?',
+        r'Amount\s*due\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*\$?',
+        r'grand\s*total\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*\$?',
+        r'GRAND\s*TOTAL\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*\$?',
+        r'Grand\s*Total\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*\$?'
     ]
     
     for pattern in total_ttc_patterns:
@@ -96,14 +182,33 @@ def extract_invoice_data(text):
                 amount_str = total_ttc_match.group(1).replace(' ', '').replace(',', '.')
                 data["total_ttc"] = float(amount_str)
                 data["total"] = data["total_ttc"]  # For backward compatibility
+                print(f"Found total TTC with pattern: {pattern}")
                 break
             except:
                 continue
     
-    # Extract TVA
+    # Extract TVA (French) / VAT (English)
     tva_patterns = [
+        # French patterns
         r'tva\s*(?:\d+\s*%\s*)?[:#]?\s*([\d\s,]+[.,]\d{2})\s*€?',
-        r'(?:tva\s*\d+\s*%)\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*€?'
+        r'TVA\s*(?:\d+\s*%\s*)?[:#]?\s*([\d\s,]+[.,]\d{2})\s*€?',
+        r'Tva\s*(?:\d+\s*%\s*)?[:#]?\s*([\d\s,]+[.,]\d{2})\s*€?',
+        r'(?:tva|TVA|Tva)\s*\d+\s*%\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*€?',
+        r'taxe\s*sur\s*la\s*valeur\s*ajout[eé]e\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*€?',
+        r'TAXE\s*SUR\s*LA\s*VALEUR\s*AJOUT[EÉ]E\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*€?',
+        r'Taxe\s*sur\s*la\s*valeur\s*ajout[eé]e\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*€?',
+        
+        # English patterns
+        r'vat\s*(?:\d+\s*%\s*)?[:#]?\s*([\d\s,]+[.,]\d{2})\s*\$?',
+        r'VAT\s*(?:\d+\s*%\s*)?[:#]?\s*([\d\s,]+[.,]\d{2})\s*\$?',
+        r'Vat\s*(?:\d+\s*%\s*)?[:#]?\s*([\d\s,]+[.,]\d{2})\s*\$?',
+        r'(?:vat|VAT|Vat)\s*\d+\s*%\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*\$?',
+        r'value\s*added\s*tax\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*\$?',
+        r'VALUE\s*ADDED\s*TAX\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*\$?',
+        r'Value\s*Added\s*Tax\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*\$?',
+        r'tax\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*\$?',
+        r'TAX\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*\$?',
+        r'Tax\s*[:#]?\s*([\d\s,]+[.,]\d{2})\s*\$?'
     ]
     
     for pattern in tva_patterns:
@@ -112,30 +217,75 @@ def extract_invoice_data(text):
             try:
                 amount_str = tva_match.group(1).replace(' ', '').replace(',', '.')
                 data["tva"] = float(amount_str)
+                print(f"Found TVA with pattern: {pattern}")
                 break
             except:
                 continue
     
     # Extract partner (first few lines usually contain partner info)
-    lines = text.split("\n")[:10]  # Check first 10 lines
+    lines = text.split("\n")[:20]  # Check first 20 lines
     for line in lines:
         line = line.strip()
         if len(line) > 5 and not re.search(r"\d{1,2}[./]\d{1,2}[./]\d{2,4}", line):
             # Skip lines with dates, numbers only, or common headers
-            if not re.match(r"^[\d\s\-\.]+", line) and "facture" not in line.lower():
-                data["partner"] = line
-                break
+            if not re.match(r"^[\d\s\-\.]+", line) and not any(word in line.lower() for word in ['facture', 'invoice', 'bill', 'receipt', 'devis', 'total', 'tva', 'ht', 'ttc', 'logo', 'logiciel', 'software']):
+                # Look for company names, addresses, or contact info
+                if re.search(r'[A-Z][a-z]+', line) or re.search(r'\d{5}', line) or re.search(r'@', line) or re.search(r'www\.', line):
+                    data["partner"] = line
+                    print(f"Found partner: {line}")
+                    break
     
     # Extract partner_id info (look for patterns after "Monsieur", "Madame", "Client", etc.)
     client_patterns = [
+        # French patterns
         r'(?:monsieur|madame|m\.|mme|client|id)\s+(.+?)(?:\n|$)',
-        r'(?:destinataire|à)\s*[:#]?\s*(.+?)(?:\n|$)'
+        r'(?:MONSIEUR|MADAME|M\.|MME|CLIENT|ID)\s+(.+?)(?:\n|$)',
+        r'(?:Monsieur|Madame|M\.|Mme|Client|Id)\s+(.+?)(?:\n|$)',
+        r'(?:destinataire|à)\s*[:#]?\s*(.+?)(?:\n|$)',
+        r'(?:DESTINATAIRE|À)\s*[:#]?\s*(.+?)(?:\n|$)',
+        r'(?:Destinataire|À)\s*[:#]?\s*(.+?)(?:\n|$)',
+        r'(?:vendeur|VENDEUR|Vendeur)\s*[:#]?\s*(.+?)(?:\n|$)',
+        r'(?:fournisseur|FOURNISSEUR|Fournisseur)\s*[:#]?\s*(.+?)(?:\n|$)',
+        r'(?:mon\s*entreprise|MON\s*ENTREPRISE|Mon\s*Entreprise)\s*[:#]?\s*(.+?)(?:\n|$)',
+        
+        # English patterns
+        r'(?:mr\.?|mrs\.?|ms\.?|miss|client|id)\s+(.+?)(?:\n|$)',
+        r'(?:MR\.?|MRS\.?|MS\.?|MISS|CLIENT|ID)\s+(.+?)(?:\n|$)',
+        r'(?:Mr\.?|Mrs\.?|Ms\.?|Miss|Client|Id)\s+(.+?)(?:\n|$)',
+        r'(?:to|for|attn|attention)\s*[:#]?\s*(.+?)(?:\n|$)',
+        r'(?:TO|FOR|ATTN|ATTENTION)\s*[:#]?\s*(.+?)(?:\n|$)',
+        r'(?:To|For|Attn|Attention)\s*[:#]?\s*(.+?)(?:\n|$)',
+        r'(?:bill\s*to|ship\s*to)\s*[:#]?\s*(.+?)(?:\n|$)',
+        r'(?:BILL\s*TO|SHIP\s*TO)\s*[:#]?\s*(.+?)(?:\n|$)',
+        r'(?:Bill\s*to|Ship\s*to)\s*[:#]?\s*(.+?)(?:\n|$)',
+        r'(?:seller|SELLER|Seller)\s*[:#]?\s*(.+?)(?:\n|$)',
+        r'(?:supplier|SUPPLIER|Supplier)\s*[:#]?\s*(.+?)(?:\n|$)',
+        r'(?:company|COMPANY|Company)\s*[:#]?\s*(.+?)(?:\n|$)'
     ]
     
     for pattern in client_patterns:
         client_match = re.search(pattern, text, re.IGNORECASE)
         if client_match:
             data["partner_id"] = client_match.group(1).strip()
+            print(f"Found partner_id with pattern: {pattern}")
+            break
+    
+    # Extract additional business information (SIRET, IBAN, etc.)
+    business_info_patterns = [
+        r'(?:SIRET|siret|Siret)\s*[:#]?\s*([A-Z0-9\-]+)',
+        r'(?:IBAN|iban|Iban)\s*[:#]?\s*([A-Z0-9\s]+)',
+        r'(?:BIC|bic|Bic|SWIFT|swift|Swift)\s*[:#]?\s*([A-Z0-9]+)',
+        r'(?:TVA|tva|Tva)\s*(?:intra|INTRA|Intra)\s*[:#]?\s*([A-Z0-9\s]+)',
+        r'(?:num[eé]ro|NUM[EÉ]RO|Num[eé]ro)\s*(?:de|DE)\s*(?:compte|COMPTE|Compte)\s*[:#]?\s*([A-Z0-9\s]+)',
+        r'(?:banque|BANQUE|Banque)\s*[:#]?\s*([A-Za-z\s]+)',
+        r'(?:code|CODE|Code)\s*(?:banque|BANQUE|Banque)\s*[:#]?\s*([0-9]+)'
+    ]
+    
+    for pattern in business_info_patterns:
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            print(f"Found business info with pattern: {pattern} - Value: {match.group(1)}")
+            # You can add these to the data structure if needed
             break
     
     return data

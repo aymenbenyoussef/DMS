@@ -1268,33 +1268,84 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
   const [editPartners, setEditPartners] = useState([]);
   const [isEditLoading, setIsEditLoading] = useState(false);
 
+  // Effect to set partner when partners are loaded and document is set
+  useEffect(() => {
+    if (editingDocument && editPartners.length > 0) {
+      const selectedPartnerId = editingDocument.partner_id != null ? String(editingDocument.partner_id) : '';
+      console.log('Setting partner in useEffect:', selectedPartnerId);
+      console.log('Available partners:', editPartners.map(p => ({ id: p.id, name: p.company_name })));
+      console.log('Editing document partner_id:', editingDocument.partner_id);
+      
+      // Only set if the partner_id is not already set correctly
+      setEditForm(prev => {
+        if (prev.partner_id !== selectedPartnerId) {
+          console.log('Updating partner_id from', prev.partner_id, 'to', selectedPartnerId);
+          return {
+            ...prev,
+            partner_id: selectedPartnerId
+          };
+        }
+        return prev;
+      });
+    }
+  }, [editingDocument, editPartners]);
+
   // Open edit modal and prefill fields
   const handleEditDocument = async (doc) => {
+    console.log('=== handleEditDocument called ===');
+    console.log('Document to edit:', doc);
+    console.log('Document partner_id:', doc.partner_id, 'Type:', typeof doc.partner_id);
+    
     setEditingDocument(doc);
     setEditError('');
     setEditSuccess('');
     setIsEditModalOpen(true);
     setIsEditLoading(true);
+    
+    // Set initial form data
+    setEditForm({
+      filename: doc.filename || '',
+      partner_id: '', // Will be set by useEffect when partners are loaded
+      is_invoice: false,
+      invoice_number: '',
+      date: '',
+      total_ht: '',
+      tva: '',
+      total_ttc: '',
+    });
+    
     try {
       // Fetch partners for the document's company
       const partnersRes = await API.partner.getByCompany(doc.company_id);
       let partnersList = partnersRes.data || [];
-      let selectedPartnerId = doc.partner_id != null ? String(doc.partner_id) : '';
+      console.log('Fetched partners for company:', partnersList);
+      
       // If the partner_id is set but not in the list, fetch it and add to the list
-      if (selectedPartnerId && !partnersList.some(p => String(p.id) === selectedPartnerId)) {
+      if (doc.partner_id && !partnersList.some(p => String(p.id) === String(doc.partner_id))) {
+        console.log('Partner not in list, fetching individually...');
         try {
           const partnerRes = await API.partner.getById(doc.partner_id);
           if (partnerRes.data) {
             partnersList = [...partnersList, partnerRes.data];
+            console.log('Added partner to list:', partnerRes.data);
           }
-        } catch (e) { /* ignore if not found */ }
+        } catch (e) { 
+          console.log('Error fetching individual partner:', e);
+        }
       }
+      
       setEditPartners(partnersList);
-      setEditForm({
-        filename: doc.filename || '',
-        partner_id: selectedPartnerId,
-      });
+      console.log('Final partners list:', partnersList);
+      
+      // Set partner immediately after partners are loaded
+      const selectedPartnerId = doc.partner_id != null ? String(doc.partner_id) : '';
+      console.log('Setting partner immediately:', selectedPartnerId);
+      setEditForm(prev => ({
+        ...prev,
+        partner_id: selectedPartnerId
+      }));
     } catch (e) {
+      console.log('Error in handleEditDocument:', e);
       setEditPartners([]);
     } finally {
       setIsEditLoading(false);
@@ -1312,6 +1363,15 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
   };
 
   const handleEditFormChange = (field, value) => {
+    if (field === 'filename') {
+      // Preserve the original file extension
+      const originalExt = editingDocument?.filename?.split('.').pop();
+      if (originalExt && !value.endsWith('.' + originalExt)) {
+        // Remove any existing extension and add the original one
+        const nameWithoutExt = value.split('.').slice(0, -1).join('.');
+        value = nameWithoutExt + '.' + originalExt;
+      }
+    }
     setEditForm(prev => ({ ...prev, [field]: value }));
   };
 
@@ -2520,17 +2580,24 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                               />
                             )}
                           {previewType === 'image' && previewUrl && (
-                            <img
-                              src={previewUrl}
-                              alt={previewTitle}
-                              style={{
-                                maxWidth: '100%',
-                                maxHeight: '100%',
-                                borderRadius: '8px',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                                backgroundColor: 'white'
-                              }}
-                            />
+                            <div style={{
+                              display: 'flex',
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                              height: '100%'
+                            }}>
+                              <img
+                                src={previewUrl}
+                                alt={previewTitle}
+                                style={{
+                                  maxWidth: '100%',
+                                  maxHeight: '100%',
+                                  borderRadius: '8px',
+                                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                                  backgroundColor: 'white'
+                                }}
+                              />
+                            </div>
                           )}
                           {previewType === 'text' && (
                             <textarea
@@ -3129,6 +3196,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                   className="btn btn-secondary"
                   onClick={handleCloseEditModal}
                   disabled={isEditSaving}
+                  style={{backgroundColor: '#6c757d', color: 'white'}}
                 >
                   Annuler
                 </button>
@@ -3137,6 +3205,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                   className="btn btn-primary"
                   onClick={handleSaveEditDocument}
                   disabled={isEditSaving}
+                  style={{backgroundColor: '#198754', color: 'white', border: '1px solid #198754'}}
                 >
                   {isEditSaving ? (
                     <>
@@ -3247,7 +3316,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
             {/* Remplacez <i className="bi bi-x"></i> par le nouveau composant SVG */}
             X
           </button>
-            <div className="fullscreen-modal-body">
+            <div className="fullscreen-modal-body" style={{ overflow: 'hidden' }}>
               {isLoading ? (
                 <div className="text-center py-5">
                   <div className="spinner-border text-primary" role="status">
@@ -3255,7 +3324,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                   </div>
                 </div>
               ) : (
-                <div className="table-responsive documents-table-container">
+                <div className="table-responsive documents-table-container" style={{ height: '100%', overflow: 'auto' }}>
                   <table className="table table-hover stylish-table">
                     <thead className="table-header-sticky">
                       <tr>
