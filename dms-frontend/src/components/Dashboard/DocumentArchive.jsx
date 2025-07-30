@@ -634,6 +634,12 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
           const docValue = doc[column];
           if (docValue === null || docValue === undefined) return false;
           
+          // Use mathematical operations for TVA, HT, and TTC fields
+          if (column === 'tva' || column === 'total_ht' || column === 'total_ttc') {
+            return applyMathFilter(docValue, filterValue);
+          }
+          
+          // Use string contains for other fields
           const lowerFilterValue = filterValue.toLowerCase();
           const lowerDocValue = String(docValue).toLowerCase();
           
@@ -885,6 +891,61 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
   const formatCurrency = (value) => {
     if (!value || isNaN(parseFloat(value))) return '-';
     return parseFloat(value).toFixed(2) + '€';
+  };
+
+  // Function to parse mathematical operations in filters
+  const parseMathOperation = (filterValue) => {
+    const trimmed = filterValue.trim();
+    
+    // Check for mathematical operators
+    if (trimmed.startsWith('>')) {
+      return { operator: '>', value: parseFloat(trimmed.substring(1)) };
+    } else if (trimmed.startsWith('<')) {
+      return { operator: '<', value: parseFloat(trimmed.substring(1)) };
+    } else if (trimmed.startsWith('>=')) {
+      return { operator: '>=', value: parseFloat(trimmed.substring(2)) };
+    } else if (trimmed.startsWith('<=')) {
+      return { operator: '<=', value: parseFloat(trimmed.substring(2)) };
+    } else if (trimmed.startsWith('=')) {
+      return { operator: '=', value: parseFloat(trimmed.substring(1)) };
+    } else if (trimmed.startsWith('==')) {
+      return { operator: '=', value: parseFloat(trimmed.substring(2)) };
+    }
+    
+    // If no operator, treat as contains search
+    return { operator: 'contains', value: trimmed };
+  };
+
+  // Function to apply mathematical filter
+  const applyMathFilter = (docValue, filterValue) => {
+    if (!docValue || isNaN(parseFloat(docValue))) return false;
+    
+    const docNum = parseFloat(docValue);
+    const parsed = parseMathOperation(filterValue);
+    
+    if (parsed.operator === 'contains') {
+      // Fall back to string contains for non-mathematical fields
+      const lowerFilterValue = filterValue.toLowerCase();
+      const lowerDocValue = String(docValue).toLowerCase();
+      return lowerDocValue.includes(lowerFilterValue);
+    }
+    
+    if (isNaN(parsed.value)) return false;
+    
+    switch (parsed.operator) {
+      case '>':
+        return docNum > parsed.value;
+      case '<':
+        return docNum < parsed.value;
+      case '>=':
+        return docNum >= parsed.value;
+      case '<=':
+        return docNum <= parsed.value;
+      case '=':
+        return docNum === parsed.value;
+      default:
+        return false;
+    }
   };
 
   // Function to format date
@@ -2157,7 +2218,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                       <input
                         type="text"
                         className="form-control form-control-sm"
-                        placeholder="Filter TVA..."
+                        placeholder="Filter TVA... (ex: >100, <50, =25)"
                         value={columnFilters.tva}
                         onChange={(e) => handleColumnFilterChange('tva', e.target.value)}
                       />
@@ -2166,7 +2227,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                       <input
                         type="text"
                         className="form-control form-control-sm"
-                        placeholder="Filter HT..."
+                        placeholder="Filter HT... (ex: >500, <1000, =750)"
                         value={columnFilters.total_ht}
                         onChange={(e) => handleColumnFilterChange('total_ht', e.target.value)}
                       />
@@ -2175,7 +2236,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                       <input
                         type="text"
                         className="form-control form-control-sm"
-                        placeholder="Filter TTC..."
+                        placeholder="Filter TTC... (ex: >600, <1200, =900)"
                         value={columnFilters.total_ttc}
                         onChange={(e) => handleColumnFilterChange('total_ttc', e.target.value)}
                       />
@@ -2330,8 +2391,35 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                     borderTop: '2px solid #dee2e6',
                     fontWeight: 'bold'
                   }}>
-                    <td colSpan="11" style={{ textAlign: 'right', padding: '12px 16px' }}>
-                      <strong>Total TTC:</strong>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td style={{ 
+                      padding: '12px 16px', 
+                      color: '#dc3545',
+                      fontSize: '1.1em',
+                      textAlign: 'right'
+                    }}>
+                      {formatCurrency(filteredDocuments
+                        .filter(doc => doc.tva && !isNaN(parseFloat(doc.tva)))
+                        .reduce((sum, doc) => sum + parseFloat(doc.tva), 0)
+                      )}
+                    </td>
+                    <td style={{ 
+                      padding: '12px 16px', 
+                      color: '#198754',
+                      fontSize: '1.1em',
+                      textAlign: 'right'
+                    }}>
+                      {formatCurrency(filteredDocuments
+                        .filter(doc => doc.total_ht && !isNaN(parseFloat(doc.total_ht)))
+                        .reduce((sum, doc) => sum + parseFloat(doc.total_ht), 0)
+                      )}
                     </td>
                     <td style={{ 
                       padding: '12px 16px', 
@@ -3561,7 +3649,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                           <input
                             type="text"
                             className="form-control form-control-sm"
-                            placeholder="Filter TVA..."
+                            placeholder="Filter TVA... (ex: >100, <50, =25)"
                             value={columnFilters.tva}
                             onChange={(e) => handleColumnFilterChange('tva', e.target.value)}
                           />
@@ -3570,7 +3658,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                           <input
                             type="text"
                             className="form-control form-control-sm"
-                            placeholder="Filter HT..."
+                            placeholder="Filter HT... (ex: >500, <1000, =750)"
                             value={columnFilters.total_ht}
                             onChange={(e) => handleColumnFilterChange('total_ht', e.target.value)}
                           />
@@ -3579,7 +3667,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                           <input
                             type="text"
                             className="form-control form-control-sm"
-                            placeholder="Filter TTC..."
+                            placeholder="Filter TTC... (ex: >600, <1200, =900)"
                             value={columnFilters.total_ttc}
                             onChange={(e) => handleColumnFilterChange('total_ttc', e.target.value)}
                           />
@@ -3733,8 +3821,35 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                             borderTop: '2px solid #dee2e6',
                             fontWeight: 'bold'
                           }}>
-                            <td colSpan="11" style={{ textAlign: 'right', padding: '12px 16px' }}>
-                              <strong>Total TTC:</strong>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td style={{ 
+                              padding: '12px 16px', 
+                              color: '#dc3545',
+                              fontSize: '1.1em',
+                              textAlign: 'right'
+                            }}>
+                              {formatCurrency(filteredDocuments
+                                .filter(doc => doc.tva && !isNaN(parseFloat(doc.tva)))
+                                .reduce((sum, doc) => sum + parseFloat(doc.tva), 0)
+                              )}
+                            </td>
+                            <td style={{ 
+                              padding: '12px 16px', 
+                              color: '#198754',
+                              fontSize: '1.1em',
+                              textAlign: 'right'
+                            }}>
+                              {formatCurrency(filteredDocuments
+                                .filter(doc => doc.total_ht && !isNaN(parseFloat(doc.total_ht)))
+                                .reduce((sum, doc) => sum + parseFloat(doc.total_ht), 0)
+                              )}
                             </td>
                             <td style={{ 
                               padding: '12px 16px', 
