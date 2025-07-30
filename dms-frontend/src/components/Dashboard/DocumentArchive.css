@@ -97,8 +97,30 @@
   transform: none !important;
 }
 
+/* Special styling for dropdowns inside table container */
+.documents-table-container .dropdown-menu {
+  position: fixed !important;
+  z-index: 9999 !important;
+  top: auto !important;
+  right: auto !important;
+  left: auto !important;
+}
+
+/* Ensure dropdowns are always visible and properly positioned */
 .dropdown-menu.show {
   display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Additional positioning adjustments for table dropdowns */
+.documents-table-container .dropdown {
+  position: relative !important;
+}
+
+.documents-table-container .dropdown-menu {
+  margin-top: 0 !important;
+  transform: none !important;
 }
 
 /* Ensure table container allows dropdown overflow */
@@ -111,6 +133,12 @@
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   background-color: #f8f9fa; /* Always use the hover background color */
+}
+
+/* Allow dropdowns to overflow outside the table container */
+.documents-table-container .dropdown-menu {
+  position: fixed !important;
+  z-index: 9999 !important;
 }
 
 .table-responsive {

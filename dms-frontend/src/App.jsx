@@ -159,6 +159,14 @@ function App() {
         };
         setUser(userInfo);
         setAuthError('');
+        
+        // Check if user has temporary password and redirect to password reset
+        if (response.has_temporary_password) {
+          // Store flag in localStorage to indicate temporary password
+          localStorage.setItem('has_temporary_password', 'true');
+          // Redirect to password reset page
+          window.location.href = '/settings-users';
+        }
       } else {
         setAuthError(response.msg || 'Erreur de connexion');
       }
@@ -203,6 +211,13 @@ function App() {
 
   if (!user) {
     return <Login onLogin={handleLogin} error={authError} />;
+  }
+
+  // Check if user has temporary password and redirect to password reset
+  const hasTemporaryPassword = localStorage.getItem('has_temporary_password') === 'true';
+  if (hasTemporaryPassword && window.location.pathname !== '/settings-users') {
+    window.location.href = '/settings-users';
+    return null;
   }
 
   return (

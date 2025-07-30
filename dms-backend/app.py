@@ -272,7 +272,14 @@ def login():
             "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
     )
-    return jsonify(access_token=access_token), 200
+    
+    # Check if user has temporary password
+    has_temporary_password = user.get("has_temporary_password", False)
+    
+    return jsonify({
+        "access_token": access_token,
+        "has_temporary_password": has_temporary_password
+    }), 200
 
 # --- Forgot Password Endpoint ---
 @app.route("/forgot-password", methods=["POST"])
@@ -287,7 +294,7 @@ def forgot_password():
 
     # Generate a secure temporary password
     temp_password = "".join(random.choices(string.ascii_letters + string.digits, k=10))
-    db.update_user(user["id"], password=temp_password)
+    db.update_user(user["id"], password=temp_password, has_temporary_password=True)
     # Log the password reset event
     log_activity(
         actor=user["username"],
@@ -2950,7 +2957,7 @@ def change_password():
         return jsonify({'message': "Utilisateur non trouvé."}), 404
 
     try:
-        db.update_user(user_id, password=new_password)
+        db.update_user(user_id, password=new_password, has_temporary_password=False)
         return jsonify({'message': 'Mot de passe mis à jour avec succès.'}), 200
     except Exception as e:
         return jsonify({'message': f'Erreur lors de la mise à jour du mot de passe: {str(e)}'}), 500

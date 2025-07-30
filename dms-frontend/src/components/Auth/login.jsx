@@ -13,6 +13,7 @@ const Login = ({ onLogin, error }) => {
   const [forgotSuccess, setForgotSuccess] = useState('');
   const [loginError, setLoginError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [forgotLoading, setForgotLoading] = useState(false);
 
   React.useEffect(() => {
     setLoginError(error || '');
@@ -53,6 +54,7 @@ const Login = ({ onLogin, error }) => {
       setForgotError("L'e-mail est requis");
       return;
     }
+    setForgotLoading(true);
     try {
       await API.users.forgotPassword(forgotEmail);
       setForgotSuccess('Veuillez vérifier votre email pour un mot de passe temporaire.');
@@ -62,6 +64,8 @@ const Login = ({ onLogin, error }) => {
       } else {
         setForgotError("Erreur lors de la demande de réinitialisation. Veuillez réessayer.");
       }
+    } finally {
+      setForgotLoading(false);
     }
   };
 
@@ -78,6 +82,7 @@ const Login = ({ onLogin, error }) => {
     setForgotError('');
     setForgotSuccess('');
     setForgotEmail('');
+    setForgotLoading(false);
   };
 
   const handleChange = (e) => {
@@ -150,8 +155,23 @@ const Login = ({ onLogin, error }) => {
               {forgotSuccess && <div className="field-success" style={{ color: 'green', fontWeight: 500 }}>{forgotSuccess}</div>}
             </div>
             <div className="forgot-actions" style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-              <button type="submit" className="login-button">Envoyer</button>
-              <button type="button" className="login-button" style={{ background: 'gray', color: 'white', border: '1px solid #d1d5db' }} onClick={handleForgotRetour}>Retour</button>
+              <button 
+                type="submit" 
+                className="login-button" 
+                disabled={forgotLoading}
+                style={{ opacity: forgotLoading ? 0.7 : 1 }}
+              >
+                {forgotLoading ? 'En cours d\'envoi...' : 'Envoyer'}
+              </button>
+              <button 
+                type="button" 
+                className="login-button" 
+                style={{ background: 'gray', color: 'white', border: '1px solid #d1d5db' }} 
+                onClick={handleForgotRetour}
+                disabled={forgotLoading}
+              >
+                Retour
+              </button>
             </div>
           </form>
         ) : (

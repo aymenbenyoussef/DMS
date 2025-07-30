@@ -1325,6 +1325,16 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
   }, [editingDocument, editPartners]);
 
   // Open edit modal and prefill fields
+  // Debug useEffect to monitor editForm changes
+  useEffect(() => {
+    if (isEditModalOpen && editingDocument) {
+      console.log('=== Edit Form State Debug ===');
+      console.log('editForm.partner_id:', editForm.partner_id);
+      console.log('editingDocument.partner_id:', editingDocument.partner_id);
+      console.log('editPartners:', editPartners);
+    }
+  }, [editForm.partner_id, isEditModalOpen, editingDocument, editPartners]);
+
   const handleEditDocument = async (doc) => {
     console.log('=== handleEditDocument called ===');
     console.log('Document to edit:', doc);
@@ -1341,10 +1351,13 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     setIsEditModalOpen(true);
     setIsEditLoading(true);
     
-    // Set initial form data
+    // Set initial form data with partner_id
+    const initialPartnerId = doc.partner_id != null && doc.partner_id !== undefined ? String(doc.partner_id) : '';
+    console.log('Setting initial partner_id:', initialPartnerId, 'from doc.partner_id:', doc.partner_id);
+    
     setEditForm({
       filename: doc.filename || '',
-      partner_id: '', // Will be set by useEffect when partners are loaded
+      partner_id: initialPartnerId, // Set partner_id immediately
       is_invoice: false,
       invoice_number: '',
       date: '',
@@ -1370,19 +1383,26 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
           }
         } catch (e) { 
           console.log('Error fetching individual partner:', e);
-      }
+        }
       }
       
       setEditPartners(partnersList);
       console.log('Final partners list:', partnersList);
+      console.log('Partner should be pre-selected with ID:', initialPartnerId);
       
-      // Set partner immediately after partners are loaded
-      const selectedPartnerId = doc.partner_id != null ? String(doc.partner_id) : '';
-      console.log('Setting partner immediately:', selectedPartnerId);
-      setEditForm(prev => ({
-        ...prev,
-        partner_id: selectedPartnerId
-      }));
+      // Only force update if there's actually a partner_id to set
+      if (initialPartnerId) {
+        setTimeout(() => {
+          setEditForm(prev => {
+            console.log('Force updating form with partner_id:', initialPartnerId);
+            return {
+              ...prev,
+              partner_id: initialPartnerId
+            };
+          });
+        }, 100);
+      }
+      
     } catch (e) {
       console.log('Error in handleEditDocument:', e);
       setEditPartners([]);
@@ -2201,17 +2221,25 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                             <div 
                               className="dropdown-menu show" 
                               style={{ 
-                            position: 'absolute',
-                                top: '100%',
-                                right: 0,
+                                position: 'fixed',
+                                top: 'auto',
+                                right: 'auto',
                                 left: 'auto',
-                                zIndex: 1000,
+                                zIndex: 9999,
                                 minWidth: '150px',
                                 fontSize: '14px',
                                 boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                                 border: '1px solid #dee2e6',
                                 borderRadius: '6px',
                                 backgroundColor: 'white'
+                              }}
+                              ref={(el) => {
+                                if (el) {
+                                  const button = el.previousElementSibling;
+                                  const rect = button.getBoundingClientRect();
+                                  el.style.top = `${rect.bottom + 5}px`;
+                                  el.style.left = `${rect.right - el.offsetWidth}px`;
+                                }
                               }}
                             >
                               <button 
@@ -3276,11 +3304,18 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                     <div className="form-row">
                       <div className="form-group">
                         <label>Nom du document :</label>
-                        <input
-                          type="text"
+                        <textarea
                           value={editForm.filename}
                           onChange={e => handleEditFormChange('filename', e.target.value)}
                           className="form-control"
+                          style={{ 
+                            resize: 'none',
+                            overflow: 'hidden',
+                            height: '45px',
+                            padding: '0.375rem 0.75rem',
+                            boxSizing: 'border-box'
+                          }}
+                          rows="1"
                         />
                       </div>
                       <div className="form-group">
@@ -3289,6 +3324,9 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                           value={editForm.partner_id}
                           onChange={e => handleEditFormChange('partner_id', e.target.value)}
                           className="form-control"
+                          style={{ 
+                            height: '45px'
+                          }}
                         >
                           <option value="">Sélectionner un partenaire externe</option>
                           {editPartners.map(partner => (
@@ -3587,17 +3625,25 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                                 <div 
                                   className="dropdown-menu show" 
                                   style={{ 
-                                    position: 'absolute',
-                                    top: '100%',
-                                    right: 0,
+                                    position: 'fixed',
+                                    top: 'auto',
+                                    right: 'auto',
                                     left: 'auto',
-                                    zIndex: 1000,
+                                    zIndex: 9999,
                                     minWidth: '150px',
                                     fontSize: '14px',
                                     boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                                     border: '1px solid #dee2e6',
                                     borderRadius: '6px',
                                     backgroundColor: 'white'
+                                  }}
+                                  ref={(el) => {
+                                    if (el) {
+                                      const button = el.previousElementSibling;
+                                      const rect = button.getBoundingClientRect();
+                                      el.style.top = `${rect.bottom + 5}px`;
+                                      el.style.left = `${rect.right - el.offsetWidth}px`;
+                                    }
                                   }}
                                 >
                                       <button 

@@ -79,6 +79,7 @@ class DatabaseManager:
                     password_hash VARCHAR(255) NOT NULL,
                     role ENUM('admin', 'user','superuser') DEFAULT 'user',
                     is_active BOOLEAN DEFAULT TRUE,
+                    has_temporary_password BOOLEAN DEFAULT FALSE,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
@@ -406,7 +407,7 @@ class DatabaseManager:
 
 
     def update_user(self, user_id, username=None, surname=None, email=None, password=None, 
-               is_active=None, companies=None):
+               is_active=None, companies=None, has_temporary_password=None):
    
         updates = []
         params = []
@@ -427,6 +428,9 @@ class DatabaseManager:
         if is_active is not None:
             updates.append("is_active = %s")
             params.append(is_active)
+        if has_temporary_password is not None:
+            updates.append("has_temporary_password = %s")
+            params.append(has_temporary_password)
     
         # Update user fields if there are changes
         if updates:
