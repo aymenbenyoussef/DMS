@@ -110,6 +110,7 @@
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  background-color: #f8f9fa; /* Always use the hover background color */
 }
 
 .table-responsive {
@@ -268,6 +269,7 @@
   margin-bottom: 0.5rem;
   height: auto;
   max-height: none;
+  background-color: #f8f9fa; /* Always use the hover background color */
 }
 
 /* Additional compact styling for filter sections */
@@ -853,8 +855,8 @@
   border-bottom: 1px solid #dee2e6;
 }
 
-.table tbody tr:hover {
-  background-color: #f8f9fa;
+.table tbody tr {
+  background-color: #f8f9fa; /* Always use the hover background color */
 }
 
 /* Document cell styles */
