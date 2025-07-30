@@ -85,7 +85,15 @@ const NavBar = ({ user, onLogout }) => {
     const fetchFilters = async () => {
       try {
         const companiesRes = await api.companies.getAll();
-        setCompanies(companiesRes.data);
+        // Filter companies based on user role and access
+        const filteredCompanies = companiesRes.data.filter(company => {
+          // Show all companies for admin and superuser, only active ones for regular users
+          if (user && (user.role === 'admin' || user.role === 'superuser')) {
+            return true; // Show all companies (active and inactive)
+          }
+          return company.is_active; // Only show active companies for regular users
+        });
+        setCompanies(filteredCompanies);
         const doctypesRes = await api.doctype.getAll();
         setDoctypes(doctypesRes.data);
       } catch (error) {
@@ -93,7 +101,7 @@ const NavBar = ({ user, onLogout }) => {
       }
     };
     fetchFilters();
-  }, []);
+  }, [user]);
 
   const handleSearch = async () => {
     if (!searchTerm.trim()) {
@@ -104,13 +112,34 @@ const NavBar = ({ user, onLogout }) => {
 
     setIsSearching(true);
     try {
+      // If no specific company is selected, use all accessible companies for the user
+      let companyFilter = selectedCompany || null;
+      
+      // If no company is selected, pass the list of accessible company IDs
+      if (!selectedCompany) {
+        const accessibleCompanyIds = companies.map(company => company.id);
+        // Pass the accessible company IDs as a parameter to the search
+        // Note: This assumes the backend API supports filtering by multiple company IDs
+        companyFilter = accessibleCompanyIds;
+      }
+
       const response = await api.search.searchDocumentsFiltered(
         searchTerm,
-        selectedCompany || null,
+        companyFilter,
         selectedDoctype || null,
         isInvoice === '' ? null : isInvoice === 'true'
       );
-      setSearchResults(response.data);
+      
+      // Additional client-side filtering to ensure only documents from accessible companies are shown
+      let filteredResults = response.data;
+      if (!selectedCompany) {
+        // Filter results to only include documents from accessible companies
+        filteredResults = response.data.filter(doc => {
+          return companies.some(company => company.id === doc.company_id);
+        });
+      }
+      
+      setSearchResults(filteredResults);
       setShowSearchResults(true);
     } catch (error) {
       console.error("Error searching documents:", error);
@@ -246,8 +275,9 @@ const NavBar = ({ user, onLogout }) => {
                         setContextDoctype(doctype);
                       }
                       
-                      // Navigate to document archive with the correct IDs
-                      navigate(`/?company=${doc.company_id || ''}&doctype=${doc.doctype_id || ''}`);
+                      // Navigate to document archive with the correct IDs and filename filter
+                      const filenameParam = encodeURIComponent(doc.filename);
+                      navigate(`/?company=${doc.company_id || ''}&doctype=${doc.doctype_id || ''}&filename=${filenameParam}`);
                       setShowSearchResults(false);
                       setSearchTerm('');
                     }}>

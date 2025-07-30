@@ -234,7 +234,10 @@ const Sidebar = ({ user, loadingUser }) => {
       )}
       <li 
           className="folder-item2"
-          onClick={() => navigate('/temp-documents')}
+          onClick={() => {
+            resetSelection();
+            navigate('/temp-documents');
+          }}
           style={{ listStyle: 'none' }}
         >
           <span className="folder-name2">À verifier ({tempDocumentsCount})</span>

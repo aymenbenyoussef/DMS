@@ -3,7 +3,7 @@ import DragDropUpload from './DragDropUpload';
 import API from '../../api';
 import { AppContext } from '../context';
 import WelcomePanel from './WelcomePanel';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import EditDocumentForm from './EditDocumentForm';
 import { exportToCSV, exportToJSON, exportToTXT, exportToExcel } from '../Admin/exportUtils';
 import { ReactComponent as FullscreenIcon } from './fullscreen.svg';
@@ -40,6 +40,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
   const [uploadError, setUploadError] = useState('');
   const { setSelectedDoctype } = useContext(AppContext);
   const navigate = useNavigate();
+  const location = useLocation();
   
   // Document type states
   const [documentTypes, setDocumentTypes] = useState([]);
@@ -888,16 +889,16 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
 
   // Function to format date
   const formatDate = (dateString) => {
-      if (!dateString) return 
+    if (!dateString) return '';
     try {
       const date = new Date(dateString);
       if (isNaN(date.getTime())) {
-        return 
+        return '';
       }
       return date.toLocaleDateString("fr-FR");
     } catch (e) {
       console.error("Erreur de formatage de date:", e);
-      return 
+      return '';
     }
   };
 
@@ -1505,7 +1506,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
       } else if (key === 'total_ttc' || key === 'total_ht' || key === 'tva') {
         aValue = parseFloat(aValue) || 0;
         bValue = parseFloat(bValue) || 0;
-      } else if (key === 'date_facture' || key === 'upload_date' || key === 'created_at') {
+      } else if (key === 'invoice_date' || key === 'created_at') {
         // Handle date sorting properly
         const aDate = aValue ? new Date(aValue) : new Date(0);
         const bDate = bValue ? new Date(bValue) : new Date(0);
@@ -1558,8 +1559,8 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
       id: doc.id,
       filename: doc.filename,
       partner_name: doc.partner_name || '',
-      date_facture: doc.date_facture ? formatDate(doc.date_facture) : '',
-      upload_date: doc.upload_date ? formatDate(doc.upload_date) : '',
+      date_facture: doc.invoice_date ? formatDate(doc.invoice_date) : '',
+      upload_date: doc.created_at ? formatDate(doc.created_at) : '',
       tva: doc.tva ? formatCurrency(doc.tva) : '',
       total_ht: doc.total_ht ? formatCurrency(doc.total_ht) : '',
       total_ttc: doc.total_ttc ? formatCurrency(doc.total_ttc) : ''
@@ -1616,6 +1617,26 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
       return "Il n'y a pas de données";
     }
   };
+
+  // Read URL parameters and set filters
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const filenameParam = searchParams.get('filename');
+    
+    if (filenameParam) {
+      // Set the filename filter
+      setColumnFilters(prev => ({
+        ...prev,
+        filename: decodeURIComponent(filenameParam)
+      }));
+      
+      // Clear the filename parameter from URL to avoid setting it again on refresh
+      const newSearchParams = new URLSearchParams(location.search);
+      newSearchParams.delete('filename');
+      const newUrl = location.pathname + (newSearchParams.toString() ? `?${newSearchParams.toString()}` : '');
+      navigate(newUrl, { replace: true });
+    }
+  }, [location.search, navigate]);
 
   if (!selectedCompany && !selectedDoctype) {
     return <WelcomePanel user={user} />;
@@ -2061,11 +2082,11 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                     <th style={{cursor:'pointer', background: sortConfig.key === 'partner_name' ? '#f0f4fa' : undefined, color: sortConfig.key === 'partner_name' ? '#1976d2' : undefined}} onClick={() => handleSort('partner_name')}>
                       Partner <span style={{fontSize:'1em'}}>{sortConfig.key === 'partner_name' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
                     </th>
-                    <th style={{cursor:'pointer', background: sortConfig.key === 'date_facture' ? '#f0f4fa' : undefined, color: sortConfig.key === 'date_facture' ? '#1976d2' : undefined}} onClick={() => handleSort('date_facture')}>
-                      Date Facture <span style={{fontSize:'1em'}}>{sortConfig.key === 'date_facture' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                    <th style={{cursor:'pointer', background: sortConfig.key === 'invoice_date' ? '#f0f4fa' : undefined, color: sortConfig.key === 'invoice_date' ? '#1976d2' : undefined}} onClick={() => handleSort('invoice_date')}>
+                      Date Facture <span style={{fontSize:'1em'}}>{sortConfig.key === 'invoice_date' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
                     </th>
-                    <th style={{cursor:'pointer', background: sortConfig.key === 'upload_date' ? '#f0f4fa' : undefined, color: sortConfig.key === 'upload_date' ? '#1976d2' : undefined}} onClick={() => handleSort('upload_date')}>
-                      Date Upload <span style={{fontSize:'1em'}}>{sortConfig.key === 'upload_date' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                    <th style={{cursor:'pointer', background: sortConfig.key === 'created_at' ? '#f0f4fa' : undefined, color: sortConfig.key === 'created_at' ? '#1976d2' : undefined}} onClick={() => handleSort('created_at')}>
+                      Date Upload <span style={{fontSize:'1em'}}>{sortConfig.key === 'created_at' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
                     </th>
                     <th style={{cursor:'pointer', background: sortConfig.key === 'tva' ? '#f0f4fa' : undefined, color: sortConfig.key === 'tva' ? '#1976d2' : undefined}} onClick={() => handleSort('tva')}>
                       TVA <span style={{fontSize:'1em'}}>{sortConfig.key === 'tva' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
@@ -3287,7 +3308,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                   className="btn btn-secondary"
                   onClick={handleCloseEditModal}
                   disabled={isEditSaving}
-                  style={{backgroundColor: '#6c757d', color: 'white'}}
+                  style={{backgroundColor: '#6c757d', color: 'white', width: '120px', height: '40px'}}
                 >
                   Annuler
                 </button>
@@ -3296,7 +3317,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                   className="btn btn-primary"
                   onClick={handleSaveEditDocument}
                   disabled={isEditSaving}
-                  style={{backgroundColor: '#198754', color: 'white', border: '1px solid #198754'}}
+                  style={{backgroundColor: '#198754', color: 'white', border: '1px solid #198754', width: '120px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center'}}
                 >
                   {isEditSaving ? (
                     <>
@@ -3348,7 +3369,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                   className="btn btn-secondary"
                   onClick={handleCloseDeleteModal}
                   disabled={isDeleting}
-                  style={{backgroundColor: 'gray'}}
+                  style={{backgroundColor: 'gray', width: '120px', height: '40px'}}
                 >
                   Annuler
                 </button>
@@ -3357,7 +3378,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                   className="btn btn-danger"
                   onClick={handleConfirmDeleteDocument}
                   disabled={isDeleting}
-                  style={{backgroundColor: 'orangered'}}
+                  style={{backgroundColor: 'orangered', width: '120px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center'}}
                 >
                   {isDeleting ? (
                     'Suppression...'
@@ -3447,11 +3468,11 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                         <th style={{cursor:'pointer', background: sortConfig.key === 'partner_name' ? '#f0f4fa' : undefined, color: sortConfig.key === 'partner_name' ? '#1976d2' : undefined}} onClick={() => handleSort('partner_name')}>
                           Partner <span style={{fontSize:'1em'}}>{sortConfig.key === 'partner_name' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
                         </th>
-                        <th style={{cursor:'pointer', background: sortConfig.key === 'date_facture' ? '#f0f4fa' : undefined, color: sortConfig.key === 'date_facture' ? '#1976d2' : undefined}} onClick={() => handleSort('date_facture')}>
-                          Date Facture <span style={{fontSize:'1em'}}>{sortConfig.key === 'date_facture' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                        <th style={{cursor:'pointer', background: sortConfig.key === 'invoice_date' ? '#f0f4fa' : undefined, color: sortConfig.key === 'invoice_date' ? '#1976d2' : undefined}} onClick={() => handleSort('invoice_date')}>
+                          Date Facture <span style={{fontSize:'1em'}}>{sortConfig.key === 'invoice_date' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
                         </th>
-                        <th style={{cursor:'pointer', background: sortConfig.key === 'upload_date' ? '#f0f4fa' : undefined, color: sortConfig.key === 'upload_date' ? '#1976d2' : undefined}} onClick={() => handleSort('upload_date')}>
-                          Date Upload <span style={{fontSize:'1em'}}>{sortConfig.key === 'upload_date' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                        <th style={{cursor:'pointer', background: sortConfig.key === 'created_at' ? '#f0f4fa' : undefined, color: sortConfig.key === 'created_at' ? '#1976d2' : undefined}} onClick={() => handleSort('created_at')}>
+                          Date Upload <span style={{fontSize:'1em'}}>{sortConfig.key === 'created_at' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
                         </th>
                         <th style={{cursor:'pointer', background: sortConfig.key === 'tva' ? '#f0f4fa' : undefined, color: sortConfig.key === 'tva' ? '#1976d2' : undefined}} onClick={() => handleSort('tva')}>
                           TVA <span style={{fontSize:'1em'}}>{sortConfig.key === 'tva' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
