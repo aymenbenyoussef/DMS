@@ -1975,7 +1975,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                       position: 'absolute',
                       top: '110%',
                       right: 0,
-                      backgroundcolor: '#fff',
+                      backgroundColor: '#fff',
                       border: '1px solid #ddd',
                       borderRadius: '4px',
                       boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
