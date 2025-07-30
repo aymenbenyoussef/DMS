@@ -878,11 +878,16 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
 
   // Function to format date
   const formatDate = (dateString) => {
-    if (!dateString) return '-';
+      if (!dateString) return 
     try {
-      return new Date(dateString).toLocaleDateString('fr-FR');
-    } catch {
-      return '-';
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return 
+      }
+      return date.toLocaleDateString("fr-FR");
+    } catch (e) {
+      console.error("Erreur de formatage de date:", e);
+      return 
     }
   };
 
