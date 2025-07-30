@@ -385,6 +385,11 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
 
   // Email management functions
   const handleSendEmail = async (document) => {
+    // Close fullscreen modal if open
+    if (isFullscreenModalOpen) {
+      closeFullscreenModal();
+    }
+    
     try {
       // Fetch document email info and available users
       const [docInfoResponse, usersResponse] = await Promise.all([
@@ -940,6 +945,11 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
 
   // Update handleViewDocument to open enhanced modal
   const handleViewDocument = async (doc) => {
+    // Close fullscreen modal if open
+    if (isFullscreenModalOpen) {
+      closeFullscreenModal();
+    }
+    
     try {
       const [documentResponse, ocrResponse] = await Promise.all([
         API.documents.download(doc.id),
@@ -993,6 +1003,11 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
 
   // Update handleViewRapport to open enhanced modal with tabs
   const handleViewRapport = async (doc) => {
+    // Close fullscreen modal if open
+    if (isFullscreenModalOpen) {
+      closeFullscreenModal();
+    }
+    
     try {
       const [rapportResponse, ocrResponse, documentResponse] = await Promise.all([
         API.documents.getRapport(doc.id),
@@ -1055,6 +1070,11 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
 
   // Update handleViewOcrText to open enhanced modal
   const handleViewOcrText = async (doc) => {
+    // Close fullscreen modal if open
+    if (isFullscreenModalOpen) {
+      closeFullscreenModal();
+    }
+    
     try {
       const response = await API.documents.getOcrText(doc.id);
       if (response.status !== 200) {
@@ -1296,6 +1316,11 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     console.log('Document to edit:', doc);
     console.log('Document partner_id:', doc.partner_id, 'Type:', typeof doc.partner_id);
     
+    // Close fullscreen modal if open
+    if (isFullscreenModalOpen) {
+      closeFullscreenModal();
+    }
+    
     setEditingDocument(doc);
     setEditError('');
     setEditSuccess('');
@@ -1331,7 +1356,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
           }
         } catch (e) { 
           console.log('Error fetching individual partner:', e);
-        }
+      }
       }
       
       setEditPartners(partnersList);
@@ -1405,6 +1430,11 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
   };
   // Update handleDeleteDocument to open confirmation modal
   const handleDeleteDocument = (doc) => {
+    // Close fullscreen modal if open
+    if (isFullscreenModalOpen) {
+      closeFullscreenModal();
+    }
+    
     setDeletingDocument(doc);
     setDeleteError('');
     setIsDeleteModalOpen(true);
@@ -2106,7 +2136,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                             <div 
                               className="dropdown-menu show" 
                               style={{ 
-                                position: 'absolute',
+                            position: 'absolute',
                                 top: '100%',
                                 right: 0,
                                 left: 'auto',
@@ -2586,17 +2616,17 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                               alignItems: 'center',
                               height: '100%'
                             }}>
-                              <img
-                                src={previewUrl}
-                                alt={previewTitle}
-                                style={{
-                                  maxWidth: '100%',
-                                  maxHeight: '100%',
-                                  borderRadius: '8px',
-                                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                                  backgroundColor: 'white'
-                                }}
-                              />
+                            <img
+                              src={previewUrl}
+                              alt={previewTitle}
+                              style={{
+                                maxWidth: '100%',
+                                maxHeight: '100%',
+                                borderRadius: '8px',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                                backgroundColor: 'white'
+                              }}
+                            />
                             </div>
                           )}
                           {previewType === 'text' && (
@@ -2899,7 +2929,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                         }}
                       >
                         <i className="bi bi-send"></i>
-                        Envoyer par email
+                        Envoyer
                       </button>
                     </div>
                   </>
@@ -3287,11 +3317,11 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
       {isFullscreenModalOpen && (
         <div className="fullscreen-modal" onClick={closeFullscreenModal}>
           <div className="fullscreen-modal-content" onClick={(e) => e.stopPropagation()}>
-          <button 
+            <button 
             className="fullscreen-modal-close" // Gardons la classe pour la structure
-            onClick={closeFullscreenModal}
-            title="Fermer le plein écran"
-            aria-label="Fermer le plein écran"
+              onClick={closeFullscreenModal}
+              title="Fermer le plein écran"
+              aria-label="Fermer le plein écran"
             style={{
               // --- Style personnalisé ---
               position: 'absolute',
@@ -3315,7 +3345,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
           >
             {/* Remplacez <i className="bi bi-x"></i> par le nouveau composant SVG */}
             X
-          </button>
+            </button>
             <div className="fullscreen-modal-body" style={{ overflow: 'hidden' }}>
               {isLoading ? (
                 <div className="text-center py-5">
@@ -3456,10 +3486,10 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                               <td className="text-muted">{doc.id}</td>
                               <td>
                               <div className="dropdown" style={{ position: 'relative' }}>
-                              <button 
+                                  <button 
                                 className="btn btn-sm p-1"
-                                type="button" 
-                                onClick={() => setOpenDropdownId(openDropdownId === doc.id ? null : doc.id)}
+                                    type="button" 
+                                    onClick={() => setOpenDropdownId(openDropdownId === doc.id ? null : doc.id)}
                                 style={{ 
                                   background: 'none',
                                   border: 'none',
@@ -3470,7 +3500,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                                 title="Actions"
                               >
                                 ⋮
-                              </button>
+                                  </button>
                               {openDropdownId === doc.id && (
                                 <div 
                                   className="dropdown-menu show" 
@@ -3488,43 +3518,43 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                                     backgroundColor: 'white'
                                   }}
                                 >
-                                  <button 
-                                    className="dropdown-item d-flex align-items-center"
-                                    onClick={() => { 
-                                      setOpenDropdownId(null);
-                                      handleSendEmail(doc); 
-                                    }}
+                                      <button 
+                                        className="dropdown-item d-flex align-items-center"
+                                        onClick={() => { 
+                                          setOpenDropdownId(null);
+                                          handleSendEmail(doc); 
+                                        }}
                                     style={{ padding: '8px 16px', border: 'none', background: 'none', width: '100%', textAlign: 'left' }}
-                                  >
-                                    <i className="bi bi-envelope me-2"></i>
-                                    Envoyer
-                                  </button>
-                                  <button 
-                                    className="dropdown-item d-flex align-items-center"
-                                    onClick={() => { 
-                                      setOpenDropdownId(null);
-                                      handleEditDocument(doc); 
-                                    }}
+                                      >
+                                        <i className="bi bi-envelope me-2"></i>
+                                        Envoyer
+                                      </button>
+                                      <button 
+                                        className="dropdown-item d-flex align-items-center"
+                                        onClick={() => { 
+                                          setOpenDropdownId(null);
+                                          handleEditDocument(doc); 
+                                        }}
                                     style={{ padding: '8px 16px', border: 'none', background: 'none', width: '100%', textAlign: 'left' }}
-                                  >
-                                    <i className="bi bi-pencil-square me-2"></i>
-                                    Modifier
-                                  </button>
+                                      >
+                                        <i className="bi bi-pencil-square me-2"></i>
+                                        Modifier
+                                      </button>
                                   <hr className="dropdown-divider" style={{ margin: '4px 0' }} />
-                                  <button 
-                                    className="dropdown-item d-flex align-items-center text-danger"
-                                    onClick={() => { 
-                                      setOpenDropdownId(null);
-                                      handleDeleteDocument(doc); 
-                                    }}
+                                      <button 
+                                        className="dropdown-item d-flex align-items-center text-danger"
+                                        onClick={() => { 
+                                          setOpenDropdownId(null);
+                                          handleDeleteDocument(doc); 
+                                        }}
                                     style={{ padding: '8px 16px', border: 'none', background: 'none', width: '100%', textAlign: 'left', color: '#dc3545' }}
-                                  >
-                                    <i className="bi bi-trash me-2"></i>
-                                    Supprimer
-                                  </button>
+                                      >
+                                        <i className="bi bi-trash me-2"></i>
+                                        Supprimer
+                                      </button>
                                 </div>
                               )}
-                            </div>
+                                </div>
                               </td>
                               <td>
                                 <div className="d-flex align-items-center">

@@ -239,22 +239,26 @@ const Sidebar = ({ user, loadingUser }) => {
         >
           <span className="folder-name2">À verifier ({tempDocumentsCount})</span>
         </li>
-      {/* Show companies and doctypes only for admin and superuser */}
-      {(user?.role === 'admin' || user?.role === 'superuser') ? (
-        <ul className="folder-list" role="list">
-          
-          {loadingStates.companies && !timeoutError ? (
-            <div className="loading-container">
-              <div className="loading-spinner"></div>
-              <span>Chargement des entreprises...</span>
-            </div>
-          ) : (!error && !timeoutError && companies.length === 0) ? (
-            <div className="no-results">Aucune entreprise trouvée</div>
-          ) : (!error && !timeoutError && companies.map) ? (
-            companies.filter(company => company.is_active).map(company => (
+      <ul className="folder-list" role="list">
+        
+        {loadingStates.companies && !timeoutError ? (
+          <div className="loading-container">
+            <div className="loading-spinner"></div>
+            <span>Chargement des entreprises...</span>
+          </div>
+        ) : (!error && !timeoutError && companies.length === 0) ? (
+          <div className="no-results">Aucune entreprise trouvée</div>
+        ) : (!error && !timeoutError && companies.map) ? (
+          companies.filter(company => {
+            // Show all companies for admin and superuser, only active ones for regular users
+            if (user && (user.role === 'admin' || user.role === 'superuser')) {
+              return true; // Show all companies (active and inactive)
+            }
+            return company.is_active; // Only show active companies for regular users
+          }).map(company => (
             <React.Fragment key={company.id}>
               <li
-                className={`folder-item ${selectedCompany?.id === company.id ? 'selected' : ''}`}
+                className={`folder-item ${selectedCompany?.id === company.id ? 'selected' : ''} ${!company.is_active ? 'inactive' : ''}`}
                 onClick={() => handleCompanyClick(company)}
               >
                 {company.name  && (
@@ -283,10 +287,16 @@ const Sidebar = ({ user, loadingUser }) => {
                     </div>
                   ) : (
                     folders[company.id]?.length > 0 ? (
-                      folders[company.id].filter(folder => folder.status).map(folder => (
+                      folders[company.id].filter(folder => {
+                        // Show all doctypes for admin and superuser, only active ones for regular users
+                        if (user && (user.role === 'admin' || user.role === 'superuser')) {
+                          return true; // Show all doctypes (active and inactive)
+                        }
+                        return folder.status; // Only show active doctypes for regular users
+                      }).map(folder => (
                         <li
                           key={folder.id}
-                          className={`folder-item folder-subitem ${selectedDoctype?.id === folder.id ? 'selected' : ''}`}
+                          className={`folder-item folder-subitem ${selectedDoctype?.id === folder.id ? 'selected' : ''} ${!folder.status ? 'inactive' : ''}`}
                           onClick={() => {
                             setSelectedDoctype(folder);
                             navigate('/');
@@ -307,20 +317,7 @@ const Sidebar = ({ user, loadingUser }) => {
             </React.Fragment>
           ))
         ) : null}
-        </ul>
-      ) : (
-        /* Regular users don't see companies and doctypes */
-        <div className="user-message" style={{
-          padding: '20px',
-          textAlign: 'center',
-          color: '#666',
-          fontSize: '14px',
-          fontStyle: 'italic'
-        }}>
-          <p>Les entités et types de documents sont gérés par les administrateurs.</p>
-          <p>Utilisez la barre de recherche pour accéder aux documents.</p>
-        </div>
-      )}
+      </ul>
     </aside>
   );
 };
