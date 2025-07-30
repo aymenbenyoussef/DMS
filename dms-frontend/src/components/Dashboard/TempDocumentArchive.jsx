@@ -678,7 +678,7 @@ const TempDocumentArchive = ({ user }) => {
                               padding: '8px 12px',
                               fontSize: '14px',
                               minWidth: '80px',
-                              backgroundColor: 'orangered',
+                              backgroundColor: '#c6400e',
                               color: 'white'
                             }}
                           >

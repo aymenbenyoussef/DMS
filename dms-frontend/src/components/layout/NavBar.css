@@ -266,7 +266,7 @@
   border-radius: 12px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
   z-index: 1000;
-  min-width: 420px;
+  min-width: 520px;
   padding: 16px 0;
   backdrop-filter: blur(10px);
   animation: slideDown 0.3s ease;
@@ -281,6 +281,12 @@
 .dropdown-column {
   flex: 1;
   min-width: 0;
+}
+
+/* Give more width to the system configuration column */
+.dropdown-column:nth-child(2) {
+  flex: 1.3;
+  min-width: 180px;
 }
 
 .category-header {
