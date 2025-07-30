@@ -450,8 +450,18 @@ const TempDocumentArchive = ({ user }) => {
           <div className="d-flex justify-content-between align-items-center mb-3">
             <h2 className="h6 mb-0">Recherche & Filtres</h2>
             <button 
-              className="btn btn-blue d-flex align-items-center"
-              style={{ marginRight: '20px'}}
+              className="btn d-flex align-items-center"
+              style={{ 
+                marginRight: '20px',
+                backgroundColor: '#c6400e',
+                borderColor: '#c6400e',
+                color: 'white',
+                width: '130px',
+                height: '45px',
+                fontSize: '16px',
+                fontWeight: '500',
+                justifyContent: 'center'
+              }}
               onClick={() => setIsUploadModalOpen(true)}
             >
               <i className="bi bi-plus me-2"></i> Télécharger
@@ -508,9 +518,14 @@ const TempDocumentArchive = ({ user }) => {
               </button>
               <div style={{ position: 'relative' }}>
                 <button 
-                  className="btn btn-blue btn-sm d-flex align-items-center"
+                  className="btn btn-sm d-flex align-items-center"
                   onClick={() => setExportMenuOpen(v => !v)}
-                  style={{ backgroundColor: '#1976d2', color: 'white' }}
+                  style={{ 
+                    backgroundColor: '#fff', 
+                    borderColor: '#27ae60', 
+                    color: '#27ae60',
+                    border: '2px solid #27ae60'
+                  }}
                 >
                   <i className="bi bi-download me-1"></i> Export ▼
                 </button>
@@ -692,6 +707,16 @@ const TempDocumentArchive = ({ user }) => {
                             <button 
                               className="btn btn-blue btn-sm"
                               onClick={() => setIsUploadModalOpen(true)}
+                              style={{
+                                backgroundColor: '#c6400e',
+                                borderColor: '#c6400e',
+                                color: 'white',
+                                width: '180px',
+                                height: '45px',
+                                fontSize: '16px',
+                                fontWeight: '500',
+                                justifyContent: 'center'
+                              }}
                             >
                               <i className="bi bi-download me-1"></i>
                               Télécharger

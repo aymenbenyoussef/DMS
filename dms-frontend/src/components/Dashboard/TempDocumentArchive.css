@@ -41,6 +41,7 @@
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     padding-bottom: 500px !important;
+    background-color: #f8f9fa; /* Always use the hover background color */
   }
   
   .table-responsive {
@@ -121,6 +122,7 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     border: 1px solid #e5e7eb;
     margin-bottom: 1rem;
+    background-color: #f8f9fa; /* Always use the hover background color */
   }
   
   .search-filter-container .card-body {
@@ -660,8 +662,8 @@
     border-bottom: 1px solid #dee2e6;
   }
   
-  .table tbody tr:hover {
-    background-color: #f8f9fa;
+  .table tbody tr {
+    background-color: #f8f9fa; /* Always use the hover background color */
   }
   
   /* Document cell styles */
