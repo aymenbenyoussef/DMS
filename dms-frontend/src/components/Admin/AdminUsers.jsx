@@ -411,9 +411,44 @@ const AdminUsers = ({user ,loadingUser}) => {
     }
     setSortConfig({ key, direction });
     const sorted = [...filteredUsers].sort((a, b) => {
-      if (a[key] === undefined || b[key] === undefined) return 0;
-      if (a[key] < b[key]) return direction === 'asc' ? -1 : 1;
-      if (a[key] > b[key]) return direction === 'asc' ? 1 : -1;
+      let aValue = a[key];
+      let bValue = b[key];
+
+      // Handle different data types
+      if (key === 'id') {
+        aValue = parseInt(aValue) || 0;
+        bValue = parseInt(bValue) || 0;
+      } else if (key === 'created_at') {
+        // Handle date sorting properly
+        const aDate = aValue ? new Date(aValue) : new Date(0);
+        const bDate = bValue ? new Date(bValue) : new Date(0);
+        
+        // Check if dates are valid
+        if (isNaN(aDate.getTime()) && isNaN(bDate.getTime())) {
+          aValue = 0;
+          bValue = 0;
+        } else if (isNaN(aDate.getTime())) {
+          aValue = 0;
+          bValue = bDate.getTime();
+        } else if (isNaN(bDate.getTime())) {
+          aValue = aDate.getTime();
+          bValue = 0;
+        } else {
+          aValue = aDate.getTime();
+          bValue = bDate.getTime();
+        }
+      } else {
+        // Handle string values
+        aValue = String(aValue || '').toLowerCase();
+        bValue = String(bValue || '').toLowerCase();
+      }
+
+      if (aValue < bValue) {
+        return direction === 'asc' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return direction === 'asc' ? 1 : -1;
+      }
       return 0;
     });
     setFilteredUsers(sorted);
@@ -623,24 +658,24 @@ const AdminUsers = ({user ,loadingUser}) => {
                       <th style={{cursor:'pointer', background: sortConfig.key === 'id' ? '#f0f4fa' : undefined, color: sortConfig.key === 'id' ? '#1976d2' : undefined}} onClick={() => handleSort('id')}>
                         Id <span style={{fontSize:'1em'}}>{sortConfig.key === 'id' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
                       </th>
-                      <th style={{cursor:'pointer', background: sortConfig.key === 'username' ? '#f0f4fa' : undefined, color: sortConfig.key === 'username' ? '#1976d2' : undefined}} onClick={() => handleSort('username')}>
+                      <th style={{cursor:'pointer', background: sortConfig.key === 'username' ? '#f0f4fa' : undefined, color: sortConfig.key === 'username' ? '#1976d2' : undefined, width: '250px', minWidth: '250px'}} onClick={() => handleSort('username')}>
                         Nom complet <span style={{fontSize:'1em'}}>{sortConfig.key === 'username' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
                       </th>
                       
-                      <th className="email-col" style={{cursor:'pointer', background: sortConfig.key === 'email' ? '#f0f4fa' : undefined, color: sortConfig.key === 'email' ? '#1976d2' : undefined, wordBreak: 'break-all'}} onClick={() => handleSort('email')}>
+                      <th className="email-col" style={{cursor:'pointer', background: sortConfig.key === 'email' ? '#f0f4fa' : undefined, color: sortConfig.key === 'email' ? '#1976d2' : undefined, wordBreak: 'break-all', width: '300px', minWidth: '300px'}} onClick={() => handleSort('email')}>
                                 Email <span style={{fontSize:'1em'}}>{sortConfig.key === 'email' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
                       </th>
 
-                      <th style={{cursor:'pointer', background: sortConfig.key === 'role' ? '#f0f4fa' : undefined, color: sortConfig.key === 'role' ? '#1976d2' : undefined}} onClick={() => handleSort('role')}>
+                      <th style={{cursor:'pointer', background: sortConfig.key === 'role' ? '#f0f4fa' : undefined, color: sortConfig.key === 'role' ? '#1976d2' : undefined, width: '100px', minWidth: '100px'}} onClick={() => handleSort('role')}>
                         Rôle <span style={{fontSize:'1em'}}>{sortConfig.key === 'role' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
                       </th>
                       <th style={{cursor:'pointer', background: sortConfig.key === 'companies' ? '#f0f4fa' : undefined, color: sortConfig.key === 'companies' ? '#1976d2' : undefined}} onClick={() => handleSort('companies')}>
                         Entités <span style={{fontSize:'1em'}}>{sortConfig.key === 'companies' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
                       </th>
-                      <th style={{cursor:'pointer', background: sortConfig.key === 'created_at' ? '#f0f4fa' : undefined, color: sortConfig.key === 'created_at' ? '#1976d2' : undefined}} onClick={() => handleSort('created_at')}>
+                      <th style={{cursor:'pointer', background: sortConfig.key === 'created_at' ? '#f0f4fa' : undefined, color: sortConfig.key === 'created_at' ? '#1976d2' : undefined, width: '180px', minWidth: '180px'}} onClick={() => handleSort('created_at')}>
                         Date de création <span style={{fontSize:'1em'}}>{sortConfig.key === 'created_at' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
                       </th>
-                      <th>Actions</th>
+                      <th style={{width: '60px', minWidth: '60px'}}>Actions</th>
                     </tr>
                     <tr className="filter-row">
                       <td></td>
@@ -653,7 +688,7 @@ const AdminUsers = ({user ,loadingUser}) => {
                           className="filter-input"
                         />
                       </td>
-                      <td>
+                      <td style={{width: '250px', minWidth: '250px'}}>
                         <input
                           type="text"
                           value={filters.username }
@@ -663,7 +698,7 @@ const AdminUsers = ({user ,loadingUser}) => {
                         />
                       </td>
                       
-                      <td>
+                      <td style={{width: '300px', minWidth: '300px'}}>
                         <input
                           type="text"
                           value={filters.email}
@@ -672,7 +707,7 @@ const AdminUsers = ({user ,loadingUser}) => {
                           className="filter-input"
                         />
                       </td>
-                      <td>
+                      <td style={{width: '100px', minWidth: '100px'}}>
                         <input
                           type="text"
                           value={filters.role}
@@ -690,8 +725,16 @@ const AdminUsers = ({user ,loadingUser}) => {
                           className="filter-input"
                         />
                       </td>
-                      <td></td>
-                      <td></td>
+                      <td style={{width: '180px', minWidth: '180px'}}>
+                        <input
+                          type="text"
+                          value={filters.created_at}
+                          onChange={(e) => handleFilterChange(e, 'created_at')}
+                          placeholder="Filter Date"
+                          className="filter-input"
+                        />
+                      </td>
+                      <td style={{width: '60px', minWidth: '60px'}}></td>
                     </tr>
                   </thead>
                   <tbody className="table-body-scrollable">
@@ -706,10 +749,10 @@ const AdminUsers = ({user ,loadingUser}) => {
                             <div className={`status-led ${rowUser.is_active ? 'status-led-active' : 'status-led-inactive'}`}></div>
                           </td>
                           <td>{rowUser.id}</td>
-                          <td>{`${rowUser.username} ${rowUser.surname}`}</td>
+                          <td style={{width: '250px', minWidth: '250px'}}>{`${rowUser.username} ${rowUser.surname}`}</td>
                           
-                          <td className="email-col" style={{wordBreak: 'break-all'}}>{rowUser.email}</td>
-                          <td>
+                          <td className="email-col" style={{wordBreak: 'break-all', width: '300px', minWidth: '300px'}}>{rowUser.email}</td>
+                          <td style={{width: '100px', minWidth: '100px'}}>
                             <span >
                               {rowUser.role === 'user' ? 'utilisateur' : rowUser.role}
                             </span>
@@ -725,8 +768,8 @@ const AdminUsers = ({user ,loadingUser}) => {
                               <span></span>
                             )}
                           </td>
-                          <td>{new Date(rowUser.created_at).toLocaleDateString()}</td>
-                          <td>
+                          <td style={{width: '180px', minWidth: '180px'}}>{new Date(rowUser.created_at).toLocaleDateString()}</td>
+                          <td style={{width: '60px', minWidth: '60px'}}>
                             {(user && (
                               (user.role === 'superuser') ||
                               (user.role === 'admin' && rowUser.role !== 'superuser')

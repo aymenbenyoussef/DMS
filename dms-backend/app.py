@@ -301,6 +301,9 @@ def forgot_password():
     )
     
     # Send email via SMTP using .env configuration
+    # Reload environment variables to get the latest SMTP settings
+    load_dotenv(SETTINGS_ENV_PATH, override=True)
+    
     smtp_host = "smtp.gmail.com"  # Change as needed
     smtp_port = 587
     smtp_user = os.environ.get('SMTP_EMAIL', 'ranesmerald358@gmail.com')  # Get from .env
@@ -2401,7 +2404,9 @@ def get_groups_by_document(document_id):
         if not document:
             return jsonify({"msg": "Document not found"}), 404
         
+        # Get groups for the document
         groups = db.get_groups_by_document(document_id)
+        
         return jsonify({
             "document": document,
             "groups": groups,
@@ -2430,6 +2435,12 @@ def update_settings():
         "smtpEmail": "SMTP_EMAIL",
         "smtpPassword": "SMTP_PASSWORD"
     }
+    
+    # Check if SMTP settings are being updated
+    smtp_updated = False
+    if 'smtpEmail' in data or 'smtpPassword' in data:
+        smtp_updated = True
+    
     # Read current .env
     env_vars = {}
     if os.path.exists(SETTINGS_ENV_PATH):
@@ -2438,15 +2449,28 @@ def update_settings():
                 if "=" in line:
                     k, v = line.strip().split("=", 1)
                     env_vars[k] = v
+    
     # Update with new values
     for key, env_key in env_map.items():
         if key in data:
             env_vars[env_key] = str(data[key])
+    
     # Write back to .env
     with open(SETTINGS_ENV_PATH, "w") as f:
         for k, v in env_vars.items():
             f.write(f"{k}={v}\n")
-    return jsonify({"success": True, "message": "Settings updated."})
+    
+    # Reload environment variables if SMTP settings were updated
+    if smtp_updated:
+        try:
+            # Reload the .env file
+            from dotenv import load_dotenv
+            load_dotenv(SETTINGS_ENV_PATH, override=True)
+            print("SMTP settings updated and environment reloaded")
+        except Exception as e:
+            print(f"Error reloading environment: {e}")
+    
+    return jsonify({"success": True, "message": "Settings updated." + (" Environment reloaded." if smtp_updated else "")})
 
 @app.route('/api/settings', methods=['GET'])
 def get_settings():
@@ -2625,6 +2649,9 @@ L'équipe RAN ESMERALD
 """
         
         # Send email to each recipient using .env configuration
+        # Reload environment variables to get the latest SMTP settings
+        load_dotenv(SETTINGS_ENV_PATH, override=True)
+        
         smtp_host = "smtp.gmail.com"
         smtp_port = 587
         smtp_user = os.environ.get('SMTP_EMAIL', 'ranesmerald@gmail.com')
@@ -2672,8 +2699,18 @@ L'équipe RAN ESMERALD
                 successful_sends.append(recipient_email)
                 
             except Exception as e:
-                print(f"Error sending email to {recipient_email}: {e}")
-                failed_sends.append({"email": recipient_email, "error": str(e)})
+                error_msg = str(e)
+                print(f"Error sending email to {recipient_email}: {error_msg}")
+                
+                # Provide more user-friendly error messages
+                if "Username and Password not accepted" in error_msg or "BadCredentials" in error_msg:
+                    error_msg = "Erreur d'authentification Gmail. Veuillez vérifier l'email et le mot de passe d'application dans les paramètres."
+                elif "Authentication failed" in error_msg:
+                    error_msg = "Échec de l'authentification. Vérifiez vos paramètres SMTP."
+                elif "Connection refused" in error_msg:
+                    error_msg = "Impossible de se connecter au serveur SMTP. Vérifiez votre connexion internet."
+                
+                failed_sends.append({"email": recipient_email, "error": error_msg})
         
         # Log email activity
         try:

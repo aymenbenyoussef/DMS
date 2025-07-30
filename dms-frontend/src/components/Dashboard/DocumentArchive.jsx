@@ -1228,14 +1228,12 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
 
   // Function to get group name for a document
   const getDocumentGroup = (doc) => {
-    // This would need to be implemented based on your API structure
-    // For now, returning a placeholder
     return doc.group_name || 'Aucun groupe';
   };
 
   // Function to get uploader name
   const getUploaderName = (doc) => {
-    return doc.uploaded_by || user?.name || 'Utilisateur inconnu';
+    return doc.owner_name || 'Utilisateur inconnu';
   };
 
   // Update the effect that runs when emailType or currentDocument changes
@@ -1492,9 +1490,25 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
       } else if (key === 'total_ttc' || key === 'total_ht' || key === 'tva') {
         aValue = parseFloat(aValue) || 0;
         bValue = parseFloat(bValue) || 0;
-      } else if (key === 'date_facture' || key === 'upload_date') {
-        aValue = new Date(aValue || 0);
-        bValue = new Date(bValue || 0);
+      } else if (key === 'date_facture' || key === 'upload_date' || key === 'created_at') {
+        // Handle date sorting properly
+        const aDate = aValue ? new Date(aValue) : new Date(0);
+        const bDate = bValue ? new Date(bValue) : new Date(0);
+        
+        // Check if dates are valid
+        if (isNaN(aDate.getTime()) && isNaN(bDate.getTime())) {
+          aValue = 0;
+          bValue = 0;
+        } else if (isNaN(aDate.getTime())) {
+          aValue = 0;
+          bValue = bDate.getTime();
+        } else if (isNaN(bDate.getTime())) {
+          aValue = aDate.getTime();
+          bValue = 0;
+        } else {
+          aValue = aDate.getTime();
+          bValue = bDate.getTime();
+        }
       } else {
         aValue = String(aValue || '').toLowerCase();
         bValue = String(bValue || '').toLowerCase();
@@ -2531,7 +2545,11 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                             color: activeTab === 'report' ? '#2563eb' : '#6b7280',
                             fontWeight: activeTab === 'report' ? '600' : '400',
                             padding: '12px 16px',
-                            borderBottom: activeTab === 'report' ? '2px solid #2563eb' : '2px solid transparent'
+                            borderBottom: activeTab === 'report' ? '2px solid #2563eb' : '2px solid transparent',
+                            textAlign: 'center',
+                            display: 'flex',
+                            justifyContent: 'center',
+                            width: '100%'
                           }}
                         >
                           <i className="bi bi-file-earmark-pdf me-2"></i>
@@ -2550,7 +2568,11 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                             color: activeTab === 'ocr' ? '#2563eb' : '#6b7280',
                             fontWeight: activeTab === 'ocr' ? '600' : '400',
                             padding: '12px 16px',
-                            borderBottom: activeTab === 'ocr' ? '2px solid #2563eb' : '2px solid transparent'
+                            borderBottom: activeTab === 'ocr' ? '2px solid #2563eb' : '2px solid transparent',
+                            textAlign: 'center',
+                            display: 'flex',
+                            justifyContent: 'center',
+                            width: '100%'
                           }}
                         >
                           <i className="bi bi-file-text me-2"></i>
@@ -2565,17 +2587,19 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                           style={{
                             border: 'none',
                             alignItems: 'center',
-                            
                             backgroundColor: 'transparent',
                             color: activeTab === 'actions' ? '#2563eb' : '#6b7280',
                             fontWeight: activeTab === 'actions' ? '600' : '400',
                             padding: '12px 16px',
-                            borderBottom: activeTab === 'actions' ? '2px solid #2563eb' : '2px solid transparent'
+                            borderBottom: activeTab === 'actions' ? '2px solid #2563eb' : '2px solid transparent',
+                            textAlign: 'center',
+                            display: 'flex',
+                            justifyContent: 'center',
+                            width: '100%'
                           }}
                         >
                           <i className="bi bi-file-earmark me-2"></i>
-                          <div style={{textAlign: 'center'}}>File</div>
-                          
+                          File
                         </button>
                       </li>
                     )}
@@ -2901,7 +2925,8 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                           justifyContent: 'center',
                           gap: '8px',
                           backgroundColor: '#198754',
-                          color: 'white'
+                          color: 'white',
+                          height: '48px'
                         }}
                       >
                         <i className="bi bi-download"></i>
@@ -2925,8 +2950,8 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                           justifyContent: 'center',
                           gap: '8px',
                           backgroundColor: '#2563eb',
-                          
-                          color: 'white'
+                          color: 'white',
+                          height: '48px'
                         }}
                         onMouseEnter={(e) => {
                           e.target.style.backgroundColor = '#2563eb';
@@ -3158,10 +3183,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                   
                 >
                   {isEmailSending ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status"></span>
-                      Envoi en cours...
-                    </>
+                    'Envoi en cours...'
                   ) : (
                     <>
                       <i className="bi bi-send me-2"></i>

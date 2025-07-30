@@ -1187,7 +1187,16 @@ class DatabaseManager:
 
     def get_document_by_id(self, document_id):
         """Get document by ID"""
-        query = "SELECT * FROM documents WHERE id = %s AND flag = TRUE"
+        query = """
+            SELECT d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size, d.file_path, 
+                   d.is_invoice, d.ocr_text, d.extracted_text, d.rapport, d.invoice_date, d.total_ht, d.tva, d.total_ttc, 
+                   d.owner_id, u.username as owner_name, g.name as group_name
+            FROM documents d
+            LEFT JOIN users u ON d.owner_id = u.id
+            LEFT JOIN documents_group dg ON d.id = dg.document_id
+            LEFT JOIN groups g ON dg.group_id = g.id
+            WHERE d.id = %s AND d.flag = TRUE
+        """
         result = self.execute_query(query, (document_id,), fetch=True)
         return result[0] if result else None
 
@@ -1383,10 +1392,16 @@ class DatabaseManager:
     def get_documents_by_company_all_types(self, company_id, start_date=None, end_date=None):
         """Get all documents for a company regardless of document type, with optional date filtering"""
         query = """
-            SELECT d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size, d.file_path,d.extracted_text, d.is_invoice, d.ocr_text, d.rapport, d.invoice_date, d.total_ht, d.tva, d.total_ttc, p.company_name as partner_name
+            SELECT d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size, d.file_path, d.extracted_text, d.is_invoice, d.ocr_text, d.rapport, d.invoice_date, d.total_ht, d.tva, d.total_ttc, d.owner_id, p.company_name as partner_name,
+                   u.username as owner_name,
+                   GROUP_CONCAT(g.name SEPARATOR ', ') as group_name
             FROM documents d
             LEFT JOIN partners p ON d.partner_id = p.id
+            LEFT JOIN users u ON d.owner_id = u.id
+            LEFT JOIN documents_group dg ON d.id = dg.document_id
+            LEFT JOIN groups g ON dg.group_id = g.id
             WHERE d.company_id = %s AND d.flag = TRUE
+            GROUP BY d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size, d.file_path, d.extracted_text, d.is_invoice, d.ocr_text, d.rapport, d.invoice_date, d.total_ht, d.tva, d.total_ttc, d.owner_id, p.company_name, u.username
             ORDER BY d.created_at DESC
         """
         params = [company_id]
@@ -1415,10 +1430,16 @@ class DatabaseManager:
     def get_documents_by_company_and_type(self, company_id, doctype_id):
         """Get only the columns needed for the document archive table, including company_id and doctype_id for file URL construction"""
         query = """
-            SELECT d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size, d.file_path, d.is_invoice, d.ocr_text, d.extracted_text, d.rapport, d.invoice_date, d.total_ht, d.tva, d.total_ttc, p.company_name as partner_name
+            SELECT d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size, d.file_path, d.is_invoice, d.ocr_text, d.extracted_text, d.rapport, d.invoice_date, d.total_ht, d.tva, d.total_ttc, d.owner_id, p.company_name as partner_name,
+                   u.username as owner_name,
+                   GROUP_CONCAT(g.name SEPARATOR ', ') as group_name
             FROM documents d
             LEFT JOIN partners p ON d.partner_id = p.id
+            LEFT JOIN users u ON d.owner_id = u.id
+            LEFT JOIN documents_group dg ON d.id = dg.document_id
+            LEFT JOIN groups g ON dg.group_id = g.id
             WHERE d.company_id = %s AND d.doctype_id = %s AND d.flag = TRUE
+            GROUP BY d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size, d.file_path, d.is_invoice, d.ocr_text, d.extracted_text, d.rapport, d.invoice_date, d.total_ht, d.tva, d.total_ttc, d.owner_id, p.company_name, u.username
             ORDER BY d.created_at DESC
         """
         return self.execute_query(query, (company_id, doctype_id), fetch=True)
@@ -1585,11 +1606,15 @@ class DatabaseManager:
         try:
             query = """
                 SELECT d.*, c.name as company_name, dt.name as doctype_name, 
-                       p.company_name as partner_name
+                       p.company_name as partner_name, u.username as owner_name,
+                       g.name as group_name
                 FROM documents d
                 LEFT JOIN companies c ON d.company_id = c.id
                 LEFT JOIN doctype dt ON d.doctype_id = dt.id
                 LEFT JOIN partners p ON d.partner_id = p.id
+                LEFT JOIN users u ON d.owner_id = u.id
+                LEFT JOIN documents_group dg ON d.id = dg.document_id
+                LEFT JOIN groups g ON dg.group_id = g.id
                 WHERE d.id = %s AND d.flag = TRUE
             """
             result = self.execute_query(query, (document_id,), fetch=True)
@@ -1686,6 +1711,43 @@ class DatabaseManager:
 
 
 
+
+    def test_document_owner_data(self):
+        """Test function to check document owner data"""
+        try:
+            # Check if documents have owner_id
+            query1 = "SELECT id, filename, owner_id FROM documents LIMIT 5"
+            docs = self.execute_query(query1, fetch=True)
+            print(f"DEBUG: Sample documents: {docs}")
+            
+            # Check if users exist
+            query2 = "SELECT id, username FROM users LIMIT 5"
+            users = self.execute_query(query2, fetch=True)
+            print(f"DEBUG: Sample users: {users}")
+            
+            # Check if any documents have owner_id = NULL
+            query3 = "SELECT COUNT(*) as null_owners FROM documents WHERE owner_id IS NULL"
+            null_owners = self.execute_query(query3, fetch=True)
+            print(f"DEBUG: Documents with NULL owner_id: {null_owners}")
+            
+            # Check if groups table exists
+            try:
+                query4 = "SELECT COUNT(*) as group_count FROM groups"
+                group_count = self.execute_query(query4, fetch=True)
+                print(f"DEBUG: Groups table exists, count: {group_count}")
+            except Exception as e:
+                print(f"DEBUG: Groups table doesn't exist or error: {e}")
+            
+            # Check if documents_group table exists
+            try:
+                query5 = "SELECT COUNT(*) as doc_group_count FROM documents_group"
+                doc_group_count = self.execute_query(query5, fetch=True)
+                print(f"DEBUG: documents_group table exists, count: {doc_group_count}")
+            except Exception as e:
+                print(f"DEBUG: documents_group table doesn't exist or error: {e}")
+            
+        except Exception as e:
+            print(f"DEBUG: Error in test_document_owner_data: {e}")
 
     def search_documents_filtered(self, company_id=None, doctype_id=None, is_invoice=None, filename_search=None):
         query = """
