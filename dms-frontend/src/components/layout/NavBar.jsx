@@ -246,8 +246,8 @@ const NavBar = ({ user, onLogout }) => {
                         setContextDoctype(doctype);
                       }
                       
-                      // Navigate to document archive with the document selected
-                      navigate(`/?company=${doc.company_id}&doctype=${doc.doctype_id}`);
+                      // Navigate to document archive with the correct IDs
+                      navigate(`/?company=${doc.company_id || ''}&doctype=${doc.doctype_id || ''}`);
                       setShowSearchResults(false);
                       setSearchTerm('');
                     }}>

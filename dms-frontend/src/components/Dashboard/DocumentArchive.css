@@ -104,27 +104,44 @@
 /* Ensure table container allows dropdown overflow */
 .documents-table-container {
   position: relative;
-  overflow: visible !important;
-  height: auto !important;
-  max-height: 800px !important;
+  max-height: 600px !important;
   overflow-y: auto !important;
+  overflow-x: auto !important;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  padding-bottom: 500px !important;
 }
 
 .table-responsive {
-  overflow: visible !important;
-  height: auto !important;
-  max-height: 800px !important;
+  max-height: 600px !important;
   overflow-y: auto !important;
+  overflow-x: auto !important;
+  position: relative;
 }
 
 /* Ensure table cells can accommodate dropdown */
 .table td {
   position: relative;
   overflow: visible;
+}
+
+/* Table sticky header fix */
+.table {
+  position: relative;
+  width: 100%;
+  margin-bottom: 0;
+}
+
+.table thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: #f8f9fa;
+}
+
+/* Ensure table body doesn't interfere with sticky header */
+.table tbody {
+  position: relative;
 }
 
 /* --- MODIFICATIONS START HERE --- */
@@ -142,10 +159,13 @@
 .documents-table-container {
   height: auto;
   overflow-y: auto;
-  padding-bottom: 500px;
   border-radius: 8px;
-  max-height: 800px;
+  max-height: 600px;
   position: relative;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  /* Ensure this creates a scrolling context for sticky positioning */
+  contain: layout style paint;
 }
 
 /* 3. Make the table header sticky */
@@ -153,7 +173,11 @@
   overflow-x: auto; /* Enable horizontal scrolling for the table */
   -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
   height: auto !important;
-  max-height: none !important;
+  max-height: 600px !important;
+  overflow-y: auto !important;
+  position: relative;
+  /* Ensure this creates a scrolling context for sticky positioning */
+  contain: layout style paint;
 }
 
 .table thead {
@@ -187,6 +211,52 @@
   top: 0 !important;
   z-index: 1000 !important;
   white-space: nowrap !important;
+}
+
+/* Ensure the filter row is also sticky */
+.table-header-sticky tr:nth-child(2) th {
+  position: sticky !important;
+  top: 60px !important; /* Adjust based on the height of the first header row */
+  z-index: 999 !important;
+  background: #f8f9fa !important;
+  border-bottom: 1px solid #e5e7eb !important;
+}
+
+/* Force sticky positioning for table headers */
+.documents-table-container .table thead {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 1000 !important;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+}
+
+.documents-table-container .table thead th {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 1000 !important;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+}
+
+.documents-table-container .table thead tr:nth-child(2) th {
+  position: sticky !important;
+  top: 60px !important;
+  z-index: 999 !important;
+  background: #f8f9fa !important;
+}
+
+/* Additional override for any conflicting styles */
+.documents-table-container table thead,
+.documents-table-container table thead th,
+.documents-table-container table thead tr th {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 1000 !important;
+}
+
+.documents-table-container table thead tr:nth-child(2) th {
+  position: sticky !important;
+  top: 60px !important;
+  z-index: 999 !important;
 }
 
 /* --- NEW SEARCH & FILTER CONTAINER STYLES --- */
