@@ -9,6 +9,15 @@ const SettingsUsers = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [hasTemporaryPassword, setHasTemporaryPassword] = useState(false);
+
+  // Check if user has temporary password on component mount
+  React.useEffect(() => {
+    const tempPasswordFlag = localStorage.getItem('has_temporary_password');
+    if (tempPasswordFlag === 'true') {
+      setHasTemporaryPassword(true);
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -32,6 +41,14 @@ const SettingsUsers = () => {
       setSuccess('Votre mot de passe a été réinitialisé avec succès.');
       setNewPassword('');
       setConfirmPassword('');
+      
+      // Clear temporary password flag and redirect to dashboard
+      if (hasTemporaryPassword) {
+        localStorage.removeItem('has_temporary_password');
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 2000);
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Erreur lors de la réinitialisation du mot de passe.');
     } finally {
@@ -43,10 +60,28 @@ const SettingsUsers = () => {
     <div className="profile-container">
       <div className="profile-header">
         <h1 className="profile-title"><BiLock style={{verticalAlign: 'middle'}} /> Réinitialiser le mot de passe</h1>
-        <p className="profile-subtitle">Changez votre mot de passe en toute sécurité</p>
+        <p className="profile-subtitle">
+          {hasTemporaryPassword 
+            ? "Vous devez changer votre mot de passe temporaire avant de continuer" 
+            : "Changez votre mot de passe en toute sécurité"
+          }
+        </p>
       </div>
-      <div className="profile-card" style={{maxWidth: 800, margin: '0 auto', padding: '2.5rem 2rem'}}>
-        <form className="settings-form" onSubmit={handleSubmit}>
+              <div className="profile-card" style={{maxWidth: 800, margin: '0 auto', padding: '2.5rem 2rem'}}>
+          {hasTemporaryPassword && (
+            <div style={{
+              backgroundColor: '#fef3c7',
+              border: '1px solid #f59e0b',
+              borderRadius: '8px',
+              padding: '16px',
+              marginBottom: '24px',
+              color: '#92400e'
+            }}>
+              <strong>⚠️ Attention :</strong> Vous utilisez actuellement un mot de passe temporaire. 
+              Vous devez le changer.
+            </div>
+          )}
+          <form className="settings-form" onSubmit={handleSubmit}>
           <div className="form-group">
             <label className="form-label">Nouveau mot de passe</label>
             <input
