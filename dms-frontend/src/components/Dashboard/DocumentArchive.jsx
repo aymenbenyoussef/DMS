@@ -1985,8 +1985,8 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
               </div>
             </div>
           ) : (
-            <div className="table-responsive documents-table-container">
-              <table className="table table-hover stylish-table" >
+            <div className="table-responsive documents-table-container" style={{ maxHeight: '600px', overflowY: 'auto' }}>
+              <table className="table table-hover stylish-table" style={{ width: '100%' }}>
                 <thead className="table-header-sticky">
                   <tr>
                       <th style={{ width: '20px', minWidth: '20px', maxWidth: '20px' }}>
@@ -2526,6 +2526,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                           onClick={() => setActiveTab('report')}
                           style={{
                             border: 'none',
+                            alignItems: 'center',
                             backgroundColor: 'transparent',
                             color: activeTab === 'report' ? '#2563eb' : '#6b7280',
                             fontWeight: activeTab === 'report' ? '600' : '400',
@@ -2534,7 +2535,8 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                           }}
                         >
                           <i className="bi bi-file-earmark-pdf me-2"></i>
-                        {previewTitle.includes('_rapport.pdf') ? 'Rapport' : 'Document'}
+                          {previewTitle.includes('_rapport.pdf') ? 'Rapport' : 'Document'}
+                        
                         </button>
                       </li>
                       <li className="nav-item">
@@ -2543,6 +2545,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                           onClick={() => setActiveTab('ocr')}
                           style={{
                             border: 'none',
+                            alignItems: 'center',
                             backgroundColor: 'transparent',
                             color: activeTab === 'ocr' ? '#2563eb' : '#6b7280',
                             fontWeight: activeTab === 'ocr' ? '600' : '400',
@@ -2561,6 +2564,8 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                           onClick={() => setActiveTab('actions')}
                           style={{
                             border: 'none',
+                            alignItems: 'center',
+                            
                             backgroundColor: 'transparent',
                             color: activeTab === 'actions' ? '#2563eb' : '#6b7280',
                             fontWeight: activeTab === 'actions' ? '600' : '400',
@@ -2569,7 +2574,8 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                           }}
                         >
                           <i className="bi bi-file-earmark me-2"></i>
-                          File
+                          <div style={{textAlign: 'center'}}>File</div>
+                          
                         </button>
                       </li>
                     )}
@@ -2882,7 +2888,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                       borderTop: '1px solid #e5e7eb'
                     }}>
                       <button
-                        className="btn btn-blue"
+                        className="btn "
                         onClick={handleContextDownload}
                         style={{
                           width: '100%',
@@ -2893,7 +2899,9 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          gap: '8px'
+                          gap: '8px',
+                          backgroundColor: '#198754',
+                          color: 'white'
                         }}
                       >
                         <i className="bi bi-download"></i>
@@ -2901,13 +2909,14 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                       </button>
                       
                       <button
-                        className="btn btn-outline-primary"
+                        className="btn "
                         onClick={() => {
                           setIsPreviewModalOpen(false); // Close the voir modal first
                           handleSendEmail(currentDocument); // Then open the email modal
                         }}
                         style={{
                           width: '100%',
+                          marginBottom: '12px',
                           padding: '12px',
                           fontSize: '14px',
                           fontWeight: 500,
@@ -2915,21 +2924,21 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                           alignItems: 'center',
                           justifyContent: 'center',
                           gap: '8px',
-                          backgroundColor: 'transparent',
-                          border: '1px solid #2563eb',
-                          color: '#2563eb'
+                          backgroundColor: '#2563eb',
+                          
+                          color: 'white'
                         }}
                         onMouseEnter={(e) => {
                           e.target.style.backgroundColor = '#2563eb';
                           e.target.style.color = 'white';
                         }}
                         onMouseLeave={(e) => {
-                          e.target.style.backgroundColor = 'transparent';
-                          e.target.style.color = '#2563eb';
+                          e.target.style.backgroundColor = '#2563eb';
+                          e.target.style.color = 'white';
                         }}
                       >
                         <i className="bi bi-send"></i>
-                        Envoyer
+                        Envoyer par email
                       </button>
                     </div>
                   </>

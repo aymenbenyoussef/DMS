@@ -1689,7 +1689,7 @@ class DatabaseManager:
 
     def search_documents_filtered(self, company_id=None, doctype_id=None, is_invoice=None, filename_search=None):
         query = """
-            SELECT d.id, d.filename, c.name as company_name, dt.name as doctype_name, d.is_invoice
+            SELECT d.id, d.filename, d.company_id, d.doctype_id, c.name as company_name, dt.name as doctype_name, d.is_invoice
             FROM documents d
             LEFT JOIN companies c ON d.company_id = c.id
             LEFT JOIN doctype dt ON d.doctype_id = dt.id
