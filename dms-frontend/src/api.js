@@ -294,7 +294,10 @@ const ocr = {
 
 // Group management endpoints
 const groups = {
-  getAll: () => API.get('/groups'),
+  getAll: (companyId = null) => {
+    const params = companyId ? `?company_id=${companyId}` : '';
+    return API.get(`/groups${params}`);
+  },
   create: (groupData) => API.post('/groups', groupData),
   update: (groupId, groupData) => API.put(`/groups/${groupId}`, groupData),
   delete: (groupId) => API.delete(`/groups/${groupId}`),

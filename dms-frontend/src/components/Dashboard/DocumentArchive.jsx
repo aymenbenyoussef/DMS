@@ -223,8 +223,10 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
 
   // Function to fetch groups
   const fetchGroups = async () => {
+    if (!selectedCompany) return;
+    
     try {
-      const response = await API.groups.getAll();
+      const response = await API.groups.getAll(selectedCompany.id);
       setGroups(response.data || []);
     } catch (error) {
       console.error('Error loading groups', error);
@@ -360,9 +362,17 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
       return;
     }
 
+    if (!selectedCompany) {
+      setGroupError('Aucune compagnie sélectionnée');
+      return;
+    }
+
     try {
       // Create the group first
-      const createResponse = await API.groups.create({ name: newGroupName.trim() });
+      const createResponse = await API.groups.create({ 
+        name: newGroupName.trim(),
+        company_id: selectedCompany.id
+      });
       const newGroupId = createResponse.data.group_id;
 
       // Add documents to the group if any are selected

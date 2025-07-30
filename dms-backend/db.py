@@ -215,7 +215,9 @@ class DatabaseManager:
                     name VARCHAR(255) NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     created_by INT,
-                    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+                    company_id INT,
+                    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+                    FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
                 )
             """)
 
@@ -258,6 +260,17 @@ class DatabaseManager:
 
             # Update existing documents to have flag = TRUE
             cursor.execute("UPDATE documents SET flag = TRUE WHERE flag IS NULL")
+
+            # Add company_id column to existing groups table if it doesn't exist
+            try:
+                cursor.execute("ALTER TABLE groups ADD COLUMN company_id INT")
+                cursor.execute("ALTER TABLE groups ADD CONSTRAINT fk_groups_company_id FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE")
+                print("Added company_id column to groups table")
+            except Error as e:
+                if "Duplicate column name" in str(e):
+                    print("company_id column already exists in groups table")
+                else:
+                    print(f"Error adding company_id column: {e}")
 
             # Create default users if they don\'t exist
             self.create_default_users()
@@ -1449,21 +1462,18 @@ class DatabaseManager:
         return result[0]['rapport'] if result and result[0]['rapport'] else None
 
     # Group management methods
-    def create_group(self, name, created_by):
-        """Create a new group"""
-        try:
-            query = "INSERT INTO groups (name, created_by) VALUES (%s, %s)"
-            return self.execute_query(query, (name, created_by))
-        except Exception as e:
-            raise Exception(f"Error creating group: {str(e)}")
+    def create_group(self, name, created_by, company_id=None):
+        query = "INSERT INTO groups (name, created_by, company_id) VALUES (%s, %s, %s)"
+        return self.execute_query(query, (name, created_by, company_id))
 
-    def get_all_groups(self):
-        """Get all groups"""
-        try:
+    def get_all_groups(self, company_id=None):
+        """Get all groups, optionally filtered by company_id"""
+        if company_id:
+            query = "SELECT * FROM groups WHERE company_id = %s ORDER BY name"
+            return self.execute_query(query, (company_id,), fetch=True)
+        else:
             query = "SELECT * FROM groups ORDER BY name"
             return self.execute_query(query, fetch=True)
-        except Exception as e:
-            raise Exception(f"Error fetching groups: {str(e)}")
 
     def get_group_by_id(self, group_id):
         """Get group by ID"""
@@ -1474,14 +1484,22 @@ class DatabaseManager:
         except Exception as e:
             raise Exception(f"Error fetching group: {str(e)}")
 
-    def update_group(self, group_id, name):
-        """Update group name"""
-        try:
-            query = "UPDATE groups SET name = %s WHERE id = %s"
-            self.execute_query(query, (name, group_id))
-            return True
-        except Exception as e:
-            raise Exception(f"Error updating group: {str(e)}")
+    def update_group(self, group_id, name=None, company_id=None):
+        """Update group"""
+        updates = []
+        params = []
+        
+        if name is not None:
+            updates.append("name = %s")
+            params.append(name)
+        if company_id is not None:
+            updates.append("company_id = %s")
+            params.append(company_id)
+        
+        if updates:
+            params.append(group_id)
+            query = f"UPDATE groups SET {', '.join(updates)} WHERE id = %s"
+            self.execute_query(query, params)
 
     def delete_group(self, group_id):
         """Delete a group and all its document associations"""

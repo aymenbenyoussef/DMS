@@ -2257,9 +2257,12 @@ def get_companies_by_datatype_route(datatype_id):
 @app.route('/groups', methods=['GET'])
 @jwt_required()
 def get_groups():
-    """Get all groups"""
+    """Get all groups, optionally filtered by company_id"""
     try:
-        groups = db.get_all_groups()
+        # Get company_id from query parameters
+        company_id = request.args.get('company_id', type=int)
+        
+        groups = db.get_all_groups(company_id=company_id)
         return jsonify(groups), 200
     except Exception as e:
         return jsonify({"msg": str(e)}), 500
@@ -2276,13 +2279,14 @@ def create_group():
         return jsonify({"msg": "Group name is required"}), 400
     
     name = data['name'].strip()
+    company_id = data.get('company_id')  # Get company_id from request data
     
     try:
         # Check if group name already exists
         if db.check_group_name_exists(name):
             return jsonify({"msg": "A group with this name already exists"}), 400
         
-        group_id = db.create_group(name, current_user_id)
+        group_id = db.create_group(name, current_user_id, company_id)
         return jsonify({
             "msg": "Group created successfully",
             "group_id": group_id
@@ -2299,6 +2303,7 @@ def update_group(group_id):
         return jsonify({"msg": "Group name is required"}), 400
     
     name = data['name'].strip()
+    company_id = data.get('company_id')  # Get company_id from request data
     
     try:
         # Check if group exists
@@ -2310,11 +2315,8 @@ def update_group(group_id):
         if db.check_group_name_exists(name, exclude_id=group_id):
             return jsonify({"msg": "A group with this name already exists"}), 400
         
-        success = db.update_group(group_id, name)
-        if success:
-            return jsonify({"msg": "Group updated successfully"}), 200
-        else:
-            return jsonify({"msg": "Failed to update group"}), 500
+        db.update_group(group_id, name=name, company_id=company_id)
+        return jsonify({"msg": "Group updated successfully"}), 200
     except Exception as e:
         return jsonify({"msg": str(e)}), 500
 
