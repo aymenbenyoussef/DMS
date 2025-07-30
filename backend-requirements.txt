@@ -20,6 +20,7 @@ Pillow
 pdf2image
 python-dateutil
 reportlab
+python-dotenv
 
 # System dependencies (install separately):
 # - Tesseract OCR (https://github.com/tesseract-ocr/tesseract)

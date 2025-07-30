@@ -349,8 +349,24 @@ const TempDocumentArchive = ({ user }) => {
         aValue = parseInt(aValue) || 0;
         bValue = parseInt(bValue) || 0;
       } else if (key === 'created_at') {
-        aValue = new Date(aValue || 0);
-        bValue = new Date(bValue || 0);
+        // Handle date sorting properly
+        const aDate = aValue ? new Date(aValue) : new Date(0);
+        const bDate = bValue ? new Date(bValue) : new Date(0);
+        
+        // Check if dates are valid
+        if (isNaN(aDate.getTime()) && isNaN(bDate.getTime())) {
+          aValue = 0;
+          bValue = 0;
+        } else if (isNaN(aDate.getTime())) {
+          aValue = 0;
+          bValue = bDate.getTime();
+        } else if (isNaN(bDate.getTime())) {
+          aValue = aDate.getTime();
+          bValue = 0;
+        } else {
+          aValue = aDate.getTime();
+          bValue = bDate.getTime();
+        }
       } else {
         aValue = String(aValue || '').toLowerCase();
         bValue = String(bValue || '').toLowerCase();
