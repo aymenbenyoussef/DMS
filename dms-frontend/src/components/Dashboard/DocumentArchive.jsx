@@ -1652,8 +1652,18 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
             <div className="d-flex gap-2" style={{ marginTop: '0.5rem' }}>
         {(selectedDoctype || selectedCompany) && (
           <button 
-                  className="btn btn-blue btn-sm d-flex align-items-center"
+                  className="btn  btn-sm d-flex align-items-center"
             onClick={openUploadModal}
+            style={{
+              backgroundColor: '#c6400e',
+              borderColor: '#c6400e',
+              color: 'white',
+              width: '135px',
+              height: '45px',
+              fontSize: '16px',
+              fontWeight: '500',
+              justifyContent: 'center'
+            }}
           >
             <i className="bi bi-plus me-1"></i> Upload File
           </button>
@@ -1949,9 +1959,14 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                 </button>
                 <div style={{ position: 'relative' }}>
                   <button 
-                    className="btn btn-blue btn-sm d-flex align-items-center"
+                    className="btn btn-sm d-flex align-items-center"
                     onClick={() => setExportMenuOpen(v => !v)}
-                    style={{ backgroundColor: '#1976d2', color: 'white' }}
+                    style={{ 
+                      backgroundColor: '#fff', 
+                      borderColor: '#27ae60', 
+                      color: '#27ae60',
+                      border: '2px solid #27ae60'
+                    }}
                   >
                     <i className="bi bi-download me-1"></i> Export ▼
                   </button>
@@ -1960,7 +1975,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                       position: 'absolute',
                       top: '110%',
                       right: 0,
-                      background: '#fff',
+                      backgroundcolor: '#fff',
                       border: '1px solid #ddd',
                       borderRadius: '4px',
                       boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
