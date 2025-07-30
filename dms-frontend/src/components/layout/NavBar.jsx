@@ -1,48 +1,34 @@
-import React, { useState, useRef, useEffect, useContext } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useState, useEffect, useRef, useContext } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { BiData, BiBarChart, BiGroup, BiCog, BiFile, BiLogOut, BiChevronDown, BiUser, BiBuilding, BiTag, BiReceipt, BiCollection, BiFolder, BiBuildings, BiSearch, BiLock } from 'react-icons/bi';
+import api from '../../api';
 import { AppContext } from '../context';
-import './NavBar.css';
-import { BiServer } from 'react-icons/bi';
-import {
-  BiFolder,
-  BiSearch,
-  BiBarChart,
-  BiGroup,
-  BiCog,
-  BiLogOut,
-  BiChevronDown,
-  BiBuildings,
-  BiCollection,
-  BiFile,
-  BiData,
-  BiLock
-} from 'react-icons/bi';
 import DmsTempUploadModal from '../Dashboard/DmsTempUploadModal';
-import api from '../../api'; 
+import './NavBar.css';
 
 const NavBar = ({ user, onLogout }) => {
-  const { systemName } = useContext(AppContext);
+  const { systemName, setSelectedCompany: setContextCompany, setSelectedDoctype: setContextDoctype } = useContext(AppContext);
   const [showAdminTools, setShowAdminTools] = useState(false);
   const [showDmsTempModal, setShowDmsTempModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCompany, setSelectedCompany] = useState('');
-  const [selectedDoctype, setSelectedDoctype] = useState('');
-  const [isInvoice, setIsInvoice] = useState(''); // 'true', 'false', or ''
-  const [companies, setCompanies] = useState([]);
-  const [doctypes, setDoctypes] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-  const location = useLocation();
+  const navigate = useNavigate();
   const adminToolsRef = useRef(null);
   const searchDropdownRef = useRef(null);
   const searchTimeoutRef = useRef(null);
+  const [companies, setCompanies] = useState([]);
+  const [doctypes, setDoctypes] = useState([]);
+  const [selectedCompany, setSelectedCompany] = useState('');
+  const [selectedDoctype, setSelectedDoctype] = useState('');
+  const [isInvoice, setIsInvoice] = useState('');
   
   // Admin tools links grouped by category
   const adminToolsCategories = {
     systemConfig: {
       title: 'Système de configuration',
-      icon: <BiServer size={16} />,
+      icon: <BiGroup size={16} />,
       items: [
         { icon: <BiGroup size={16} />, label: 'Utilisateurs', link: '/admin/users' },
         { icon: <BiCollection size={16} />, label: 'Types de données', link: '/doctypes' },
@@ -65,7 +51,7 @@ const NavBar = ({ user, onLogout }) => {
   const { resetSelection } = useContext(AppContext);
   
   const isActive = (path) => {
-    return location.pathname === path ? 'active' : '';
+    return navigate.pathname === path ? 'active' : '';
   };
 
   // Close dropdowns when clicking outside
@@ -248,8 +234,20 @@ const NavBar = ({ user, onLogout }) => {
                 ) : searchResults.length > 0 ? (
                   searchResults.map(doc => (
                     <div key={doc.id} className="search-result-item" onClick={() => {
+                      // Find the company and doctype objects
+                      const company = companies.find(c => c.id === doc.company_id);
+                      const doctype = doctypes.find(d => d.id === doc.doctype_id);
+                      
+                      // Update context with selected company and doctype
+                      if (company) {
+                        setContextCompany(company);
+                      }
+                      if (doctype) {
+                        setContextDoctype(doctype);
+                      }
+                      
                       // Navigate to document archive with the document selected
-                      window.location.href = `/?company=${doc.company_id}&doctype=${doc.doctype_id}`;
+                      navigate(`/?company=${doc.company_id}&doctype=${doc.doctype_id}`);
                       setShowSearchResults(false);
                       setSearchTerm('');
                     }}>

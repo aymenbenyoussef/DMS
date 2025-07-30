@@ -157,7 +157,7 @@
 .folder-list {
   list-style: none;
   padding: 0;
-  margin: 5px 0 5px 40px;
+  margin: 5px 0 5px 5px;
   
 }
 
@@ -178,7 +178,7 @@
   
   align-items: center;
   gap: 12px;
-  padding-left: 60px;
+  padding-left: 5px;
  padding-top: 8px;
  padding-bottom: 8px;
   font-weight: 600;
@@ -238,4 +238,35 @@
 .no-results.small {
   padding: 0.5rem 1rem;
   font-size: 0.9rem;
+}
+
+/* Inactive items styling for admin/superuser */
+.folder-item.inactive {
+  opacity: 0.6;
+  color: #6b7280;
+  font-style: italic;
+}
+
+.folder-item.inactive:hover {
+  background-color: #f3f4f6;
+  opacity: 0.8;
+}
+
+.folder-item.inactive .company-icon,
+.folder-item.inactive .folder-icon {
+  opacity: 0.6;
+}
+
+.folder-item.inactive .folder-name,
+.folder-item.inactive .company-name {
+  color: #6b7280;
+}
+
+/* Add a visual indicator for inactive items */
+.folder-item.inactive::after {
+  content: " (inactif)";
+  font-size: 0.75rem;
+  color: #ef4444;
+  font-style: normal;
+  margin-left: 4px;
 }
