@@ -2131,8 +2131,10 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
               </div>
             </div>
           ) : (
-            <div className="table-responsive documents-table-container" style={{ maxHeight: '600px', overflowY: 'auto' }}>
-              <table className="table table-hover stylish-table" style={{ width: '100%' }}>
+            <div className="documents-table-container">
+              {/* Fixed Header */}
+              <div className="table-header-fixed">
+                <table className="table table-hover stylish-table" style={{ width: '100%', marginBottom: 0 }}>
                 <thead className="table-header-sticky">
                   <tr>
                       <th style={{ width: '20px', minWidth: '20px', maxWidth: '20px' }}>
@@ -2243,6 +2245,12 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                     </th>
                   </tr>
                 </thead>
+                </table>
+              </div>
+
+              {/* Scrollable Body */}
+              <div className="table-body-scrollable">
+                <table className="table table-hover stylish-table" style={{ width: '100%', marginBottom: 0 }}>
                 <tbody>
                   {filteredDocuments.length > 0 ? (
                     <>
@@ -2282,25 +2290,17 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                             <div 
                               className="dropdown-menu show" 
                               style={{ 
-                                position: 'fixed',
-                                top: 'auto',
-                                right: 'auto',
-                                left: 'auto',
+                                position: 'absolute',
+                                top: '100%',
+                                right: 0,
                                 zIndex: 9999,
                                 minWidth: '150px',
                                 fontSize: '14px',
                                 boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                                 border: '1px solid #dee2e6',
                                 borderRadius: '6px',
-                                backgroundColor: 'white'
-                              }}
-                              ref={(el) => {
-                                if (el) {
-                                  const button = el.previousElementSibling;
-                                  const rect = button.getBoundingClientRect();
-                                  el.style.top = `${rect.bottom + 5}px`;
-                                  el.style.left = `${rect.right - el.offsetWidth}px`;
-                                }
+                                backgroundColor: 'white',
+                                marginTop: '2px'
                               }}
                             >
                               <button 
@@ -2385,12 +2385,49 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                       <td style={{ textAlign: 'right' }}>{formatCurrency(doc.total_ttc)}</td>
                     </tr>
                   ))}
-                
+                  </>
+            ) : (
+                      <tr>
+                        <td colSpan="12" className="text-center py-5">
+                          <div className="empty-state">
+                            <i className="bi bi-search text-muted mb-3" style={{ fontSize: '3rem' }}></i>
+                            <p className="text-muted mb-3">{getNoDataMessage()}</p>
+                            {hasActiveFilters() ? (
+                              <button 
+                                className="btn btn-blue btn-sm"
+                                onClick={handleResetFilters}
+                              >
+                                <i className="bi bi-arrow-clockwise me-1"></i>
+                                Réinitialiser les filtres
+                              </button>
+                            ) : (
+                              <button 
+                                className="btn btn-blue btn-sm"
+                                onClick={openUploadModal}
+                              >
+                                <i className="bi bi-download me-1"></i>
+                                Télécharger
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+            )}       
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Fixed Footer */}
+              {filteredDocuments.length > 0 && (
+                <div className="table-footer-fixed">
+                  <table className="table table-hover stylish-table" style={{ width: '100%', marginBottom: 0 }}>
+                    <tbody>
                   <tr style={{ 
                     backgroundColor: '#f8f9fa', 
                     borderTop: '2px solid #dee2e6',
                     fontWeight: 'bold'
                   }}>
+                        <td></td>
                     <td></td>
                     <td></td>
                     <td></td>
@@ -2433,37 +2470,10 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                       )}
                     </td>
                   </tr>
-                
-                    </>
-          ) : (
-                    <tr>
-                      <td colSpan="12" className="text-center py-5">
-                        <div className="empty-state">
-                          <i className="bi bi-search text-muted mb-3" style={{ fontSize: '3rem' }}></i>
-                          <p className="text-muted mb-3">{getNoDataMessage()}</p>
-                          {hasActiveFilters() ? (
-                            <button 
-                              className="btn btn-blue btn-sm"
-                              onClick={handleResetFilters}
-                            >
-                              <i className="bi bi-arrow-clockwise me-1"></i>
-                              Réinitialiser les filtres
-                            </button>
-                          ) : (
-                            <button 
-                              className="btn btn-blue btn-sm"
-                              onClick={openUploadModal}
-                            >
-                              <i className="bi bi-download me-1"></i>
-                              Télécharger
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-          )}       
                 </tbody>
               </table>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -3143,67 +3153,66 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
 
       {/* Email Sending Modal */}
       {isEmailModalOpen && (
-        <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 2000 }}>
-          <div className="modal-dialog modal-lg" style={{ height: '90vh', maxHeight: '90vh', display: 'flex', alignItems: 'center' }}>
-            <div className="modal-content" style={{ height: '90vh', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
-              <div className="modal-header">
-                <h5 className="modal-title">
-                  <i className="bi bi-envelope me-2"></i>
-                  Envoyer le document par email
-                </h5>
+        <div className="email-modal-overlay">
+          <div className="email-modal">
+            <div className="email-modal-header">
+              <div className="email-modal-title">
+                <i className="bi bi-envelope"></i>
+                <span>Envoyer le document par email</span>
+              </div>
                 <button 
                   type="button" 
-                  className="btn-close" 
+                className="email-modal-close" 
                   onClick={handleCloseEmailModal}
-                ></button>
+              >
+                <i className="bi bi-x-lg" style={{fontSize: '1.5rem',fontFamily: 'Arial, sans-serif'}}>x</i>
+              </button>
               </div>
-              <div className="modal-body" style={{ overflowY: 'auto', flex: 1, minHeight: 0 }}>
+            
+            <div className="email-modal-body">
                 {currentDocument && (
                   <>
-                    {/* Document Information */}
-                    <div className="card mb-4" style={{height:'120px'}}>
-                      <div className="card-body">
-                        <h6 className="card-title">Document à envoyer</h6>
-                        <div className="d-flex align-items-center">
-                          <i className={`bi ${getFileIconClass(currentDocument.filename)} me-2`}></i>
-                          <div>
-                            <div className="fw-medium">{displayedEmailFilename || currentDocument.filename}</div>
-                            <small className="text-muted">
+                  {/* Document Information Card */}
+                  <div className="email-document-card">
+                    
+                    <div className="email-document-info">
+                      <h6 className="email-document-title">Document à envoyer</h6>
+                      <div className="email-document-name">{displayedEmailFilename || currentDocument.filename}</div>
+                      <div className="email-document-meta">
                               {formatFileSize(currentDocument.file_size || 0)} • 
                               Créé le {currentDocument.created_at ? new Date(currentDocument.created_at).toLocaleDateString('fr-FR') : 'N/A'}
-                            </small>
-                          </div>
                         </div>
                       </div>
                     </div>
 
                     {/* Email Type Selection */}
-                    <div className="mb-4">
-                      <label className="form-label">
+                  <div className="email-section">
+                    <div className="email-section-header">
+                      <label className="email-section-label">
                         Type de fichier à envoyer
                         {selectedEmailTypes.length > 0 && (
-                          <span className="badge bg-primary ms-2">{selectedEmailTypes.length} sélectionné(s)</span>
+                          <span className="email-selection-badge">{selectedEmailTypes.length} sélectionné(s)</span>
                         )}
                       </label>
-                      <div className="mb-2">
+                      <div className="email-section-actions">
                         <button 
                           type="button" 
-                          className="btn btn-sm btn-primary me-2"
-                          style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' , backgroundColor:'blue'}}
+                          className="email-action-btn"
                           onClick={() => setSelectedEmailTypes(availableEmailTypes.map(type => type.type))}
                         >
                           Tout sélectionner
                         </button>
                         <button 
                           type="button" 
-                          className="btn btn-sm btn-primary"
-                          style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' , backgroundColor:'blue'}}
+                          className="email-action-btn"
                           onClick={() => setSelectedEmailTypes([])}
                         >
                           Tout désélectionner
                         </button>
                       </div>
-                      <div className="row g-2">
+                    </div>
+                    
+                    <div className="email-type-grid">
                         {availableEmailTypes.map((type) => {
                           let fileLabel = '';
                           if (type.type === 'rapport' && currentDocument.rapport) {
@@ -3214,14 +3223,10 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                             fileLabel = currentDocument.filename;
                           }
                           return (
-                            <div key={type.type} className="col-md-4">
-                              <div className="form-check">
+                          <div key={type.type} className="email-type-item">
+                            <label className="email-type-checkbox">
                                 <input 
-                                  className="form-check-input" 
                                   type="checkbox" 
-                                  name="emailType"
-                                  id={`emailType-${type.type}`}
-                                  value={type.type}
                                   checked={selectedEmailTypes.includes(type.type)}
                                   onChange={(e) => {
                                     if (e.target.checked) {
@@ -3231,14 +3236,11 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                                     }
                                   }}
                                 />
-                                <label className="form-check-label" htmlFor={`emailType-${type.type}`}> 
+                              <span className="email-type-label">
                                   <strong>{type.label}</strong>
-                                  <br />
-                                  <span style={{ display: 'block', color: '#64748b', fontSize: '12px', marginTop: '2px' }}>
-                                    Fichier : {fileLabel}
+                                <span className="email-type-file">Fichier : {fileLabel}</span>
                                   </span>
                                 </label>
-                              </div>
                             </div>
                           );
                         })}
@@ -3246,63 +3248,68 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                     </div>
 
                     {/* Recipients Selection */}
-                    <div className="mb-4">
-                      <label className="form-label">Destinataires</label>
-                      <div className="border rounded p-3" style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                        {emailUsers.length > 0 ? (
-                          <>
-                            <div className="mb-2">
+                  <div className="email-section">
+                    <div className="email-section-header">
+                      <label className="email-section-label">Destinataires</label>
+                      <div className="email-section-actions">
                               <button 
                                 type="button" 
-                                className="btn btn-sm btn-primary me-2"
-                                style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' , backgroundColor:'blue'}}
+                          className="email-action-btn"
                                 onClick={() => setSelectedRecipients(emailUsers.map(u => u.email))}
                               >
                                 Tout sélectionner
                               </button>
                               <button 
                                 type="button" 
-                                className="btn btn-sm btn-primary"
-                                style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' , backgroundColor:'blue'}}
+                          className="email-action-btn"
                                 onClick={() => setSelectedRecipients([])}
                               >
                                 Tout désélectionner
                               </button>
                             </div>
+                    </div>
+                    
+                    <div className="email-recipients-container">
+                      {emailUsers.length > 0 ? (
+                        <>
+                          <div className="email-recipients-list">
                             {emailUsers.map((user) => (
-                              <div key={user.id} className="form-check">
+                              <div key={user.id} className="email-recipient-item">
+                                <label className="email-recipient-checkbox">
                                 <input 
-                                  className="form-check-input" 
                                   type="checkbox" 
-                                  id={`user-${user.id}`}
                                   checked={selectedRecipients.includes(user.email)}
                                   onChange={() => handleRecipientToggle(user.email)}
                                 />
-                                <label className="form-check-label" htmlFor={`user-${user.id}`}>
+                                  <span className="email-recipient-info">
                                   <strong>{user.username} {user.surname}</strong>
-                                  <br />
-                                  <small className="text-muted">{user.email} • {user.role}</small>
+                                    <span className="email-recipient-details">{user.email} • {user.role}</span>
+                                  </span>
                                 </label>
                               </div>
                             ))}
-                          </>
-                        ) : (
-                          <p className="text-muted mb-0">Aucun utilisateur disponible</p>
-                        )}
                       </div>
                       {selectedRecipients.length > 0 && (
-                        <small className="text-muted">
+                            <div className="email-selection-summary">
                           {selectedRecipients.length} destinataire(s) sélectionné(s)
-                        </small>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <div className="email-no-recipients">
+                          <i className="bi bi-exclamation-circle"></i>
+                          Aucun utilisateur disponible
+                        </div>
                       )}
+                    </div>
                     </div>
 
                     {/* Email Subject */}
-                    <div className="mb-3">
-                      <label className="form-label">Objet</label>
+                  <div className="email-section">
+                    <label className="email-section-label">Objet</label>
                       <input 
                         type="text" 
-                        className="form-control"
+                      className="email-input"
                         value={emailSubject}
                         onChange={(e) => setEmailSubject(e.target.value)}
                         placeholder="Objet de l'email"
@@ -3310,10 +3317,10 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                     </div>
 
                     {/* Email Message */}
-                    <div className="mb-4">
-                      <label className="form-label">Message (optionnel)</label>
+                  <div className="email-section">
+                    <label className="email-section-label">Message (optionnel)</label>
                       <textarea 
-                        className="form-control"
+                      className="email-textarea"
                         rows="4"
                         value={emailMessage}
                         onChange={(e) => setEmailMessage(e.target.value)}
@@ -3323,42 +3330,48 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
 
                     {/* Error and Success Messages */}
                     {emailError && (
-                      <div className="alert alert-danger">{emailError}</div>
+                    <div className="email-error-message">
+                      <i className="bi bi-exclamation-triangle"></i>
+                      {emailError}
+                    </div>
                     )}
                     {emailSuccess && (
-                      <div className="alert alert-success">{emailSuccess}</div>
+                    <div className="email-success-message">
+                      <i className="bi bi-check-circle"></i>
+                      {emailSuccess}
+                    </div>
                     )}
                   </>
                 )}
               </div>
               
-              <div className="modal-footer">
+            <div className="email-modal-footer">
                 <button 
                   type="button" 
-                  className="btn btn-secondary"
+                className="email-btn email-btn-secondary"
                   onClick={handleCloseEmailModal}
                   disabled={isEmailSending}
-                  style={{backgroundColor: 'gray'}}
                 >
                   Annuler
                 </button>
                 <button 
                   type="button" 
-                  className="btn btn-primary"
+                className="email-btn email-btn-primary"
                   onClick={handleConfirmSendEmail}
                   disabled={isEmailSending || selectedRecipients.length === 0 || selectedEmailTypes.length === 0}
-                  
                 >
                   {isEmailSending ? (
-                    'Envoi en cours...'
+                  <>
+                    <i className="bi bi-arrow-clockwise email-loading-icon"></i>
+                    Envoi en cours...
+                  </>
                   ) : (
                     <>
-                      <i className="bi bi-send me-2"></i>
+                    <i className="bi bi-send"></i>
                       Envoyer l'email
                     </>
                   )}
                 </button>
-              </div>
             </div>
           </div>
         </div>
@@ -3562,7 +3575,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                   </div>
                 </div>
               ) : (
-                <div className="table-responsive documents-table-container" style={{ height: '100%', overflow: 'auto' }}>
+                <div className="table-responsive documents-table-container" style={{  overflow: 'auto' }}>
                   <table className="table table-hover stylish-table">
                     <thead className="table-header-sticky">
                       <tr>
@@ -3713,25 +3726,17 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                                 <div 
                                   className="dropdown-menu show" 
                                   style={{ 
-                                    position: 'fixed',
-                                    top: 'auto',
-                                    right: 'auto',
-                                    left: 'auto',
+                                    position: 'absolute',
+                                    top: '100%',
+                                    right: 0,
                                     zIndex: 9999,
                                     minWidth: '150px',
                                     fontSize: '14px',
                                     boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                                     border: '1px solid #dee2e6',
                                     borderRadius: '6px',
-                                    backgroundColor: 'white'
-                                  }}
-                                  ref={(el) => {
-                                    if (el) {
-                                      const button = el.previousElementSibling;
-                                      const rect = button.getBoundingClientRect();
-                                      el.style.top = `${rect.bottom + 5}px`;
-                                      el.style.left = `${rect.right - el.offsetWidth}px`;
-                                    }
+                                    backgroundColor: 'white',
+                                    marginTop: '2px'
                                   }}
                                 >
                                       <button 
