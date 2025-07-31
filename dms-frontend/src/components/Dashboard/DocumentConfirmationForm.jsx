@@ -55,8 +55,10 @@ const DocumentConfirmationForm = ({
     if (currentCompany?.id) {
       loadDoctypesByCompany(currentCompany.id);
       loadPartners(currentCompany.id);
+      loadGroups(currentCompany.id); // <-- updated
     } else {
       setPartners([]);
+      setGroups([]); // <-- updated
     }
   }, [currentCompany]);
 
@@ -103,10 +105,15 @@ const DocumentConfirmationForm = ({
     }
   };
 
-  const loadGroups = async () => {
+  // Replace loadGroups with company-specific version
+  const loadGroups = async (companyId) => {
+    if (!companyId) {
+      setGroups([]);
+      return;
+    }
     try {
-      const response = await API.groups.getAll();
-      setGroups(response.data);
+      const response = await API.groups.getAll(companyId);
+      setGroups(response.data || []);
     } catch (error) {
       console.error('Error loading groups:', error);
       setGroups([]);
