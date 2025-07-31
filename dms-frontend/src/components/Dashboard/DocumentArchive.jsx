@@ -137,12 +137,14 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
 
   // Dropdown menu states
   const [openDropdownId, setOpenDropdownId] = useState(null);
+  const [dropdownPosition, setDropdownPosition] = useState(null);
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (!event.target.closest('.dropdown')) {
         setOpenDropdownId(null);
+        setDropdownPosition(null);
       }
     };
 
@@ -2157,10 +2159,10 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                       ID <span style={{fontSize:'1em'}}>{sortConfig.key === 'id' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
                     </th>
                     <th>Actions</th>
-                    <th style={{cursor:'pointer', background: sortConfig.key === 'filename' ? '#f0f4fa' : undefined, color: sortConfig.key === 'filename' ? '#1976d2' : undefined}} onClick={() => handleSort('filename')}>
+                    <th style={{cursor:'pointer', background: sortConfig.key === 'filename' ? '#f0f4fa' : undefined, color: sortConfig.key === 'filename' ? '#1976d2' : undefined, width: '50px', minWidth: '50px', maxWidth: '150px'}} onClick={() => handleSort('filename')}>
                       Document <span style={{fontSize:'1em'}}>{sortConfig.key === 'filename' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
                     </th>
-                    <th>Facturable</th>
+                    <th>Facture</th>
                     <th>Rapport</th>
                     <th style={{cursor:'pointer', background: sortConfig.key === 'partner_name' ? '#f0f4fa' : undefined, color: sortConfig.key === 'partner_name' ? '#1976d2' : undefined}} onClick={() => handleSort('partner_name')}>
                       Partner <span style={{fontSize:'1em'}}>{sortConfig.key === 'partner_name' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
@@ -2177,7 +2179,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                     <th style={{cursor:'pointer', background: sortConfig.key === 'total_ht' ? '#f0f4fa' : undefined, color: sortConfig.key === 'total_ht' ? '#1976d2' : undefined}} onClick={() => handleSort('total_ht')}>
                       HT <span style={{fontSize:'1em'}}>{sortConfig.key === 'total_ht' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
                     </th>
-                    <th style={{cursor:'pointer', background: sortConfig.key === 'total_ttc' ? '#f0f4fa' : undefined, color: sortConfig.key === 'total_ttc' ? '#1976d2' : undefined, textAlign: 'right'}} onClick={() => handleSort('total_ttc')}>
+                    <th style={{cursor:'pointer', background: sortConfig.key === 'total_ttc' ? '#f0f4fa' : undefined, color: sortConfig.key === 'total_ttc' ? '#1976d2' : undefined}} onClick={() => handleSort('total_ttc')}>
                       TTC <span style={{fontSize:'1em'}}>{sortConfig.key === 'total_ttc' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
                     </th>
                   </tr>
@@ -2194,13 +2196,14 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                       />
                     </th>
                     <th></th>
-                    <th>
+                    <th style={{ width: '150px', minWidth: '150px', maxWidth: '150px' }}>
                       <input
                         type="text"
                         className="form-control form-control-sm"
                         placeholder="Filter Document..."
                         value={columnFilters.filename}
                         onChange={(e) => handleColumnFilterChange('filename', e.target.value)}
+                        style={{ width: '100%' }}
                       />
                     </th>
                     <th></th>
@@ -2220,7 +2223,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                       <input
                         type="text"
                         className="form-control form-control-sm"
-                        placeholder="Filter TVA... (ex: >100, <50, =25)"
+                        placeholder="Filter TVA"
                         value={columnFilters.tva}
                         onChange={(e) => handleColumnFilterChange('tva', e.target.value)}
                       />
@@ -2229,7 +2232,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                       <input
                         type="text"
                         className="form-control form-control-sm"
-                        placeholder="Filter HT... (ex: >500, <1000, =750)"
+                        placeholder="Filter HT"
                         value={columnFilters.total_ht}
                         onChange={(e) => handleColumnFilterChange('total_ht', e.target.value)}
                       />
@@ -2238,7 +2241,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                       <input
                         type="text"
                         className="form-control form-control-sm"
-                        placeholder="Filter TTC... (ex: >600, <1200, =900)"
+                        placeholder="Filter TTC"
                         value={columnFilters.total_ttc}
                         onChange={(e) => handleColumnFilterChange('total_ttc', e.target.value)}
                       />
@@ -2274,7 +2277,18 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                           <button 
                             className="btn btn-sm p-1"
                             type="button" 
-                            onClick={() => setOpenDropdownId(openDropdownId === doc.id ? null : doc.id)}
+                            onClick={(e) => {
+                              const rect = e.currentTarget.getBoundingClientRect();
+                              setOpenDropdownId(openDropdownId === doc.id ? null : doc.id);
+                              if (openDropdownId !== doc.id) {
+                                // Store position for dropdown
+                                setDropdownPosition({
+                                  top: rect.bottom + window.scrollY,
+                                  left: rect.right - 150, // 150px is dropdown width
+                                  docId: doc.id
+                                });
+                              }
+                            }}
                             style={{ 
                               background: 'none',
                               border: 'none',
@@ -2290,10 +2304,10 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                             <div 
                               className="dropdown-menu show" 
                               style={{ 
-                                position: 'absolute',
-                                top: '100%',
-                                right: 0,
-                                zIndex: 9999,
+                                position: 'fixed',
+                                top: dropdownPosition?.top || 'auto',
+                                left: dropdownPosition?.left || 'auto',
+                                zIndex: 999999999,
                                 minWidth: '150px',
                                 fontSize: '14px',
                                 boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
@@ -2307,6 +2321,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                                 className="dropdown-item d-flex align-items-center"
                                 onClick={() => { 
                                   setOpenDropdownId(null);
+                                  setDropdownPosition(null);
                                   setIsPreviewModalOpen(false); 
                                   handleSendEmail(doc); 
                                 }}
@@ -2319,6 +2334,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                                 className="dropdown-item d-flex align-items-center"
                                 onClick={() => { 
                                   setOpenDropdownId(null);
+                                  setDropdownPosition(null);
                                   handleEditDocument(doc); 
                                 }}
                                 style={{ padding: '8px 16px', border: 'none', background: 'none', width: '100%', textAlign: 'left' }}
@@ -2331,6 +2347,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                                 className="dropdown-item d-flex align-items-center text-danger"
                                 onClick={() => { 
                                   setOpenDropdownId(null);
+                                  setDropdownPosition(null);
                                   handleDeleteDocument(doc); 
                                 }}
                                 style={{ padding: '8px 16px', border: 'none', background: 'none', width: '100%', textAlign: 'left', color: '#dc3545' }}
@@ -2382,7 +2399,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                       <td>{formatDate(doc.created_at)}</td>
                       <td>{formatCurrency(doc.tva)}</td>
                       <td>{formatCurrency(doc.total_ht)}</td>
-                      <td style={{ textAlign: 'right' }}>{formatCurrency(doc.total_ttc)}</td>
+                      <td>{formatCurrency(doc.total_ttc)}</td>
                     </tr>
                   ))}
                   </>
@@ -2437,33 +2454,33 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                     <td></td>
                     <td></td>
                     <td style={{ 
-                      padding: '12px 16px', 
+                       
                       color: '#dc3545',
                       fontSize: '1.1em',
                       textAlign: 'right'
-                    }}>
+                    }}>Total tva : 
                       {formatCurrency(filteredDocuments
                         .filter(doc => doc.tva && !isNaN(parseFloat(doc.tva)))
                         .reduce((sum, doc) => sum + parseFloat(doc.tva), 0)
                       )}
                     </td>
                     <td style={{ 
-                      padding: '12px 16px', 
+                     
                       color: '#198754',
                       fontSize: '1.1em',
                       textAlign: 'right'
-                    }}>
+                    }}>Total ht :
                       {formatCurrency(filteredDocuments
                         .filter(doc => doc.total_ht && !isNaN(parseFloat(doc.total_ht)))
                         .reduce((sum, doc) => sum + parseFloat(doc.total_ht), 0)
                       )}
                     </td>
                     <td style={{ 
-                      padding: '12px 16px', 
+                      
                       color: '#2563eb',
                       fontSize: '1.1em',
                       textAlign: 'right'
-                    }}>
+                    }}>Total ttc :
                       {formatCurrency(filteredDocuments
                         .filter(doc => doc.total_ttc && !isNaN(parseFloat(doc.total_ttc)))
                         .reduce((sum, doc) => sum + parseFloat(doc.total_ttc), 0)
@@ -3539,35 +3556,36 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
         <div className="fullscreen-modal" onClick={closeFullscreenModal}>
           <div className="fullscreen-modal-content" onClick={(e) => e.stopPropagation()}>
             <button 
-            className="fullscreen-modal-close" // Gardons la classe pour la structure
+              className="fullscreen-modal-close"
               onClick={closeFullscreenModal}
               title="Fermer le plein écran"
               aria-label="Fermer le plein écran"
-            style={{
-              // --- Style personnalisé ---
-              position: 'absolute',
-              top: '15px',
-              right: '15px',
-              background: '#e7f5ff', // Fond bleu très clair
-              border: 'none',
-              borderRadius: '50%',   
-              width: '40px',
-              height: '40px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              color: '#007bff',      // Couleur de l'icône (bleu plus foncé)
-              transition: 'background-color 0.2s ease, transform 0.2s ease'
-            }}
-            // Effet de survol pour une meilleure interaction
-            onMouseOver={e => e.currentTarget.style.backgroundColor = '#d0ebff'}
-            onMouseOut={e => e.currentTarget.style.backgroundColor = '#e7f5ff'}
-          >
-            {/* Remplacez <i className="bi bi-x"></i> par le nouveau composant SVG */}
-            X
+              style={{
+                position: 'absolute',
+                top: '15px',
+                right: '15px',
+                background: '#e7f5ff',
+                border: 'none',
+                borderRadius: '50%',   
+                width: '40px',
+                height: '40px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: '#007bff',
+                transition: 'background-color 0.2s ease, transform 0.2s ease',
+                zIndex: 1001
+              }}
+              onMouseOver={e => e.currentTarget.style.backgroundColor = '#d0ebff'}
+              onMouseOut={e => e.currentTarget.style.backgroundColor = '#e7f5ff'}
+            >
+              X
             </button>
-            <div className="fullscreen-modal-body" style={{ overflow: 'hidden' }}>
+            <div className="fullscreen-modal-body" style={{ 
+              height: '100vh',
+              overflow: 'auto'
+            }}>
               {isLoading ? (
                 <div className="text-center py-5">
                   <div className="spinner-border text-primary" role="status">
@@ -3575,9 +3593,14 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                   </div>
                 </div>
               ) : (
-                <div className="table-responsive documents-table-container" style={{  overflow: 'auto' }}>
+                <div className="table-responsive documents-table-container">
                   <table className="table table-hover stylish-table">
-                    <thead className="table-header-sticky">
+                    <thead className="table-header-sticky" style={{ 
+                      position: 'sticky', 
+                      top: 0, 
+                      zIndex: 1000, 
+                      backgroundColor: 'white'
+                    }}>
                       <tr>
                         <th style={{ width: '20px', minWidth: '20px', maxWidth: '20px' }}>
                           {isGroupMode && (
@@ -3619,7 +3642,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                         <th style={{cursor:'pointer', background: sortConfig.key === 'total_ht' ? '#f0f4fa' : undefined, color: sortConfig.key === 'total_ht' ? '#1976d2' : undefined}} onClick={() => handleSort('total_ht')}>
                           HT <span style={{fontSize:'1em'}}>{sortConfig.key === 'total_ht' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
                         </th>
-                        <th style={{cursor:'pointer', background: sortConfig.key === 'total_ttc' ? '#f0f4fa' : undefined, color: sortConfig.key === 'total_ttc' ? '#1976d2' : undefined, textAlign: 'right'}} onClick={() => handleSort('total_ttc')}>
+                        <th style={{cursor:'pointer', background: sortConfig.key === 'total_ttc' ? '#f0f4fa' : undefined, color: sortConfig.key === 'total_ttc' ? '#1976d2' : undefined}} onClick={() => handleSort('total_ttc')}>
                           TTC <span style={{fontSize:'1em'}}>{sortConfig.key === 'total_ttc' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
                         </th>
                       </tr>
@@ -3662,7 +3685,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                           <input
                             type="text"
                             className="form-control form-control-sm"
-                            placeholder="Filter TVA... (ex: >100, <50, =25)"
+                            placeholder="Filter TVA"
                             value={columnFilters.tva}
                             onChange={(e) => handleColumnFilterChange('tva', e.target.value)}
                           />
@@ -3671,7 +3694,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                           <input
                             type="text"
                             className="form-control form-control-sm"
-                            placeholder="Filter HT... (ex: >500, <1000, =750)"
+                            placeholder="Filter HT"
                             value={columnFilters.total_ht}
                             onChange={(e) => handleColumnFilterChange('total_ht', e.target.value)}
                           />
@@ -3680,14 +3703,14 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                           <input
                             type="text"
                             className="form-control form-control-sm"
-                            placeholder="Filter TTC... (ex: >600, <1200, =900)"
+                            placeholder="Filter TTC"
                             value={columnFilters.total_ttc}
                             onChange={(e) => handleColumnFilterChange('total_ttc', e.target.value)}
                           />
                         </th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody style={{ overflow: 'auto' }}>
                       {filteredDocuments.length > 0 ? (
                         <>
                           {filteredDocuments.map((doc) => (
@@ -3817,57 +3840,9 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                               <td>{formatDate(doc.created_at)}</td>
                               <td>{formatCurrency(doc.tva)}</td>
                               <td>{formatCurrency(doc.total_ht)}</td>
-                              <td style={{ textAlign: 'right' }}>{formatCurrency(doc.total_ttc)}</td>
+                              <td>{formatCurrency(doc.total_ttc)}</td>
                             </tr>
                           ))}
-                          
-                          <tr style={{ 
-                            backgroundColor: '#f8f9fa', 
-                            borderTop: '2px solid #dee2e6',
-                            fontWeight: 'bold'
-                          }}>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td style={{ 
-                              padding: '12px 16px', 
-                              color: '#dc3545',
-                              fontSize: '1.1em',
-                              textAlign: 'right'
-                            }}>
-                              {formatCurrency(filteredDocuments
-                                .filter(doc => doc.tva && !isNaN(parseFloat(doc.tva)))
-                                .reduce((sum, doc) => sum + parseFloat(doc.tva), 0)
-                              )}
-                            </td>
-                            <td style={{ 
-                              padding: '12px 16px', 
-                              color: '#198754',
-                              fontSize: '1.1em',
-                              textAlign: 'right'
-                            }}>
-                              {formatCurrency(filteredDocuments
-                                .filter(doc => doc.total_ht && !isNaN(parseFloat(doc.total_ht)))
-                                .reduce((sum, doc) => sum + parseFloat(doc.total_ht), 0)
-                              )}
-                            </td>
-                            <td style={{ 
-                              padding: '12px 16px', 
-                              color: '#2563eb',
-                              fontSize: '1.1em',
-                              textAlign: 'right'
-                            }}>
-                              {formatCurrency(filteredDocuments
-                                .filter(doc => doc.total_ttc && !isNaN(parseFloat(doc.total_ttc)))
-                                .reduce((sum, doc) => sum + parseFloat(doc.total_ttc), 0)
-                              )}
-                            </td>
-                          </tr>
                         </>
                       ) : (
                         <tr>
@@ -3901,6 +3876,41 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                 </div>
               )}
             </div>
+
+            {/* Fixed Footer */}
+            {filteredDocuments.length > 0 && (
+              <div style={{ 
+                position: 'sticky', 
+                bottom: 0, 
+                zIndex: 1000, 
+                backgroundColor: '#f8f9fa', 
+                borderTop: '2px solid #dee2e6',
+                padding: '15px',
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: '20px',
+                fontWeight: 'bold'
+              }}>
+                <div style={{ color: '#dc3545', fontSize: '1.1em' }}>
+                  TVA Total: {formatCurrency(filteredDocuments
+                    .filter(doc => doc.tva && !isNaN(parseFloat(doc.tva)))
+                    .reduce((sum, doc) => sum + parseFloat(doc.tva), 0)
+                  )}
+                </div>
+                <div style={{ color: '#198754', fontSize: '1.1em' }}>
+                  HT Total: {formatCurrency(filteredDocuments
+                    .filter(doc => doc.total_ht && !isNaN(parseFloat(doc.total_ht)))
+                    .reduce((sum, doc) => sum + parseFloat(doc.total_ht), 0)
+                  )}
+                </div>
+                <div style={{ color: '#2563eb', fontSize: '1.1em' }}>
+                  TTC Total: {formatCurrency(filteredDocuments
+                    .filter(doc => doc.total_ttc && !isNaN(parseFloat(doc.total_ttc)))
+                    .reduce((sum, doc) => sum + parseFloat(doc.total_ttc), 0)
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

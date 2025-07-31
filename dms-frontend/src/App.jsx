@@ -166,6 +166,9 @@ function App() {
           localStorage.setItem('has_temporary_password', 'true');
           // Redirect to password reset page
           window.location.href = '/settings-users';
+        } else {
+          // Redirect to home page (temp-document) for normal login
+          window.location.href = '/';
         }
       } else {
         setAuthError(response.msg || 'Erreur de connexion');
