@@ -244,8 +244,7 @@ class DatabaseManager:
                     file_path VARCHAR(500) NOT NULL,
                     owner_id INT NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
-                    FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+                    FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
                 )
             """)
 
