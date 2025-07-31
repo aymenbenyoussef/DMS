@@ -285,17 +285,6 @@ class DatabaseManager:
 
     def create_default_users(self):
         try:
-        # Admin
-            if not self.get_user_by_username('admin'):
-                self.create_user(
-                'admin',             # username
-                'Administrator',     # surname
-                'admin@dms.local',   # email
-                'admin123',          # mot de passe
-                True,                # is_active
-                'admin',             # rôle
-                )
-                print("Default admin user created: admin/admin123")
 
         # Superuser
             if not self.get_user_by_username('slim'):
@@ -308,6 +297,17 @@ class DatabaseManager:
                     'superuser'
                 )
                 print("Default superuser created: slim/slim123")
+        # Admin
+            if not self.get_user_by_username('admin'):
+                self.create_user(
+                'admin',             # username
+                'Administrator',     # surname
+                'admin@dms.local',   # email
+                'admin123',          # mot de passe
+                True,                # is_active
+                'admin',             # rôle
+                )
+                print("Default admin user created: admin/admin123")
 
         # User normal
         except Exception as e:
