@@ -1,4 +1,5 @@
 import axios from 'axios';
+import Logger from './utils/logger';
 
 // Create axios instance with base configuration
 const API_BASE_URL = 'http://localhost:5000';
@@ -40,7 +41,7 @@ API.interceptors.response.use(
       localStorage.removeItem('token');
       window.location.href = '/login';
     }
-    console.error('API Error:', {
+    Logger.error('API Error:', {
       message: error.message,
       response: error.response?.data,
       status: error.response?.status,

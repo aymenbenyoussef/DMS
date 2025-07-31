@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
+import Logger from '../../utils/logger';
 import DragDropUpload from './DragDropUpload';
 import API from '../../api';
 import { AppContext } from '../context';
