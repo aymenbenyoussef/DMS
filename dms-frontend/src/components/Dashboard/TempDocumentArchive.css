@@ -40,7 +40,7 @@
     border: 1px solid #e5e7eb;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    padding-bottom: 500px !important;
+    padding-bottom: 400px !important;
     background-color: #f8f9fa; /* Always use the hover background color */
   }
   
@@ -63,24 +63,38 @@
   .document-archive-container {
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 40px); /* Full viewport height minus padding */
+     /* Full viewport height */
+    max-height: 100vh; /* Ensure it doesn't exceed viewport */
     padding: 20px;
     overflow: hidden; /* Disable scrolling on the main container */
+    box-sizing: border-box; /* Include padding in height calculation */
   }
   
   /* 2. Make the table container the main scrolling area */
   .documents-table-container {
-    height: auto;
-    overflow-y: auto;
-    padding-bottom: 500px;
+    flex: 1; /* Take remaining space */
+    min-height: 0; /* Allow flex item to shrink */
+    overflow-y: auto; /* Enable vertical scrolling */
+    overflow-x: auto; /* Enable horizontal scrolling */
     border-radius: 8px;
-    max-height: 800px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    background-color: white;
+    position: relative;
+    /* Remove fixed max-height and padding-bottom */
+    contain: layout style paint;
   }
   
   /* 3. Make the table header sticky */
   .table-responsive {
     overflow-x: auto; /* Enable horizontal scrolling for the table */
     -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+    height: 100%; /* Take full height of container */
+    max-height: none; /* Remove max-height constraint */
+    overflow-y: visible; /* Let parent handle vertical scrolling */
+    position: relative;
+    /* Ensure this creates a scrolling context for sticky positioning */
+    contain: layout style paint;
   }
   
   .table thead {
@@ -1392,5 +1406,78 @@
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+/* Responsive design for different screen sizes and zoom levels */
+@media (max-width: 1200px) {
+  .document-archive-container {
+    padding: 15px;
+  }
+  
+  .documents-table-container {
+    border-radius: 6px;
+  }
+}
+
+@media (max-width: 768px) {
+  .document-archive-container {
+    padding: 10px;
+    height: 100vh; /* Maintain full height on mobile */
+  }
+  
+  .documents-table-container {
+    border-radius: 4px;
+  }
+  
+  .table-responsive {
+    font-size: 0.875rem; /* Slightly smaller font on mobile */
+  }
+}
+
+@media (max-width: 576px) {
+  .document-archive-container {
+    padding: 5px;
+  }
+  
+  .documents-table-container {
+    border-radius: 4px;
+  }
+  
+  .table-responsive {
+    font-size: 0.8rem; /* Even smaller font on very small screens */
+  }
+}
+
+/* Zoom level adaptations */
+@media screen and (max-resolution: 96dpi) {
+  /* For low DPI displays or when zoomed out */
+  .document-archive-container {
+    padding: 10px;
+  }
+}
+
+@media screen and (min-resolution: 144dpi) {
+  /* For high DPI displays or when zoomed in */
+  .document-archive-container {
+    padding: 25px;
+  }
+  
+  .documents-table-container {
+    border-radius: 10px;
+  }
+}
+
+/* Ensure the container works at any zoom level */
+@media (min-width: 1px) {
+  .document-archive-container {
+    min-height: 100vh;
+    max-height: 100vh;
+    overflow: hidden;
+  }
+  
+  .documents-table-container {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
   }
 }

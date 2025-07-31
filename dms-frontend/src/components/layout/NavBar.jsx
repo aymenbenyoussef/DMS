@@ -220,40 +220,6 @@ const NavBar = ({ user, onLogout }) => {
 
           {showSearchResults && (
             <div className="search-dropdown">
-              <div className="search-filters">
-                <select 
-                  value={selectedCompany}
-                  onChange={(e) => setSelectedCompany(e.target.value)}
-                  className="search-filter-select"
-                >
-                  <option value="">Toutes les entreprises</option>
-                  {companies.map(company => (
-                    <option key={company.id} value={company.id}>{company.name}</option>
-                  ))}
-                </select>
-
-                <select 
-                  value={selectedDoctype}
-                  onChange={(e) => setSelectedDoctype(e.target.value)}
-                  className="search-filter-select"
-                >
-                  <option value="">Tous les types de document</option>
-                  {doctypes.map(doctype => (
-                    <option key={doctype.id} value={doctype.id}>{doctype.name}</option>
-                  ))}
-                </select>
-
-                <select 
-                  value={isInvoice}
-                  onChange={(e) => setIsInvoice(e.target.value)}
-                  className="search-filter-select"
-                >
-                  <option value="">Tous les types (Facturable/Non)</option>
-                  <option value="true">Facturable</option>
-                  <option value="false">Non Facturable</option>
-                </select>
-              </div>
-
               <div className="search-results">
                 {isSearching ? (
                   <div className="loading-results">

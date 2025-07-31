@@ -179,44 +179,77 @@
 .document-archive-container {
   display: flex;
   flex-direction: column;
- /* height: 100%;  Remove fixed height constraint */
+   /* Full viewport height */
+  max-height: 100vh; /* Ensure it doesn't exceed viewport */
   padding: 20px;
-  overflow: visible; /* Allow scrolling */
+  overflow: hidden; /* Disable scrolling on the main container */
+  box-sizing: border-box; /* Include padding in height calculation */
 }
 
 /* 2. Make the table container the main scrolling area */
 .documents-table-container {
-  height: auto;
-  overflow-y: auto;
+  flex: 1; /* Take remaining space */
+  min-height: 0; /* Allow flex item to shrink */
+  overflow: hidden; /* Disable scrolling on container - only tbody will scroll */
   border-radius: 8px;
-  max-height: 600px;
-  position: relative;
   border: 1px solid #e5e7eb;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  /* Ensure this creates a scrolling context for sticky positioning */
-  contain: layout style paint;
-}
-
-/* 3. Make the table header sticky */
-.table-responsive {
-  overflow-x: auto; /* Enable horizontal scrolling for the table */
-  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
-  height: auto !important;
-  max-height: 600px !important;
-  overflow-y: auto !important;
+  background-color: white;
   position: relative;
-  /* Ensure this creates a scrolling context for sticky positioning */
-  contain: layout style paint;
+  display: flex;
+  flex-direction: column;
+  
 }
 
+/* 3. Table structure with fixed header and footer */
+.table-responsive {
+  flex: 1; /* Take remaining space */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Disable scrolling on table-responsive */
+  position: relative;
+}
+
+/* 4. Fixed header */
 .table thead {
   position: sticky;
   top: 0;
-  z-index: 10; /* Ensure header stays above table content */
-  background-color: #f8f9fa; /* Give it a solid background */
+  z-index: 1000;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-bottom: 2px solid #e5e7eb;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0; /* Prevent header from shrinking */
 }
 
-/* Enhanced sticky header for better visibility */
+/* 5. Scrollable tbody */
+.table tbody {
+  flex: 1; /* Take remaining space */
+  overflow-y: auto; /* Enable vertical scrolling only for data rows */
+  overflow-x: auto; /* Enable horizontal scrolling */
+  min-height: 0; /* Allow tbody to shrink */
+}
+
+/* 6. Fixed footer - only apply to footer totals, not last data row */
+.table-footer-fixed table tbody tr:last-child {
+  position: sticky;
+  bottom: 0;
+  z-index: 999;
+  background: #f8f9fa;
+  border-top: 2px solid #dee2e6;
+  font-weight: bold;
+  flex-shrink: 0; /* Prevent footer from shrinking */
+}
+
+/* Remove bold styling from last data row in scrollable body */
+.table-body-scrollable table tbody tr:last-child {
+  font-weight: normal;
+}
+
+.table-body-scrollable table tbody tr:last-child td {
+  font-weight: normal;
+}
+
+/* 7. Enhanced sticky header for better visibility */
 .table-header-sticky {
   position: sticky !important;
   top: 0 !important;
@@ -242,7 +275,7 @@
   white-space: nowrap !important;
 }
 
-/* Ensure the filter row is also sticky */
+/* 8. Ensure the filter row is also sticky */
 .table-header-sticky tr:nth-child(2) th {
   position: sticky !important;
   top: 60px !important; /* Adjust based on the height of the first header row */
@@ -251,7 +284,7 @@
   border-bottom: 1px solid #e5e7eb !important;
 }
 
-/* Force sticky positioning for table headers */
+/* 9. Force sticky positioning for table headers */
 .documents-table-container .table thead {
   position: sticky !important;
   top: 0 !important;
@@ -273,19 +306,46 @@
   background: #f8f9fa !important;
 }
 
-/* Additional override for any conflicting styles */
+/* 10. Additional override for any conflicting styles */
 .documents-table-container table thead,
 .documents-table-container table thead th,
 .documents-table-container table thead tr th {
   position: sticky !important;
   top: 0 !important;
   z-index: 1000 !important;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
 }
 
 .documents-table-container table thead tr:nth-child(2) th {
   position: sticky !important;
   top: 60px !important;
   z-index: 999 !important;
+  background: #f8f9fa !important;
+}
+
+/* 11. Ensure footer totals stay fixed */
+.documents-table-container .table-footer-fixed table tbody tr:last-child {
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 999 !important;
+  background: #f8f9fa !important;
+  border-top: 2px solid #dee2e6 !important;
+  font-weight: bold !important;
+}
+
+.documents-table-container .table-footer-fixed table tbody tr:last-child td {
+  background: #f8f9fa !important;
+  border-top: 2px solid #dee2e6 !important;
+  font-weight: bold !important;
+}
+
+/* Ensure data rows in scrollable body have normal font weight */
+.documents-table-container .table-body-scrollable table tbody tr {
+  font-weight: normal;
+}
+
+.documents-table-container .table-body-scrollable table tbody tr td {
+  font-weight: normal;
 }
 
 /* --- NEW SEARCH & FILTER CONTAINER STYLES --- */
@@ -1825,5 +1885,633 @@ body:has(.modal.show) .dropdown-menu.show {
   visibility: hidden !important;
   z-index: -9999 !important;
   opacity: 0 !important;
+}
+
+/* Email Modal Styles */
+.email-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px;
+}
+
+.email-modal {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  width: 100%;
+  max-width: 700px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: emailModalSlideIn 0.3s ease-out;
+}
+
+@keyframes emailModalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.email-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 32px;
+  background: linear-gradient(135deg, #0f5132 0%, #198754 100%);
+  color: white;
+  border-radius: 16px 16px 0 0;
+}
+
+.email-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.email-modal-title i {
+  font-size: 24px;
+}
+
+.email-modal-close {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 18px;
+}
+
+.email-modal-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.email-modal-body {
+  padding: 32px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Document Card */
+.email-document-card {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.email-document-icon {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 24px;
+}
+
+.email-document-info {
+  flex: 1;
+}
+
+.email-document-title {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.email-document-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.email-document-meta {
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* Email Sections */
+.email-section {
+  margin-bottom: 24px;
+}
+
+.email-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.email-section-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.email-selection-badge {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.email-section-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.email-action-btn {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.email-action-btn:hover {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+  transform: translateY(-1px);
+}
+
+/* Email Type Grid */
+.email-type-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.email-type-item {
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px;
+  transition: all 0.2s ease;
+}
+
+.email-type-item:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+}
+
+.email-type-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+  margin: 0;
+}
+
+.email-type-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: #3b82f6;
+}
+
+.email-type-label {
+  flex: 1;
+}
+
+.email-type-label strong {
+  display: block;
+  font-size: 14px;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.email-type-file {
+  display: block;
+  font-size: 11px;
+  color: #64748b;
+  font-style: italic;
+}
+
+/* Recipients Container */
+.email-recipients-container {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.email-recipients-list {
+  padding: 16px;
+}
+
+.email-recipient-item {
+  margin-bottom: 12px;
+}
+
+.email-recipient-item:last-child {
+  margin-bottom: 0;
+}
+
+.email-recipient-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+  margin: 0;
+}
+
+.email-recipient-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: #3b82f6;
+}
+
+.email-recipient-info {
+  flex: 1;
+}
+
+.email-recipient-info strong {
+  display: block;
+  font-size: 14px;
+  color: #1e293b;
+  margin-bottom: 2px;
+}
+
+.email-recipient-details {
+  display: block;
+  font-size: 11px;
+  color: #64748b;
+}
+
+.email-selection-summary {
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border-top: 1px solid #e2e8f0;
+  font-size: 12px;
+  color: #1e40af;
+  font-weight: 600;
+}
+
+.email-no-recipients {
+  padding: 32px 16px;
+  text-align: center;
+  color: #64748b;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* Form Inputs */
+.email-input,
+.email-textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.email-input:focus,
+.email-textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.email-textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+/* Messages */
+.email-error-message,
+.email-success-message {
+  padding: 12px 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  margin-top: 16px;
+}
+
+.email-error-message {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  color: #991b1b;
+  border: 1px solid #ef4444;
+}
+
+.email-success-message {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  color: #065f46;
+  border: 1px solid #10b981;
+}
+
+/* Footer */
+.email-modal-footer {
+  padding: 24px 32px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.email-btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.email-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.email-btn-secondary {
+  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+  color: white;
+}
+
+.email-btn-secondary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+  transform: translateY(-1px);
+}
+
+.email-btn-primary {
+  background: linear-gradient(135deg, #0f5132 0%, #198754 100%);
+  color: white;
+}
+
+.email-btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #198754 0%, #157347 100%);
+  transform: translateY(-1px);
+}
+
+.email-loading-icon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .email-modal-overlay {
+    padding: 10px;
+  }
+  
+  .email-modal {
+    max-height: 95vh;
+  }
+  
+  .email-modal-header,
+  .email-modal-footer {
+    padding: 20px;
+  }
+  
+  .email-modal-body {
+    padding: 20px;
+  }
+  
+  .email-type-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .email-modal-footer {
+    flex-direction: column;
+  }
+  
+  .email-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Responsive design for different screen sizes and zoom levels */
+@media (max-width: 1200px) {
+  .document-archive-container {
+    padding: 15px;
+  }
+  
+  .documents-table-container {
+    border-radius: 6px;
+  }
+}
+
+@media (max-width: 768px) {
+  .document-archive-container {
+    padding: 10px;
+    height: 100vh; /* Maintain full height on mobile */
+  }
+  
+  .documents-table-container {
+    border-radius: 4px;
+  }
+  
+  .table-responsive {
+    font-size: 0.875rem; /* Slightly smaller font on mobile */
+  }
+}
+
+@media (max-width: 576px) {
+  .document-archive-container {
+    padding: 5px;
+  }
+  
+  .documents-table-container {
+    border-radius: 4px;
+  }
+  
+  .table-responsive {
+    font-size: 0.8rem; /* Even smaller font on very small screens */
+  }
+}
+
+/* Zoom level adaptations */
+@media screen and (max-resolution: 96dpi) {
+  /* For low DPI displays or when zoomed out */
+  .document-archive-container {
+    padding: 10px;
+  }
+}
+
+@media screen and (min-resolution: 144dpi) {
+  /* For high DPI displays or when zoomed in */
+  .document-archive-container {
+    padding: 25px;
+  }
+  
+  .documents-table-container {
+    border-radius: 10px;
+  }
+}
+
+/* Ensure the container works at any zoom level */
+@media (min-width: 1px) {
+  .document-archive-container {
+    min-height: 100vh;
+    max-height: 100vh;
+    overflow: hidden;
+  }
+  
+  .documents-table-container {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+  }
+}
+
+/* 12. Fixed header, scrollable body, and fixed footer structure */
+.table-header-fixed {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: white;
+  border-bottom: 2px solid #e5e7eb;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+}
+
+.table-body-scrollable {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: auto;
+  min-height: 0;
+  max-height: calc(100vh - 400px); /* Adjust based on header and footer height */
+}
+
+.table-footer-fixed {
+  position: sticky;
+  bottom: 0;
+  z-index: 999;
+  background: white;
+  border-top: 2px solid #dee2e6;
+  box-shadow: 0 -4px 6px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+}
+
+/* 13. Ensure proper table alignment */
+.table-header-fixed table,
+.table-body-scrollable table,
+.table-footer-fixed table {
+  width: 100%;
+  margin-bottom: 0;
+}
+
+/* 14. Remove borders between sections */
+.table-header-fixed .table {
+  border-bottom: none;
+}
+
+.table-body-scrollable .table {
+  border-top: none;
+  border-bottom: none;
+}
+
+.table-footer-fixed .table {
+  border-top: none;
+}
+
+/* 15. Ensure consistent column widths */
+.table-header-fixed th,
+.table-body-scrollable td,
+.table-footer-fixed td {
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+/* 16. Responsive adjustments */
+@media (max-width: 768px) {
+  .table-body-scrollable {
+    max-height: calc(100vh - 350px);
+  }
+}
+
+@media (max-width: 576px) {
+  .table-body-scrollable {
+    max-height: calc(100vh - 300px);
+  }
+}
+
+/* 17. Ensure dropdown menus work properly in new table structure */
+.table-body-scrollable .dropdown {
+  position: relative;
+}
+
+.table-body-scrollable .dropdown-menu {
+  position: absolute !important;
+  top: 100% !important;
+  right: 0 !important;
+  left: auto !important;
+  z-index: 9999 !important;
+  margin-top: 2px !important;
+}
+
+.table-body-scrollable .dropdown-menu.show {
+  display: block !important;
+}
+
+/* 18. Ensure proper overflow for dropdowns */
+.table-body-scrollable {
+  overflow: visible;
+}
+
+.table-body-scrollable table {
+  overflow: visible;
 }
 
