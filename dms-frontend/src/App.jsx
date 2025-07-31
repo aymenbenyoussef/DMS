@@ -161,7 +161,7 @@ function App() {
         setAuthError('');
         
         // Check if user has temporary password and redirect to password reset
-        if (response.has_temporary_password) {
+        if (response.has_temporary_password && decoded.role !== 'admin' && decoded.role !== 'superuser') {
           // Store flag in localStorage to indicate temporary password
           localStorage.setItem('has_temporary_password', 'true');
           // Redirect to password reset page
@@ -215,7 +215,7 @@ function App() {
 
   // Check if user has temporary password and redirect to password reset
   const hasTemporaryPassword = localStorage.getItem('has_temporary_password') === 'true';
-  if (hasTemporaryPassword && window.location.pathname !== '/settings-users') {
+  if (hasTemporaryPassword && user && user.role !== 'admin' && user.role !== 'superuser' && window.location.pathname !== '/settings-users') {
     window.location.href = '/settings-users';
     return null;
   }
