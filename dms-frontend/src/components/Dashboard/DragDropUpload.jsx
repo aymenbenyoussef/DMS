@@ -310,12 +310,12 @@ const DragDropUpload = ({ onUpload, onClose }) => {
       <div className="upload-modal-overlay">
         <div className="upload-modal confirmation-modal">
           <div className="upload-header">
-            <h3>Document confirmation</h3>
+            <h3>Confirmation des documents</h3>
             <button className="close-btn" onClick={onClose}>×</button>
           </div>
           {erroredFiles.map((conf, idx) => (
               <div key={idx} className="status-message error">
-                Error processing file {conf.file.name}: {conf.error.message}
+                Erreur lors du traitement du fichier{conf.file.name}: {conf.error.message}
               </div>
           ))}
           {validFiles.length > 0 && (
@@ -389,15 +389,15 @@ const DragDropUpload = ({ onUpload, onClose }) => {
     <div className="upload-modal-overlay">
       <div className="upload-modal">
         <div className="upload-header">
-          <h3>Document Upload</h3>
+          <h3>Téléchargement de documents</h3>
           <button className="close-btn" onClick={onClose}>×</button>
         </div>
         
         <div className="upload-content">
           {selectedCompany && selectedDoctype && (
             <div className="selection-info">
-              <p><strong>Entity :</strong> {selectedCompany.name}</p>
-              <p><strong>Document Type :</strong> {selectedDoctype.name}</p>
+              <p><strong>Entité :</strong> {selectedCompany.name}</p>
+              <p><strong>Type de document :</strong> {selectedDoctype.name}</p>
             </div>
           )}
           
@@ -410,7 +410,7 @@ const DragDropUpload = ({ onUpload, onClose }) => {
           >
             <div className="drop-zone-content">
               <div className="upload-icon">📄</div>
-              <p>Upload Your File(s) Here</p>
+              <p>Téléchargez votre/vos fichier(s) ici</p>
               <label className="file-input-label">
                 <input
                   type="file"
@@ -419,10 +419,10 @@ const DragDropUpload = ({ onUpload, onClose }) => {
                   className="file-input"
                   multiple
                 />
-                Browse Files
+                Parcourir les fichiers
               </label>
               <p className="file-types">
-                Accepted Format : PDF, JPG, PNG, TIFF, DOC, DOCX
+                Formats acceptés : PDF, JPG, PNG, TIFF, DOC, DOCX
               </p>
             </div>
           </div>
@@ -479,7 +479,7 @@ const DragDropUpload = ({ onUpload, onClose }) => {
               onClick={onClose}
               disabled={isUploading}
             >
-              Cancel
+              Annuler
             </button>
             <button 
               className="btn-primary" 

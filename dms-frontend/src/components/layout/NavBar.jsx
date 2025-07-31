@@ -359,7 +359,7 @@ const NavBar = ({ user, onLogout }) => {
                         </button>
                         <Link to="/dms/rapports" className="dropdown-item" onClick={() => setShowAdminTools(false)}>
                           <span className="dropdown-icon"><BiBarChart size={16} /></span>
-                          <span>Rapports</span>
+                          <span>DMS</span>
                         </Link>
                       </div>
                     </div>
@@ -468,7 +468,7 @@ const NavBar = ({ user, onLogout }) => {
                         </button>
                         <Link to="/dms/rapports" className="dropdown-item" onClick={() => setShowAdminTools(false)}>
                           <span className="dropdown-icon"><BiBarChart size={16} /></span>
-                          <span>Rapports</span>
+                          <span>DMS</span>
                         </Link>
                         {/* Add more items if users have access, e.g., Rapports */}
                       </div>

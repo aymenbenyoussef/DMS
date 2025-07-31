@@ -1730,13 +1730,13 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
         <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
           <div className="modal-dialog modal-lg">
             <div className="modal-content">
-              <div className="modal-body">
+              
                 <DragDropUpload 
                   onClose={closeUploadModal}
                   onUpload={handleUploadDocuments}
                 />
                 {uploadError && <p className="text-danger mt-3">{uploadError}</p>}
-              </div>
+              
             </div>
           </div>
         </div>
@@ -1767,7 +1767,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
               justifyContent: 'center'
             }}
           >
-            <i className="bi bi-plus me-1"></i> Upload File
+            <i className="bi bi-plus me-1"></i> Upload
           </button>
         )}
       </div>
@@ -2048,7 +2048,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
               </nav>
           </div>
             <div className="d-flex align-items-center gap-3">
-              <span className="text-muted items-count">{filteredDocuments.length} items</span>
+              <span className="text-muted items-count">{filteredDocuments.length} articles</span>
               
               {/* Export and Reset buttons */}
               <div className="d-flex gap-2">
@@ -2057,7 +2057,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                   onClick={handleResetFilters}
                   style={{ backgroundColor: 'gray', color: 'white' }}
                 >
-                  <i className="bi bi-arrow-clockwise me-1"></i> Reset Filter
+                  <i className="bi bi-arrow-clockwise me-1"></i> Réinitialiser le filtre
                 </button>
                 <div style={{ position: 'relative' }}>
                   <button 
@@ -2070,7 +2070,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                       border: '2px solid #27ae60'
                     }}
                   >
-                    <i className="bi bi-download me-1"></i> Export ▼
+                    <i className="bi bi-download me-1"></i> Exporter ▼
                   </button>
                   {exportMenuOpen && (
                     <ul ref={exportMenuRef} style={{

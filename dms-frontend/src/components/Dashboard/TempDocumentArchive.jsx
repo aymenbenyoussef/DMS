@@ -464,7 +464,7 @@ const TempDocumentArchive = ({ user }) => {
               }}
               onClick={() => setIsUploadModalOpen(true)}
             >
-              <i className="bi bi-plus me-2"></i> Télécharger
+              <i className="bi bi-plus me-2"></i> Upload
             </button>
           </div>
           <div className="row g-3">
@@ -508,13 +508,13 @@ const TempDocumentArchive = ({ user }) => {
           <div className="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
             <h2 className="h6 mb-0">Documents temporaires</h2>
             <div className="d-flex align-items-center gap-3">
-              <span className="text-muted items-count">{filteredDocuments.length} items</span>
+              <span className="text-muted items-count">{filteredDocuments.length} articles</span>
               <button 
                 className="btn btn-secondary btn-sm d-flex align-items-center"
                 onClick={handleResetFilters}
                 style={{ backgroundColor: 'gray', color: 'white' }}
               >
-                <i className="bi bi-arrow-clockwise me-1"></i> Reset Filter
+                <i className="bi bi-arrow-clockwise me-1"></i> Réinitialiser le filtre
               </button>
               <div style={{ position: 'relative' }}>
                 <button 
@@ -527,7 +527,7 @@ const TempDocumentArchive = ({ user }) => {
                     border: '2px solid #27ae60'
                   }}
                 >
-                  <i className="bi bi-download me-1"></i> Export ▼
+                  <i className="bi bi-download me-1"></i> Exporter ▼
                 </button>
                 {exportMenuOpen && (
                   <ul ref={exportMenuRef} style={{
