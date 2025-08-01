@@ -584,7 +584,7 @@ const AdminPartners = ({ user }) => {
             <table className="users-table-fixed">
               <thead>
                 <tr>
-                  <th></th>
+                  <th style={{width: '24px', minWidth: '24px', maxWidth: '24px', padding: 0}}></th>
                   
                   <th style={{cursor:'pointer', background: sortConfig.key === 'unique_identifier' ? '#f0f4fa' : undefined, color: sortConfig.key === 'unique_identifier' ? '#1976d2' : undefined}} onClick={() => handleSort('unique_identifier')}>
                     Unique Identifier <span style={{fontSize:'1em'}}>{sortConfig.key === 'unique_identifier' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
@@ -670,7 +670,7 @@ const AdminPartners = ({ user }) => {
                 {!loading && filteredPartners.length > 0 && (
                   filteredPartners.map(partner => (
                     <tr key={partner.id}>
-                      <td>
+                      <td style={{width: '24px', minWidth: '24px', maxWidth: '24px', padding: 0, textAlign: 'center'}}>
                         <div className={`status-led ${partner.is_active ? 'status-led-active' : 'status-led-inactive'}`}></div>
                       </td>
                       

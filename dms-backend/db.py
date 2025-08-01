@@ -211,7 +211,7 @@ class DatabaseManager:
 
             # Create groups table
             cursor.execute("""
-                CREATE TABLE IF NOT EXISTS groups (
+                CREATE TABLE IF NOT EXISTS `groups` (
                     id INT AUTO_INCREMENT PRIMARY KEY,
                     name VARCHAR(255) NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -230,7 +230,7 @@ class DatabaseManager:
                     group_id INT NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE CASCADE,
-                    FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE,
+                    FOREIGN KEY (group_id) REFERENCES `groups` (id) ON DELETE CASCADE,
                     UNIQUE KEY unique_document_group (document_id, group_id)
                 )
             """)
@@ -263,9 +263,9 @@ class DatabaseManager:
 
             # Add company_id column to existing groups table if it doesn't exist
             try:
-                cursor.execute("ALTER TABLE groups ADD COLUMN company_id INT")
-                cursor.execute("ALTER TABLE groups ADD CONSTRAINT fk_groups_company_id FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE")
-                print("Added company_id column to groups table")
+                cursor.execute("ALTER TABLE `groups` ADD COLUMN company_id INT")
+                cursor.execute("ALTER TABLE `groups` ADD CONSTRAINT fk_groups_company_id FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE")
+                print("Added company_id column to `groups` table")
             except Error as e:
                 if "Duplicate column name" in str(e):
                     print("company_id column already exists in groups table")
@@ -1210,7 +1210,7 @@ class DatabaseManager:
             FROM documents d
             LEFT JOIN users u ON d.owner_id = u.id
             LEFT JOIN documents_group dg ON d.id = dg.document_id
-            LEFT JOIN groups g ON dg.group_id = g.id
+            LEFT JOIN `groups` g ON dg.group_id = g.id
             WHERE d.id = %s AND d.flag = TRUE
         """
         result = self.execute_query(query, (document_id,), fetch=True)
@@ -1415,7 +1415,7 @@ class DatabaseManager:
             LEFT JOIN partners p ON d.partner_id = p.id
             LEFT JOIN users u ON d.owner_id = u.id
             LEFT JOIN documents_group dg ON d.id = dg.document_id
-            LEFT JOIN groups g ON dg.group_id = g.id
+            LEFT JOIN `groups` g ON dg.group_id = g.id
             WHERE d.company_id = %s AND d.flag = TRUE
             GROUP BY d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size, d.file_path, d.extracted_text, d.is_invoice, d.ocr_text, d.rapport, d.invoice_date, d.total_ht, d.tva, d.total_ttc, d.owner_id, p.company_name, u.username
             ORDER BY d.created_at DESC
@@ -1453,7 +1453,7 @@ class DatabaseManager:
             LEFT JOIN partners p ON d.partner_id = p.id
             LEFT JOIN users u ON d.owner_id = u.id
             LEFT JOIN documents_group dg ON d.id = dg.document_id
-            LEFT JOIN groups g ON dg.group_id = g.id
+            LEFT JOIN `groups` g ON dg.group_id = g.id
             WHERE d.company_id = %s AND d.doctype_id = %s AND d.flag = TRUE
             GROUP BY d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size, d.file_path, d.is_invoice, d.ocr_text, d.extracted_text, d.rapport, d.invoice_date, d.total_ht, d.tva, d.total_ttc, d.owner_id, p.company_name, u.username
             ORDER BY d.created_at DESC
@@ -1466,22 +1466,22 @@ class DatabaseManager:
 
     # Group management methods
     def create_group(self, name, created_by, company_id=None):
-        query = "INSERT INTO groups (name, created_by, company_id) VALUES (%s, %s, %s)"
+        query = "INSERT INTO `groups` (name, created_by, company_id) VALUES (%s, %s, %s)"
         return self.execute_query(query, (name, created_by, company_id))
 
     def get_all_groups(self, company_id=None):
         """Get all groups, optionally filtered by company_id"""
         if company_id:
-            query = "SELECT * FROM groups WHERE company_id = %s ORDER BY name"
+            query = "SELECT * FROM `groups` WHERE company_id = %s ORDER BY name"
             return self.execute_query(query, (company_id,), fetch=True)
         else:
-            query = "SELECT * FROM groups ORDER BY name"
+            query = "SELECT * FROM `groups` ORDER BY name"
             return self.execute_query(query, fetch=True)
 
     def get_group_by_id(self, group_id):
         """Get group by ID"""
         try:
-            query = "SELECT * FROM groups WHERE id = %s"
+            query = "SELECT * FROM `groups` WHERE id = %s"
             result = self.execute_query(query, (group_id,), fetch=True)
             return result[0] if result else None
         except Exception as e:
@@ -1501,7 +1501,7 @@ class DatabaseManager:
         
         if updates:
             params.append(group_id)
-            query = f"UPDATE groups SET {', '.join(updates)} WHERE id = %s"
+            query = f"UPDATE `groups` SET {', '.join(updates)} WHERE id = %s"
             self.execute_query(query, params)
 
     def delete_group(self, group_id):
@@ -1510,7 +1510,7 @@ class DatabaseManager:
             # First delete all document-group associations
             self.execute_query("DELETE FROM documents_group WHERE group_id = %s", (group_id,))
             # Then delete the group
-            self.execute_query("DELETE FROM groups WHERE id = %s", (group_id,))
+            self.execute_query("DELETE FROM `groups` WHERE id = %s", (group_id,))
             return True
         except Exception as e:
             raise Exception(f"Error deleting group: {str(e)}")
@@ -1568,7 +1568,7 @@ class DatabaseManager:
         try:
             query = """
                 SELECT g.*, dg.created_at as added_to_group_at
-                FROM groups g
+                FROM `groups` g
                 JOIN documents_group dg ON g.id = dg.group_id
                 WHERE dg.document_id = %s
                 ORDER BY g.name
@@ -1580,7 +1580,7 @@ class DatabaseManager:
     def check_group_name_exists(self, name, exclude_id=None):
         """Check if a group name already exists"""
         try:
-            query = "SELECT id FROM groups WHERE name = %s"
+            query = "SELECT id FROM `groups` WHERE name = %s"
             params = [name]
             
             if exclude_id:
@@ -1635,7 +1635,7 @@ class DatabaseManager:
                 LEFT JOIN partners p ON d.partner_id = p.id
                 LEFT JOIN users u ON d.owner_id = u.id
                 LEFT JOIN documents_group dg ON d.id = dg.document_id
-                LEFT JOIN groups g ON dg.group_id = g.id
+                LEFT JOIN `groups` g ON dg.group_id = g.id
                 WHERE d.id = %s AND d.flag = TRUE
             """
             result = self.execute_query(query, (document_id,), fetch=True)
@@ -1753,7 +1753,7 @@ class DatabaseManager:
             
             # Check if groups table exists
             try:
-                query4 = "SELECT COUNT(*) as group_count FROM groups"
+                query4 = "SELECT COUNT(*) as group_count FROM `groups`"
                 group_count = self.execute_query(query4, fetch=True)
                 print(f"DEBUG: Groups table exists, count: {group_count}")
             except Exception as e:
