@@ -29,6 +29,8 @@ const Settings = () => {
   // SMTP Settings
   const [smtpEmail, setSmtpEmail] = useState('');
   const [smtpPassword, setSmtpPassword] = useState('');
+  const [smtpHost, setSmtpHost] = useState('');
+  const [smtpPort, setSmtpPort] = useState('');
 
   const [loading, setLoading] = useState(true);
   const [successMessage, setSuccessMessage] = useState('');
@@ -57,6 +59,8 @@ const Settings = () => {
         setEntitiesDataPath(data.entitiesDataPath);
         setSmtpEmail(data.smtpEmail || '');
         setSmtpPassword(data.smtpPassword || '');
+        setSmtpHost(data.smtpHost || '');
+        setSmtpPort(data.smtpPort || '');
       } catch (err) {
         // Optionally handle error
       } finally {
@@ -92,7 +96,9 @@ const Settings = () => {
       logsPath,
       entitiesDataPath,
       smtpEmail,
-      smtpPassword
+      smtpPassword,
+      smtpHost,
+      smtpPort
     };
     try {
       await axios.post('http://localhost:5000/api/settings', payload);
@@ -147,6 +153,18 @@ const Settings = () => {
                 </div>
                 <input type="password" value={dbPassword} onChange={e => setDbPassword(e.target.value)} />
             </div>
+            <div className="setting-item">
+                <div className="setting-info">
+                  <div className="setting-label">SMTP Host</div>
+                </div>
+                <input type="text" value={smtpHost} onChange={e => setSmtpHost(e.target.value)} />
+              </div>
+              <div className="setting-item">
+                <div className="setting-info">
+                  <div className="setting-label">SMTP Port</div>
+                </div>
+                <input type="text" value={smtpPort} onChange={e => setSmtpPort(e.target.value)} />
+              </div>
               <div className="setting-item">
                 <div className="setting-info">
                   <div className="setting-label">Email SMTP</div>
@@ -159,6 +177,7 @@ const Settings = () => {
                 </div>
                 <input type="password" value={smtpPassword} onChange={e => setSmtpPassword(e.target.value)} />
               </div>
+              
             </form>
           </div>
         </div>
@@ -211,7 +230,7 @@ const Settings = () => {
                   <div className="alert alert-success" style={{marginBottom: '1rem', fontWeight: 600}}>{successMessage}</div>
                 )}
                 <button 
-                  className="btn btn-primary" 
+                  className="btn" 
                   onClick={handleSubmit}
                   style={{
                     backgroundColor: 'orangered',

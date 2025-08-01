@@ -3,16 +3,21 @@ import api from '../../api';
 import './ActivityLogs.css';
 
 const ActivityLogs = () => {
-  // Get first day of current month and today's date
-  const getFirstDayOfMonth = () => {
-    const now = new Date();
-    // Ensure we're working with local time to avoid timezone issues
-    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-    const year = firstDay.getFullYear();
-    const month = String(firstDay.getMonth() + 1).padStart(2, '0');
-    const day = String(firstDay.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
+  // Helper function to get the same day last month
+const getOneMonthAgo = () => {
+  const now = new Date();
+  const lastMonth = new Date(now);
+  lastMonth.setMonth(now.getMonth() - 1);
+  // Handle month wrap-around (e.g., March 31 -> Feb 28/29)
+  if (lastMonth.getMonth() === now.getMonth()) {
+    // If setMonth overflowed, set to last day of previous month
+    lastMonth.setDate(0);
+  }
+  const year = lastMonth.getFullYear();
+  const month = String(lastMonth.getMonth() + 1).padStart(2, '0');
+  const day = String(lastMonth.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
   const getTodayDate = () => {
     const now = new Date();
@@ -27,7 +32,7 @@ const ActivityLogs = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [filters, setFilters] = useState({
-    startDate: getFirstDayOfMonth(),
+    startDate: getOneMonthAgo(),
     endDate: getTodayDate(),
     role: '',
     action: '',
@@ -185,7 +190,7 @@ const ActivityLogs = () => {
 
   const resetFilters = () => {
     setFilters({
-      startDate: getFirstDayOfMonth(),
+      startDate: getOneMonthAgo(),
       endDate: getTodayDate(),
       role: '',
       action: '',
@@ -294,7 +299,7 @@ const ActivityLogs = () => {
         <button 
           className="reset-button"
           onClick={resetFilters}
-          disabled={filters.startDate === getFirstDayOfMonth() && filters.endDate === getTodayDate() && filters.role === '' && filters.action === '' && filters.resource === ''}
+          disabled={filters.startDate === getOneMonthAgo() && filters.endDate === getTodayDate() && filters.role === '' && filters.action === '' && filters.resource === ''}
         >
           Reset Filters
         </button>

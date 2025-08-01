@@ -352,16 +352,18 @@
   font-size: 14px;
   color: #374151;
   font-weight: 600;
+  
 }
 
 .status-message {
   padding: 12px 16px;
   border-radius: 8px;
-  margin: 16px 0;
+  margin: 16px 19px;
   font-weight: 500;
   display: flex;
   align-items: center;
   gap: 8px;
+  
 }
 
 .status-message::before {
@@ -387,10 +389,12 @@
   background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
   color: #1e40af;
   border: 1px solid #3b82f6;
+  
 }
 
 .status-message.processed::before {
   background: #3b82f6;
+  
 }
 
 .status-message.confirming {

@@ -9,6 +9,7 @@ const DmsTempUploadModal = ({ onClose, onSuccess }) => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState(null);
   const [maxFileSize, setMaxFileSize] = useState(2014); // Default max file size in KB
+  const [progressTimer, setProgressTimer] = useState(null);
 
   // Fetch max file size from settings
   useEffect(() => {
@@ -36,6 +37,32 @@ const DmsTempUploadModal = ({ onClose, onSuccess }) => {
       return () => clearTimeout(timer);
     }
   }, [uploadStatus]);
+
+  // Animate progress bar to 90% while uploading
+  useEffect(() => {
+    if (isUploading && uploadStatus === 'pending') {
+      if (progressTimer) clearInterval(progressTimer);
+      const timer = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev < 90) return prev + 2;
+          return 90;
+        });
+      }, 80);
+      setProgressTimer(timer);
+    } else if (!isUploading || uploadStatus === 'completed' || uploadStatus === 'error') {
+      if (progressTimer) {
+        clearInterval(progressTimer);
+        setProgressTimer(null);
+      }
+      if (uploadStatus === 'completed') {
+        setUploadProgress(100);
+      }
+      if (uploadStatus === 'error') {
+        setUploadProgress(0);
+      }
+    }
+    // eslint-disable-next-line
+  }, [isUploading, uploadStatus]);
 
   const handleDragEnter = (e) => {
     e.preventDefault();
@@ -116,17 +143,19 @@ const DmsTempUploadModal = ({ onClose, onSuccess }) => {
     setUploadStatus('pending');
     setUploadProgress(0);
     try {
-      await API.tempDocuments.upload(files);
+      for (let i = 0; i < files.length; i++) {
+        await API.tempDocuments.upload([files[i]]);
+        setUploadProgress(Math.round(((i + 1) / files.length) * 100));
+      }
       setUploadStatus('completed');
       setUploadProgress(100);
-      
-      // Dispatch event to refresh TempDocumentArchive table
-      window.dispatchEvent(new Event('TempDocumentsUploaded'));
-      
-      if (onSuccess) onSuccess();
+      // Wait 700ms to show 100% before closing/next stage
       setTimeout(() => {
+        // Dispatch event to refresh TempDocumentArchive table
+        window.dispatchEvent(new Event('TempDocumentsUploaded'));
+        if (onSuccess) onSuccess();
         onClose();
-      }, 1200);
+      }, 700);
     } catch (error) {
       setUploadStatus('error');
     } finally {
@@ -255,4 +284,4 @@ const DmsTempUploadModal = ({ onClose, onSuccess }) => {
   );
 };
 
-export default DmsTempUploadModal; 
+export default DmsTempUploadModal;

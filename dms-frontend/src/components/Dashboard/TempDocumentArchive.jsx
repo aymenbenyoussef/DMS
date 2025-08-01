@@ -12,16 +12,21 @@ const TempDocumentArchive = ({ user }) => {
   // Note: User-based filtering is handled automatically by the backend
   // Regular users only see their own temp documents, while admins and superusers see all documents
 
-  // Helper function to get first day of current month
-  const getFirstDayOfMonth = () => {
-    const now = new Date();
-    // Ensure we're working with local time to avoid timezone issues
-    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-    const year = firstDay.getFullYear();
-    const month = String(firstDay.getMonth() + 1).padStart(2, '0');
-    const day = String(firstDay.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
+  // Helper function to get the same day last month
+const getOneMonthAgo = () => {
+  const now = new Date();
+  const lastMonth = new Date(now);
+  lastMonth.setMonth(now.getMonth() - 1);
+  // Handle month wrap-around (e.g., March 31 -> Feb 28/29)
+  if (lastMonth.getMonth() === now.getMonth()) {
+    // If setMonth overflowed, set to last day of previous month
+    lastMonth.setDate(0);
+  }
+  const year = lastMonth.getFullYear();
+  const month = String(lastMonth.getMonth() + 1).padStart(2, '0');
+  const day = String(lastMonth.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
   // Helper function to get today's date
   const getToday = () => {
@@ -35,7 +40,7 @@ const TempDocumentArchive = ({ user }) => {
   const [documents, setDocuments] = useState([]);
   const [filteredDocuments, setFilteredDocuments] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [startDate, setStartDate] = useState(getFirstDayOfMonth());
+  const [startDate, setStartDate] = useState(getOneMonthAgo());
   const [endDate, setEndDate] = useState(getToday());
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [previewType, setPreviewType] = useState('');
@@ -153,7 +158,7 @@ const TempDocumentArchive = ({ user }) => {
     const hasColumnFilters = Object.values(columnFilters).some(value => value && value.trim() !== '');
     
     // Check date filters (if they're different from default)
-    const defaultStartDate = getFirstDayOfMonth();
+    const defaultStartDate = getOneMonthAgo();
     const defaultEndDate = getToday();
     const hasDateFilters = startDate !== defaultStartDate || endDate !== defaultEndDate;
     
@@ -406,7 +411,7 @@ const TempDocumentArchive = ({ user }) => {
 
   // Reset all filters and sorting
   const handleResetFilters = () => {
-    setStartDate(getFirstDayOfMonth());
+    setStartDate(getOneMonthAgo());
     setEndDate(getToday());
     setSearchTerm('');
     setColumnFilters({
@@ -1119,4 +1124,4 @@ const TempDocumentArchive = ({ user }) => {
   );
 };
 
-export default TempDocumentArchive; 
+export default TempDocumentArchive;

@@ -22,7 +22,22 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
     const day = String(firstDay.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   };
+ // Helper function to get the same day last month
 
+const getOneMonthAgo = () => {
+  const now = new Date();
+  const lastMonth = new Date(now);
+  lastMonth.setMonth(now.getMonth() - 1);
+  // Handle month wrap-around (e.g., March 31 -> Feb 28/29)
+  if (lastMonth.getMonth() === now.getMonth()) {
+    // If setMonth overflowed, set to last day of previous month
+    lastMonth.setDate(0);
+  }
+  const year = lastMonth.getFullYear();
+  const month = String(lastMonth.getMonth() + 1).padStart(2, '0');
+  const day = String(lastMonth.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
   // Helper function to get today's date
   const getToday = () => {
     const now = new Date();
@@ -59,7 +74,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
   
   // Filter states
   const [selectedDoctypeFilters, setSelectedDoctypeFilters] = useState([]);
-  const [startDate, setStartDate] = useState(getFirstDayOfMonth());
+  const [startDate, setStartDate] = useState(getOneMonthAgo());
   const [endDate, setEndDate] = useState(getToday());
   const [searchTerm, setSearchTerm] = useState('');
   const [availableDoctypes, setAvailableDoctypes] = useState([]);
@@ -529,7 +544,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
       fetchGroups();
       
       // Set default date range to first day of current month and today
-      setStartDate(getFirstDayOfMonth());
+      setStartDate(getOneMonthAgo());
       setEndDate(getToday());
     }
   }, [selectedCompany]);
@@ -778,7 +793,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
   const handleResetFilters = () => {
     setSearchTerm('');
     setSelectedDoctypeFilters([]);
-    setStartDate(getFirstDayOfMonth());
+    setStartDate(getOneMonthAgo());
     setEndDate(getToday());
     setBillableFilter('all');
     setSelectedGroupFilters([]);
@@ -3561,27 +3576,27 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
               onClick={closeFullscreenModal}
               title="Fermer le plein écran"
               aria-label="Fermer le plein écran"
-              style={{
-                position: 'absolute',
-                top: '15px',
-                right: '15px',
+            style={{
+              position: 'absolute',
+              top: '15px',
+              right: '15px',
                 background: '#e7f5ff',
-                border: 'none',
-                borderRadius: '50%',   
-                width: '40px',
-                height: '40px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
+              border: 'none',
+              borderRadius: '50%',   
+              width: '40px',
+              height: '40px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
                 color: '#007bff',
                 transition: 'background-color 0.2s ease, transform 0.2s ease',
                 zIndex: 1001
-              }}
-              onMouseOver={e => e.currentTarget.style.backgroundColor = '#d0ebff'}
-              onMouseOut={e => e.currentTarget.style.backgroundColor = '#e7f5ff'}
-            >
-              X
+            }}
+            onMouseOver={e => e.currentTarget.style.backgroundColor = '#d0ebff'}
+            onMouseOut={e => e.currentTarget.style.backgroundColor = '#e7f5ff'}
+          >
+            X
             </button>
             <div className="fullscreen-modal-body" style={{ 
               height: '100vh',
@@ -3897,7 +3912,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
                     .filter(doc => doc.tva && !isNaN(parseFloat(doc.tva)))
                     .reduce((sum, doc) => sum + parseFloat(doc.tva), 0)
                   )}
-                </div>
+          </div>
                 <div style={{ color: '#198754', fontSize: '1.1em' }}>
                   HT Total: {formatCurrency(filteredDocuments
                     .filter(doc => doc.total_ht && !isNaN(parseFloat(doc.total_ht)))
