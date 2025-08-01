@@ -2,7 +2,7 @@
 .settings-container {
   min-height: 100vh;
   background-color: #f8fafc;
-  padding: 2rem 1rem 3rem 1rem;
+  padding: 1.2rem 1rem 3rem 1rem;
   overflow: hidden;
 }
 
@@ -37,7 +37,7 @@
   border-radius: 1rem;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
   overflow: hidden;
-  height: 590px;
+  height: 690px;
   padding-bottom: 0.5rem;
 }
 
