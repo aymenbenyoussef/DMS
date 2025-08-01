@@ -80,7 +80,8 @@
 }
 
 .users-table-container {
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -91,20 +92,18 @@
 .users-table-fixed {
   width: 100%;
   border-collapse: collapse;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
+  display: table; /* Change to table display */
+  table-layout: fixed; /* Fix table layout */
 }
 
 .users-table-fixed thead,
 .users-table-fixed tbody {
-  display: block;
+  display: table-row-group; /* Change to table-row-group display */
 }
 
 .users-table-fixed thead tr,
 .users-table-fixed tbody tr {
-  display: flex;
-  width: 100%;
+  display: table-row; /* Change to table-row display */
 }
 
 .users-table-fixed th,
@@ -112,9 +111,11 @@
   padding: 8px 12px;
   text-align: left;
   border-bottom: 1px solid #e9ecef;
-  flex: 1;
-  min-width: 0;
-  word-wrap: break-word;
+  width: auto; /* Allow width to be determined by table-layout */
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  box-sizing: border-box;
 }
 
 .users-table-fixed th {
@@ -542,6 +543,25 @@
   background: #a8a8a8;
 }
 
+/* Scrollbar styling for table container */
+.users-table-container::-webkit-scrollbar {
+  height: 8px;
+}
+
+.users-table-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.users-table-container::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.users-table-container::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
 .loading-message {
   text-align: center;
   padding: 20px;
@@ -549,16 +569,6 @@
   font-style: italic;
 }
 
-/* Update the column width definitions at the bottom of the file */
-.users-table-fixed th:nth-child(1), .users-table-fixed td:nth-child(1) { flex: 0.1 } /* Status LED */
-
-.users-table-fixed th:nth-child(3), .users-table-fixed td:nth-child(3) { flex: 1; } /* Unique Identifier */
-.users-table-fixed th:nth-child(4), .users-table-fixed td:nth-child(4) { flex: 1.6; } /* Company Name */
-.users-table-fixed th:nth-child(5), .users-table-fixed td:nth-child(5) { flex: 1.5; } /* Entities */
-.users-table-fixed th:nth-child(6), .users-table-fixed td:nth-child(6) { flex: 1.4; } /* Partner Types */
-.users-table-fixed th:nth-child(7), .users-table-fixed td:nth-child(7) { flex: 1; } /* Phone */
-.users-table-fixed th:nth-child(8), .users-table-fixed td:nth-child(8) { flex: 1.5; } /* Email */
-.users-table-fixed th:nth-child(9), .users-table-fixed td:nth-child(9) { flex: 0.7; } /* Actions */
 .users-table-fixed thead tr {
   border-bottom: 2px solid #e9ecef;
 }
@@ -870,17 +880,6 @@
 @keyframes dropdown-fade-in {
   0% { opacity: 0; transform: translateY(-10px); }
   100% { opacity: 1; transform: translateY(0); }
-}
-
-.users-table-fixed td,
-.users-table-fixed th {
-  white-space: nowrap;
-}
-
-.users-table-fixed td.email-col,
-.users-table-fixed th.email-col {
-  width: 1%;
-  white-space: nowrap;
 }
 
 /* Remove border between header and filter */
