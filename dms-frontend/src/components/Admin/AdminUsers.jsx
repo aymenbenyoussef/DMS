@@ -654,7 +654,7 @@ const AdminUsers = ({user ,loadingUser}) => {
                 <table className="users-table-fixed">
                   <thead>
                     <tr>
-                      <th></th>
+                      <th style={{width: '24px', minWidth: '24px', maxWidth: '24px', padding: 0}}></th>
                       <th style={{cursor:'pointer', background: sortConfig.key === 'id' ? '#f0f4fa' : undefined, color: sortConfig.key === 'id' ? '#1976d2' : undefined}} onClick={() => handleSort('id')}>
                         Id <span style={{fontSize:'1em'}}>{sortConfig.key === 'id' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
                       </th>
@@ -745,7 +745,7 @@ const AdminUsers = ({user ,loadingUser}) => {
                           key={rowUser.id}
                           className={rowUser.role === 'superuser' && user.role !== 'superuser' ? 'row-disabled' : ''}
                         >
-                          <td>
+                          <td style={{width: '24px', minWidth: '24px', maxWidth: '24px', padding: 0, textAlign: 'center'}}>
                             <div className={`status-led ${rowUser.is_active ? 'status-led-active' : 'status-led-inactive'}`}></div>
                           </td>
                           <td>{rowUser.id}</td>
