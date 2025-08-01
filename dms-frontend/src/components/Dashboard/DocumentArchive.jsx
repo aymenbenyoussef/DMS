@@ -3210,7 +3210,9 @@ const getOneMonthAgo = () => {
                     
                     <div className="email-document-info">
                       <h6 className="email-document-title">Document à envoyer</h6>
-                      <div className="email-document-name">{displayedEmailFilename || currentDocument.filename}</div>
+                      <div className="email-document-name">{<div style={{ wordBreak: 'break-all', whiteSpace: 'pre-line', maxWidth: '100%', display: 'block' }}>
+  {displayedEmailFilename}
+</div> || currentDocument.filename}</div>
                       <div className="email-document-meta">
                               {formatFileSize(currentDocument.file_size || 0)} • 
                               Créé le {currentDocument.created_at ? new Date(currentDocument.created_at).toLocaleDateString('fr-FR') : 'N/A'}
@@ -3253,7 +3255,9 @@ const getOneMonthAgo = () => {
                           } else if (type.type === 'ocr_text' && currentDocument.ocr_text) {
                             fileLabel = currentDocument.ocr_text.split(/[\\/]/).pop();
                           } else {
-                            fileLabel = currentDocument.filename;
+                            fileLabel = <div style={{ wordBreak: 'break-all', whiteSpace: 'pre-line', maxWidth: '100%', display: 'block' }}>
+  {currentDocument.filename}
+</div>
                           }
                           return (
                           <div key={type.type} className="email-type-item">
@@ -3271,7 +3275,9 @@ const getOneMonthAgo = () => {
                                 />
                               <span className="email-type-label">
                                   <strong>{type.label}</strong>
-                                <span className="email-type-file">Fichier : {fileLabel}</span>
+                                <span className="email-type-file">Fichier : <div style={{ wordBreak: 'break-all', whiteSpace: 'pre-line', maxWidth: '100%', display: 'block' }}>
+  {fileLabel}
+</div></span>
                                   </span>
                                 </label>
                             </div>

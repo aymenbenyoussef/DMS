@@ -43,6 +43,16 @@ const DocumentConfirmationForm = ({
     loadCompanies();
   }, []);
 
+  // Load doctypes, partners, and groups for the initial company when the modal opens
+  useEffect(() => {
+    const companyId = (initialCompany || selectedCompany)?.id;
+    if (companyId) {
+      loadDoctypesByCompany(companyId);
+      loadPartners(companyId);
+      loadGroups(companyId);
+    }
+  }, [initialCompany, selectedCompany]);
+
   // Check for changes in any file
   useEffect(() => {
     const hasAnyChanges = confirmedDocuments.some((doc, idx) => {

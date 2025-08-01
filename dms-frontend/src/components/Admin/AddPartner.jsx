@@ -607,7 +607,7 @@ const handleSubmit = async (e) => {
             <input
               type="text"
               name="bankAccountNumber"
-              placeholder="Entrez le numéro de compte bancaire"
+              placeholder="Entrez le numéro de compte bancaire *"
               value={formData.bankAccountNumber}
               onChange={handleInputChange}
               className={fieldErrors.bankAccountNumber ? 'input-error' : ''}
@@ -661,7 +661,7 @@ const handleSubmit = async (e) => {
           </div>
 
           {/* Show global existence errors above the Create button */}
-          {hasSubmitted && Object.keys(fieldErrors).length > 0 && (
+          {hasSubmitted && Object.keys(fieldErrors).length > 0 && !success && (
             <div className="alert alert-error" style={{marginBottom: '16px'}}>
               <ul style={{margin: 0, paddingLeft: '20px'}}>
                 {Object.entries(fieldErrors).map(([key, msg]) =>
