@@ -20,9 +20,10 @@
     width: 90%;
     max-width: 600px;
     max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-    animation: modalSlideIn 0.3s ease-out;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 90vh;
   }
   
   .confirmation-modal {
@@ -733,4 +734,46 @@
       border-radius: 0;
       min-width: 0;
     }
+  }
+
+  .fixed-header {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #0f5132;
+    color: white;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .scrollable-content {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    min-height: 0;
+    padding: 24px;
+  }
+
+  .fixed-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    background: #fff;
+    border-top: 1px solid #e5e7eb;
+    border-radius: 0 0 12px 12px;
+    padding: 16px 24px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+  }
+
+  .upload-modal.no-files {
+    min-height: 260px;
+    height : 590px;
+    max-height: 640px;
+    transition: max-height 0.3s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  .upload-modal.has-files {
+    min-height: 420px;
+    max-height: 90vh;
+    transition: max-height 0.3s cubic-bezier(0.4,0,0.2,1);
   }
