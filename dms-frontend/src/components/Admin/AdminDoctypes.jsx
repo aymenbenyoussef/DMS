@@ -434,7 +434,7 @@ const AdminDoctypes = ({ user }) => {
             <table className="users-table-fixed">
               <thead>
                 <tr>
-                  <th></th>
+                  <th style={{width: '24px', minWidth: '24px', maxWidth: '24px', padding: 0}}></th>
                   <th style={{cursor:'pointer', background: sortConfig.key === 'id' ? '#f0f4fa' : undefined, color: sortConfig.key === 'id' ? '#1976d2' : undefined}} onClick={() => handleSort('id')}>
                     ID <span style={{fontSize:'1em'}}>{sortConfig.key === 'id' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
                   </th>
@@ -482,7 +482,7 @@ const AdminDoctypes = ({ user }) => {
                 {!loading && filteredDoctypes.length > 0 && (
                   filteredDoctypes.map(doctype => (
                     <tr key={doctype.id}>
-                      <td>
+                      <td style={{width: '24px', minWidth: '24px', maxWidth: '24px', padding: 0, textAlign: 'center'}}>
                         <div className={`status-led ${doctype.status ? 'status-led-active' : 'status-led-inactive'}`}></div>
                       </td>
                       <td>{doctype.id}</td>
