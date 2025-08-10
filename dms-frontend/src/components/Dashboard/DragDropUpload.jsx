@@ -309,77 +309,82 @@ const DragDropUpload = ({ onUpload, onClose }) => {
     return (
       <div className="upload-modal-overlay">
         <div className="upload-modal confirmation-modal">
-          <div className="upload-header">
+          <div className="upload-header fixed-header">
             <h3>Confirmation des documents</h3>
             <button className="close-btn" onClick={onClose}>×</button>
           </div>
-          {erroredFiles.map((conf, idx) => (
-              <div key={idx} className="status-message error">
-                Erreur lors du traitement du fichier{conf.file.name}: {conf.error.message}
-              </div>
-          ))}
-          {validFiles.length > 0 && (
-          <DocumentConfirmationForm
-              files={validFiles}
-              onConfirm={async (confirmedDocuments, errors) => {
-                // If any errors, do not proceed
-                const hasError = errors.some(err => Object.keys(err).length > 0);
-                if (hasError) {
-                  setUploadStatus('error');
-                  alert('Veuillez corriger les erreurs dans tous les formulaires avant de confirmer.');
-                  return;
-                }
-                setIsUploading(true);
-                setUploadStatus('confirming');
-                try {
-                  for (let i = 0; i < validFiles.length; i++) {
-                    const conf = showConfirmations.find(c => c.sessionId === validFiles[i].sessionId);
-                    const doc = confirmedDocuments[i];
-                    if (conf.sessionId && doc) {
-                      const documentToConfirm = {
-                        ...doc,
-                        company_id: doc.company_id,
-                        doctype_id: doc.doctype_id,
-                        partner_id: doc.confirmed_data.partner_id || null,
-                        confirmed_data: { ...doc.confirmed_data }
-                      };
-                      const response = await API.documents.confirmDocuments(conf.sessionId, [documentToConfirm]);
-                      const savedDoc = response.data.saved_documents[0];
-                      if (savedDoc && !savedDoc.error) {
-                        onUpload({
-                          id: savedDoc.document_id,
-                          filename: savedDoc.filename,
-                          is_invoice: savedDoc.is_invoice,
-                          created_at: new Date().toISOString(),
-                          status: 'confirmed',
-                          partner_id: savedDoc.partner_id
-                        });
+          <div className="upload-content scrollable-content">
+            {erroredFiles.map((conf, idx) => (
+                <div key={idx} className="status-message error">
+                  Erreur lors du traitement du fichier{conf.file.name}: {conf.error.message}
+                </div>
+            ))}
+            {validFiles.length > 0 && (
+            <DocumentConfirmationForm
+                files={validFiles}
+                onConfirm={async (confirmedDocuments, errors) => {
+                  // If any errors, do not proceed
+                  const hasError = errors.some(err => Object.keys(err).length > 0);
+                  if (hasError) {
+                    setUploadStatus('error');
+                    alert('Veuillez corriger les erreurs dans tous les formulaires avant de confirmer.');
+                    return;
+                  }
+                  setIsUploading(true);
+                  setUploadStatus('confirming');
+                  try {
+                    for (let i = 0; i < validFiles.length; i++) {
+                      const conf = showConfirmations.find(c => c.sessionId === validFiles[i].sessionId);
+                      const doc = confirmedDocuments[i];
+                      if (conf.sessionId && doc) {
+                        const documentToConfirm = {
+                          ...doc,
+                          company_id: doc.company_id,
+                          doctype_id: doc.doctype_id,
+                          partner_id: doc.confirmed_data.partner_id || null,
+                          confirmed_data: { ...doc.confirmed_data }
+                        };
+                        const response = await API.documents.confirmDocuments(conf.sessionId, [documentToConfirm]);
+                        const savedDoc = response.data.saved_documents[0];
+                        if (savedDoc && !savedDoc.error) {
+                          onUpload({
+                            id: savedDoc.document_id,
+                            filename: savedDoc.filename,
+                            is_invoice: savedDoc.is_invoice,
+                            created_at: new Date().toISOString(),
+                            status: 'confirmed',
+                            partner_id: savedDoc.partner_id
+                          });
+                        }
                       }
                     }
+                    window.dispatchEvent(new Event('FilesUploaded'));
+                    setUploadStatus('completed');
+                    setTimeout(() => {
+                      onClose();
+                    }, 2000);
+                  } catch (error) {
+                    setUploadStatus('error');
+                    alert('Erreur lors de la confirmation: ' + (error.response?.data?.msg || error.message));
+                  } finally {
+                    setIsUploading(false);
                   }
-                  window.dispatchEvent(new Event('FilesUploaded'));
-                  setUploadStatus('completed');
-                  setTimeout(() => {
-                    onClose();
-                  }, 2000);
-                } catch (error) {
-                  setUploadStatus('error');
-                  alert('Erreur lors de la confirmation: ' + (error.response?.data?.msg || error.message));
-                } finally {
-                  setIsUploading(false);
-                }
-              }}
-            onCancel={onClose}
-            initialCompany={selectedCompany}
-            initialDoctype={selectedDoctype}
-              hideConfirmButton={false}
-            />
-          )}
-          {uploadStatus && (
-            <div className={`status-message ${uploadStatus}`}>
-              {getStatusMessage()}
-            </div>
-          )}
+                }}
+              onCancel={onClose}
+              initialCompany={selectedCompany}
+              initialDoctype={selectedDoctype}
+                hideConfirmButton={false}
+              />
+            )}
+            {uploadStatus && (
+              <div className={`status-message ${uploadStatus}`}>
+                {getStatusMessage()}
+              </div>
+            )}
+          </div>
+          <div className="upload-actions fixed-footer">
+            {/* Only show confirm/cancel if not in DocumentConfirmationForm */}
+          </div>
         </div>
       </div>
     );
@@ -387,20 +392,18 @@ const DragDropUpload = ({ onUpload, onClose }) => {
 
   return (
     <div className="upload-modal-overlay">
-      <div className="upload-modal">
-        <div className="upload-header">
+      <div className={`upload-modal${files.length > 0 ? ' has-files' : ' no-files'}`}>
+        <div className="upload-header fixed-header">
           <h3>Téléchargement de documents</h3>
           <button className="close-btn" onClick={onClose}>×</button>
         </div>
-        
-        <div className="upload-content">
+        <div className="upload-content scrollable-content">
           {selectedCompany && selectedDoctype && (
             <div className="selection-info">
               <p><strong>Entité :</strong> {selectedCompany.name}</p>
               <p><strong>Type de document :</strong> {selectedDoctype.name}</p>
             </div>
           )}
-          
           <div 
             className={`drop-zone ${isDragging ? 'dragging' : ''} ${files.length ? 'has-file' : ''}`}
             onDragEnter={handleDragEnter}
@@ -426,7 +429,6 @@ const DragDropUpload = ({ onUpload, onClose }) => {
               </p>
             </div>
           </div>
-          
           {/* Section des fichiers téléchargés - maintenant en dehors de la drop-zone */}
           {files.length > 0 && (
             <div className="uploaded-files-section">
@@ -454,7 +456,6 @@ const DragDropUpload = ({ onUpload, onClose }) => {
               </div>
             </div>
           )}
-          
           {isUploading && (
             <div className="upload-progress">
               <div className="progress-bar">
@@ -466,29 +467,27 @@ const DragDropUpload = ({ onUpload, onClose }) => {
               <span className="progress-text">{uploadProgress}%</span>
             </div>
           )}
-          
           {uploadStatus && (
             <div className={`status-message ${uploadStatus}`}>
               {getStatusMessage()}
             </div>
           )}
-          
-          <div className="upload-actions">
-            <button 
-              className="btn-secondary" 
-              onClick={onClose}
-              disabled={isUploading}
-            >
-              Annuler
-            </button>
-            <button 
-              className="btn-primary" 
-              onClick={handleUpload}
-              disabled={!files.length || isUploading || !selectedCompany}
-            >
-              {isUploading ? 'Treatment...' : 'Upload'}
-            </button>
-          </div>
+        </div>
+        <div className="upload-actions fixed-footer">
+          <button 
+            className="btn-secondary" 
+            onClick={onClose}
+            disabled={isUploading}
+          >
+            Annuler
+          </button>
+          <button 
+            className="btn-primary" 
+            onClick={handleUpload}
+            disabled={!files.length || isUploading || !selectedCompany}
+          >
+            {isUploading ? 'Treatment...' : 'Upload'}
+          </button>
         </div>
       </div>
     </div>
