@@ -719,3 +719,15 @@
     min-width: 0;
   }
 }
+.upload-modal.no-files {
+    min-height: 260px;
+    height : 590px;
+    max-height: 640px;
+    transition: max-height 0.3s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  .upload-modal.has-files {
+    min-height: 420px;
+    max-height: 90vh;
+    transition: max-height 0.3s cubic-bezier(0.4,0,0.2,1);
+  }

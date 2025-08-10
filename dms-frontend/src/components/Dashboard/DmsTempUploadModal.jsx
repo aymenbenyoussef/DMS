@@ -187,12 +187,12 @@ const DmsTempUploadModal = ({ onClose, onSuccess }) => {
 
   return (
     <div className="upload-modal-overlay">
-      <div className="upload-modal">
-        <div className="upload-header">
+      <div className={`upload-modal${files.length > 0 ? ' has-files' : ' no-files'}`}> 
+        <div className="upload-header fixed-header">
           <h3>Téléchargement temporaire vers DMS</h3>
           <button className="close-btn" onClick={onClose}>&times;</button>
         </div>
-        <div className="upload-content">
+        <div className="upload-content scrollable-content">
           <div 
             className={`drop-zone ${isDragging ? 'dragging' : ''} ${files.length ? 'has-file' : ''}`}
             onDragEnter={handleDragEnter}
@@ -262,22 +262,22 @@ const DmsTempUploadModal = ({ onClose, onSuccess }) => {
               {getStatusMessage()}
             </div>
           )}
-          <div className="upload-actions">
-            <button 
-              className="btn-secondary" 
-              onClick={onClose}
-              disabled={isUploading}
-            >
-              Cancel
-            </button>
-            <button 
-              className="btn-primary" 
-              onClick={handleUpload}
-              disabled={!files.length || isUploading}
-            >
-              {isUploading ? 'Uploading...' : 'Upload'}
-            </button>
-          </div>
+        </div>
+        <div className="upload-actions fixed-footer">
+          <button 
+            className="btn-secondary" 
+            onClick={onClose}
+            disabled={isUploading}
+          >
+            Cancel
+          </button>
+          <button 
+            className="btn-primary" 
+            onClick={handleUpload}
+            disabled={!files.length || isUploading}
+          >
+            {isUploading ? 'Uploading...' : 'Upload'}
+          </button>
         </div>
       </div>
     </div>
