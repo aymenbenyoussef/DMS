@@ -1,8 +1,34 @@
 import axios from 'axios';
 import Logger from './utils/logger';
 
+// Dynamic API base resolution: prefer REACT_APP_API_BASE_URL (supports "||" as alternatives), otherwise derive from current window.location with default port 5000
+export function getApiBaseUrl() {
+  try {
+    const envRaw = process.env.REACT_APP_API_BASE_URL;
+    if (envRaw) {
+      const candidates = envRaw.split('||').map(s => s.trim()).filter(Boolean);
+      for (let c of candidates) {
+        // replace 0.0.0.0 by actual hostname
+        if (c.includes('0.0.0.0')) {
+          c = c.replace('0.0.0.0', window.location.hostname);
+        }
+        // if scheme missing add current protocol
+        if (!/^https?:\/\//i.test(c)) {
+          c = `${window.location.protocol}//${c}`;
+        }
+        return c;
+      }
+    }
+  } catch (e) {
+    // ignore and fallback to window location
+  }
+  const port = process.env.REACT_APP_API_PORT || '5000';
+  return `${window.location.protocol}//${window.location.hostname}:${port}`;
+}
+
+const API_BASE_URL = getApiBaseUrl();
+
 // Create axios instance with base configuration
-const API_BASE_URL = 'http://localhost:5000';
 
 const API = axios.create({
   baseURL: API_BASE_URL,
