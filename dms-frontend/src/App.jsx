@@ -25,14 +25,12 @@ import AddPartner from './components/Admin/AddPartner';
 import { AppProvider } from './components/context';  
 import './App.css';
 import SettingsUsers from './components/Auth/SettingsUsers';
+import { getApiBaseUrl } from './api';
 
 // API configuration remains the same as in your original file
-const API_BASE = 'http://localhost:5000';
+const API_BASE = getApiBaseUrl();
 
 const api = {
-
-
-  
   login: async (credentials) => {
     const response = await fetch(`${API_BASE}/login`, {
       method: 'POST',
