@@ -4,7 +4,7 @@ import './Sidebar.css';
 import { useNavigate } from 'react-router-dom'; 
 import { AppContext } from '../context';
 
-const Sidebar = ({ user, loadingUser }) => {
+const Sidebar = ({ user, loadingUser, isOpen }) => {
   const [companies, setCompanies] = useState([]);
   const [folders, setFolders] = useState({});
   const [error, setError] = useState('');
@@ -215,7 +215,7 @@ const Sidebar = ({ user, loadingUser }) => {
   };
 
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
       <header className="sidebar-header" onClick={handleHeaderClick}>
         <svg xmlns="http://www.w3.org/2000/svg" className="company-icon" viewBox="0 0 24 24" fill="currentColor">
           <path d="M3 21v-2h18v2H3zm2-3V3h6v15H5zm8 0V7h6v11h-6z" />

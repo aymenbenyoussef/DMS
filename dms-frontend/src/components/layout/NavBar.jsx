@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { BiData, BiBarChart, BiGroup, BiCog, BiFile, BiLogOut, BiChevronDown, BiUser, BiBuilding, BiTag, BiReceipt, BiCollection, BiFolder, BiBuildings, BiSearch, BiLock } from 'react-icons/bi';
+import { BiData, BiBarChart, BiGroup, BiCog, BiFile, BiLogOut, BiChevronDown, BiUser, BiBuilding, BiTag, BiReceipt, BiCollection, BiFolder, BiBuildings, BiSearch, BiLock, BiMenu } from 'react-icons/bi';
 import api from '../../api';
 import { AppContext } from '../context';
 import DmsTempUploadModal from '../Dashboard/DmsTempUploadModal';
 import './NavBar.css';
 
-const NavBar = ({ user, onLogout }) => {
+const NavBar = ({ user, onLogout, toggleSidebar }) => {
   const { systemName, setSelectedCompany: setContextCompany, setSelectedDoctype: setContextDoctype } = useContext(AppContext);
   const [showAdminTools, setShowAdminTools] = useState(false);
   const [showDmsTempModal, setShowDmsTempModal] = useState(false);
@@ -176,6 +176,10 @@ const NavBar = ({ user, onLogout }) => {
     <>
     <nav className="navbar">
       <div className="navbar-container">
+        {/* Sidebar toggle (visible on all sizes, styled in CSS) */}
+        <button className="sidebar-toggle" onClick={() => typeof toggleSidebar === 'function' && toggleSidebar()} aria-label="Basculer la barre latérale">
+          <BiMenu size={20} />
+        </button>
         {/* Logo Section */}
         <div className="navbar-brand" onClick={resetSelection}>
           <Link to="/" className="logo-link">
@@ -206,16 +210,6 @@ const NavBar = ({ user, onLogout }) => {
                 }
               }}
             />
-            <button onClick={handleSearch} className="search-button" disabled={isSearching}>
-              {isSearching ? (
-                <>
-                  <i className="bi bi-arrow-clockwise me-1" style={{animation: 'spin 1s linear infinite'}}></i>
-                  Recherche...
-                </>
-              ) : (
-                'Rechercher'
-              )}
-            </button>
           </div>
 
           {showSearchResults && (
