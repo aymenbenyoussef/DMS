@@ -406,7 +406,7 @@ const DocumentConfirmationForm = ({
               </div>
             <div className="form-row">
               <div className="form-group">
-                <label>Total HT (€) *:</label>
+                <label>Total HT  *:</label>
                 <input
                   type="number"
                   step="0.01"
@@ -418,7 +418,7 @@ const DocumentConfirmationForm = ({
                   {err.total_ht && <div className="error-message">{err.total_ht}</div>}
               </div>
               <div className="form-group">
-                <label>TVA (€) *:</label>
+                <label>TVA  *:</label>
                 <input
                   type="number"
                   step="0.01"
@@ -430,7 +430,7 @@ const DocumentConfirmationForm = ({
                   {err.tva && <div className="error-message">{err.tva}</div>}
               </div>
               <div className="form-group">
-                <label>Total TTC (€) *:</label>
+                <label>Total TTC  *:</label>
                 <input
                   type="number"
                   step="0.01"
@@ -608,7 +608,7 @@ const DocumentConfirmationForm = ({
                 </div>
                 <div className="form-row">
                   <div className="form-group">
-                    <label>Total HT (€) *:</label>
+                    <label>Total HT  *:</label>
                     <input
                       type="number"
                       step="0.01"
@@ -620,7 +620,7 @@ const DocumentConfirmationForm = ({
                     {errors[idx].total_ht && <div className="error-message">{errors[idx].total_ht}</div>}
                   </div>
                   <div className="form-group">
-                    <label>TVA (€) *:</label>
+                    <label>TVA  *:</label>
                     <input
                       type="number"
                       step="0.01"
@@ -632,7 +632,7 @@ const DocumentConfirmationForm = ({
                     {errors[idx].tva && <div className="error-message">{errors[idx].tva}</div>}
                   </div>
                   <div className="form-group">
-                    <label>Total TTC (€) *:</label>
+                    <label>Total TTC  *:</label>
                     <input
                       type="number"
                       step="0.01"

@@ -276,11 +276,9 @@ const AdminUsers = ({user ,loadingUser}) => {
       errorMessages.push('Surname is required');
     }
     if (!formData.email.trim()) {
-      errors.email = 'Email is required';
-      errorMessages.push('Email is required');
-    } else if (!formData.email.includes('@')) {
-      errors.email = 'Email is invalid';
-      errorMessages.push('Email is invalid');
+      errors.email = 'L\'email est requis.';
+    } else if (!/^([a-zA-Z0-9._-]+)@([a-zA-Z0-9.-]+)\.([a-zA-Z]{2,})$/.test(formData.email) || (formData.email.match(/@/g) || []).length !== 1) {
+      errors.email = 'Format d\'email invalide.';
     }
     if (!editingUser && !formData.password) {
       errors.password = 'Password is required';
@@ -931,4 +929,3 @@ const AdminUsers = ({user ,loadingUser}) => {
 
 export default AdminUsers;
 
- 

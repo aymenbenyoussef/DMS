@@ -211,13 +211,27 @@ const AdminPartners = ({ user }) => {
       errors.mailing_address = 'Mailing address is required';
       errorMessages.push('Mailing address is required');
     }
-    if (!formData.phone1.trim()) {
-      errors.phone1 = 'Primary phone is required';
-      errorMessages.push('Primary phone is required');
+    if (!String(formData.phone1 || '').trim()) {
+      errors.phone1 = 'Le numéro de téléphone principal est requis';
+      errorMessages.push('Le numéro de téléphone principal est requis');
+    } else if (!/^\d{8}$/.test(formData.phone1)) {
+      errors.phone1 = 'Le numéro de téléphone principal doit contenir exactement 8 chiffres';
+      errorMessages.push('Le numéro de téléphone principal doit contenir exactement 8 chiffres');
     }
-    if (!formData.email.trim()) {
-      errors.email = 'Email is required';
-      errorMessages.push('Email is required');
+    if (formData.phone2 && !/^\d{8}$/.test(formData.phone2)) {
+      errors.phone2 = 'Le numéro de téléphone secondaire doit contenir exactement 8 chiffres';
+      errorMessages.push('Le numéro de téléphone secondaire doit contenir exactement 8 chiffres');
+    }
+    if (formData.phone3 && !/^\d{8}$/.test(formData.phone3)) {
+      errors.phone3 = 'Le numéro de téléphone additionnel doit contenir exactement 8 chiffres';
+      errorMessages.push('Le numéro de téléphone additionnel doit contenir exactement 8 chiffres');
+    }
+    if (!String(formData.email || '').trim()) {
+      errors.email = 'L\'email est requis';
+      errorMessages.push('L\'email est requis');
+    } else if (!/^([a-zA-Z0-9._-]+)@([a-zA-Z0-9.-]+)\.([a-zA-Z]{2,})$/.test(formData.email) || (formData.email.match(/@/g) || []).length !== 1) {
+      errors.email = 'Format d\'email invalide.';
+      errorMessages.push('Format d\'email invalide.');
     }
     if (formData.companies.length === 0) {
       errors.companies = 'At least one company must be selected';
@@ -484,11 +498,9 @@ const AdminPartners = ({ user }) => {
         </div>
       </div>
 
-      {error && <div className="alert alert-error">{error}</div>}
+      
       {success && <div className="alert alert-success">{success}</div>}
-      {globalLimitError && (
-        <div className="alert alert-error" style={{marginBottom: '1rem', fontWeight: 600}}>{globalLimitError}</div>
-      )}
+      
       
 
       {activeTab === 'list' && (
@@ -508,10 +520,10 @@ const AdminPartners = ({ user }) => {
               }}
               onClick={handleResetFilters}
             >
-              Reset Filter
+              Réinitialiser le filtre
             </button>
             <button className="export-dropdown-btn" onClick={() => setExportMenuOpen(v => !v)}>
-              Export ▼
+              Exporter ▼
             </button>
             {exportMenuOpen && (
               <ul ref={exportMenuRef} style={{
@@ -587,19 +599,19 @@ const AdminPartners = ({ user }) => {
                   <th style={{width: '24px', minWidth: '24px', maxWidth: '24px', padding: 0}}></th>
                   
                   <th style={{cursor:'pointer', background: sortConfig.key === 'unique_identifier' ? '#f0f4fa' : undefined, color: sortConfig.key === 'unique_identifier' ? '#1976d2' : undefined}} onClick={() => handleSort('unique_identifier')}>
-                    Unique Identifier <span style={{fontSize:'1em'}}>{sortConfig.key === 'unique_identifier' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                    Identifiant unique <span style={{fontSize:'1em'}}>{sortConfig.key === 'unique_identifier' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
                   </th>
                   <th style={{cursor:'pointer', background: sortConfig.key === 'company_name' ? '#f0f4fa' : undefined, color: sortConfig.key === 'company_name' ? '#1976d2' : undefined}} onClick={() => handleSort('company_name')}>
-                    Company Name <span style={{fontSize:'1em'}}>{sortConfig.key === 'company_name' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                    Nom d'entreprise <span style={{fontSize:'1em'}}>{sortConfig.key === 'company_name' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
                   </th>
                   <th style={{cursor:'pointer', background: sortConfig.key === 'companies' ? '#f0f4fa' : undefined, color: sortConfig.key === 'companies' ? '#1976d2' : undefined}} onClick={() => handleSort('companies')}>
-                    Entities <span style={{fontSize:'1em'}}>{sortConfig.key === 'companies' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                    Entités <span style={{fontSize:'1em'}}>{sortConfig.key === 'companies' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
                   </th>
                   <th style={{cursor:'pointer', background: sortConfig.key === 'partnertypes' ? '#f0f4fa' : undefined, color: sortConfig.key === 'partnertypes' ? '#1976d2' : undefined}} onClick={() => handleSort('partnertypes')}>
-                    Partner Types <span style={{fontSize:'1em'}}>{sortConfig.key === 'partnertypes' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                    Type de partenaire <span style={{fontSize:'1em'}}>{sortConfig.key === 'partnertypes' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
                   </th>
                   <th style={{cursor:'pointer', background: sortConfig.key === 'phone1' ? '#f0f4fa' : undefined, color: sortConfig.key === 'phone1' ? '#1976d2' : undefined}} onClick={() => handleSort('phone1')}>
-                    Phone <span style={{fontSize:'1em'}}>{sortConfig.key === 'phone1' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                    Téléphone <span style={{fontSize:'1em'}}>{sortConfig.key === 'phone1' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
                   </th>
                   <th style={{cursor:'pointer', background: sortConfig.key === 'email' ? '#f0f4fa' : undefined, color: sortConfig.key === 'email' ? '#1976d2' : undefined}} onClick={() => handleSort('email')}>
                     Email <span style={{fontSize:'1em'}}>{sortConfig.key === 'email' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
@@ -847,7 +859,9 @@ const AdminPartners = ({ user }) => {
                     placeholder="Entrez le téléphone secondaire"
                     value={formData.phone2}
                     onChange={handleInputChange}
+                    className={fieldErrors.phone2 ? 'input-error' : ''}
                   />
+                  {fieldErrors.phone2 && <div className="field-error">{fieldErrors.phone2}</div>}
                 </div>
                 <div className="form-group">
                   <label>Téléphone 3</label>
@@ -857,7 +871,9 @@ const AdminPartners = ({ user }) => {
                     placeholder="Entrez le téléphone additionnel"
                     value={formData.phone3}
                     onChange={handleInputChange}
+                    className={fieldErrors.phone3 ? 'input-error' : ''}
                   />
+                  {fieldErrors.phone3 && <div className="field-error">{fieldErrors.phone3}</div>}
                 </div>
                 <div className="form-group">
                   <label>Email</label>

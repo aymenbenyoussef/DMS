@@ -54,9 +54,9 @@ const AddUser = () => {
   if (!formData.email.trim()) {
     errors.email = 'L\'email est requis';
     errorMessages.push('L\'email est requis');
-  } else if (!formData.email.includes('@')) {
-    errors.email = 'L\'email est invalide';
-    errorMessages.push('L\'email est invalide');
+  } else if (!/^([a-zA-Z0-9._-]+)@([a-zA-Z0-9.-]+)\.([a-zA-Z]{2,})$/.test(formData.email) || (formData.email.match(/@/g) || []).length !== 1) {
+    errors.email = 'Format d\'email invalide.';
+    errorMessages.push('Format d\'email invalide.');
   }
   if (!formData.password) {
     errors.password = 'Le mot de passe est requis';
@@ -99,7 +99,7 @@ const AddUser = () => {
     if (!formData.username.trim()) errors.username = "Le nom d'utilisateur est requis";
     if (!formData.surname.trim()) errors.surname = 'Le prénom est requis';
     if (!formData.email.trim()) errors.email = "L'email est requis";
-    else if (!formData.email.includes('@')) errors.email = "L'email est invalide";
+    else if (!/^([a-zA-Z0-9._-]+)@([a-zA-Z0-9.-]+)\.([a-zA-Z]{2,})$/.test(formData.email) || (formData.email.match(/@/g) || []).length !== 1) errors.email = "Format d'email invalide.";
     setFieldErrors(errors);
     if (Object.keys(errors).length === 0) setActiveTab('security');
   };

@@ -131,16 +131,24 @@ const AddPartner = ({ user }) => {
       if (!formData.phone1.trim()) {
         errors.phone1 = 'Le téléphone principal est requis';
         errorMessages.push('Le téléphone principal est requis');
-      } else if (!/^[0-9+\- ]+$/.test(formData.phone1)) {
-        errors.phone1 = 'Format de numéro de téléphone invalide';
-        errorMessages.push('Format de numéro de téléphone principal non valide');
+      } else if (!/^\d{8}$/.test(formData.phone1)) {
+        errors.phone1 = 'Le numéro de téléphone principal doit contenir exactement 8 chiffres';
+        errorMessages.push('Le numéro de téléphone principal doit contenir exactement 8 chiffres');
+      }
+      if (formData.phone2 && !/^\d{8}$/.test(formData.phone2)) {
+        errors.phone2 = 'Le numéro de téléphone secondaire doit contenir exactement 8 chiffres';
+        errorMessages.push('Le numéro de téléphone secondaire doit contenir exactement 8 chiffres');
+      }
+      if (formData.phone3 && !/^\d{8}$/.test(formData.phone3)) {
+        errors.phone3 = 'Le numéro de téléphone additionnel doit contenir exactement 8 chiffres';
+        errorMessages.push('Le numéro de téléphone additionnel doit contenir exactement 8 chiffres');
       }
       if (!formData.email.trim()) {
         errors.email = 'L e-mail est requis';
         errorMessages.push('L e-mail est requis');
-      } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
-        errors.email = 'L e-mail n est pas valide';
-        errorMessages.push('L e-mail n est pas valide');
+      } else if (!/^([a-zA-Z0-9._-]+)@([a-zA-Z0-9.-]+)\.([a-zA-Z]{2,})$/.test(formData.email) || (formData.email.match(/@/g) || []).length !== 1) {
+        errors.email = 'Format d\'email invalide.';
+        errorMessages.push('Format d\'email invalide.');
       }
     }
 
@@ -534,6 +542,7 @@ const handleSubmit = async (e) => {
               value={formData.phone2}
               onChange={handleInputChange}
             />
+            {fieldErrors.phone2 && <div className="field-error">{fieldErrors.phone2}</div>}
           </div>
           <div className="form-group">
             <label>Téléphone 3</label>
@@ -544,6 +553,7 @@ const handleSubmit = async (e) => {
               value={formData.phone3}
               onChange={handleInputChange}
             />
+            {fieldErrors.phone3 && <div className="field-error">{fieldErrors.phone3}</div>}
           </div>
           <div className="form-group">
             <label>Email</label>

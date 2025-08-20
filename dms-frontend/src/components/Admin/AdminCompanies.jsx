@@ -157,10 +157,16 @@ const AdminCompanies = ({ user }) => {
     if (!String(formData.phone || '').trim()) {
       errors.phone = 'Le numéro de téléphone est requis';
       errorMessages.push('Le numéro de téléphone est requis');
+    } else if (!/^\d{8}$/.test(formData.phone)) {
+      errors.phone = 'Le numéro de téléphone doit contenir exactement 8 chiffres';
+      errorMessages.push('Le numéro de téléphone doit contenir exactement 8 chiffres');
     }
     if (!String(formData.email || '').trim()) {
       errors.email = 'L\'email est requis';
       errorMessages.push('L\'email est requis');
+    } else if (!/^([a-zA-Z0-9._-]+)@([a-zA-Z0-9.-]+)\.([a-zA-Z]{2,})$/.test(formData.email) || (formData.email.match(/@/g) || []).length !== 1) {
+      errors.email = 'Format d\'email invalide.';
+      errorMessages.push('Format d\'email invalide.');
     }
   
     setFieldErrors(errors);
@@ -346,18 +352,10 @@ const AdminCompanies = ({ user }) => {
         </div>
       </div>
 
-      {error && <div className="alert alert-error">{error}</div>}
+      
       {success && <div className="alert alert-success">{success}</div>}
-      {globalErrors.length > 0 && (
-        <div className="alert alert-error">
-          {globalErrors.map((err, index) => (
-            <div key={index}>{err}</div>
-          ))}
-        </div>
-      )}
-      {globalLimitError && (
-        <div className="alert alert-error" style={{marginBottom: '1rem', fontWeight: 600}}>{globalLimitError}</div>
-      )}
+      
+      
 
       {activeTab === 'list' && (
         <div className="users-list">
@@ -376,10 +374,10 @@ const AdminCompanies = ({ user }) => {
               }}
               onClick={handleResetFilters}
             >
-              Reset Filter
+              Réinitialiser le filtre
             </button>
             <button className="export-dropdown-btn" onClick={() => setExportMenuOpen(v => !v)}>
-              Export ▼
+              Exporter ▼
             </button>
             {exportMenuOpen && (
               <ul ref={exportMenuRef} style={{
