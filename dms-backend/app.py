@@ -61,15 +61,15 @@ def log_activity(actor, action, resource_type, resource_data):
     timestamp = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     
     # Format log entry based on resource type
-    if resource_type == "user":
+    if resource_type == "utilisateur":
         log_entry = (
-            f"{timestamp} - {actor} - {action} User: "
+            f"{timestamp} - {actor} - {action} Utilisateur: "
             f"{resource_data['id']}, {resource_data['username']}, "
             f"{resource_data['email']}, {'enabled' if resource_data['is_active'] else 'disabled'}"
         )
-    elif resource_type == "company":
+    elif resource_type == "entité":
         log_entry = (
-            f"{timestamp} - {actor} - {action} Entity: "
+            f"{timestamp} - {actor} - {action} Entité: "
             f"{resource_data['id']}, {resource_data['name']}"
         )
     elif resource_type == "document":
@@ -78,25 +78,25 @@ def log_activity(actor, action, resource_type, resource_data):
             f"{resource_data['id']}, {resource_data['filename']}, "
             f"company_id={resource_data['company_id']}"
         )
-    elif resource_type == "doctype":
+    elif resource_type == "typededocu":
         log_entry = (
-            f"{timestamp} - {actor} - {action} DocType: "
+            f"{timestamp} - {actor} - {action} TypeDeDoc: "
             f"{resource_data['id']}, {resource_data['name']}"
         )
-    elif resource_type == "partnertype":
+    elif resource_type == "typedepartenaire":
         log_entry = (
-            f"{timestamp} - {actor} - {action} PartnerType: "
+            f"{timestamp} - {actor} - {action} TypePartenaire: "
             f"{resource_data['id']}, {resource_data['name']}, "
             f"{'active' if resource_data.get('status', True) else 'inactive'}"
         )   
-    elif resource_type == "partner":
+    elif resource_type == "partenaire":
         log_entry = (
-            f"{timestamp} - {actor} - {action} Partner: "
+            f"{timestamp} - {actor} - {action} Partenaire: "
             f"{resource_data['id']}, {resource_data['company_name']}, "
             f"type={resource_data.get('partner_type', 'N/A')}, "
             f"status={'active' if resource_data.get('status', True) else 'inactive'}"
         )
-    elif resource_type == "login":
+    elif resource_type == "connecter":
         log_entry = (
             f"{timestamp} - {actor} - {action} Compte: "
             f"email={resource_data.get('email','')}, username={resource_data.get('username','')}, "
@@ -108,9 +108,9 @@ def log_activity(actor, action, resource_type, resource_data):
             f"email={resource_data.get('email','')}, username={resource_data.get('username','')}, "
             f"date={resource_data.get('date','')}"
         )
-    elif resource_type == "tempdocument":
+    elif resource_type == "documenttemp":
         log_entry = (
-            f"{timestamp} - {actor} - {action} TempDocument : "
+            f"{timestamp} - {actor} - {action} DocumentTemp : "
             f"{resource_data['id']}, {resource_data['filename']}, "
             
         )
@@ -264,8 +264,8 @@ def login():
     # Log the login event
     log_activity(
         actor=user["username"],
-        action="Login",
-        resource_type="login",
+        action="connecter",
+        resource_type="connecter",
         resource_data={
             "email": user["email"],
             "username": user["username"],
@@ -298,7 +298,7 @@ def forgot_password():
     # Log the password reset event
     log_activity(
         actor=user["username"],
-        action="PasswordReset",
+        action="MdpReinitialiser",
         resource_type="MDPreinitialisation",
         resource_data={
             "email": user["email"],
@@ -311,8 +311,8 @@ def forgot_password():
     # Reload environment variables to get the latest SMTP settings
     load_dotenv(SETTINGS_ENV_PATH, override=True)
     
-    smtp_host = "smtp.gmail.com"  # Change as needed
-    smtp_port = 587
+    smtp_host = os.environ.get('SMTP_HOST', 'smtp.gmail.com')
+    smtp_port = os.environ.get('SMTP_PORT', 587)
     smtp_user = os.environ.get('SMTP_EMAIL', 'ranesmerald358@gmail.com')  # Get from .env
     smtp_pass = os.environ.get('SMTP_PASSWORD', 'tvkw cnff wpge eccz')     # Get from .env
 
@@ -426,8 +426,8 @@ def create_user():
         # Log the user creation event
         log_activity(
             actor=current_user_claims['username'],
-            action="Create",
-            resource_type="user",
+            action="Creation",
+            resource_type="utilisateur",
             resource_data={
                 'id': user_id,
                 'username': data['username'],
@@ -476,8 +476,8 @@ def update_user(user_id):
             # Log user update
             log_activity(
                 actor=current_user_claims['username'],
-                action="Update",
-                resource_type="user",
+                action="Modifier",
+                resource_type="utilisateur",
                 resource_data={
                     'id': user_id,
                     'username': data.get('username', '[unchanged]'),
@@ -509,8 +509,8 @@ def delete_user(user_id):
             # Log user deletion
             log_activity(
                 actor=current_user_claims['username'],
-                action="Delete",
-                resource_type="user",
+                action="Supprission",
+                resource_type="utilisateur",
                 resource_data={
                     'id': user_id,
                     'username': user['username'],
@@ -555,8 +555,8 @@ def create_partner_type():
         # Log the creation
         log_activity(
             actor=current_user_claims['username'],
-            action="Create",
-            resource_type="partnertype",
+            action="Creation",
+            resource_type="typedepartenaire",
             resource_data={
                 'id': partner_type_id,
                 'name': data['name'].strip(),
@@ -596,8 +596,8 @@ def update_partner_type(partner_type_id):
             
             log_activity(
                 actor=current_user_claims['username'],
-                action="Update",
-                resource_type="partnertype",
+                action="Modifier",
+                resource_type="typedepartenaire",
                 resource_data={
                     'id': partner_type_id,
                     'name': data.get('name'),
@@ -646,8 +646,8 @@ def delete_partner_type(partner_type_id):
             
             log_activity(
                 actor=current_user_claims['username'],
-                action="Delete",
-                resource_type="partnertype",
+                action="Supprission",
+                resource_type="typedepartenaire",
                 resource_data={
                     'id': partner_type_id,
                     'name': partner_type['name'],
@@ -700,8 +700,8 @@ def create_company():
         # Log company creation
         log_activity(
             actor=current_user_claims['username'],
-            action="Create",
-            resource_type="company",
+            action="Creation",
+            resource_type="entité",
             resource_data={
                 'id': company_id,
                 'name': data.get('name')
@@ -759,8 +759,8 @@ def update_company(company_id):
         # Log company update
         log_activity(
             actor=current_user_claims['username'],
-            action="Update",
-            resource_type="company",
+            action="Modifier",
+            resource_type="entité",
             resource_data={
                 'id': company_id,
                 'name': company['name']
@@ -789,8 +789,8 @@ def delete_company(company_id):
         if success:
             log_activity(
                 actor=current_user_claims['username'],
-                action="Delete",
-                resource_type="company",
+                action="Supprission",
+                resource_type="entité",
                 resource_data={
                     'id': company_id,
                     'name': company['name']
@@ -884,8 +884,8 @@ def create_partner():
         # Log partner creation
         log_activity(
             actor=current_user_claims['username'],
-            action="Create",
-            resource_type="partner",
+            action="Creation",
+            resource_type="partenaire",
             resource_data={
                 'id': partner_id,
                 'company_name': partner['company_name'],
@@ -947,8 +947,8 @@ def update_partner(partner_id):
             # Log the update
             log_activity(
                 actor=current_user_claims["username"],
-                action="Update",
-                resource_type="partner",
+                action="Midifier",
+                resource_type="partenaire",
                 resource_data={
                     "id": partner_id,
                     "company_name": partner["company_name"],
@@ -983,8 +983,8 @@ def delete_partner(partner_id):
             # Log the status change
             log_activity(
                 actor=current_user_claims['username'],
-                action="Delete",
-                resource_type="partner",
+                action="Supprission",
+                resource_type="partenaire",
                 resource_data={
                     'id': partner_id,
                     'company_name': partner['company_name'],
@@ -1145,8 +1145,8 @@ def create_doctype():
         # Log creation
         log_activity(
             actor=current_user_claims['username'],
-            action="Create",
-            resource_type="doctype",
+            action="Creation",
+            resource_type="typededocu",
             resource_data={
                 'id': doctype_id,
                 'name': data['name'].strip()
@@ -1222,8 +1222,8 @@ def update_doctype(doctype_id):
             # Log doctype update
             log_activity(
                 actor=current_user_claims['username'],
-                action="Update",
-                resource_type="doctype",
+                action="Modifier",
+                resource_type="typededocu",
                 resource_data={
                     'id': doctype_id,
                     'name': data.get('name', '[unchanged]')
@@ -1253,8 +1253,8 @@ def delete_doctype(doctype_id):
             # Log doctype deletion
             log_activity(
                 actor=current_user_claims['username'],
-                action="Delete",
-                resource_type="doctype",
+                action="Supprission",
+                resource_type="typededocu",
                 resource_data={
                     'id': doctype_id,
                     'name': doctype['name']
@@ -1347,7 +1347,7 @@ def create_document():
         # Log document creation
         log_activity(
             actor=current_user_claims['username'],
-            action="Create",
+            action="Creation",
             resource_type="document",
             resource_data={
                 'id': document_id,
@@ -1693,7 +1693,7 @@ def confirm_document():
                 # Log document creation
                 log_activity(
                     actor=f"{current_user_claims.get('username', 'Unknown')} (id={current_user_id})",
-                    action="Create",
+                    action="Creation",
                     resource_type="document",
                     resource_data={
                         'id': document_id,
@@ -2160,7 +2160,7 @@ def update_document(document_id):
         if success:
             log_activity(
                 actor=current_user_claims['username'],
-                action="Update",
+                action="Modifer",
                 resource_type="document",
                 resource_data={
                     'id': document_id,
@@ -2211,7 +2211,7 @@ def delete_document(document_id):
             # Log document deletion
             log_activity(
                 actor=current_user_claims['username'],
-                action="Delete",
+                action="Supprission",
                 resource_type="document",
                 resource_data={
                     'id': document_id,
@@ -2442,12 +2442,14 @@ def update_settings():
         "logsPath": "SYSTEM_LOGS_PATH",
         "entitiesDataPath": "ENTITIES_DATA_PATH",
         "smtpEmail": "SMTP_EMAIL",
-        "smtpPassword": "SMTP_PASSWORD"
+        "smtpPassword": "SMTP_PASSWORD",
+        "smtpHost": "SMTP_HOST",
+        "smtpPort": "SMTP_PORT"
     }
     
     # Check if SMTP settings are being updated
     smtp_updated = False
-    if 'smtpEmail' in data or 'smtpPassword' in data:
+    if 'smtpEmail' in data or 'smtpPassword' in data or 'smtpHost' in data or 'smtpPort' in data:
         smtp_updated = True
     
     # Read current .env
@@ -2496,7 +2498,9 @@ def get_settings():
         "logsPath": "SYSTEM_LOGS_PATH",
         "entitiesDataPath": "ENTITIES_DATA_PATH",
         "smtpEmail": "SMTP_EMAIL",
-        "smtpPassword": "SMTP_PASSWORD"
+        "smtpPassword": "SMTP_PASSWORD",
+        "smtpHost": "SMTP_HOST",
+        "smtpPort": "SMTP_PORT"
     }
     env_vars = {k: '' for k in env_map.keys()}
     if os.path.exists(SETTINGS_ENV_PATH):
@@ -2661,8 +2665,8 @@ L'équipe RAN ESMERALD
         # Reload environment variables to get the latest SMTP settings
         load_dotenv(SETTINGS_ENV_PATH, override=True)
         
-        smtp_host = "smtp.gmail.com"
-        smtp_port = 587
+        smtp_host = os.environ.get('SMTP_HOST', 'smtp.gmail.com')
+        smtp_port = os.environ.get('SMTP_PORT', 587)
         smtp_user = os.environ.get('SMTP_EMAIL', 'ranesmerald@gmail.com')
         smtp_pass = os.environ.get('SMTP_PASSWORD', 'tvkw cnff wpge eccz')
         
@@ -2731,7 +2735,7 @@ L'équipe RAN ESMERALD
         # Log activity
         log_activity(
             actor=current_username,
-            action="Send Email",
+            action="envoi d\'Email",
             resource_type="document",
             resource_data={
                 'id': document_id,
@@ -2861,8 +2865,8 @@ def upload_temp_documents():
         # Log the temporary document creation
         log_activity(
             actor=current_user_claims['username'],
-            action="Create",
-            resource_type="tempdocument",
+            action="Creation",
+            resource_type="documenttemp",
             resource_data={
                 'id': temp_doc_id,
                 'filename': filename,
@@ -2906,8 +2910,8 @@ def delete_temp_document(doc_id):
         # Log the temporary document deletion before deleting
         log_activity(
             actor=current_user_claims['username'],
-            action="Delete",
-            resource_type="tempdocument",
+            action="Supprission",
+            resource_type="documenttemp",
             resource_data={
                 'id': doc_id,
                 'filename': temp_doc_data['filename'],

@@ -436,16 +436,16 @@ const AdminPartnerTypes = ({ user }) => {
 
       {activeTab === 'form' && (
         <div className="user-form">
-          <h2>Modify Partner Type</h2>
+          <h2>Modifier type de partenaire</h2>
           <form onSubmit={handleUpdate}>
             <div className="form-group">
-              <label>Name</label>
+              <label>Nom</label>
               <input
                 type="text"
                 name="name"
                 value={formData.name}
                 onChange={handleInputChange}
-                placeholder="Partner type name"
+                placeholder="nom de type de partenaire"
                 className={fieldErrors.name ? 'error-input' : ''}
               />
               {fieldErrors.name && <div className="field-error">{fieldErrors.name}</div>}

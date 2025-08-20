@@ -202,7 +202,7 @@ const getOneMonthAgo = () => {
   return (
     <div className="activity-logs">
       <div className="header">
-        <h2>Activity Logs</h2>
+        <h2>Journaux d'activité</h2>
         <button 
           className="refresh-button"
           onClick={fetchLogs} 
@@ -211,12 +211,12 @@ const getOneMonthAgo = () => {
           {loading ? (
             <>
               <span className="spinner"></span>
-              Refreshing...
+              Rafraîchissant...
             </>
           ) : (
             <>
               <span className="refresh-icon">↻</span>
-              Refresh Logs
+              Actualiser les journaux
             </>
           )}
         </button>
@@ -231,7 +231,7 @@ const getOneMonthAgo = () => {
       
       <div className="filters-container">
         <div className="filter-group">
-          <label htmlFor="start-date-filter">Start Date</label>
+          <label htmlFor="start-date-filter">Date de début</label>
           <input
             type="date"
             id="start-date-filter"
@@ -241,7 +241,7 @@ const getOneMonthAgo = () => {
           />
         </div>
         <div className="filter-group">
-          <label htmlFor="end-date-filter">End Date</label>
+          <label htmlFor="end-date-filter">Date de fin</label>
           <input
             type="date"
             id="end-date-filter"
@@ -252,14 +252,14 @@ const getOneMonthAgo = () => {
         </div>
         
         <div className="filter-group">
-          <label htmlFor="role-filter">Role</label>
+          <label htmlFor="role-filter">Rôle</label>
           <select 
             id="role-filter" 
             name="role" 
             value={filters.role}
             onChange={handleFilterChange}
           >
-            <option value="">All Roles</option>
+            <option value="">Tous les roles</option>
             {Array.from(uniqueValues.roles).map(role => (
               <option key={role} value={role}>{role}</option>
             ))}
@@ -274,7 +274,7 @@ const getOneMonthAgo = () => {
             value={filters.action}
             onChange={handleFilterChange}
           >
-            <option value="">All Actions</option>
+            <option value="">Tous les actions</option>
             {Array.from(uniqueValues.actions).map(action => (
               <option key={action} value={action}>{action}</option>
             ))}
@@ -282,14 +282,14 @@ const getOneMonthAgo = () => {
         </div>
         
         <div className="filter-group">
-          <label htmlFor="resource-filter">Resource</label>
+          <label htmlFor="resource-filter">Ressource</label>
           <select 
             id="resource-filter" 
             name="resource" 
             value={filters.resource}
             onChange={handleFilterChange}
           >
-            <option value="">All Resources</option>
+            <option value="">Tous les resources</option>
             {Array.from(uniqueValues.resources).map(resource => (
               <option key={resource} value={resource}>{resource}</option>
             ))}
@@ -301,29 +301,30 @@ const getOneMonthAgo = () => {
           onClick={resetFilters}
           disabled={filters.startDate === getOneMonthAgo() && filters.endDate === getTodayDate() && filters.role === '' && filters.action === '' && filters.resource === ''}
         >
-          Reset Filters
+          Réinitialiser les filtres
+
         </button>
       </div>
       
       {loading && filteredLogs.length === 0 ? (
         <div className="loading">
           <div className="spinner"></div>
-          <p>Loading activity logs...</p>
+          <p>Chargement des journaux d'activité...</p>
         </div>
       ) : filteredLogs.length === 0 ? (
         <div className="no-results">
-          <p>No activity logs match your filters</p>
+          <p>Aucun journal d'activité ne correspond à vos filtres</p>
         </div>
       ) : (
         <div className="logs-table">
           <table>
             <thead>
               <tr>
-                <th>Date & Time</th>
-                <th>Role</th>
+                <th>Date & Heure</th>
+                <th>Rôle</th>
                 <th>Action</th>
-                <th>Resource</th>
-                <th>Details</th>
+                <th>Ressource</th>
+                <th>Détails</th>
               </tr>
             </thead>
             <tbody>
