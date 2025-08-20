@@ -362,10 +362,10 @@ const AdminDoctypes = ({ user }) => {
               }}
               onClick={handleResetFilters}
             >
-              Reset Filter
+              Réinitialiser le filtre
             </button>
             <button className="export-dropdown-btn" onClick={() => setExportMenuOpen(v => !v)}>
-              Export ▼
+              Exporter ▼
             </button>
             {exportMenuOpen && (
               <ul ref={exportMenuRef} style={{

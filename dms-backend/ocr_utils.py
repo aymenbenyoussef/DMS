@@ -371,9 +371,9 @@ def generate_report_pdf(confirmed_data, output_path, original_filename):
             ['Date', confirmed_data.get('date', 'N/A')],
             ["Fournisseur", confirmed_data.get("partner", "N/A")],
             ["Client", confirmed_data.get("partner_id", "N/A")],
-            ['Total HT', f"{confirmed_data.get('total_ht', 'N/A')} €" if confirmed_data.get('total_ht') else 'N/A'],
-            ['TVA', f"{confirmed_data.get('tva', 'N/A')} €" if confirmed_data.get('tva') else 'N/A'],
-            ['Total TTC', f"{confirmed_data.get('total_ttc', 'N/A')} €" if confirmed_data.get('total_ttc') else 'N/A'],
+            ['Total HT', f"{confirmed_data.get('total_ht', 'N/A')} dt" if confirmed_data.get('total_ht') else 'N/A'],
+            ['TVA', f"{confirmed_data.get('tva', 'N/A')} dt" if confirmed_data.get('tva') else 'N/A'],
+            ['Total TTC', f"{confirmed_data.get('total_ttc', 'N/A')} dt" if confirmed_data.get('total_ttc') else 'N/A'],
             ['Type de document', 'Facture' if confirmed_data.get('is_invoice') else 'Autre document']
         ]
         

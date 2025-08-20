@@ -264,7 +264,7 @@ const EditDocumentForm = ({ document, onSave, onCancel, isLoading }) => {
               <div className="row">
                 <div className="col-md-4">
                   <div className="form-group">
-                    <label className="form-label">Montant HT (€) *</label>
+                    <label className="form-label">Montant HT  *</label>
                     <input
                       type="number"
                       step="0.01"
@@ -283,7 +283,7 @@ const EditDocumentForm = ({ document, onSave, onCancel, isLoading }) => {
                 
                 <div className="col-md-4">
                   <div className="form-group">
-                    <label className="form-label">TVA (€) *</label>
+                    <label className="form-label">TVA  *</label>
                     <input
                       type="number"
                       step="0.01"
@@ -302,7 +302,7 @@ const EditDocumentForm = ({ document, onSave, onCancel, isLoading }) => {
                 
                 <div className="col-md-4">
                   <div className="form-group">
-                    <label className="form-label">Montant TTC (€) *</label>
+                    <label className="form-label">Montant TTC  *</label>
                     <input
                       type="number"
                       step="0.01"

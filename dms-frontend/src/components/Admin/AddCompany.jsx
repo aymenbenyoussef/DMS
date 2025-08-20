@@ -40,8 +40,16 @@ const AdminCompanies = ({ user }) => {
   const errors = {};
   if (!formData.name.trim()) errors.name = 'Le nom est requis.';
   if (!formData.address.trim()) errors.address = 'L\'adresse est requise.';
-  if (!formData.email.trim()) errors.email = 'L\'email est requis.';
-  if (!formData.phone.trim()) errors.phone = 'Le téléphone est requis.';
+  if (!formData.email.trim()) {
+    errors.email = 'L\'email est requis.';
+  } else if (!/^([a-zA-Z0-9._-]+)@([a-zA-Z0-9.-]+)\.([a-zA-Z]{2,})$/.test(formData.email) || (formData.email.match(/@/g) || []).length !== 1) {
+    errors.email = 'Format d\'email invalide.';
+  }
+  if (!formData.phone.trim()) {
+    errors.phone = 'Le téléphone est requis.';
+  } else if (!/^\d{8}$/.test(formData.phone)) {
+    errors.phone = 'Le numéro de téléphone doit contenir exactement 8 chiffres';
+  }
 
   if (Object.keys(errors).length > 0) {
     setFieldErrors(errors);
