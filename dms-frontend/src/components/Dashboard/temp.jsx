@@ -8,20 +8,27 @@ import './TempDocumentArchive.css';
 
 const TempDocumentArchive = ({ user }) => {
   const { selectedCompany, selectedDoctype, setSelectedCompany, setSelectedDoctype } = useContext(AppContext);
+  
+  // Note: User-based filtering is handled automatically by the backend
+  // Regular users only see their own temp documents, while admins and superusers see all documents
 
-  const getOneMonthAgo = () => {
-    const now = new Date();
-    const lastMonth = new Date(now);
-    lastMonth.setMonth(now.getMonth() - 1);
-    if (lastMonth.getMonth() === now.getMonth()) {
-      lastMonth.setDate(0);
-    }
-    const year = lastMonth.getFullYear();
-    const month = String(lastMonth.getMonth() + 1).padStart(2, '0');
-    const day = String(lastMonth.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
+  // Helper function to get the same day last month
+const getOneMonthAgo = () => {
+  const now = new Date();
+  const lastMonth = new Date(now);
+  lastMonth.setMonth(now.getMonth() - 1);
+  // Handle month wrap-around (e.g., March 31 -> Feb 28/29)
+  if (lastMonth.getMonth() === now.getMonth()) {
+    // If setMonth overflowed, set to last day of previous month
+    lastMonth.setDate(0);
+  }
+  const year = lastMonth.getFullYear();
+  const month = String(lastMonth.getMonth() + 1).padStart(2, '0');
+  const day = String(lastMonth.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
+  // Helper function to get today's date
   const getToday = () => {
     const now = new Date();
     const year = now.getFullYear();
@@ -49,25 +56,36 @@ const TempDocumentArchive = ({ user }) => {
   const [originalDoctype, setOriginalDoctype] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  
+  // Search state
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // Column filter states
   const [columnFilters, setColumnFilters] = useState({
     id: '',
     filename: '',
     owner: ''
   });
+  
+  // Delete confirmation modal state
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deletingDocument, setDeletingDocument] = useState(null);
+
+  // Sorting and export states
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const exportMenuRef = useRef(null);
-  const [isFilterCollapsed, setIsFilterCollapsed] = useState(false);
 
   useEffect(() => {
     fetchDocuments();
+    // eslint-disable-next-line
   }, [startDate, endDate]);
 
+  // Filter documents based on column filters
   useEffect(() => {
     let filtered = [...documents];
+    
+    // Filter by search term (searches across all data)
     if (searchTerm && searchTerm.trim() !== '') {
       filtered = filtered.filter(doc => {
         const searchLower = searchTerm.toLowerCase();
@@ -76,32 +94,45 @@ const TempDocumentArchive = ({ user }) => {
           String(doc.filename).toLowerCase(),
           String(doc.created_at).toLowerCase()
         ];
+        
+        // Add owner field to search for admin and superuser
         if (user?.role === 'admin' || user?.role === 'superuser') {
           searchFields.push(String(doc.owner_name || doc.owner || '').toLowerCase());
         }
+        
         return searchFields.some(field => field.includes(searchLower));
       });
     }
+    
+    // Filter by column filters
     Object.keys(columnFilters).forEach(column => {
       const filterValue = columnFilters[column];
       if (filterValue && filterValue.trim() !== '') {
         filtered = filtered.filter(doc => {
           const docValue = doc[column];
           if (docValue === null || docValue === undefined) return false;
+          
           const lowerFilterValue = filterValue.toLowerCase();
           const lowerDocValue = String(docValue).toLowerCase();
+          
           return lowerDocValue.includes(lowerFilterValue);
         });
       }
     });
+    
     setFilteredDocuments(filtered);
   }, [documents, columnFilters, searchTerm, user?.role]);
 
+  // Add event listener for temporary document uploads
   useEffect(() => {
     const handleTempDocumentUpload = () => {
       fetchDocuments();
     };
+
+    // Listen for temporary document uploads
     window.addEventListener('TempDocumentsUploaded', handleTempDocumentUpload);
+    
+    // Cleanup event listener on component unmount
     return () => {
       window.removeEventListener('TempDocumentsUploaded', handleTempDocumentUpload);
     };
@@ -121,15 +152,23 @@ const TempDocumentArchive = ({ user }) => {
     }
   };
 
+  // Check if there are any active filters
   const hasActiveFilters = () => {
+    // Check column filters
     const hasColumnFilters = Object.values(columnFilters).some(value => value && value.trim() !== '');
+    
+    // Check date filters (if they're different from default)
     const defaultStartDate = getOneMonthAgo();
     const defaultEndDate = getToday();
     const hasDateFilters = startDate !== defaultStartDate || endDate !== defaultEndDate;
+    
+    // Check search term
     const hasSearchTerm = searchTerm && searchTerm.trim() !== '';
+    
     return hasColumnFilters || hasDateFilters || hasSearchTerm;
   };
 
+  // Get the appropriate no data message
   const getNoDataMessage = () => {
     if (documents.length === 0) {
       return "Il n'y a pas de données";
@@ -140,6 +179,7 @@ const TempDocumentArchive = ({ user }) => {
     }
   };
 
+
   const handleViewDocument = async (doc) => {
     try {
       const response = await API.tempDocuments.download(doc.id);
@@ -147,9 +187,9 @@ const TempDocumentArchive = ({ user }) => {
       const url = window.URL.createObjectURL(blob);
       const ext = doc.filename.split('.').pop().toLowerCase();
       let type = '';
-      if (['pdf'].includes(ext)) type = 'pdf';
-      else if (['jpg', 'jpeg', 'png', 'gif', 'tiff', 'bmp', 'webp'].includes(ext)) type = 'image';
-      else if (['txt'].includes(ext)) type = 'text';
+      if (["pdf"].includes(ext)) type = 'pdf';
+      else if (["jpg","jpeg","png","gif","tiff","bmp","webp"].includes(ext)) type = 'image';
+      else if (["txt"].includes(ext)) type = 'text';
       else type = 'other';
       setPreviewType(type);
       setPreviewUrl(url);
@@ -174,6 +214,8 @@ const TempDocumentArchive = ({ user }) => {
       await API.tempDocuments.delete(deletingDocument.id);
       setDocuments(prev => prev.filter(d => d.id !== deletingDocument.id));
       setFilteredDocuments(prev => prev.filter(d => d.id !== deletingDocument.id));
+      
+      // Dispatch event to refresh the table (in case other components need to know)
       window.dispatchEvent(new Event('TempDocumentsUploaded'));
       setIsDeleteModalOpen(false);
       setDeletingDocument(null);
@@ -192,22 +234,33 @@ const TempDocumentArchive = ({ user }) => {
   const handleSend = async (doc) => {
     setProcessingDocId(doc.id);
     setCurrentDocument(doc);
+    
+    // Store original company and doctype to restore later
     setOriginalCompany(selectedCompany);
     setOriginalDoctype(selectedDoctype);
+    
     try {
+      // Download the file to get the blob
       const response = await API.tempDocuments.download(doc.id);
       const blob = response.data;
+      
+      // Create a File object from the blob
       const file = new File([blob], doc.filename, { type: blob.type });
+      
+      // Process the file with OCR (similar to DragDropUpload)
       const ocrResponse = await API.documents.uploadSingleFile(
         file,
-        selectedCompany?.id || null,
-        selectedDoctype?.id || null
+        selectedCompany?.id || null, // Use selected company if available
+        selectedDoctype?.id || null  // Use selected doctype if available
       );
+      
+      // Set up confirmation data
       const confirmationData = {
         sessionId: ocrResponse.data?.session_id,
         extractedData: ocrResponse.data?.extracted_data,
         filename: doc.filename
       };
+      
       setConfirmationData([confirmationData]);
       setShowConfirmationModal(true);
     } catch (error) {
@@ -220,21 +273,30 @@ const TempDocumentArchive = ({ user }) => {
 
   const handleConfirmDocuments = async (confirmedDocuments, errors) => {
     if (!confirmationData || !confirmationData[0]) return;
+    
     try {
       const sessionId = confirmationData[0].sessionId;
       const doc = confirmedDocuments[0];
+      
       if (doc && sessionId) {
         const documentToConfirm = {
           ...doc,
           partner_id: doc.confirmed_data.partner_id || null,
           confirmed_data: { ...doc.confirmed_data }
         };
+        
         const response = await API.documents.confirmDocuments(sessionId, [documentToConfirm]);
         const savedDoc = response.data.saved_documents[0];
+        
         if (savedDoc && !savedDoc.error) {
+          // Remove the temporary document from the list since it's now confirmed
           setDocuments(prev => prev.filter(d => d.id !== currentDocument?.id));
           setFilteredDocuments(prev => prev.filter(d => d.id !== currentDocument?.id));
+          
+          // Dispatch event to refresh the table
           window.dispatchEvent(new Event('TempDocumentsUploaded'));
+          
+          // Modal will be closed by the form after showing success message
         }
       }
     } catch (error) {
@@ -246,12 +308,15 @@ const TempDocumentArchive = ({ user }) => {
   const handleCancelConfirmation = () => {
     setShowConfirmationModal(false);
     setConfirmationData(null);
+    
+    // Restore original company and doctype
     if (originalCompany) {
       setSelectedCompany(originalCompany);
     }
     if (originalDoctype) {
       setSelectedDoctype(originalDoctype);
     }
+    
     setOriginalCompany(null);
     setOriginalDoctype(null);
   };
@@ -259,31 +324,41 @@ const TempDocumentArchive = ({ user }) => {
   const handleModalClose = () => {
     setShowConfirmationModal(false);
     setConfirmationData(null);
+    
+    // Restore original company and doctype
     if (originalCompany) {
       setSelectedCompany(originalCompany);
     }
     if (originalDoctype) {
       setSelectedDoctype(originalDoctype);
     }
+    
     setOriginalCompany(null);
     setOriginalDoctype(null);
   };
 
+  // Sorting function
   const handleSort = (key) => {
     let direction = 'asc';
     if (sortConfig.key === key && sortConfig.direction === 'asc') {
       direction = 'desc';
     }
     setSortConfig({ key, direction });
+
     const sortedDocuments = [...filteredDocuments].sort((a, b) => {
       let aValue = a[key];
       let bValue = b[key];
+
+      // Handle different data types
       if (key === 'id') {
         aValue = parseInt(aValue) || 0;
         bValue = parseInt(bValue) || 0;
       } else if (key === 'created_at') {
+        // Handle date sorting properly
         const aDate = aValue ? new Date(aValue) : new Date(0);
         const bDate = bValue ? new Date(bValue) : new Date(0);
+        
+        // Check if dates are valid
         if (isNaN(aDate.getTime()) && isNaN(bDate.getTime())) {
           aValue = 0;
           bValue = 0;
@@ -301,6 +376,7 @@ const TempDocumentArchive = ({ user }) => {
         aValue = String(aValue || '').toLowerCase();
         bValue = String(bValue || '').toLowerCase();
       }
+
       if (aValue < bValue) {
         return direction === 'asc' ? -1 : 1;
       }
@@ -309,26 +385,31 @@ const TempDocumentArchive = ({ user }) => {
       }
       return 0;
     });
+
     setFilteredDocuments(sortedDocuments);
   };
 
+  // Export function
   const handleExport = (type) => {
     const columns = [
       { key: 'id', label: 'ID' },
       { key: 'filename', label: 'Document' },
       { key: 'created_at', label: 'Date d\'upload' }
     ];
+
     const data = filteredDocuments.map(doc => ({
       id: doc.id,
       filename: doc.filename,
       created_at: doc.created_at ? new Date(doc.created_at).toLocaleDateString('fr-FR') : '-'
     }));
+
     if (type === 'csv') exportToCSV(data, columns, 'temp_documents.csv');
-    if (type === 'json') exportToJSON(data, columns, 'temp_documents.json');
+    if (type === 'json') exportToJSON(data, 'temp_documents.json');
     if (type === 'txt') exportToTXT(data, columns, 'temp_documents.txt');
     if (type === 'excel') exportToExcel(data, columns, 'temp_documents.xls');
   };
 
+  // Reset all filters and sorting
   const handleResetFilters = () => {
     setStartDate(getOneMonthAgo());
     setEndDate(getToday());
@@ -341,6 +422,7 @@ const TempDocumentArchive = ({ user }) => {
     setSortConfig({ key: null, direction: 'asc' });
   };
 
+  // Handle column filter change
   const handleColumnFilterChange = (column, value) => {
     setColumnFilters(prev => ({
       ...prev,
@@ -348,6 +430,7 @@ const TempDocumentArchive = ({ user }) => {
     }));
   };
 
+  // Close export menu on outside click
   useEffect(() => {
     function handleClickOutside(event) {
       if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
@@ -365,186 +448,295 @@ const TempDocumentArchive = ({ user }) => {
   }, [exportMenuOpen]);
 
   return (
-    <div className="document-archive">
-      <div className="container-fluid h-100">
-        <div className="row h-100">
-          {/* Main Content Area - Table */}
-          <div className={`col-lg-${isFilterCollapsed ? '12' : '9'} col-md-${isFilterCollapsed ? '12' : '8'} h-100 d-flex flex-column`}>
-            {/* Header with Upload Button */}
-            <div className="d-flex justify-content-between align-items-center mb-2">
-              <h4 className="mb-0 text-dark fw-bold d-flex align-items-center gap-2">
-                <i className="fas fa-history me-2 text-primary"></i>
-                Documents Temporaires
-              </h4>
-              <div className="d-flex gap-2">
-                
-                <button
-                  className="btn btn-outline-secondary btn-sm"
-                  onClick={() => setIsFilterCollapsed(!isFilterCollapsed)}
-                  title={isFilterCollapsed ? "Afficher les filtres" : "Masquer les filtres"}
-                >
-                  <i className={`fas fa-${isFilterCollapsed ? 'filter' : 'times'}`}></i>
-                  <span className="ms-1">Filtres</span>
-                </button>
-                <div className="dropdown">
-                  <button
-                    className="btn btn-outline-secondary btn-sm dropdown-toggle"
-                    onClick={() => setExportMenuOpen(!exportMenuOpen)}
-                    ref={exportMenuRef}
-                  >
-                    <i className="fas fa-download me-1"></i>
-                    Exporter
-                  </button>
-                  {exportMenuOpen && (
-                    <div className="dropdown-menu show">
-                      <button className="dropdown-item" onClick={() => handleExport('csv')}>
-                        <i className="fas fa-file-csv me-2"></i>CSV
-                      </button>
-                      <button className="dropdown-item" onClick={() => handleExport('excel')}>
-                        <i className="fas fa-file-excel me-2"></i>Excel
-                      </button>
-                      <button className="dropdown-item" onClick={() => handleExport('json')}>
-                        <i className="fas fa-file-code me-2"></i>JSON
-                      </button>
-                      <button className="dropdown-item" onClick={() => handleExport('txt')}>
-                        <i className="fas fa-file-alt me-2"></i>TXT
-                      </button>
-                    </div>
-                  )}
+    <div className="container-fluid py-4">
+
+      <div className="card mb-4 search-filter-container">
+        <div className="card-body p-3">
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <h2 className="h6 mb-0">Recherche & Filtres</h2>
+            <button 
+              className="btn d-flex align-items-center"
+              style={{ 
+                marginRight: '20px',
+                backgroundColor: '#c6400e',
+                borderColor: '#c6400e',
+                color: 'white',
+                width: '130px',
+                height: '45px',
+                fontSize: '16px',
+                fontWeight: '500',
+                justifyContent: 'center'
+              }}
+              onClick={() => setIsUploadModalOpen(true)}
+            >
+              <i className="bi bi-plus me-2"></i> Upload
+            </button>
+          </div>
+          <div className="row g-3">
+            <div className="col-md-6">
+              <div className="row g-2 mb-3">
+                <div className="col-6">
+                  <label className="form-label small">Date de début</label>
+                  <input
+                    type="date"
+                    className="form-control form-control-sm"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                  />
                 </div>
-                <button
-                  className="btn-outline-primary btn-sm"
-                  onClick={() => setIsUploadModalOpen(true)}
-                >
-                  <i className="fas fa-upload me-1"></i>
-                  Télécharger
-                </button>
+                <div className="col-6">
+                  <label className="form-label small">Date de fin</label>
+                  <input
+                    type="date"
+                    className="form-control form-control-sm"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                  />
+                </div>
               </div>
             </div>
-
-            {/* Documents Table */}
-            <div className="documents-table-container flex-grow-1">
-              <div className="table-responsive h-100" style={{display: 'flex', flexDirection: 'column', height: '100%'}}>
-                <table className="table table-sm table-hover mb-0" style={{tableLayout: 'fixed', width: '100%'}}>
-                  <thead className="table-light sticky-top">
-                    <tr>
-                      <th style={{ width: '20px', cursor: 'pointer' }} className="text-center" onClick={() => handleSort('id')} title="Trier par ID">ID</th>
-                      <th style={{ width: '120px', cursor: 'pointer' }} onClick={() => handleSort('filename')} title="Trier par nom de fichier">Fichier</th>
-                      {(user?.role === 'admin' || user?.role === 'superuser') && (
-                        <th style={{ width: '120px', cursor: 'pointer' }} onClick={() => handleSort('owner')} title="Trier par propriétaire">Propriétaire</th>
-                      )}
-                      <th style={{ width: '90px', cursor: 'pointer' }} className="text-center" onClick={() => handleSort('created_at')} title="Trier par date">Date</th>
-                      <th style={{ width: '120px' }} className="text-center">Actions</th>
-                    </tr>
-                    <tr className="bg-light">
-                      <th><input type="text" className="form-control form-control-sm" placeholder="ID..." value={columnFilters.id} onChange={(e) => handleColumnFilterChange('id', e.target.value)} /></th>
-                      <th><input type="text" className="form-control form-control-sm" placeholder="Nom du fichier..." value={columnFilters.filename} onChange={(e) => handleColumnFilterChange('filename', e.target.value)} /></th>
-                      {(user?.role === 'admin' || user?.role === 'superuser') && (
-                        <th><input type="text" className="form-control form-control-sm" placeholder="Propriétaire..." value={columnFilters.owner} onChange={(e) => handleColumnFilterChange('owner', e.target.value)} /></th>
-                      )}
-                      <th></th>
-                      <th></th>
-                    </tr>
-                  </thead>
-                </table>
-                <div style={{flex: 1, overflowY: 'auto', minHeight: 0}}>
-                  <table className="table table-sm table-hover mb-0" style={{tableLayout: 'fixed', width: '100%'}}>
-                    <colgroup>
-                      <col style={{width: '20px'}} />
-                      <col style={{width: '120px'}} />
-                      {(user?.role === 'admin' || user?.role === 'superuser') && <col style={{width: '120px'}} />}
-                      <col style={{width: '90px'}} />
-                      <col style={{width: '120px'}} />
-                    </colgroup>
-                    <tbody>
-                      {isLoading ? (
-                        <tr><td colSpan={user?.role === 'admin' || user?.role === 'superuser' ? "5" : "4"} className="text-center py-4">Chargement...</td></tr>
-                      ) : filteredDocuments.length > 0 ? (
-                        filteredDocuments.map(doc => (
-                          <tr key={doc.id}>
-                            <td className="text-center" style={{width: '20px'}}>{doc.id}</td>
-                            <td style={{width: '120px'}}>{doc.filename}</td>
-                            {(user?.role === 'admin' || user?.role === 'superuser') && <td style={{width: '120px'}}>{doc.owner_name || doc.owner}</td>}
-                            <td className="text-center" style={{width: '90px'}}>{new Date(doc.created_at).toLocaleDateString()}</td>
-                            <td className="text-center" style={{width: '120px'}}>
-                              <button className="btn btn-sm btn-outline-primary me-1" style={{backgroundColor:'blue'}} onClick={() => handleViewDocument(doc)}><i className="fas fa-eye"></i>voir</button>
-                              <button className="btn btn-sm btn-outline-success me-1" style={{backgroundColor:'blue'}} onClick={() => handleSend(doc)} disabled={processingDocId === doc.id}>{processingDocId === doc.id ? <i className="fas fa-eye">deplacement</i> : <i className="fas fa-eye">deplacer</i>}</button>
-                              <button className="btn btn-sm btn-outline-danger me-1" style={{backgroundColor:'orangered'}}  onClick={() => handleDeleteDocument(doc)}><i className="fas fa-eye">supprimer</i></button>
-                            </td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr><td colSpan={user?.role === 'admin' || user?.role === 'superuser' ? "5" : "4"} className="text-center py-4">{getNoDataMessage()}</td></tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+            <div className="col-md-6">
+              <label className="form-label small">Rechercher</label>
+              <input
+                type="text"
+                className="form-control form-control-sm"
+                placeholder="Rechercher dans les données..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="card">
+        <div className="card-body">
+          <div className="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+            <h2 className="h6 mb-0">Documents temporaires</h2>
+            <div className="d-flex align-items-center gap-3">
+              <span className="text-muted items-count">{filteredDocuments.length} articles</span>
+              <button 
+                className="btn btn-secondary btn-sm d-flex align-items-center"
+                onClick={handleResetFilters}
+                style={{ backgroundColor: 'gray', color: 'white' }}
+              >
+                <i className="bi bi-arrow-clockwise me-1"></i> Réinitialiser le filtre
+              </button>
+              <div style={{ position: 'relative' }}>
+                <button 
+                  className="btn btn-sm d-flex align-items-center"
+                  onClick={() => setExportMenuOpen(v => !v)}
+                  style={{ 
+                    backgroundColor: '#fff', 
+                    borderColor: '#27ae60', 
+                    color: '#27ae60',
+                    border: '2px solid #27ae60'
+                  }}
+                >
+                  <i className="bi bi-download me-1"></i> Exporter ▼
+                </button>
+                {exportMenuOpen && (
+                  <ul ref={exportMenuRef} style={{
+                    position: 'absolute',
+                    top: '110%',
+                    right: 0,
+                    background: '#fff',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                    zIndex: 99999,
+                    minWidth: '140px',
+                    padding: 0,
+                    margin: 0,
+                    listStyle: 'none',
+                  }}>
+                    <li style={{padding: '8px 16px', cursor: 'pointer', transition: 'background-color 0.2s ease, color 0.2s ease'}} onMouseOver={(e) => { e.target.style.backgroundColor = '#f8f9fa'; e.target.style.color = '#1976d2'; }} onMouseOut={(e) => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = 'inherit'; }} onClick={() => { handleExport('csv'); setExportMenuOpen(false); }}>CSV</li>
+                    <li style={{padding: '8px 16px', cursor: 'pointer', transition: 'background-color 0.2s ease, color 0.2s ease'}} onMouseOver={(e) => { e.target.style.backgroundColor = '#f8f9fa'; e.target.style.color = '#1976d2'; }} onMouseOut={(e) => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = 'inherit'; }} onClick={() => { handleExport('json'); setExportMenuOpen(false); }}>JSON</li>
+                    <li style={{padding: '8px 16px', cursor: 'pointer', transition: 'background-color 0.2s ease, color 0.2s ease'}} onMouseOver={(e) => { e.target.style.backgroundColor = '#f8f9fa'; e.target.style.color = '#1976d2'; }} onMouseOut={(e) => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = 'inherit'; }} onClick={() => { handleExport('txt'); setExportMenuOpen(false); }}>TXT</li>
+                    <li style={{padding: '8px 16px', cursor: 'pointer', transition: 'background-color 0.2s ease, color 0.2s ease'}} onMouseOver={(e) => { e.target.style.backgroundColor = '#f8f9fa'; e.target.style.color = '#1976d2'; }} onMouseOut={(e) => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = 'inherit'; }} onClick={() => { handleExport('excel'); setExportMenuOpen(false); }}>Excel</li>
+                  </ul>
+                )}
               </div>
             </div>
           </div>
-          {/* Filter Sidebar */}
-          {!isFilterCollapsed && (
-            <div className="col-lg-3 col-md-4 h-100">
-              <div className="card h-100">
-                <div className="card-header bg-light py-2">
-                  <h6 className="mb-0 d-flex align-items-center">
-                    <i className="fas fa-filter me-2 text-primary"></i>
-                    Filtres
-                    <button
-                      className="btn btn-link btn-sm ms-auto p-0"
-                      onClick={handleResetFilters}
-                      title="Effacer tous les filtres"
-                    >
-                      <i className="fas fa-times text-muted"></i>
-                    </button>
-                  </h6>
-                </div>
-                <div className="card-body p-3 overflow-auto">
-                  {/* Search */}
-                  <div className="mb-3">
-                    <label className="form-label small fw-bold">Recherche</label>
-                    <div className="input-group input-group-sm">
+          {isLoading ? (
+            <div className="text-center py-5">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+            </div>
+          ) : (
+            <div className="table-responsive documents-table-container">
+              <table className="table table-hover stylish-table">
+                <thead className="table-header-sticky">
+                  <tr>
+                    <th style={{cursor:'pointer', background: sortConfig.key === 'id' ? '#f0f4fa' : undefined, color: sortConfig.key === 'id' ? '#1976d2' : undefined}} onClick={() => handleSort('id')}>
+                      ID <span style={{fontSize:'1em'}}>{sortConfig.key === 'id' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                    </th>
+                    <th style={{cursor:'pointer', background: sortConfig.key === 'filename' ? '#f0f4fa' : undefined, color: sortConfig.key === 'filename' ? '#1976d2' : undefined}} onClick={() => handleSort('filename')}>
+                      Document <span style={{fontSize:'1em'}}>{sortConfig.key === 'filename' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                    </th>
+                    {(user?.role === 'admin' || user?.role === 'superuser') && (
+                      <th style={{cursor:'pointer', background: sortConfig.key === 'owner' ? '#f0f4fa' : undefined, color: sortConfig.key === 'owner' ? '#1976d2' : undefined}} onClick={() => handleSort('owner')}>
+                        Owner <span style={{fontSize:'1em'}}>{sortConfig.key === 'owner' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                      </th>
+                    )}
+                    <th style={{cursor:'pointer', background: sortConfig.key === 'created_at' ? '#f0f4fa' : undefined, color: sortConfig.key === 'created_at' ? '#1976d2' : undefined}} onClick={() => handleSort('created_at')}>
+                      Date d'upload <span style={{fontSize:'1em'}}>{sortConfig.key === 'created_at' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                    </th>
+                    <th>Action</th>
+                  </tr>
+                  {/* Filter Row */}
+                  <tr style={{ backgroundColor: '#f8f9fa' }}>
+                    <th>
                       <input
                         type="text"
-                        className="form-control"
-                        placeholder="Rechercher..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="form-control form-control-sm"
+                        placeholder="Filter ID..."
+                        value={columnFilters.id}
+                        onChange={(e) => handleColumnFilterChange('id', e.target.value)}
                       />
-                    </div>
-                  </div>
-
-                  {/* Date Range */}
-                  <div className="mb-3">
-                    <label className="form-label small fw-bold">Période</label>
-                    <div className="row g-2">
-                      <div className="col-6">
+                    </th>
+                    <th>
+                      <input
+                        type="text"
+                        className="form-control form-control-sm"
+                        placeholder="Filter Document..."
+                        value={columnFilters.filename}
+                        onChange={(e) => handleColumnFilterChange('filename', e.target.value)}
+                      />
+                    </th>
+                    {(user?.role === 'admin' || user?.role === 'superuser') && (
+                      <th>
                         <input
-                          type="date"
+                          type="text"
                           className="form-control form-control-sm"
-                          value={startDate}
-                          onChange={(e) => setStartDate(e.target.value)}
+                          placeholder="Filter Owner..."
+                          value={columnFilters.owner}
+                          onChange={(e) => handleColumnFilterChange('owner', e.target.value)}
                         />
-                      </div>
-                      <div className="col-6">
-                        <input
-                          type="date"
-                          className="form-control form-control-sm"
-                          value={endDate}
-                          onChange={(e) => setEndDate(e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  
-                  
-                </div>
-              </div>
+                      </th>
+                    )}
+                    <th></th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredDocuments.length > 0 ? (
+                    filteredDocuments.map((doc) => (
+                    <tr key={doc.id} className="table-row-hover">
+                      <td className="text-muted">{doc.id}</td>
+                      <td>{doc.filename}</td>
+                      {(user?.role === 'admin' || user?.role === 'superuser') && (
+                        <td>{doc.owner_name || doc.owner || '-'}</td>
+                      )}
+                      <td>{doc.created_at ? new Date(doc.created_at).toLocaleDateString('fr-FR') : '-'}</td>
+                                            <td>
+                        <div className="d-flex gap-2">
+                          <button
+                            className="btn btn-outline-primary d-flex align-items-center justify-content-center"
+                            onClick={() => handleViewDocument(doc)}
+                            title="Voir"
+                            style={{
+                              padding: '8px 12px',
+                              fontSize: '14px',
+                              minWidth: '80px',
+                              backgroundColor: '#2563eb',
+                              color: 'white',
+                              border: '1px solid #2563eb'
+                            }}
+                          >
+                            <i className="bi bi-eye me-1"></i>
+                            Voir
+                          </button>
+                          <button
+                            className="btn btn-outline-info d-flex align-items-center justify-content-center"
+                            onClick={() => handleSend(doc)}
+                            disabled={processingDocId === doc.id}
+                            title="Envoyer"
+                            style={{
+                              padding: '8px 12px',
+                              fontSize: '14px',
+                              minWidth: '80px',
+                              backgroundColor: '#198754',
+                              color: 'white',
+                              border: '1px solid #198754',
+                              ...(processingDocId === doc.id && {
+                                color: 'white',
+                              })
+                            }}
+                          >
+                            {processingDocId === doc.id ? (
+                              'Traitement...'
+                            ) : (
+                              <>
+                                <i className="bi bi-send me-1"></i>
+                                déplacer
+                              </>
+                            )}
+                          </button>
+                          <button
+                            className="btn btn-outline-warning d-flex align-items-center justify-content-center"
+                            onClick={() => handleDeleteDocument(doc)}
+                            disabled={isDeleting}
+                            title="Supprimer"
+                            style={{
+                              padding: '8px 12px',
+                              fontSize: '14px',
+                              minWidth: '80px',
+                              backgroundColor: '#c6400e',
+                              color: 'white'
+                            }}
+                          >
+                            <i className="bi bi-trash me-1"></i>
+                            Supprimer
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={(user?.role === 'admin' || user?.role === 'superuser') ? 5 : 4} className="text-center py-5">
+                        <div className="empty-state">
+                          <i className="bi bi-search text-muted mb-3" style={{ fontSize: '3rem' }}></i>
+                          <p className="text-muted mb-3">{getNoDataMessage()}</p>
+                          {hasActiveFilters() ? (
+                            <button 
+                              className="btn btn-blue btn-sm"
+                              onClick={handleResetFilters}
+                            >
+                              <i className="bi bi-arrow-clockwise me-1"></i>
+                              Réinitialiser les filtres
+                            </button>
+                          ) : (
+                            <button 
+                              className="btn btn-blue btn-sm"
+                              onClick={() => setIsUploadModalOpen(true)}
+                              style={{
+                                backgroundColor: '#c6400e',
+                                borderColor: '#c6400e',
+                                color: 'white',
+                                width: '180px',
+                                height: '45px',
+                                fontSize: '16px',
+                                fontWeight: '500',
+                                justifyContent: 'center'
+                              }}
+                            >
+                              <i className="bi bi-download me-1"></i>
+                              Télécharger
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
       </div>
-
       {/* Preview Modal */}
       {isPreviewModalOpen && (
         <div className="modal-overlay" style={{
@@ -775,6 +967,104 @@ const TempDocumentArchive = ({ user }) => {
         </div>
       )}
 
+      {/* Document Confirmation Modal */}
+      {showConfirmationModal && confirmationData && (
+        <div className="modal-overlay" style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          backgroundColor: 'rgba(0,0,0,0.7)',
+          zIndex: 2000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+          <div className="modal-content" style={{
+            width: '80vw',
+            maxWidth: '800px',
+            maxHeight: '95vh',
+            height: '90vh',
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            overflow: 'hidden',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+            display: 'flex',
+            flexDirection: 'column',
+          }}>
+            {/* Modal Header */}
+            <div className="modal-header" style={{
+              padding: '20px 24px',
+              borderBottom: '1px solid #e5e7eb',
+              backgroundColor: '#f8fafc',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              background: 'linear-gradient(135deg, #0f5132 0%, #198754 100%)',
+              color: 'white'
+            }}>
+              <h3 style={{
+                margin: 0,
+                fontSize: '1.25rem',
+                fontWeight: 600
+                
+              }}>
+                Confirmation de document
+              </h3>
+              <button
+                className="close-btn"
+                onClick={handleCancelConfirmation}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  color: '#6b7280',
+                  padding: '8px',
+                  borderRadius: '6px',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = '#f3f4f6';
+                  e.target.style.color = '#374151';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = 'transparent';
+                  e.target.style.color = '#6b7280';
+                }}
+              >
+                ×
+              </button>
+            </div>
+            
+            {/* Modal Body */}
+            <div className="modal-body" style={{ flex: 1, overflow: 'hidden' }}>
+              <TempDocumentConfirmationForm
+                files={confirmationData}
+                onConfirm={handleConfirmDocuments}
+                onCancel={handleModalClose}
+                initialCompany={selectedCompany}
+                initialDoctype={selectedDoctype}
+                tempDocumentId={currentDocument?.id}
+                onRefresh={fetchDocuments}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Temporary Document Upload Modal */}
+      {isUploadModalOpen && (
+        <DmsTempUploadModal
+          onClose={() => setIsUploadModalOpen(false)}
+          onSuccess={() => {
+            setIsUploadModalOpen(false);
+            // The table will automatically refresh due to the event listener
+          }}
+        />
+      )}
+
       {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && deletingDocument && (
         <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
@@ -832,108 +1122,8 @@ const TempDocumentArchive = ({ user }) => {
           </div>
         </div>
       )}
-
-      {/* Upload Modal */}
-      {isUploadModalOpen && (
-        <DmsTempUploadModal
-          onClose={() => setIsUploadModalOpen(false)}
-          onUploadComplete={() => {
-            setIsUploadModalOpen(false);
-            fetchDocuments();
-          }}
-        />
-      )}
-
-      {/* Confirmation Modal */}
-      {showConfirmationModal && confirmationData && (
-              <div className="modal-overlay" style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                width: '100vw',
-                height: '100vh',
-                backgroundColor: 'rgba(0,0,0,0.7)',
-                zIndex: 2000,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
-                <div className="modal-content" style={{
-                  width: '80vw',
-                  maxWidth: '800px',
-                  maxHeight: '95vh',
-                  height: '90vh',
-                  backgroundColor: 'white',
-                  borderRadius: '12px',
-                  overflow: 'hidden',
-                  boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                }}>
-                  {/* Modal Header */}
-                  <div className="modal-header" style={{
-                    padding: '20px 24px',
-                    borderBottom: '1px solid #e5e7eb',
-                    backgroundColor: '#f8fafc',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    background: 'linear-gradient(135deg, #0f5132 0%, #198754 100%)',
-                    color: 'white'
-                  }}>
-                    <h3 style={{
-                      margin: 0,
-                      fontSize: '1.25rem',
-                      fontWeight: 600
-                      
-                    }}>
-                      Confirmation de document
-                    </h3>
-                    <button
-                      className="close-btn"
-                      onClick={handleCancelConfirmation}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        fontSize: '24px',
-                        cursor: 'pointer',
-                        color: '#6b7280',
-                        padding: '8px',
-                        borderRadius: '6px',
-                        transition: 'all 0.2s',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.backgroundColor = '#f3f4f6';
-                        e.target.style.color = '#374151';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.backgroundColor = 'transparent';
-                        e.target.style.color = '#6b7280';
-                      }}
-                    >
-                      ×
-                    </button>
-                  </div>
-                  
-                  {/* Modal Body */}
-                  <div className="modal-body" style={{ flex: 1, overflow: 'hidden' }}>
-                    <TempDocumentConfirmationForm
-                      files={confirmationData}
-                      onConfirm={handleConfirmDocuments}
-                      onCancel={handleModalClose}
-                      initialCompany={selectedCompany}
-                      initialDoctype={selectedDoctype}
-                      tempDocumentId={currentDocument?.id}
-                      onRefresh={fetchDocuments}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
     </div>
   );
 };
 
 export default TempDocumentArchive;
-
-

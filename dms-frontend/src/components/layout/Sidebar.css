@@ -1,17 +1,65 @@
 /* Sidebar container */
 .sidebar {
-  width: 280px;
+  width: 64px !important;
   min-height: 90vh;
+  padding: 12px 8px !important;
   background-color: #fff;
-  border-right: 1px solid #ddd;
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  color: #222;
-  position: fixed; 
-  overflow-y: auto;
-  max-height: 90vh;
+  border-right: 1px solid #eee;
+  transition: width .18s ease, box-shadow .18s ease;
+  overflow: visible;
+}
+
+.sidebar:hover {
+  width: 220px !important;
+  box-shadow: 0 6px 20px rgba(2,6,23,0.06);
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  z-index: 1100;
+}
+
+/* Hide text labels by default to keep sidebar compact */
+.sidebar .company-name,
+.sidebar .folder-name,
+.sidebar .folder-name2 {
+  opacity: 0;
+  width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  transition: opacity .18s ease, width .18s ease, margin .18s ease;
+  margin-left: 0;
+}
+
+.sidebar:hover .company-name,
+.sidebar:hover .folder-name,
+.sidebar:hover .folder-name2 {
+  opacity: 1;
+  width: auto;
+  margin-left: 10px;
+}
+
+/* Make icons centered in compact mode */
+.sidebar .company-icon,
+.sidebar .folder-icon {
+  margin-right: 0 !important;
+  flex-shrink: 0;
+}
+
+.folder-list { padding-left: 0; }
+.folder-item { padding: 8px 6px; align-items: center; }
+.folder-item2 { padding: 8px 6px; }
+
+/* Hide expand chevrons when collapsed to reduce clutter */
+.sidebar .expand-icon { opacity: 0; transition: opacity .12s ease, transform .12s ease; }
+.sidebar:hover .expand-icon { opacity: 1; }
+
+/* Ensure selected state remains visible with a subtle bar */
+.folder-item.selected { box-shadow: inset 4px 0 0 #6366f1; background-color: rgba(99,102,241,0.05); }
+
+@media (max-width: 768px) {
+  .sidebar { position: fixed; left: 0; top: 0; height: 100vh; z-index: 1200; transform: translateX(-100%); transition: transform .18s ease; }
+  .sidebar.open { transform: translateX(0); width: 220px !important; }
 }
 
 /* Sidebar header */
@@ -20,6 +68,7 @@
   align-items: center;
   margin-bottom: 1.25rem;
   gap: 0.5rem;
+  position: relative;
 }
 
 .sidebar-header h2 {
@@ -28,6 +77,25 @@
   color: #2c3e50;
   margin: 0;
 }
+
+/* Collapse / expand button in sidebar header */
+.sidebar-collapse {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  background: transparent;
+  border: none;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #111827;
+}
+
+.sidebar-collapse:hover { background: rgba(0,0,0,0.04); }
 
 .folder-icon {
   fill: #000000;
@@ -110,12 +178,6 @@
   font-size: 0.875rem;
   margin: 0;
 }
-
-
-
-
-
-  
 
 /* Error message in sidebar */
 .sidebar-error {
@@ -260,7 +322,7 @@
 
 .folder-item.inactive .folder-name,
 .folder-item.inactive .company-name {
-
+  opacity: 0.6;
 }
 
 /* Add a visual indicator for inactive items */
@@ -274,5 +336,134 @@
 
 .folder-item.selected {
   background-color: #e0e7ff;
+}
+
+/* === Responsive overlay behaviour (explicit, overrides earlier rules) === */
+
+/* Desktop / large screens: keep sidebar overlay when explicitly opened instead of pushing content */
+@media (min-width: 769px) {
+  .sidebar {
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    height: auto !important;
+    z-index: auto !important;
+    width: 64px !important;
+  }
+
+  /* Hover still expands visually but as an overlay so content isn't pushed */
+  .sidebar:hover {
+    position: absolute !important;
+    left: 0 !important;
+    top: var(--navbar-height, 44px) !important; /* sit below the navbar */
+    height: calc(100vh - var(--navbar-height, 44px)) !important; /* don't cover navbar */
+    width: 220px !important;
+    z-index: 1100 !important; /* lower than navbar */
+    box-shadow: 0 6px 20px rgba(2,6,23,0.06) !important;
+    transform: none !important;
+  }
+
+  /* When the sidebar is explicitly opened (has .open), overlay it instead of changing layout */
+  .sidebar.open {
+    position: absolute !important;
+    left: 0 !important;
+    top: var(--navbar-height, 44px) !important; /* sit below the navbar */
+    height: calc(100vh - var(--navbar-height, 44px)) !important; /* don't cover navbar */
+    width: 220px !important;
+    z-index: 1100 !important;
+    box-shadow: 0 6px 20px rgba(2,6,23,0.06) !important;
+    transform: none !important;
+  }
+}
+
+/* Mobile / small screens: keep full overlay behaviour */
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed !important;
+    left: 0 !important;
+    top: var(--navbar-height, 44px) !important;
+    height: calc(100vh - var(--navbar-height, 44px)) !important;
+    width: 220px !important;
+    z-index: 1100 !important; /* keep below navbar */
+    transform: translateX(-100%) !important; /* keep closed by default */
+    transition: transform .18s ease !important;
+  }
+
+  .sidebar.open {
+    transform: translateX(0) !important;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.12) !important;
+  }
+}
+
+/* Ensure main content stacking context so overlay does not hide navbar */
+.main-content {
+  position: relative;
+  z-index: 1;
+}
+
+/* When anchored open, ensure labels are visible */
+.sidebar.open .company-name,
+.sidebar.open .folder-name,
+.sidebar.open .folder-name2 { opacity: 1; width: auto; margin-left: 10px; }
+
+/* When not open, keep compact */
+.sidebar { width: 64px !important; }
+
+/* Ensure logo and title behave when sidebar collapsed */
+.sidebar .sidebar-header .company-icon { margin-left: 0; }
+.sidebar .sidebar-header h2 { margin: 0; font-size: 1rem; font-weight: 700; }
+
+/* Hide title when collapsed (unless open) */
+.sidebar .sidebar-header h2 { opacity: 0; width: 0; overflow: hidden; transition: opacity .18s ease, width .18s ease; }
+.sidebar.open .sidebar-header h2 { opacity: 1; width: auto; margin-left: 8px; }
+
+/* Show header title on hover when collapsed */
+.sidebar:hover .sidebar-header h2 {
+  opacity: 1;
+  width: auto;
+  margin-left: 8px;
+}
+
+/* Ensure company icon remains visible and aligned */
+.sidebar .sidebar-header .company-icon {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+}
+
+/* Ensure icons are centered when collapsed */
+.sidebar .sidebar-header { display:flex; align-items:center; gap:8px; }
+
+/* Subitems should stay in the same column and only appear when sidebar is open or hovered */
+.folder-subitems {
+  display: none;
+  width: 100%;
+  box-sizing: border-box;
+  padding-left: 0;
+  margin-left: 0;
+}
+
+/* Show subitems when sidebar is anchored open or hovered */
+.sidebar.open .folder-subitems,
+.sidebar:hover .folder-subitems {
+  display: block;
+}
+
+/* Ensure subitems list items align under parent without creating a second column */
+.folder-subitems .folder-subitem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 12px;
+  margin-left: 0;
+  border-radius: 4px;
+}
+
+/* Reduce awkward left margin on folder icons causing visual offset */
+.folder-icon { margin-left: 0 !important; width: 18px; height: 18px; }
+
+/* Active visual for sidebar toggle button */
+.sidebar-toggle.active, .sidebar-collapse:focus {
+  background: rgba(0,0,0,0.06);
 }
 

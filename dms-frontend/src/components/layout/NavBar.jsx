@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { BiData, BiBarChart, BiGroup, BiCog, BiFile, BiLogOut, BiChevronDown, BiUser, BiBuilding, BiTag, BiReceipt, BiCollection, BiFolder, BiBuildings, BiSearch, BiLock } from 'react-icons/bi';
+import { BiData, BiBarChart, BiGroup, BiCog, BiFile, BiLogOut, BiChevronDown, BiUser, BiBuilding, BiTag, BiReceipt, BiCollection, BiFolder, BiBuildings, BiSearch, BiLock, BiMenu } from 'react-icons/bi';
 import api from '../../api';
 import { AppContext } from '../context';
 import DmsTempUploadModal from '../Dashboard/DmsTempUploadModal';
 import './NavBar.css';
 
-const NavBar = ({ user, onLogout }) => {
+const NavBar = ({ user, onLogout, toggleSidebar }) => {
   const { systemName, setSelectedCompany: setContextCompany, setSelectedDoctype: setContextDoctype } = useContext(AppContext);
   const [showAdminTools, setShowAdminTools] = useState(false);
   const [showDmsTempModal, setShowDmsTempModal] = useState(false);
@@ -176,6 +176,10 @@ const NavBar = ({ user, onLogout }) => {
     <>
     <nav className="navbar">
       <div className="navbar-container">
+        {/* Sidebar toggle (visible on all sizes, styled in CSS) */}
+        <button className="sidebar-toggle" onClick={() => typeof toggleSidebar === 'function' && toggleSidebar()} aria-label="Basculer la barre latérale">
+          <BiMenu size={20} />
+        </button>
         {/* Logo Section */}
         <div className="navbar-brand" onClick={resetSelection}>
           <Link to="/" className="logo-link">
@@ -232,7 +236,6 @@ const NavBar = ({ user, onLogout }) => {
                       // Find the company and doctype objects
                       const company = companies.find(c => c.id === doc.company_id);
                       const doctype = doctypes.find(d => d.id === doc.doctype_id);
-                      
                       // Update context with selected company and doctype
                       if (company) {
                         setContextCompany(company);
@@ -240,7 +243,6 @@ const NavBar = ({ user, onLogout }) => {
                       if (doctype) {
                         setContextDoctype(doctype);
                       }
-                      
                       // Navigate to document archive with the correct IDs and filename filter
                       const filenameParam = encodeURIComponent(doc.filename);
                       navigate(`/?company=${doc.company_id || ''}&doctype=${doc.doctype_id || ''}&filename=${filenameParam}`);
