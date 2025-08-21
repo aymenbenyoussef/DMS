@@ -1,3 +1,6 @@
+@import './DragDropUpload.css';
+@import './DocumentConfirmationForm.css';
+
 /* Styles améliorés pour le composant DragDropUpload */
 
 .upload-modal-overlay {

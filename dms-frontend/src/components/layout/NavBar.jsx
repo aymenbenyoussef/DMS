@@ -210,7 +210,7 @@ const NavBar = ({ user, onLogout, toggleSidebar }) => {
                 }
               }}
             />
-            <button onClick={handleSearch} className="search-button" disabled={isSearching}>
+            {/*<button onClick={handleSearch} className="search-button" disabled={isSearching}>
               {isSearching ? (
                 <>
                   <i className="bi bi-arrow-clockwise me-1" style={{animation: 'spin 1s linear infinite'}}></i>
@@ -219,7 +219,7 @@ const NavBar = ({ user, onLogout, toggleSidebar }) => {
               ) : (
                 'Rechercher'
               )}
-            </button>
+            </button>*/}
           </div>
 
           {showSearchResults && (

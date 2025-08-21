@@ -299,7 +299,7 @@ const getOneMonthAgo = () => {
         // Get documents from the first group (assuming a document belongs to one main group)
         const groupId = response.data.groups[0].id;
         const groupDocsResponse = await API.groups.getDocuments(groupId);
-        // Fix: The backend returns { group, documents, count }, so we need to access response.data.documents
+        // Fix: The backend returns { group,
         const groupDocs = groupDocsResponse.data?.documents || [];
         // Filter out the current document
         const relatedDocs = groupDocs.filter(doc => doc.id !== documentId);
@@ -1629,9 +1629,9 @@ const getOneMonthAgo = () => {
                 <DragDropUpload
                   selectedCompany={selectedCompany}
                   selectedDoctype={selectedDoctype}
-                  onUploadComplete={() => {
+                  onClose={() => {
+                    // Only close the upload modal. Do not refresh documents here.
                     closeUploadModal();
-                    fetchDocuments();
                   }}
                 />
                 {uploadError && (

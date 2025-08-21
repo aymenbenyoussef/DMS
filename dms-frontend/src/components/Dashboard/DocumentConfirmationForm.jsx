@@ -4,8 +4,8 @@ import { AppContext } from '../context';
 import './DocumentConfirmationForm.css';
 
 const DocumentConfirmationForm = ({ 
-  files = [], // Array of { sessionId, extractedData, filename }
-  onConfirm, // (confirmedDocuments, errors) => void
+  files = [],
+  onConfirm,
   onCancel,
   initialCompany,
   initialDoctype,
@@ -13,12 +13,13 @@ const DocumentConfirmationForm = ({
 }) => {
   const { selectedCompany, selectedDoctype, setSelectedCompany, setSelectedDoctype } = useContext(AppContext);
   const [companies, setCompanies] = useState([]);
-  const [doctypes, setDoctypes] = useState({}); // Changed to object to store doctypes per company
-  const [partners, setPartners] = useState({}); // Changed to object to store partners per company
-  const [groups, setGroups] = useState({}); // Changed to object to store groups per company
+  const [doctypes, setDoctypes] = useState({});
+  const [partners, setPartners] = useState({});
+  const [groups, setGroups] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
-  // Array of confirmedDocuments and errors, one per file
+  const [activeFileIndex, setActiveFileIndex] = useState(0);
+  
   const [confirmedDocuments, setConfirmedDocuments] = useState(() => files.map(f => ({
     filename: f.filename,
     company_id: (initialCompany || selectedCompany)?.id,
@@ -36,7 +37,58 @@ const DocumentConfirmationForm = ({
       is_invoice: f.extractedData?.is_invoice || false
     }
   })));
+  
   const [errors, setErrors] = useState(() => files.map(() => ({})));
+
+  // Icônes SVG
+  const CompanyIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+      <polyline points="17,21 17,13 7,13 7,21"/>
+      <polyline points="7,3 7,8 15,8"/>
+    </svg>
+  );
+
+  const DocumentIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+    </svg>
+  );
+
+  const PartnerIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </svg>
+  );
+
+  const InvoiceIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14,2 14,8 20,8"/>
+      <line x1="16" y1="13" x2="8" y2="13"/>
+      <line x1="16" y1="17" x2="8" y2="17"/>
+      <polyline points="10,9 9,9 8,9"/>
+    </svg>
+  );
+
+  const CalendarIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+      <line x1="16" y1="2" x2="16" y2="6"/>
+      <line x1="8" y1="2" x2="8" y2="6"/>
+      <line x1="3" y1="10" x2="21" y2="10"/>
+    </svg>
+  );
+
+  const MoneyIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <line x1="12" y1="1" x2="12" y2="23"/>
+      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+    </svg>
+  );
 
   // Load companies on component mount
   useEffect(() => {
@@ -68,8 +120,7 @@ const DocumentConfirmationForm = ({
     if (hideConfirmButton) {
       onConfirm(confirmedDocuments, errors);
     }
-    // eslint-disable-next-line
-  }, [confirmedDocuments, errors]);
+  }, [confirmedDocuments, errors, hideConfirmButton, onConfirm]);
 
   const loadCompanies = async () => {
     try {
@@ -100,7 +151,6 @@ const DocumentConfirmationForm = ({
     }
   };
 
-  // Replace loadGroups with company-specific version
   const loadGroups = async (companyId) => {
     if (!companyId) {
       setGroups(prev => ({ ...prev, [companyId]: [] }));
@@ -117,7 +167,6 @@ const DocumentConfirmationForm = ({
 
   // Update confirmed document data
   const updateConfirmedDocument = (idx, field, value) => {
-    console.log(`updateConfirmedDocument: idx=${idx}, field="${field}", value="${value}"`);
     setConfirmedDocuments(prev => {
       const updated = [...prev];
       if (field === 'is_invoice') {
@@ -125,13 +174,11 @@ const DocumentConfirmationForm = ({
         updated[idx].confirmed_data.is_invoice = value;
       } else if (field === 'company_id') {
         updated[idx].company_id = value;
-        // Load company-specific data when company changes
         if (value) {
           loadDoctypesByCompany(value);
           loadPartners(value);
           loadGroups(value);
         }
-        // Reset doctype and partner when company changes
         updated[idx].doctype_id = null;
         updated[idx].confirmed_data.partner_id = '';
         updated[idx].confirmed_data.partner = '';
@@ -139,7 +186,6 @@ const DocumentConfirmationForm = ({
         updated[idx].doctype_id = value;
       } else if (field === 'partner_id') {
         updated[idx].confirmed_data.partner_id = value;
-        console.log(`Stored partner_id for file ${idx}: "${value}"`);
       } else if (field === 'group_id') {
         updated[idx].confirmed_data.group_id = value;
       } else {
@@ -159,10 +205,8 @@ const DocumentConfirmationForm = ({
 
   // Validate all forms
   const validateAll = () => {
-    console.log('=== Starting validation ===');
     const newErrors = files.map((f, idx) => {
       const doc = confirmedDocuments[idx];
-      console.log(`Validating file ${idx}:`, doc);
       const errs = {};
       
       if (!doc.company_id) {
@@ -194,25 +238,17 @@ const DocumentConfirmationForm = ({
         }
       }
       
-      console.log(`File ${idx} errors:`, errs);
       return errs;
     });
-    console.log('=== Validation complete ===');
     setErrors(newErrors);
-    // Return true if all error objects are empty
     return newErrors.every(err => Object.keys(err).length === 0);
   };
 
   const handleConfirm = async () => {
-    console.log('=== handleConfirm called ===');
-    console.log('Current confirmedDocuments:', confirmedDocuments);
     const isValid = validateAll();
-    console.log('Validation result:', isValid);
     if (!isValid) {
-      console.log('Validation failed, not proceeding with submission');
       return;
     }
-    console.log('Validation passed, proceeding with submission');
     setIsLoading(true);
     try {
       await onConfirm(confirmedDocuments, errors);
@@ -223,8 +259,7 @@ const DocumentConfirmationForm = ({
     }
   };
 
-  // If only one file, keep backward compatibility (single form)
-  if (files.length === 1) {
+  const renderSingleFileForm = () => {
     const doc = confirmedDocuments[0];
     const err = errors[0];
     const currentFileDoctypes = doctypes[doc.company_id] || [];
@@ -234,387 +269,539 @@ const DocumentConfirmationForm = ({
     return (
       <div className="document-confirmation-form">
         <div className="form-header">
-          
-        </div>
-        <div className="confirmation-form-scroll-area document-form">
-          <h4 className="document-title">{files[0].filename}</h4>
-          {/* First row: Entity and Document Type */}
-          <div className="form-row">
-            <div className="form-group">
-              <label>Entité *:</label>
-              <select 
-                value={doc.company_id || ''} 
-                onChange={e => { 
-                  const companyId = parseInt(e.target.value);
-                  setSelectedCompany(companies.find(c => c.id === companyId));
-                  updateConfirmedDocument(0, 'company_id', companyId);
-                }}
-                className={`${doc.company_id !== (initialCompany || selectedCompany)?.id ? 'changed' : ''} ${err.company_id ? 'error' : ''}`}
-              >
-                <option value="">Sélectionner une entité</option>
-                {companies.map(company => (
-                  <option key={company.id} value={company.id}>{company.name}</option>
-                ))}
-              </select>
-              
-              {err.company_id && <div className="error-message">{err.company_id}</div>}
-            </div>
-            <div className="form-group">
-              <label>Type de document *:</label>
-              <select 
-                value={doc.doctype_id || ''} 
-                onChange={e => { 
-                  const doctypeId = parseInt(e.target.value);
-                  setSelectedDoctype(currentFileDoctypes.find(d => d.id === doctypeId));
-                  updateConfirmedDocument(0, 'doctype_id', doctypeId);
-                }}
-                disabled={!doc.company_id}
-                className={`${doc.doctype_id !== (initialDoctype || selectedDoctype)?.id ? 'changed' : ''} ${err.doctype_id ? 'error' : ''}`}
-              >
-                <option value="">Sélectionner un type</option>
-                {currentFileDoctypes.map(doctype => (
-                  <option key={doctype.id} value={doctype.id}>{doctype.name}</option>
-                ))}
-              </select>
-              
-              {err.doctype_id && <div className="error-message">{err.doctype_id}</div>}
-            </div>
-          </div>
-          {/* Second row: Partner Selection (full width) */}
-          <div className="form-row">
-            <div className="form-group">
-              <label>Partenaire externe *:</label>
-              <select
-                value={doc.confirmed_data.partner_id || ''}
-                onChange={e => { 
-                  const partnerId = parseInt(e.target.value);
-                  const partner = currentFilePartners.find(p => p.id === partnerId);
-                  updateConfirmedDocument(0, 'partner_id', partnerId);
-                  if (partner) {
-                    updateConfirmedDocument(0, 'partner', partner.company_name);
-                  } else {
-                    updateConfirmedDocument(0, 'partner', '');
-                  }
-                }}
-                className={err.partner_id ? 'error' : ''}
-                required
-              >
-                <option value="">Sélectionner un partenaire externe</option>
-                {currentFilePartners.map(partner => (
-                  <option key={partner.id} value={partner.id}>{partner.company_name} ({partner.partnertypes.map(pt => pt.name).join(', ')})</option>
-                ))}
-              </select>
-              {err.partner_id && <div className="error-message">{err.partner_id}</div>}
-            </div>
-            <div className="form-group">
-              <label>Groupe:</label>
-              <select
-                value={doc.confirmed_data.group_id || ''}
-                onChange={e => updateConfirmedDocument(0, 'group_id', e.target.value)}
-                className={err.group_id ? 'error' : ''}
-              >
-                <option value="">Sélectionner un groupe (optionnel)</option>
-                {currentFileGroups.map(group => (
-                  <option key={group.id} value={group.id}>{group.name}</option>
-                ))}
-              </select>
-              {err.group_id && <div className="error-message">{err.group_id}</div>}
-            </div>
-          </div>
-          <div className="form-group checkbox-group">
-            <label>
-              <input
-                type="checkbox"
-                checked={doc.is_invoice || false}
-                onChange={e => {
-                  const isInvoice = e.target.checked;
-                  console.log(`Invoice checkbox toggled: ${isInvoice}`);
-                  updateConfirmedDocument(0, 'is_invoice', isInvoice);
-                  // Trigger validation immediately after toggling invoice status
-                  setTimeout(() => {
-                    console.log('Running validation after invoice toggle...');
-                    const newErrors = validateAll();
-                    console.log('Validation after invoice toggle:', newErrors);
-                  }, 50);
-                }}
-              />
-              Ce fichier est une facture
-            </label>
-          </div>
-          {doc.is_invoice && (
-            <div className="invoice-fields">
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Numéro de facture *:</label>
-                  <input
-                    type="text"
-                    value={doc.confirmed_data.invoice_number || ''}
-                    onChange={e => updateConfirmedDocument(0, 'invoice_number', e.target.value)}
-                    className={err.invoice_number ? 'error' : ''}
-                  />
-                  {err.invoice_number && <div className="error-message">{err.invoice_number}</div>}
-                </div>
-                <div className="form-group">
-                  <label>Date *:</label>
-                  <input
-                    type="date"
-                    value={doc.confirmed_data.date || ''}
-                    onChange={e => updateConfirmedDocument(0, 'date', e.target.value)}
-                    className={err.date ? 'error' : ''}
-                  />
-                  {err.date && <div className="error-message">{err.date}</div>}
-                </div>
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Total HT  *:</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    value={doc.confirmed_data.total_ht || ''}
-                    onChange={e => updateConfirmedDocument(0, 'total_ht', parseFloat(e.target.value) || '')}
-                    className={err.total_ht ? 'error' : ''}
-                  />
-                  {err.total_ht && <div className="error-message">{err.total_ht}</div>}
-                </div>
-                <div className="form-group">
-                  <label>TVA *:</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={doc.confirmed_data.tva || ''}
-                    onChange={e => updateConfirmedDocument(0, 'tva', parseFloat(e.target.value) || '')}
-                    className={err.tva ? 'error' : ''}
-                  />
-                  {err.tva && <div className="error-message">{err.tva}</div>}
-                </div>
-                <div className="form-group">
-                  <label>Total TTC *:</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    value={doc.confirmed_data.total_ttc || ''}
-                    onChange={e => updateConfirmedDocument(0, 'total_ttc', parseFloat(e.target.value) || '')}
-                    className={err.total_ttc ? 'error' : ''}
-                  />
-                  {err.total_ttc && <div className="error-message">{err.total_ttc}</div>}
-                </div>
-              </div>
+          <h3>Confirmation du document</h3>
+          <p>Vérifiez et modifiez les informations extraites si nécessaire</p>
+          {hasChanges && (
+            <div className="changes-notice">
+              Des modifications ont été apportées à la configuration initiale
             </div>
           )}
         </div>
-        <div className="confirmation-actions">
-          <button className="btn-secondary" onClick={onCancel} disabled={isLoading}>Annuler</button>
-          {!hideConfirmButton && (
-            <button className="btn-primary" onClick={handleConfirm} disabled={isLoading}>
-              {isLoading ? 'Confirmation...' : 'Confirmer'}
-            </button>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // Multi-file form
-  return (
-    <div className="document-confirmation-form">
-      <div className="form-header">
         
-      </div>
-      <div className="confirmation-form-scroll-area document-form">
-        {files.map((file, idx) => {
-          const doc = confirmedDocuments[idx];
-          const currentFileCompany = companies.find(c => c.id === doc.company_id);
-          const currentFileDoctypes = doctypes[doc.company_id] || [];
-          const currentFilePartners = partners[doc.company_id] || [];
-          const currentFileGroups = groups[doc.company_id] || [];
-          const currentFilePartner = currentFilePartners.find(p => p.id === doc.confirmed_data.partner_id);
-          
-          return (
-            <div key={file.sessionId || file.filename} className="multi-file-section">
-              <h4 className="document-title">{file.filename}</h4>
-              {/* First row: Entity and Document Type */}
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Entité *:</label>
-                  <select 
-                    value={doc.company_id || ''} 
-                    onChange={e => { 
-                      const companyId = parseInt(e.target.value);
-                      updateConfirmedDocument(idx, 'company_id', companyId);
-                    }}
-                    className={`${doc.company_id !== (initialCompany || selectedCompany)?.id ? 'changed' : ''} ${errors[idx].company_id ? 'error' : ''}`}
-                  >
-                    <option value="">Sélectionner une entité</option>
-                    {companies.map(company => (
-                      <option key={company.id} value={company.id}>{company.name}</option>
-                    ))}
-                  </select>
-                  
-                  {errors[idx].company_id && <div className="error-message">{errors[idx].company_id}</div>}
-                </div>
-                <div className="form-group">
-                  <label>Type de document *:</label>
-                  <select 
-                    value={doc.doctype_id || ''} 
-                    onChange={e => { 
-                      const doctypeId = parseInt(e.target.value);
-                      updateConfirmedDocument(idx, 'doctype_id', doctypeId);
-                    }}
-                    disabled={!doc.company_id}
-                    className={`${doc.doctype_id !== (initialDoctype || selectedDoctype)?.id ? 'changed' : ''} ${errors[idx].doctype_id ? 'error' : ''}`}
-                  >
-                    <option value="">Sélectionner un type</option>
-                    {currentFileDoctypes.map(doctype => (
-                      <option key={doctype.id} value={doctype.id}>{doctype.name}</option>
-                    ))}
-                  </select>
-                  
-                  {errors[idx].doctype_id && <div className="error-message">{errors[idx].doctype_id}</div>}
-                </div>
-              </div>
-              {/* Second row: Partner Selection (full width) */}
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Partenaire externe *:</label>
-                  <select
-                    value={doc.confirmed_data.partner_id || ''}
-                    onChange={e => { 
-                      const partnerId = parseInt(e.target.value);
-                      const partner = currentFilePartners.find(p => p.id === partnerId);
-                      updateConfirmedDocument(idx, 'partner_id', partnerId);
-                      if (partner) {
-                        updateConfirmedDocument(idx, 'partner', partner.company_name);
-                      } else {
-                        updateConfirmedDocument(idx, 'partner', '');
-                      }
-                    }}
-                    className={errors[idx].partner_id ? 'error' : ''}
-                    required
-                  >
-                    <option value="">Sélectionner un partenaire externe</option>
-                    {currentFilePartners.map(partner => (
-                      <option key={partner.id} value={partner.id}>{partner.company_name} ({partner.partnertypes.map(pt => pt.name).join(', ')})</option>
-                    ))}
-                  </select>
-                  {errors[idx].partner_id && <div className="error-message">{errors[idx].partner_id}</div>}
-                </div>
-                <div className="form-group">
-                  <label>Groupe:</label>
-                  <select
-                    value={doc.confirmed_data.group_id || ''}
-                    onChange={e => updateConfirmedDocument(idx, 'group_id', e.target.value)}
-                    className={errors[idx].group_id ? 'error' : ''}
-                  >
-                    <option value="">Sélectionner un groupe (optionnel)</option>
-                    {currentFileGroups.map(group => (
-                      <option key={group.id} value={group.id}>{group.name}</option>
-                    ))}
-                  </select>
-                  {errors[idx].group_id && <div className="error-message">{errors[idx].group_id}</div>}
-                </div>
-              </div>
-              <div className="form-group checkbox-group">
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={doc.is_invoice || false}
-                    onChange={e => {
-                      const isInvoice = e.target.checked;
-                      console.log(`Invoice checkbox toggled for file ${idx}: ${isInvoice}`);
-                      updateConfirmedDocument(idx, 'is_invoice', isInvoice);
-                      // Trigger validation immediately after toggling invoice status
-                      setTimeout(() => {
-                        console.log('Running validation after invoice toggle...');
-                        const newErrors = validateAll();
-                        console.log('Validation after invoice toggle:', newErrors);
-                      }, 50);
-                    }}
-                  />
-                  Ce fichier est une facture
+        <div className="confirmation-form-scroll-area">
+          <div className="document-form">
+            <h4 className="document-title">{files[0].filename}</h4>
+            
+            {/* Première ligne : Entité et Type de document */}
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">
+                  <CompanyIcon />
+                  Entité *
                 </label>
+                <select 
+                  value={doc.company_id || ''} 
+                  onChange={e => { 
+                    const companyId = parseInt(e.target.value);
+                    setSelectedCompany(companies.find(c => c.id === companyId));
+                    updateConfirmedDocument(0, 'company_id', companyId);
+                  }}
+                  className={`form-input ${doc.company_id !== (initialCompany || selectedCompany)?.id ? 'changed' : ''} ${err.company_id ? 'error' : ''}`}
+                >
+                  <option value="">Sélectionner une entité</option>
+                  {companies.map(company => (
+                    <option key={company.id} value={company.id}>{company.name}</option>
+                  ))}
+                </select>
+                {err.company_id && <div className="error-message">{err.company_id}</div>}
               </div>
-              {doc.is_invoice && (
-                <div className="invoice-fields">
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Numéro de facture *:</label>
-                      <input
-                        type="text"
-                        value={doc.confirmed_data.invoice_number || ''}
-                        onChange={e => updateConfirmedDocument(idx, 'invoice_number', e.target.value)}
-                        className={errors[idx].invoice_number ? 'error' : ''}
-                      />
-                      {errors[idx].invoice_number && <div className="error-message">{errors[idx].invoice_number}</div>}
-                    </div>
-                    <div className="form-group">
-                      <label>Date *:</label>
-                      <input
-                        type="date"
-                        value={doc.confirmed_data.date || ''}
-                        onChange={e => updateConfirmedDocument(idx, 'date', e.target.value)}
-                        className={errors[idx].date ? 'error' : ''}
-                      />
-                      {errors[idx].date && <div className="error-message">{errors[idx].date}</div>}
-                    </div>
+              
+              <div className="form-group">
+                <label className="form-label">
+                  <DocumentIcon />
+                  Type de document *
+                </label>
+                <select 
+                  value={doc.doctype_id || ''} 
+                  onChange={e => { 
+                    const doctypeId = parseInt(e.target.value);
+                    setSelectedDoctype(currentFileDoctypes.find(d => d.id === doctypeId));
+                    updateConfirmedDocument(0, 'doctype_id', doctypeId);
+                  }}
+                  disabled={!doc.company_id}
+                  className={`form-input ${doc.doctype_id !== (initialDoctype || selectedDoctype)?.id ? 'changed' : ''} ${err.doctype_id ? 'error' : ''}`}
+                >
+                  <option value="">Sélectionner un type</option>
+                  {currentFileDoctypes.map(doctype => (
+                    <option key={doctype.id} value={doctype.id}>{doctype.name}</option>
+                  ))}
+                </select>
+                {err.doctype_id && <div className="error-message">{err.doctype_id}</div>}
+              </div>
+            </div>
+
+            {/* Deuxième ligne : Partenaire */}
+            <div className="form-row">
+              <div className="form-group full-width-field">
+                <label className="form-label">
+                  <PartnerIcon />
+                  Partenaire externe *
+                </label>
+                <select
+                  value={doc.confirmed_data.partner_id || ''}
+                  onChange={e => { 
+                    const partnerId = parseInt(e.target.value);
+                    const partner = currentFilePartners.find(p => p.id === partnerId);
+                    updateConfirmedDocument(0, 'partner_id', partnerId);
+                    if (partner) {
+                      updateConfirmedDocument(0, 'partner', partner.company_name);
+                    } else {
+                      updateConfirmedDocument(0, 'partner', '');
+                    }
+                  }}
+                  className={`form-input ${err.partner_id ? 'error' : ''}`}
+                  required
+                >
+                  <option value="">Sélectionner un partenaire</option>
+                  {currentFilePartners.map(partner => (
+                    <option key={partner.id} value={partner.id}>
+                      {partner.company_name} - {partner.contact_name}
+                    </option>
+                  ))}
+                </select>
+                {err.partner_id && <div className="error-message">{err.partner_id}</div>}
+              </div>
+            </div>
+
+            {/* Case à cocher pour facture */}
+            <div className="checkbox-group">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={doc.is_invoice}
+                  onChange={e => updateConfirmedDocument(0, 'is_invoice', e.target.checked)}
+                />
+                Ce document est une facture
+              </label>
+            </div>
+
+            {/* Champs spécifiques aux factures */}
+            {doc.is_invoice && (
+              <div className="invoice-fields">
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label">
+                      <InvoiceIcon />
+                      Numéro de facture *
+                    </label>
+                    <input
+                      type="text"
+                      value={doc.confirmed_data.invoice_number}
+                      onChange={e => updateConfirmedDocument(0, 'invoice_number', e.target.value)}
+                      className={`form-input ${err.invoice_number ? 'error' : ''}`}
+                      placeholder="Numéro de facture"
+                    />
+                    {err.invoice_number && <div className="error-message">{err.invoice_number}</div>}
                   </div>
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Total HT *:</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0.01"
-                        value={doc.confirmed_data.total_ht || ''}
-                        onChange={e => updateConfirmedDocument(idx, 'total_ht', parseFloat(e.target.value) || '')}
-                        className={errors[idx].total_ht ? 'error' : ''}
-                      />
-                      {errors[idx].total_ht && <div className="error-message">{errors[idx].total_ht}</div>}
-                    </div>
-                    <div className="form-group">
-                      <label>TVA *:</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={doc.confirmed_data.tva || ''}
-                        onChange={e => updateConfirmedDocument(idx, 'tva', parseFloat(e.target.value) || '')}
-                        className={errors[idx].tva ? 'error' : ''}
-                      />
-                      {errors[idx].tva && <div className="error-message">{errors[idx].tva}</div>}
-                    </div>
-                    <div className="form-group">
-                      <label>Total TTC *:</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0.01"
-                        value={doc.confirmed_data.total_ttc || ''}
-                        onChange={e => updateConfirmedDocument(idx, 'total_ttc', parseFloat(e.target.value) || '')}
-                        className={errors[idx].total_ttc ? 'error' : ''}
-                      />
-                      {errors[idx].total_ttc && <div className="error-message">{errors[idx].total_ttc}</div>}
-                    </div>
+                  
+                  <div className="form-group">
+                    <label className="form-label">
+                      <CalendarIcon />
+                      Date *
+                    </label>
+                    <input
+                      type="date"
+                      value={doc.confirmed_data.date}
+                      onChange={e => updateConfirmedDocument(0, 'date', e.target.value)}
+                      className={`form-input ${err.date ? 'error' : ''}`}
+                    />
+                    {err.date && <div className="error-message">{err.date}</div>}
                   </div>
                 </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-      <div className="confirmation-actions">
-        <button className="btn-secondary" onClick={onCancel} disabled={isLoading}>Annuler</button>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label">
+                      <MoneyIcon />
+                      Total HT *
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={doc.confirmed_data.total_ht}
+                      onChange={e => updateConfirmedDocument(0, 'total_ht', e.target.value)}
+                      className={`form-input ${err.total_ht ? 'error' : ''}`}
+                      placeholder="0.00"
+                    />
+                    {err.total_ht && <div className="error-message">{err.total_ht}</div>}
+                  </div>
+                  
+                  <div className="form-group">
+                    <label className="form-label">
+                      <MoneyIcon />
+                      TVA *
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={doc.confirmed_data.tva}
+                      onChange={e => updateConfirmedDocument(0, 'tva', e.target.value)}
+                      className={`form-input ${err.tva ? 'error' : ''}`}
+                      placeholder="0.00"
+                    />
+                    {err.tva && <div className="error-message">{err.tva}</div>}
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label">
+                      <MoneyIcon />
+                      Total TTC *
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={doc.confirmed_data.total_ttc}
+                      onChange={e => updateConfirmedDocument(0, 'total_ttc', e.target.value)}
+                      className={`form-input ${err.total_ttc ? 'error' : ''}`}
+                      placeholder="0.00"
+                    />
+                    {err.total_ttc && <div className="error-message">{err.total_ttc}</div>}
+                  </div>
+                  
+                  <div className="form-group">
+                    <label className="form-label">Groupe (optionnel)</label>
+                    <select
+                      value={doc.confirmed_data.group_id || ''}
+                      onChange={e => updateConfirmedDocument(0, 'group_id', e.target.value)}
+                      className="form-input"
+                    >
+                      <option value="">Aucun groupe</option>
+                      {currentFileGroups.map(group => (
+                        <option key={group.id} value={group.id}>{group.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
         {!hideConfirmButton && (
-          <button className="btn-primary" onClick={handleConfirm} disabled={isLoading}>
-            {isLoading ? 'Confirmation...' : 'Confirmer'}
-          </button>
+          <div className="confirmation-actions">
+            <button 
+              type="button" 
+              className="action-btn action-btn--secondary" 
+              onClick={onCancel}
+              disabled={isLoading}
+            >
+              Annuler
+            </button>
+            <button 
+              type="button" 
+              className="action-btn action-btn--primary" 
+              onClick={handleConfirm}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <div className="spinner spinner--small"></div>
+                  Confirmation...
+                </>
+              ) : (
+                <>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22,4 12,14.01 9,11.01"/>
+                  </svg>
+                  Confirmer
+                </>
+              )}
+            </button>
+          </div>
         )}
       </div>
-    </div>
-  );
+    );
+  };
+
+  const renderMultiFileForm = () => {
+    return (
+      <div className="document-confirmation-form">
+        <div className="form-header">
+          <h3>Confirmation des documents ({files.length})</h3>
+          <p>Vérifiez et modifiez les informations extraites pour chaque fichier</p>
+          {hasChanges && (
+            <div className="changes-notice">
+              Des modifications ont été apportées à la configuration initiale
+            </div>
+          )}
+        </div>
+
+        {/* Navigation des fichiers */}
+        <div className="file-navigation">
+          {files.map((file, idx) => (
+            <button
+              key={idx}
+              className={`file-tab ${idx === activeFileIndex ? 'active' : ''}`}
+              onClick={() => setActiveFileIndex(idx)}
+            >
+              {file.filename}
+              {Object.keys(errors[idx] || {}).length > 0 && (
+                <span style={{ color: 'var(--error)', marginLeft: '0.25rem' }}>⚠️</span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        <div className="confirmation-form-scroll-area">
+          {files.map((file, idx) => {
+            if (idx !== activeFileIndex) return null;
+            
+            const doc = confirmedDocuments[idx];
+            const err = errors[idx];
+            const currentFileDoctypes = doctypes[doc.company_id] || [];
+            const currentFilePartners = partners[doc.company_id] || [];
+            const currentFileGroups = groups[doc.company_id] || [];
+
+            return (
+              <div key={idx} className="multi-file-section">
+                <div className="document-form">
+                  <h4 className="document-title">{file.filename}</h4>
+                  
+                  {/* Première ligne : Entité et Type de document */}
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label className="form-label">
+                        <CompanyIcon />
+                        Entité *
+                      </label>
+                      <select 
+                        value={doc.company_id || ''} 
+                        onChange={e => { 
+                          const companyId = parseInt(e.target.value);
+                          updateConfirmedDocument(idx, 'company_id', companyId);
+                        }}
+                        className={`form-input ${err.company_id ? 'error' : ''}`}
+                      >
+                        <option value="">Sélectionner une entité</option>
+                        {companies.map(company => (
+                          <option key={company.id} value={company.id}>{company.name}</option>
+                        ))}
+                      </select>
+                      {err.company_id && <div className="error-message">{err.company_id}</div>}
+                    </div>
+                    
+                    <div className="form-group">
+                      <label className="form-label">
+                        <DocumentIcon />
+                        Type de document *
+                      </label>
+                      <select 
+                        value={doc.doctype_id || ''} 
+                        onChange={e => { 
+                          const doctypeId = parseInt(e.target.value);
+                          updateConfirmedDocument(idx, 'doctype_id', doctypeId);
+                        }}
+                        disabled={!doc.company_id}
+                        className={`form-input ${err.doctype_id ? 'error' : ''}`}
+                      >
+                        <option value="">Sélectionner un type</option>
+                        {currentFileDoctypes.map(doctype => (
+                          <option key={doctype.id} value={doctype.id}>{doctype.name}</option>
+                        ))}
+                      </select>
+                      {err.doctype_id && <div className="error-message">{err.doctype_id}</div>}
+                    </div>
+                  </div>
+
+                  {/* Deuxième ligne : Partenaire */}
+                  <div className="form-row">
+                    <div className="form-group full-width-field">
+                      <label className="form-label">
+                        <PartnerIcon />
+                        Partenaire externe *
+                      </label>
+                      <select
+                        value={doc.confirmed_data.partner_id || ''}
+                        onChange={e => { 
+                          const partnerId = parseInt(e.target.value);
+                          const partner = currentFilePartners.find(p => p.id === partnerId);
+                          updateConfirmedDocument(idx, 'partner_id', partnerId);
+                          if (partner) {
+                            updateConfirmedDocument(idx, 'partner', partner.company_name);
+                          } else {
+                            updateConfirmedDocument(idx, 'partner', '');
+                          }
+                        }}
+                        className={`form-input ${err.partner_id ? 'error' : ''}`}
+                        required
+                      >
+                        <option value="">Sélectionner un partenaire</option>
+                        {currentFilePartners.map(partner => (
+                          <option key={partner.id} value={partner.id}>
+                            {partner.company_name} - {partner.contact_name}
+                          </option>
+                        ))}
+                      </select>
+                      {err.partner_id && <div className="error-message">{err.partner_id}</div>}
+                    </div>
+                  </div>
+
+                  {/* Case à cocher pour facture */}
+                  <div className="checkbox-group">
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={doc.is_invoice}
+                        onChange={e => updateConfirmedDocument(idx, 'is_invoice', e.target.checked)}
+                      />
+                      Ce document est une facture
+                    </label>
+                  </div>
+
+                  {/* Champs spécifiques aux factures */}
+                  {doc.is_invoice && (
+                    <div className="invoice-fields">
+                      <div className="form-row">
+                        <div className="form-group">
+                          <label className="form-label">
+                            <InvoiceIcon />
+                            Numéro de facture *
+                          </label>
+                          <input
+                            type="text"
+                            value={doc.confirmed_data.invoice_number}
+                            onChange={e => updateConfirmedDocument(idx, 'invoice_number', e.target.value)}
+                            className={`form-input ${err.invoice_number ? 'error' : ''}`}
+                            placeholder="Numéro de facture"
+                          />
+                          {err.invoice_number && <div className="error-message">{err.invoice_number}</div>}
+                        </div>
+                        
+                        <div className="form-group">
+                          <label className="form-label">
+                            <CalendarIcon />
+                            Date *
+                          </label>
+                          <input
+                            type="date"
+                            value={doc.confirmed_data.date}
+                            onChange={e => updateConfirmedDocument(idx, 'date', e.target.value)}
+                            className={`form-input ${err.date ? 'error' : ''}`}
+                          />
+                          {err.date && <div className="error-message">{err.date}</div>}
+                        </div>
+                      </div>
+
+                      <div className="form-row">
+                        <div className="form-group">
+                          <label className="form-label">
+                            <MoneyIcon />
+                            Total HT *
+                          </label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={doc.confirmed_data.total_ht}
+                            onChange={e => updateConfirmedDocument(idx, 'total_ht', e.target.value)}
+                            className={`form-input ${err.total_ht ? 'error' : ''}`}
+                            placeholder="0.00"
+                          />
+                          {err.total_ht && <div className="error-message">{err.total_ht}</div>}
+                        </div>
+                        
+                        <div className="form-group">
+                          <label className="form-label">
+                            <MoneyIcon />
+                            TVA *
+                          </label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={doc.confirmed_data.tva}
+                            onChange={e => updateConfirmedDocument(idx, 'tva', e.target.value)}
+                            className={`form-input ${err.tva ? 'error' : ''}`}
+                            placeholder="0.00"
+                          />
+                          {err.tva && <div className="error-message">{err.tva}</div>}
+                        </div>
+                      </div>
+
+                      <div className="form-row">
+                        <div className="form-group">
+                          <label className="form-label">
+                            <MoneyIcon />
+                            Total TTC *
+                          </label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={doc.confirmed_data.total_ttc}
+                            onChange={e => updateConfirmedDocument(idx, 'total_ttc', e.target.value)}
+                            className={`form-input ${err.total_ttc ? 'error' : ''}`}
+                            placeholder="0.00"
+                          />
+                          {err.total_ttc && <div className="error-message">{err.total_ttc}</div>}
+                        </div>
+                        
+                        <div className="form-group">
+                          <label className="form-label">Groupe (optionnel)</label>
+                          <select
+                            value={doc.confirmed_data.group_id || ''}
+                            onChange={e => updateConfirmedDocument(idx, 'group_id', e.target.value)}
+                            className="form-input"
+                          >
+                            <option value="">Aucun groupe</option>
+                            {currentFileGroups.map(group => (
+                              <option key={group.id} value={group.id}>{group.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {!hideConfirmButton && (
+          <div className="confirmation-actions">
+            <button 
+              type="button" 
+              className="action-btn action-btn--secondary" 
+              onClick={onCancel}
+              disabled={isLoading}
+            >
+              Annuler
+            </button>
+            <button 
+              type="button" 
+              className="action-btn action-btn--primary" 
+              onClick={handleConfirm}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <div className="spinner spinner--small"></div>
+                  Confirmation...
+                </>
+              ) : (
+                <>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22,4 12,14.01 9,11.01"/>
+                  </svg>
+                  Confirmer tous ({files.length})
+                </>
+              )}
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Render based on number of files
+  if (files.length === 1) {
+    return renderSingleFileForm();
+  } else {
+    return renderMultiFileForm();
+  }
 };
 
 export default DocumentConfirmationForm;
+
