@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import API from '../../api';
 import { AppContext } from '../context';
-import TempDocumentConfirmationForm from './TempDocumentConfirmationForm';
+import DocumentConfirmationForm from './DocumentConfirmationForm';
 import DmsTempUploadModal from './DmsTempUploadModal';
 import { exportToCSV, exportToJSON, exportToTXT, exportToExcel } from '../Admin/exportUtils';
 import './TempDocumentArchive.css';
@@ -846,90 +846,29 @@ const TempDocumentArchive = ({ user }) => {
 
       {/* Confirmation Modal */}
       {showConfirmationModal && confirmationData && (
-              <div className="modal-overlay" style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                width: '100vw',
-                height: '100vh',
-                backgroundColor: 'rgba(0,0,0,0.7)',
-                zIndex: 2000,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
-                <div className="modal-content" style={{
-                  width: '80vw',
-                  maxWidth: '800px',
-                  maxHeight: '95vh',
-                  height: '90vh',
-                  backgroundColor: 'white',
-                  borderRadius: '12px',
-                  overflow: 'hidden',
-                  boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                }}>
-                  {/* Modal Header */}
-                  <div className="modal-header" style={{
-                    padding: '20px 24px',
-                    borderBottom: '1px solid #e5e7eb',
-                    backgroundColor: '#f8fafc',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    background: 'linear-gradient(135deg, #0f5132 0%, #198754 100%)',
-                    color: 'white'
-                  }}>
-                    <h3 style={{
-                      margin: 0,
-                      fontSize: '1.25rem',
-                      fontWeight: 600
-                      
-                    }}>
-                      Confirmation de document
-                    </h3>
-                    <button
-                      className="close-btn"
-                      onClick={handleCancelConfirmation}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        fontSize: '24px',
-                        cursor: 'pointer',
-                        color: '#6b7280',
-                        padding: '8px',
-                        borderRadius: '6px',
-                        transition: 'all 0.2s',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.backgroundColor = '#f3f4f6';
-                        e.target.style.color = '#374151';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.backgroundColor = 'transparent';
-                        e.target.style.color = '#6b7280';
-                      }}
-                    >
-                      ×
-                    </button>
-                  </div>
-                  
-                  {/* Modal Body */}
-                  <div className="modal-body" style={{ flex: 1, overflow: 'hidden' }}>
-                    <TempDocumentConfirmationForm
-                      files={confirmationData}
-                      onConfirm={handleConfirmDocuments}
-                      onCancel={handleModalClose}
-                      initialCompany={selectedCompany}
-                      initialDoctype={selectedDoctype}
-                      tempDocumentId={currentDocument?.id}
-                      onRefresh={fetchDocuments}
-                    />
-                  </div>
-                </div>
+        <div className="modal-overlay" role="dialog" aria-modal="true">
+          <div className="modal-container modal-container--large">
+            <div className="modal-header">
+              <div className="modal-header__content">
+                <div className="modal-header__icon">📋</div>
+                <h2 className="modal-title">Confirmation du document</h2>
               </div>
-            )}
+              <button className="modal-close-btn" onClick={handleCancelConfirmation} aria-label="Fermer">
+                ×
+              </button>
+            </div>
+            <div className="modal-body modal-body--scrollable">
+              <DocumentConfirmationForm
+                files={confirmationData}
+                onConfirm={handleConfirmDocuments}
+                onCancel={handleModalClose}
+                initialCompany={selectedCompany}
+                initialDoctype={selectedDoctype}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

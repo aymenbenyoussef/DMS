@@ -4,7 +4,8 @@
 @import './ModalStyles.css';
 
 /* ===== OVERLAY ET CONTENEUR PRINCIPAL ===== */
-.upload-modal-overlay {
+.upload-modal-overlay,
+.modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -14,26 +15,33 @@
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   display: flex;
-  align-items: flex-start;
+  /* center vertically so top/bottom distance is equal */
+  align-items: center;
   justify-content: center;
   z-index: var(--z-modal-backdrop);
-  padding: calc(var(--app-navbar-height) + 4px) 1rem 20px;
+  /* remove external padding so overlay isn't pushed by navbar; modal handles internal padding */
+  padding: 0;
   animation: fadeIn var(--transition-normal);
   overflow: hidden;
 }
 
-.upload-modal {
+.upload-modal,
+.modal-container {
   background: white;
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-xl);
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - var(--app-navbar-height) - 20px);
+  /* ensure the modal can grow but keeps equal spacing above/below; subtract a fixed gutter to guarantee visible top/bottom space */
+  max-height: calc(100vh - 80px);
   width: 100%;
   max-width: 700px; /* Réduit de 800px à 700px */
   animation: slideUp var(--transition-normal);
   overflow: hidden;
-  margin: 0 auto;
+  margin: auto; /* centers the modal both horizontally and vertically inside the overlay */
+  box-sizing: border-box;
+  /* internal padding so content and actions are inset from edges */
+  padding: 1rem !important;
   z-index: var(--z-modal);
 }
 
@@ -553,7 +561,7 @@
   justify-content: flex-end;
   gap: 0.625rem; /* Réduit de 0.75rem à 0.625rem */
   margin-top: 1rem; /* Réduit de 1.5rem à 1rem */
-  padding-top: 1rem; /* Réduit de 1.5rem à 1rem */
+  padding: 1rem 1.25rem !important; /* ensure actions are inset from modal edges */
   border-top: 1px solid var(--neutral-200);
   flex-shrink: 0; /* Empêche la compression */
 }
@@ -609,6 +617,26 @@
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
+}
+
+/* Make the Télécharger button larger and force its characteristics with !important
+   Targeting .upload-actions .btn-primary to avoid global overrides */
+.upload-actions .btn-primary {
+  padding: 0.95rem 1.6rem !important;
+  background: var(--primary-blue) !important;
+  color: #ffffff !important;
+  border-radius: var(--radius-lg) !important;
+  font-size: 0.98rem !important;
+  font-weight: 700 !important;
+  min-width: 9rem !important;
+  box-shadow: var(--shadow-md) !important;
+  border: none !important;
+}
+
+/* Also make the inner svg/icon inside the button scale a bit */
+.upload-actions .btn-primary svg {
+  width: 18px !important;
+  height: 18px !important;
 }
 
 /* ===== SPINNER ===== */

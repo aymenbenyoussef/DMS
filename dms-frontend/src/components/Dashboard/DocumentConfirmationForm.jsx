@@ -330,9 +330,23 @@ const DocumentConfirmationForm = ({
               </div>
             </div>
 
-            {/* Deuxième ligne : Partenaire */}
+            {/* Deuxième ligne : Groupe (optionnel) et Partenaire côte-à-côte */}
             <div className="form-row">
-              <div className="form-group full-width-field">
+              <div className="form-group">
+                <label className="form-label">Groupe (optionnel)</label>
+                <select
+                  value={doc.confirmed_data.group_id || ''}
+                  onChange={e => updateConfirmedDocument(0, 'group_id', parseInt(e.target.value) || '')}
+                  className="form-input"
+                >
+                  <option value="">Aucun groupe</option>
+                  {currentFileGroups.map(group => (
+                    <option key={group.id} value={group.id}>{group.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
                 <label className="form-label">
                   <PartnerIcon />
                   Partenaire externe *
@@ -460,19 +474,7 @@ const DocumentConfirmationForm = ({
                     {err.total_ttc && <div className="error-message">{err.total_ttc}</div>}
                   </div>
                   
-                  <div className="form-group">
-                    <label className="form-label">Groupe (optionnel)</label>
-                    <select
-                      value={doc.confirmed_data.group_id || ''}
-                      onChange={e => updateConfirmedDocument(0, 'group_id', e.target.value)}
-                      className="form-input"
-                    >
-                      <option value="">Aucun groupe</option>
-                      {currentFileGroups.map(group => (
-                        <option key={group.id} value={group.id}>{group.name}</option>
-                      ))}
-                    </select>
-                  </div>
+                  
                 </div>
               </div>
             )}
@@ -606,9 +608,23 @@ const DocumentConfirmationForm = ({
                     </div>
                   </div>
 
-                  {/* Deuxième ligne : Partenaire */}
+                  {/* Deuxième ligne : Groupe (optionnel) et Partenaire côte-à-côte */}
                   <div className="form-row">
-                    <div className="form-group full-width-field">
+                    <div className="form-group">
+                      <label className="form-label">Groupe (optionnel)</label>
+                      <select
+                        value={doc.confirmed_data.group_id || ''}
+                        onChange={e => updateConfirmedDocument(idx, 'group_id', parseInt(e.target.value) || '')}
+                        className="form-input"
+                      >
+                        <option value="">Aucun groupe</option>
+                        {currentFileGroups.map(group => (
+                          <option key={group.id} value={group.id}>{group.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="form-group">
                       <label className="form-label">
                         <PartnerIcon />
                         Partenaire externe *
@@ -736,19 +752,7 @@ const DocumentConfirmationForm = ({
                           {err.total_ttc && <div className="error-message">{err.total_ttc}</div>}
                         </div>
                         
-                        <div className="form-group">
-                          <label className="form-label">Groupe (optionnel)</label>
-                          <select
-                            value={doc.confirmed_data.group_id || ''}
-                            onChange={e => updateConfirmedDocument(idx, 'group_id', e.target.value)}
-                            className="form-input"
-                          >
-                            <option value="">Aucun groupe</option>
-                            {currentFileGroups.map(group => (
-                              <option key={group.id} value={group.id}>{group.name}</option>
-                            ))}
-                          </select>
-                        </div>
+                        
                       </div>
                     </div>
                   )}

@@ -1168,6 +1168,7 @@ const getOneMonthAgo = () => {
                           <input
                             type="checkbox"
                             className="form-check-input"
+                            onClick={(e) => e.stopPropagation()} /* Prevent header checkbox click from opening modal */
                             onChange={(e) => {
                               if (e.target.checked) {
                                 setSelectedDocuments(filteredDocuments.map(doc => doc.id));
@@ -1367,12 +1368,23 @@ const getOneMonthAgo = () => {
                       </tr>
                     ) : (
                       filteredDocuments.map((document) => (
-                        <tr key={document.id} className="align-middle">
+                        <tr
+                          key={document.id}
+                          className="align-middle document-row"
+                          onClick={(e) => {
+                            // If click originated from an interactive element (checkbox, button, dropdown, link, select), do nothing
+                            const ignored = e.target?.closest && e.target.closest('input, button, .dropdown, a, select, .form-check-input, .dropdown-menu');
+                            if (ignored) return;
+                            handleRapport(document);
+                          }}
+                          style={{ cursor: 'pointer' }}
+                        >
                           {isGroupMode && (
                             <td>
                               <input
                                 type="checkbox"
                                 className="form-check-input"
+                                onClick={(e) => e.stopPropagation()} /* Prevent row click when toggling checkbox */
                                 checked={selectedDocuments.includes(document.id)}
                                 onChange={() => handleDocumentSelection(document.id)}
                               />
@@ -1615,7 +1627,6 @@ const getOneMonthAgo = () => {
 
       {/* Upload Modal */}
       {isUploadModalOpen && (
-        <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
           <div className="modal-dialog modal-lg">
             <div className="modal-content">
               <div className="modal-header">
@@ -1642,7 +1653,6 @@ const getOneMonthAgo = () => {
               </div>
             </div>
           </div>
-        </div>
       )}
 
 

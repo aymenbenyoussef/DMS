@@ -65,11 +65,12 @@
   backdrop-filter: blur(8px); /* flou sur toute la page */
   -webkit-backdrop-filter: blur(8px);
   display: flex;
-  align-items: flex-start; /* aligner en haut pour que la modale commence sous la navbar */
+  /* centre la modale verticalement par défaut, afin d'avoir la même distance haut/bas */
+  align-items: center;
   justify-content: center;
-  z-index: var(--z-modal-backdrop); 
-  /* padding-top pour laisser la navbar visible sous le flou (la modale commence en dessous) */
-  padding: calc(var(--app-navbar-height) + 4px) 1rem 20px; /* bottom 20px, reduced gap */
+  z-index: var(--z-modal-backdrop);
+  /* overlay gère seulement le centrage; la modale doit contrôler son padding interne */
+  padding: 0;
   animation: fadeIn var(--transition-normal);
   overflow: hidden; /* empêche double scroll */
 }
@@ -98,12 +99,16 @@
   box-shadow: var(--shadow-xl);
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - var(--app-navbar-height) - 20px); /* tenir sous la navbar et 20px du bas */
+  /* utiliser un gutter fixe plus généreux pour garantir un espacement égal haut/bas indépendamment de la navbar */
+  max-height: calc(100vh - 96px);
   width: 100%;
   animation: slideUp var(--transition-normal);
   overflow: hidden;
-  margin: 0 auto;
-  z-index: var(--z-modal)
+  margin: auto; /* centré dans l'overlay */
+  box-sizing: border-box;
+  /* internal padding to prevent content and footer from touching edges */
+  padding: 1rem !important;
+  z-index: var(--z-modal);
 }
 
 .modal-container--medium {
@@ -905,7 +910,7 @@
   align-items: center;
   justify-content: flex-end;
   gap: 0.75rem;
-  padding: 1.5rem;
+  padding: 1.25rem 1.5rem !important; /* inset footer so buttons are away from lower-right corner */
   border-top: 1px solid var(--neutral-200);
   background: var(--neutral-50);
 }
