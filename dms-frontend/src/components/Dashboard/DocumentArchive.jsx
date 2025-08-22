@@ -1721,25 +1721,16 @@ const getOneMonthAgo = () => {
       {/* Edit Modal */}
       {isEditModalOpen && editingDocument && (
         <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog modal-lg">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">
-                  <i className="fas fa-edit me-2"></i>
-                  Modifier le document
-                </h5>
-                <button type="button" className="btn-close" onClick={handleCloseEditModal}></button>
-              </div>
-              <div className="modal-body">
-                <EditDocumentForm
-                  document={editingDocument}
-                  onSave={handleSaveEdit}
-                  onCancel={handleCloseEditModal}
-                  isLoading={isEditSaving}
-                  error={editError}
-                  success={editSuccess}
-                />
-              </div>
+          <div className="modal-dialog modal-lg modal-dialog-centered" style={{ height: '80vh', display: 'flex', alignItems: 'center' }}>
+            <div className="modal-content edit-modal-content-fixed-height">
+              <EditDocumentForm
+                document={editingDocument}
+                onSave={handleSaveEdit}
+                onCancel={handleCloseEditModal}
+                isLoading={isEditSaving}
+                error={editError}
+                success={editSuccess}
+              />
             </div>
           </div>
         </div>

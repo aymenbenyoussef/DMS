@@ -65,6 +65,43 @@
 .fullscreen-modal-close { position:absolute; top:20px; right:20px; background:rgba(0,0,0,0.7); color:white; border:none; border-radius:50%; width:40px; height:40px; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:2002 !important; transition:background-color 0.2s ease; }
 .fullscreen-modal-close:hover { background:rgba(0,0,0,0.9); }
 
+/* --- Edit Modal Fixed Height & Scrollable Body --- */
+.edit-modal-content-fixed-height {
+  display: flex;
+  flex-direction: column;
+  height: 80vh;
+  max-height: 90vh;
+  min-height: 400px;
+}
+.edit-modal-content-fixed-height .modal-header {
+  flex-shrink: 0;
+  border-bottom: 1px solid #e9ecef;
+  background: #fff;
+  z-index: 2;
+}
+.edit-modal-content-fixed-height .edit-modal-scrollable-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  background: #fff;
+  padding: 1.5rem;
+}
+.edit-modal-content-fixed-height .form-actions {
+  flex-shrink: 0;
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  background: #fff;
+}
+@media (max-width: 768px) {
+  .edit-modal-content-fixed-height {
+    height: 95vh;
+    min-height: 0;
+  }
+  .edit-modal-content-fixed-height .edit-modal-scrollable-body {
+    padding: 1rem;
+  }
+}
+
 /* ===== MAIN LAYOUT ===== */
 .document-archive {
   padding: 0.75rem;

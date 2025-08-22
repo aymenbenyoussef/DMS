@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import API from '../../api';
 import { AppContext } from '../context';
 import DocumentConfirmationForm from './DocumentConfirmationForm';
@@ -192,22 +193,27 @@ const TempDocumentArchive = ({ user }) => {
   const handleSend = async (doc) => {
     setProcessingDocId(doc.id);
     setCurrentDocument(doc);
+    
     setOriginalCompany(selectedCompany);
     setOriginalDoctype(selectedDoctype);
+    
     try {
       const response = await API.tempDocuments.download(doc.id);
       const blob = response.data;
       const file = new File([blob], doc.filename, { type: blob.type });
+      
       const ocrResponse = await API.documents.uploadSingleFile(
         file,
         selectedCompany?.id || null,
         selectedDoctype?.id || null
       );
+      
       const confirmationData = {
         sessionId: ocrResponse.data?.session_id,
         extractedData: ocrResponse.data?.extracted_data,
         filename: doc.filename
       };
+      
       setConfirmationData([confirmationData]);
       setShowConfirmationModal(true);
     } catch (error) {
@@ -220,20 +226,25 @@ const TempDocumentArchive = ({ user }) => {
 
   const handleConfirmDocuments = async (confirmedDocuments, errors) => {
     if (!confirmationData || !confirmationData[0]) return;
+    
     try {
       const sessionId = confirmationData[0].sessionId;
       const doc = confirmedDocuments[0];
+      
       if (doc && sessionId) {
         const documentToConfirm = {
           ...doc,
           partner_id: doc.confirmed_data.partner_id || null,
           confirmed_data: { ...doc.confirmed_data }
         };
+        
         const response = await API.documents.confirmDocuments(sessionId, [documentToConfirm]);
         const savedDoc = response.data.saved_documents[0];
+        
         if (savedDoc && !savedDoc.error) {
           setDocuments(prev => prev.filter(d => d.id !== currentDocument?.id));
           setFilteredDocuments(prev => prev.filter(d => d.id !== currentDocument?.id));
+          
           window.dispatchEvent(new Event('TempDocumentsUploaded'));
         }
       }
@@ -366,6 +377,11 @@ const TempDocumentArchive = ({ user }) => {
 
   return (
     <div className="document-archive">
+      {successMessage && (
+        <div className="alert alert-success" style={{ position: 'fixed', top: 20, right: 20, zIndex: 9999 }}>
+          {successMessage}
+        </div>
+      )}
       <div className="container-fluid h-100">
         <div className="row h-100">
           {/* Main Content Area - Table */}
@@ -546,7 +562,7 @@ const TempDocumentArchive = ({ user }) => {
       </div>
 
       {/* Preview Modal */}
-      {isPreviewModalOpen && (
+      {isPreviewModalOpen && createPortal(
         <div className="modal-overlay" style={{
           position: 'fixed',
           top: 0,
@@ -772,11 +788,12 @@ const TempDocumentArchive = ({ user }) => {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Delete Confirmation Modal */}
-      {isDeleteModalOpen && deletingDocument && (
+      {isDeleteModalOpen && deletingDocument && createPortal(
         <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
           <div className="modal-dialog" style={{ marginTop: '120px' }}>
             <div className="modal-content">
@@ -830,22 +847,24 @@ const TempDocumentArchive = ({ user }) => {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Upload Modal */}
-      {isUploadModalOpen && (
+      {isUploadModalOpen && createPortal(
         <DmsTempUploadModal
           onClose={() => setIsUploadModalOpen(false)}
           onUploadComplete={() => {
             setIsUploadModalOpen(false);
             fetchDocuments();
           }}
-        />
+        />,
+        document.body
       )}
 
       {/* Confirmation Modal */}
-      {showConfirmationModal && confirmationData && (
+      {showConfirmationModal && confirmationData && createPortal(
         <div className="modal-overlay" role="dialog" aria-modal="true">
           <div className="modal-container modal-container--large">
             <div className="modal-header">
@@ -867,7 +886,8 @@ const TempDocumentArchive = ({ user }) => {
               />
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

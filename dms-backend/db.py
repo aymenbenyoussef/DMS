@@ -1121,7 +1121,7 @@ class DatabaseManager:
                 ORDER BY d.created_at DESC
             """
             return self.execute_query(query, (company_id,), fetch=True)
-    def update_document(self, document_id, name=None, partner_id=None):
+    def update_document(self, document_id, name=None, partner_id=None,  is_invoice=None, invoice_number=None, invoice_date=None, total_ht=None, tva=None, total_ttc=None):
         updates = []
         params = []
         if name is not None:
@@ -1130,6 +1130,24 @@ class DatabaseManager:
         if partner_id is not None:
             updates.append("partner_id = %s")
             params.append(partner_id)
+        if is_invoice is not None:
+            updates.append("is_invoice = %s")
+            params.append(is_invoice)
+        if invoice_number is not None:
+            updates.append("invoice_number = %s")
+            params.append(invoice_number)
+        if invoice_date is not None:
+            updates.append("invoice_date = %s")
+            params.append(invoice_date)
+        if total_ht is not None:
+            updates.append("total_ht = %s")
+            params.append(total_ht)
+        if tva is not None:
+            updates.append("tva = %s")
+            params.append(tva)
+        if total_ttc is not None:
+            updates.append("total_ttc = %s")
+            params.append(total_ttc)
         if not updates:
             return False
         updates.append("updated_at = CURRENT_TIMESTAMP")

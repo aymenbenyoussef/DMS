@@ -407,7 +407,9 @@ function RapportModal(props) {
                       <div className="info-item">
                         <span className="info-label">Utilisateur</span>
                         <span className="info-value">
-                          {getUploaderName ? getUploaderName(currentDocument) : (currentDocument?.uploader_name || currentDocument?.user_name || currentDocument?.uploaded_by || '-')}
+                          {getUploaderName
+                            ? getUploaderName(currentDocument)
+                            : (currentDocument?.owner_name || currentDocument?.uploader_name || currentDocument?.user_name || currentDocument?.uploaded_by || '-')}
                         </span>
                       </div>
                       <div className="info-item">

@@ -1630,7 +1630,7 @@ def confirm_document():
                     except Exception as e:
                         extracted_text = ''
                 rapport = None
-                print(extracted_text)
+                
                 if is_invoice and confirmed_info:
                     # Generate report PDF for invoices
                     report_filename = f"{os.path.splitext(unique_final_filename)[0]}_report.pdf"
@@ -2145,7 +2145,7 @@ def download_document_ocr_text(document_id):
 @app.route('/documents/<int:document_id>', methods=['PUT'])
 @jwt_required()
 def update_document(document_id):
-    """Update document name and partner only"""
+    """Update document fields: name, partner, invoice fields, etc."""
     current_user_claims = get_jwt()
     data = request.get_json()
     if not data:
@@ -2154,9 +2154,36 @@ def update_document(document_id):
         doc = db.get_document_by_id(document_id)
         if not doc:
             return jsonify({"msg": "Document not found"}), 404
+        # Accept all possible fields from the frontend
         name = data.get('filename')
         partner_id = data.get('partner_id')
-        success = db.update_document(document_id, name=name, partner_id=partner_id)
+        confirmed_data = data.get('confirmed_data')
+        # If confirmed_data is present, extract invoice fields
+        invoice_fields = {}
+        if confirmed_data:
+            invoice_fields['is_invoice'] = confirmed_data.get('is_invoice')
+            invoice_fields['invoice_number'] = confirmed_data.get('invoice_number')
+            invoice_fields['date'] = confirmed_data.get('date')
+            invoice_fields['total_ht'] = confirmed_data.get('total_ht')
+            invoice_fields['tva'] = confirmed_data.get('tva')
+            invoice_fields['total_ttc'] = confirmed_data.get('total_ttc')
+            invoice_fields['partner'] = confirmed_data.get('partner')
+            invoice_fields['partner_id'] = confirmed_data.get('partner_id')
+        else:
+            invoice_fields = None
+        # Update all fields in the DB
+        success = db.update_document(
+            document_id,
+            name=name,
+            partner_id=partner_id,
+            
+            is_invoice=invoice_fields.get('is_invoice') if invoice_fields else None,
+            invoice_number=invoice_fields.get('invoice_number') if invoice_fields else None,
+            invoice_date=invoice_fields.get('date') if invoice_fields else None,
+            total_ht=invoice_fields.get('total_ht') if invoice_fields else None,
+            tva=invoice_fields.get('tva') if invoice_fields else None,
+            total_ttc=invoice_fields.get('total_ttc') if invoice_fields else None
+        )
         if success:
             log_activity(
                 actor=current_user_claims['username'],
@@ -2174,7 +2201,6 @@ def update_document(document_id):
     except Exception as e:
         app.logger.error(f"Error updating document {document_id}: {str(e)}")
         return jsonify({"msg": f"Error updating document: {str(e)}"}), 500
-
 @app.route('/documents/<int:document_id>', methods=['DELETE'])
 @jwt_required()
 def delete_document(document_id):
@@ -2920,6 +2946,7 @@ def delete_temp_document(doc_id):
         )
         
         db.execute_query("DELETE FROM temp_documents WHERE id = %s", (doc_id,))
+        print("deleted")
         # Optionally delete the file from disk
         if file_path and os.path.exists(file_path):
             os.remove(file_path)
