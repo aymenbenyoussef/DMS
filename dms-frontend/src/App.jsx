@@ -26,7 +26,8 @@ import { AppProvider } from './components/context';
 import './App.css';
 import SettingsUsers from './components/Auth/SettingsUsers';
 import { getApiBaseUrl } from './api';
-
+import './i18n';
+import { LanguageProvider } from './contexts/LanguageContext';
 // API configuration remains the same as in your original file
 const API_BASE = getApiBaseUrl();
 
@@ -223,50 +224,52 @@ function App() {
   }
 
   return (
-    <AppProvider>  {/* Using the correct AppProvider from context */}
-      <Router>
-        <Layout user={user} loadingUser={loading} onLogout={handleLogout}>
-          <Routes>
-            <Route path="/" element={<Dashboard user={user} />} />
-  
-            {(user.role === 'admin' || user.role === 'superuser') && (
-              <>
-                <Route path="/admin/users" element={<AdminUsers user={user} loadingUser={loading} />} />
-                {/* Updated to ActivityLogs component */}
-                <Route path="/admin/activity_logs" element={<ActivityLogs user={user} loadingUser={loading} />} />
-                <Route path="/companies" element={<AdminCompanies user={user} loadingUser={loading} />} />
-                <Route path="/doctypes" element={<AdminDoctypes user={user} loadingUser={loading} />} />
-                <Route path="/partnertypes" element={<AdminPartnertypes user={user} loadingUser={loading} />} />
-                <Route path="/partners" element={<AdminPartners user={user} loadingUser={loading} />} />
-              </>
-            )}
-            <Route path="*" element={<Navigate to="/" replace />} />
-            <Route 
-              path="/admin/tools" element={<AdminTools user={user} loadingUser={loading} />} />
-            <Route 
-              path="/User/tools" element={<UserTools user={user} loadingUser={loading} />} />  
-            <Route 
-              path="/profile" element={<Profile user={user}/>} /> 
-            <Route 
-              path="/settings" element={<Settings user={user}/>} /> 
-            <Route 
-              path="/settings-users" element={<SettingsUsers />} />
-            <Route 
-              path="/AddComp" element={<AddComp user={user}/>} />
+    <LanguageProvider>
+      <AppProvider>  {/* Using the correct AppProvider from context */}
+        <Router>
+          <Layout user={user} loadingUser={loading} onLogout={handleLogout}>
+            <Routes>
+              <Route path="/" element={<Dashboard user={user} />} />
+    
+              {(user.role === 'admin' || user.role === 'superuser') && (
+                <>
+                  <Route path="/admin/users" element={<AdminUsers user={user} loadingUser={loading} />} />
+                  {/* Updated to ActivityLogs component */}
+                  <Route path="/admin/activity_logs" element={<ActivityLogs user={user} loadingUser={loading} />} />
+                  <Route path="/companies" element={<AdminCompanies user={user} loadingUser={loading} />} />
+                  <Route path="/doctypes" element={<AdminDoctypes user={user} loadingUser={loading} />} />
+                  <Route path="/partnertypes" element={<AdminPartnertypes user={user} loadingUser={loading} />} />
+                  <Route path="/partners" element={<AdminPartners user={user} loadingUser={loading} />} />
+                </>
+              )}
+              <Route path="*" element={<Navigate to="/" replace />} />
               <Route 
-              path="/AddDoctype" element={<AddDoctype user={user}/>} />
-            <Route 
-              path="/AddUsers" element={<AddUsers />} />
+                path="/admin/tools" element={<AdminTools user={user} loadingUser={loading} />} />
               <Route 
-              path="/AddPartnerType" element={<AddPartnerType user={user}/>} />
+                path="/User/tools" element={<UserTools user={user} loadingUser={loading} />} />  
               <Route 
-              path="/AddPartner" element={<AddPartner user={user}/>} />
+                path="/profile" element={<Profile user={user}/>} /> 
               <Route 
-              path="/temp-documents" element={<TempDocumentArchive user={user}/>} />
-          </Routes>
-        </Layout>
-      </Router>
-    </AppProvider>
+                path="/settings" element={<Settings user={user}/>} /> 
+              <Route 
+                path="/settings-users" element={<SettingsUsers />} />
+              <Route 
+                path="/AddComp" element={<AddComp user={user}/>} />
+                <Route 
+                path="/AddDoctype" element={<AddDoctype user={user}/>} />
+              <Route 
+                path="/AddUsers" element={<AddUsers />} />
+                <Route 
+                path="/AddPartnerType" element={<AddPartnerType user={user}/>} />
+                <Route 
+                path="/AddPartner" element={<AddPartner user={user}/>} />
+                <Route 
+                path="/temp-documents" element={<TempDocumentArchive user={user}/>} />
+            </Routes>
+          </Layout>
+        </Router>
+      </AppProvider>
+    </LanguageProvider>
   );
 }
 

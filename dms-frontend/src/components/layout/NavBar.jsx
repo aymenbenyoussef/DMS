@@ -4,9 +4,11 @@ import { BiData, BiBarChart, BiGroup, BiCog, BiFile, BiLogOut, BiChevronDown, Bi
 import api from '../../api';
 import { AppContext } from '../context';
 import DmsTempUploadModal from '../Dashboard/DmsTempUploadModal';
+import { useLanguage } from '../../contexts/LanguageContext';
 import './NavBar.css';
 
 const NavBar = ({ user, onLogout, toggleSidebar }) => {
+  const { language, changeLanguage, t } = useLanguage();
   const { systemName, setSelectedCompany: setContextCompany, setSelectedDoctype: setContextDoctype } = useContext(AppContext);
   const [showAdminTools, setShowAdminTools] = useState(false);
   const [showDmsTempModal, setShowDmsTempModal] = useState(false);
@@ -27,22 +29,21 @@ const NavBar = ({ user, onLogout, toggleSidebar }) => {
   // Admin tools links grouped by category
   const adminToolsCategories = {
     systemConfig: {
-      title: 'Système de configuration',
+      title: t('systemConfig'),
       icon: <BiGroup size={16} />,
       items: [
-        { icon: <BiGroup size={16} />, label: 'Utilisateurs', link: '/admin/users' },
-        { icon: <BiCollection size={16} />, label: 'Types de données', link: '/doctypes' },
-        { icon: <BiFolder size={16} />, label: 'Types de partenaires', link: '/partnertypes' },
-        { icon: <BiFile size={16} />, label: 'Logs', link: '/admin/activity_logs' },
-        // Paramètres will be conditionally rendered below
+        { icon: <BiGroup size={16} />, label: t('users'), link: '/admin/users' },
+        { icon: <BiCollection size={16} />, label: t('dataTypes'), link: '/doctypes' },
+        { icon: <BiFolder size={16} />, label: t('partnerTypes'), link: '/partnertypes' },
+        { icon: <BiFile size={16} />, label: t('logs'), link: '/admin/activity_logs' },
       ]
     },
     businessData: {
-      title: 'Données commerciales',
+      title: t('businessData'),
       icon: <BiData size={16} />,
       items: [
-        { icon: <BiBuildings size={16} />, label: 'Entités', link: '/companies' },
-        { icon: <BiBarChart size={16} />, label: 'Partenaires', link: '/partners' }
+        { icon: <BiBuildings size={16} />, label: t('entities'), link: '/companies' },
+        { icon: <BiBarChart size={16} />, label: t('partners'), link: '/partners' }
       ]
     }
   };
@@ -187,7 +188,7 @@ const NavBar = ({ user, onLogout, toggleSidebar }) => {
               <span className="logo-icon"><BiData size={32} /></span>
               <div className="logo-text">
                 <span className="logo-main">{systemName}</span>
-                <span className="logo-sub">Système avancé de gestion des données</span>
+                <span className="logo-sub">{t('systemName')}</span>
               </div>
             </div> 
           </Link>
@@ -199,7 +200,7 @@ const NavBar = ({ user, onLogout, toggleSidebar }) => {
             <span className="search-icon"><BiSearch size={18} /></span>
             <input 
               type="text" 
-              placeholder="Recherche par nom de fichier..." 
+              placeholder={t('searchPlaceholder')} 
               className="search-input"
               value={searchTerm}
               onChange={handleSearchInputChange}
@@ -210,16 +211,6 @@ const NavBar = ({ user, onLogout, toggleSidebar }) => {
                 }
               }}
             />
-            {/*<button onClick={handleSearch} className="search-button" disabled={isSearching}>
-              {isSearching ? (
-                <>
-                  <i className="bi bi-arrow-clockwise me-1" style={{animation: 'spin 1s linear infinite'}}></i>
-                  Recherche...
-                </>
-              ) : (
-                'Rechercher'
-              )}
-            </button>*/}
           </div>
 
           {showSearchResults && (
@@ -228,7 +219,7 @@ const NavBar = ({ user, onLogout, toggleSidebar }) => {
                 {isSearching ? (
                   <div className="loading-results">
                     <i className="bi bi-search me-2"></i>
-                    Recherche en cours...
+                    {t('searching')}
                   </div>
                 ) : searchResults.length > 0 ? (
                   searchResults.map(doc => (
@@ -256,15 +247,15 @@ const NavBar = ({ user, onLogout, toggleSidebar }) => {
                       <div className="search-result-details">
                         <span className="search-result-company">
                           <i className="bi bi-building me-1"></i>
-                          {doc.company_name || 'N/A'}
+                          {doc.company_name || t('company')}
                         </span>
                         <span className="search-result-doctype">
                           <i className="bi bi-tag me-1"></i>
-                          {doc.doctype_name || 'N/A'}
+                          {doc.doctype_name || t('doctype')}
                         </span>
                         <span className={`search-result-invoice ${doc.is_invoice ? 'invoice-yes' : 'invoice-no'}`}>
                           <i className="bi bi-receipt me-1"></i>
-                          {doc.is_invoice ? 'Facturable' : 'Non Facturable'}
+                          {doc.is_invoice ? t('invoiceYes') : t('invoiceNo')}
                         </span>
                       </div>
                     </div>
@@ -272,12 +263,12 @@ const NavBar = ({ user, onLogout, toggleSidebar }) => {
                 ) : searchTerm.trim() ? (
                   <div className="no-results">
                     <i className="bi bi-search me-2"></i>
-                    Aucun document trouvé pour "{searchTerm}"
+                    {t('noResults')} "{searchTerm}"
                   </div>
                 ) : (
                   <div className="search-placeholder">
                     <i className="bi bi-search me-2"></i>
-                    Entrez un terme de recherche pour commencer
+                    {t('searchPrompt')}
                   </div>
                 )}
               </div>
@@ -287,6 +278,22 @@ const NavBar = ({ user, onLogout, toggleSidebar }) => {
         
         {/* Navigation Links */}
         <div className="navbar-links">
+          {/* Language Switcher */}
+          <div className="language-switcher">
+            <button 
+              onClick={() => changeLanguage('fr')} 
+              className={language === 'fr' ? 'active' : ''}
+            >
+              FR
+            </button>
+            <button 
+              onClick={() => changeLanguage('en')} 
+              className={language === 'en' ? 'active' : ''}
+            >
+              EN
+            </button>
+          </div>
+          
           {/* Dashboard link */}
           <Link 
             to="/" 
@@ -294,7 +301,7 @@ const NavBar = ({ user, onLogout, toggleSidebar }) => {
             onClick={resetSelection}
           >
             <span className="nav-icon"><BiBarChart size={20} /></span>
-            <span>Tableau de bord</span>
+            <span>{t('dashboard')}</span>
           </Link>
           
           {/* Admin Tools Dropdown */}
@@ -305,7 +312,7 @@ const NavBar = ({ user, onLogout, toggleSidebar }) => {
                 onClick={() => setShowAdminTools(!showAdminTools)}
               >
                 <span className="nav-icon"><BiGroup size={20} /></span>
-                <span>Outils</span>
+                <span>{t('tools')}</span>
                 <span className={`dropdown-icon ${showAdminTools ? 'open' : ''}`}>
                   <BiChevronDown size={14} />
                 </span>
@@ -318,16 +325,16 @@ const NavBar = ({ user, onLogout, toggleSidebar }) => {
                     <div className="dropdown-column">
                       <div className="category-header">
                         <span className="category-icon"><BiData size={16} /></span>
-                        <span className="category-title">Document management </span>
+                        <span className="category-title">{t('documentManagement')}</span>
                       </div>
                       <div className="category-items">
                         <button className="dropdown-item" onClick={() => { setShowDmsTempModal(true); setShowAdminTools(false); }}>
                           <span className="dropdown-icon"><BiFile size={16} /></span>
-                          <span>Upload File</span>
+                          <span>{t('uploadFile')}</span>
                         </button>
                         <Link to="/dms/rapports" className="dropdown-item" onClick={() => setShowAdminTools(false)}>
                           <span className="dropdown-icon"><BiBarChart size={16} /></span>
-                          <span>DMS</span>
+                          <span>{t('dms')}</span>
                         </Link>
                       </div>
                     </div>
@@ -357,7 +364,7 @@ const NavBar = ({ user, onLogout, toggleSidebar }) => {
                             onClick={() => setShowAdminTools(false)}
                           >
                             <span className="dropdown-icon"><BiCog size={16} /></span>
-                            <span>Paramètres</span>
+                            <span>{t('settings')}</span>
                           </Link>
                         )}
                       </div>
@@ -396,7 +403,7 @@ const NavBar = ({ user, onLogout, toggleSidebar }) => {
                       className="logout-button"
                     >
                       <BiLogOut size={16} />
-                      <span>Déconnexion</span>
+                      <span>{t('logout')}</span>
                     </button>
                   </div>
                 </div>
@@ -412,7 +419,7 @@ const NavBar = ({ user, onLogout, toggleSidebar }) => {
                 onClick={() => setShowAdminTools(!showAdminTools)}
               >
                 <span className="nav-icon"><BiGroup size={20} /></span>
-                <span>Outils</span>
+                <span>{t('tools')}</span>
                 <span className={`dropdown-icon ${showAdminTools ? 'open' : ''}`}> <BiChevronDown size={14} /> </span>
               </button>
               {showAdminTools && (
@@ -422,33 +429,27 @@ const NavBar = ({ user, onLogout, toggleSidebar }) => {
                     <div className="dropdown-column">
                       <div className="category-header">
                         <span className="category-icon"><BiData size={16} /></span>
-                        <span className="category-title">Document management</span>
+                        <span className="category-title">{t('documentManagement')}</span>
                       </div>
                       <div className="category-items">
-                        {/* Remove the Documents link for users */}
-                        {/* <Link to="/temp-documents" className="dropdown-item" onClick={() => setShowAdminTools(false)}>
-                          <span className="dropdown-icon"><BiFile size={16} /></span>
-                          <span>Documents</span>
-                        </Link> */}
                         <button className="dropdown-item" onClick={() => { setShowDmsTempModal(true); setShowAdminTools(false); }}>
                           <span className="dropdown-icon"><BiFile size={16} /></span>
-                          <span>Upload File</span>
+                          <span>{t('uploadFile')}</span>
                         </button>
                         <Link to="/dms/rapports" className="dropdown-item" onClick={() => setShowAdminTools(false)}>
                           <span className="dropdown-icon"><BiBarChart size={16} /></span>
-                          <span>DMS</span>
+                          <span>{t('dms')}</span>
                         </Link>
-                        {/* Add more items if users have access, e.g., Rapports */}
                       </div>
                       {/* Password Reset Section */}
                       <div className="category-header" style={{marginTop: '2rem'}}>
                         <span className="category-icon"><BiLock size={16} /></span>
-                        <span className="category-title">Sécurité</span>
+                        <span className="category-title">{t('security')}</span>
                       </div>
                       <div className="category-items">
                         <Link to="/settings-users" className="dropdown-item" onClick={() => setShowAdminTools(false)}>
                           <span className="dropdown-icon"><BiLock size={16} /></span>
-                          <span>Réinitialiser le mot de passe</span>
+                          <span>{t('resetPassword')}</span>
                         </Link>
                       </div>
                     </div>
@@ -462,7 +463,7 @@ const NavBar = ({ user, onLogout, toggleSidebar }) => {
                       className="logout-button"
                     >
                       <BiLogOut size={16} />
-                      <span>Déconnexion</span>
+                      <span>{t('logout')}</span>
                     </button>
                   </div>
                 </div>
@@ -480,4 +481,3 @@ const NavBar = ({ user, onLogout, toggleSidebar }) => {
 };
 
 export default NavBar;
-

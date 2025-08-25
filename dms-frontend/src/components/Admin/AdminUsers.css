@@ -76,7 +76,8 @@
 /* BOUTON D'AJOUT MODERNISÉ */
 .btn-primary-2,
 .btn-add-modern {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  /*background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);*/
+  background: #03bf59;
   color: white;
   border: none;
   border-radius: 12px;
