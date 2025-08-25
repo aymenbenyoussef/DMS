@@ -1525,3 +1525,31 @@ body.modal-open {
     overflow: auto;
   }
 }
+
+
+/* Add these styles to the existing CSS */
+
+.documents-table-container {
+  overflow-x: auto !important;
+  min-width: 0;
+}
+
+.table-responsive {
+  min-width: 650px; /* Minimum width to prevent excessive shrinking */
+}
+
+/* Ensure table cells don't wrap content */
+.table td {
+  white-space: nowrap;
+}
+
+/* Specific styling for actions column to prevent button wrapping */
+.table td:last-child {
+  min-width: 120px;
+}
+
+/* Keep buttons in a single line */
+.table td:last-child .btn {
+  display: inline-block;
+  margin: 2px;
+}

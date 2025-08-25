@@ -1438,7 +1438,7 @@ const getOneMonthAgo = () => {
                                 className="btn btn-outline-secondary btn-sm"
                                 onClick={(e) => handleDropdownToggle(document.id, e)}
                               >
-                                <i className="fas fa-ellipsis-v"></i>
+                                <i className="fas fa-ellipsis-v">...</i>
                               </button>
                               {openDropdownId === document.id && (
                                 <div

@@ -236,6 +236,16 @@ const DocumentConfirmationForm = ({
         if (invData.total_ttc === '' || isNaN(invData.total_ttc) || invData.total_ttc <= 0) {
           errs.total_ttc = 'Total TTC doit être un nombre supérieur à 0';
         }
+        
+        // New validation: Check if TTC equals HT + TVA
+        const ht = parseFloat(invData.total_ht);
+        const tva = parseFloat(invData.tva);
+        const ttc = parseFloat(invData.total_ttc);
+        const expectedTtc = ht + tva;
+        
+        if (!isNaN(ht) && !isNaN(tva) && !isNaN(ttc) && Math.abs(ttc - expectedTtc) > 0.01) {
+          errs.total_ttc = `Le Total TTC devrait être ${expectedTtc.toFixed(2)} (HT + TVA = ${ht.toFixed(2)} + ${tva.toFixed(2)})`;
+        }
       }
       
       return errs;
@@ -268,7 +278,7 @@ const DocumentConfirmationForm = ({
     
     return (
       <div className="document-confirmation-form">
-        <div className="form-header">
+        {/*<div className="form-header">
           <h3>Confirmation du document</h3>
           <p>Vérifiez et modifiez les informations extraites si nécessaire</p>
           {hasChanges && (
@@ -276,7 +286,7 @@ const DocumentConfirmationForm = ({
               Des modifications ont été apportées à la configuration initiale
             </div>
           )}
-        </div>
+        </div>*/}
         
         <div className="confirmation-form-scroll-area">
           <div className="document-form">
@@ -521,7 +531,7 @@ const DocumentConfirmationForm = ({
   const renderMultiFileForm = () => {
     return (
       <div className="document-confirmation-form">
-        <div className="form-header">
+        {/*<div className="form-header">
           <h3>Confirmation des documents ({files.length})</h3>
           <p>Vérifiez et modifiez les informations extraites pour chaque fichier</p>
           {hasChanges && (
@@ -529,7 +539,7 @@ const DocumentConfirmationForm = ({
               Des modifications ont été apportées à la configuration initiale
             </div>
           )}
-        </div>
+        </div>*/}
 
         {/* Navigation des fichiers */}
         <div className="file-navigation">
@@ -808,4 +818,3 @@ const DocumentConfirmationForm = ({
 };
 
 export default DocumentConfirmationForm;
-

@@ -490,15 +490,38 @@ const TempDocumentArchive = ({ user }) => {
                         <tr><td colSpan={user?.role === 'admin' || user?.role === 'superuser' ? "5" : "4"} className="text-center py-4">Chargement...</td></tr>
                       ) : filteredDocuments.length > 0 ? (
                         filteredDocuments.map(doc => (
-                          <tr key={doc.id}>
+                          <tr 
+                            key={doc.id} 
+                            onClick={() => handleViewDocument(doc)}
+                            style={{ cursor: 'pointer' }}
+                            className="table-row-hover"
+                          >
                             <td className="text-center" style={{width: '20px'}}>{doc.id}</td>
                             <td style={{width: '120px'}}>{doc.filename}</td>
                             {(user?.role === 'admin' || user?.role === 'superuser') && <td style={{width: '120px'}}>{doc.owner_name || doc.owner}</td>}
                             <td className="text-center" style={{width: '90px'}}>{new Date(doc.created_at).toLocaleDateString()}</td>
                             <td className="text-center" style={{width: '120px'}}>
-                              <button className="btn btn-sm btn-outline-primary me-1" style={{backgroundColor:'blue'}} onClick={() => handleViewDocument(doc)}><i className="fas fa-eye"></i>voir</button>
-                              <button className="btn btn-sm btn-outline-success me-1" style={{backgroundColor:'blue'}} onClick={() => handleSend(doc)} disabled={processingDocId === doc.id}>{processingDocId === doc.id ? <i className="fas fa-eye">deplacement</i> : <i className="fas fa-eye">deplacer</i>}</button>
-                              <button className="btn btn-sm btn-outline-danger me-1" style={{backgroundColor:'orangered'}}  onClick={() => handleDeleteDocument(doc)}><i className="fas fa-eye">supprimer</i></button>
+                              <button 
+                                className="btn btn-sm btn-outline-success me-1" 
+                                style={{backgroundColor:'blue', color: 'white'}} 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSend(doc);
+                                }} 
+                                disabled={processingDocId === doc.id}
+                              >
+                                {processingDocId === doc.id ? 'Déplacement...' : 'Déplacer'}
+                              </button>
+                              <button 
+                                className="btn btn-sm btn-outline-danger me-1" 
+                                style={{backgroundColor:'orangered', color: 'white'}}  
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteDocument(doc);
+                                }}
+                              >
+                                Supprimer
+                              </button>
                             </td>
                           </tr>
                         ))
@@ -784,7 +807,7 @@ const TempDocumentArchive = ({ user }) => {
                   <label style={{
                     fontSize: '0.875rem',
                     fontWeight: 500,
-                    color: '#6b7280',
+                    color: '##6b7280',
                     display: 'block',
                     marginBottom: '4px'
                   }}>
@@ -907,5 +930,3 @@ const TempDocumentArchive = ({ user }) => {
 };
 
 export default TempDocumentArchive;
-
-
