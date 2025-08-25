@@ -21,7 +21,7 @@ const DmsTempUploadModal = ({ onClose, onSuccess }) => {
           setMaxFileSize(settings.maxFileSize);
         }
       } catch (error) {
-        console.log('Could not fetch max file size from settings:', error);
+        console.log('Impossible de récupérer la taille maximale du fichier à partir des paramètres :', error);
       }
     };
     
@@ -171,13 +171,13 @@ const DmsTempUploadModal = ({ onClose, onSuccess }) => {
   const getStatusMessage = () => {
     switch (uploadStatus) {
       case 'pending':
-        return 'Uploading files...';
+        return 'Téléchargement de fichiers...';
       case 'completed':
-        return 'Files uploaded successfully!';
+        return 'Fichiers téléchargés avec succès !';
       case 'error':
-        return 'Error during upload.';
+        return 'Erreur lors du téléchargement.';
       case 'invalid':
-        return 'Invalid file type.';
+        return 'Type de fichier non valide.';
       case 'size_error':
         return `La taille du fichier dépasse la limite maximale de ${maxFileSize} Ko.`;
       default:
@@ -202,7 +202,7 @@ const DmsTempUploadModal = ({ onClose, onSuccess }) => {
           >
             <div className="drop-zone-content">
               <div className="upload-icon">📄</div>
-              <p>Upload Your File(s) Here</p>
+              <p>Téléchargez votre/vos fichier(s) ici</p>
               <label className="file-input-label">
                 <input
                   type="file"
@@ -211,10 +211,10 @@ const DmsTempUploadModal = ({ onClose, onSuccess }) => {
                   className="file-input"
                   multiple
                 />
-                Browse Files
+                Parcourir les fichiers
               </label>
               <p className="file-types">
-                Accepted Format : PDF, JPG, PNG, TIFF, DOC, DOCX
+                Formats acceptés : PDF, JPG, PNG, TIFF, DOC, DOCX
               </p>
             </div>
           </div>
@@ -269,14 +269,14 @@ const DmsTempUploadModal = ({ onClose, onSuccess }) => {
             onClick={onClose}
             disabled={isUploading}
           >
-            Cancel
+            Annuler
           </button>
           <button 
             className="btn-primary" 
             onClick={handleUpload}
             disabled={!files.length || isUploading}
           >
-            {isUploading ? 'Uploading...' : 'Upload'}
+            {isUploading ? 'Téléchargement...' : 'Télécharger'}
           </button>
         </div>
       </div>
