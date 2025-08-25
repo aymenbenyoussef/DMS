@@ -230,15 +230,7 @@ const DocumentConfirmationForm = ({
       }
       
       // Delete temp document if ID is provided
-      if (tempDocumentId) {
-      try {
-        console.log('Deleting temp document with ID:', tempDocumentId);
-        await API.tempDocuments.delete(tempDocumentId);
-        console.log('Temp document deleted successfully');
-      } catch (deleteError) {
-        console.error('Error deleting temp document:', deleteError);
-      }
-    }
+      
       
       // Refresh documents list if refresh function is provided
       if (onRefresh) {

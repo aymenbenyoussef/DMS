@@ -248,6 +248,19 @@ const TempDocumentArchive = ({ user }) => {
           window.dispatchEvent(new Event('TempDocumentsUploaded'));
         }
       }
+      try {
+        console.log('Deleting temp document with ID:', currentDocument.id);
+        await API.tempDocuments.delete(currentDocument.id);
+        console.log('Temp document deleted successfully');
+        // Show success message, close modal, refresh documents
+        setSuccessMessage('Déplacement fait avec succès');
+        setShowConfirmationModal(false);
+        setConfirmationData(null);
+        fetchDocuments();
+        setTimeout(() => setSuccessMessage(''), 3000);
+      } catch (deleteError) {
+        console.error('Error deleting temp document:', deleteError);
+      }
     } catch (error) {
       console.error('Error confirming document:', error);
       alert('Erreur lors de la confirmation: ' + (error.response?.data?.msg || error.message));
