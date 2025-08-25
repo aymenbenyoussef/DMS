@@ -6,6 +6,50 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { exportToCSV, exportToJSON, exportToTXT, exportToExcel } from './exportUtils';
 
+// Fonction pour générer une couleur basée sur le nom
+const getTokenColor = (name) => {
+  const colors = [
+    'company-token-color-1',
+    'company-token-color-2', 
+    'company-token-color-3',
+    'company-token-color-4',
+    'company-token-color-5',
+    'company-token-color-6',
+    'company-token-color-7',
+    'company-token-color-8'
+  ];
+  
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    const char = name.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  
+  return colors[Math.abs(hash) % colors.length];
+};
+
+// Composant pour afficher les tokens
+const TokenList = ({ items, type = 'company' }) => {
+  if (!items || items.length === 0) {
+    return <span className="text-muted">Aucun</span>;
+  }
+
+  return (
+    <div className="company-tokens-container">
+      {items.map((item, index) => (
+        <span 
+          key={item.id || index}
+          className={`company-token ${getTokenColor(item.name)}`}
+          title={item.name}
+        >
+          {item.name}
+        </span>
+      ))}
+    </div>
+  );
+};
+
 const AdminPartners = ({ user }) => {
   const [partners, setPartners] = useState([]);
   const [filteredPartners, setFilteredPartners] = useState([]);
@@ -195,7 +239,43 @@ const AdminPartners = ({ user }) => {
     });
   };
 
-  const validate = () => {
+  const handleEdit = async (partner) => {
+    setGlobalLimitError('');
+    try {
+      const fullPartner = await API.partner.getById(partner.id);
+      setEditingPartner(fullPartner.data);
+      
+      setFormData({
+        company_name: fullPartner.data.company_name || '',
+        trade_name: fullPartner.data.trade_name || '',
+        unique_identifier: fullPartner.data.unique_identifier || '',
+        mailing_address: fullPartner.data.mailing_address || '',
+        billing_address: fullPartner.data.billing_address || '',
+        phone1: fullPartner.data.phone1 || '',
+        phone2: fullPartner.data.phone2 || '',
+        phone3: fullPartner.data.phone3 || '',
+        email: fullPartner.data.email || '',
+        payment_terms: fullPartner.data.payment_terms || '',
+        billing_terms: fullPartner.data.billing_terms || '',
+        bank_account_number: fullPartner.data.bank_account_number || '',
+        bank_name: fullPartner.data.bank_name || '',
+        notes: fullPartner.data.notes || '',
+        is_active: fullPartner.data.is_active || true,
+        companies: fullPartner.data.companies?.map(c => c.id) || [],
+        partnertypes: fullPartner.data.partnertypes?.map(pt => pt.id) || []
+      });
+      
+      setShowModifyTab(true);
+      setActiveTab('form');
+      setFieldErrors({});
+      setGlobalErrors([]);
+    } catch (err) {
+      setError('Error loading partner details');
+      console.error('Error loading partner details:', err);
+    }
+  };
+
+    const validate = () => {
     const errors = {};
     const errorMessages = [];
 
@@ -246,64 +326,8 @@ const AdminPartners = ({ user }) => {
     setGlobalErrors(errorMessages);
     return errorMessages.length === 0;
   };
-
-  const handleEdit = async (partner) => {
-    setGlobalLimitError('');
-    try {
-      const fullPartner = await API.partner.getById(partner.id);
-      setEditingPartner(fullPartner.data);
-      
-      setFormData({
-        company_name: fullPartner.data.company_name || '',
-        trade_name: fullPartner.data.trade_name || '',
-        unique_identifier: fullPartner.data.unique_identifier || '',
-        mailing_address: fullPartner.data.mailing_address || '',
-        billing_address: fullPartner.data.billing_address || '',
-        phone1: fullPartner.data.phone1 || '',
-        phone2: fullPartner.data.phone2 || '',
-        phone3: fullPartner.data.phone3 || '',
-        email: fullPartner.data.email || '',
-        payment_terms: fullPartner.data.payment_terms || '',
-        billing_terms: fullPartner.data.billing_terms || '',
-        bank_account_number: fullPartner.data.bank_account_number || '',
-        bank_name: fullPartner.data.bank_name || '',
-        notes: fullPartner.data.notes || '',
-        is_active: fullPartner.data.is_active || true,
-        companies: fullPartner.data.companies?.map(c => c.id) || [],
-        partnertypes: fullPartner.data.partnertypes?.map(pt => pt.id) || []
-      });
-      
-      setShowModifyTab(true);
-      setActiveTab('form');
-      setFieldErrors({});
-      setGlobalErrors([]);
-    } catch (err) {
-      setError('Error loading partner details');
-      console.error('Error loading partner details:', err);
-    }
-  };
-
- const handleDelete = async (partnerId) => {
-    if (window.confirm('Are you sure you want to delete this partner?')) {
-      try {
-        setLoading(true);
-        await API.partner.delete(partnerId);
-        setSuccess('Partner deleted successfully');
-        setError('');
-        fetchPartners(); // Refresh the list after deletion
-      } catch (err) {
-        const errorMessage = err.response?.data?.msg || 
-                            err.message || 
-                            'Error deleting partner';
-        setError(errorMessage);
-        console.error('Error deleting partner:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-  };
-
-  const handleInputChange = (e) => {
+  
+   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     
     if (name === 'companies' || name === 'partnertypes') {
@@ -361,8 +385,7 @@ const AdminPartners = ({ user }) => {
       companies: formData.companies,
       partnertypes: formData.partnertypes
     };
-    
-    const response = await API.partner.update(editingPartner.id, partnerData);
+        const response = await API.partner.update(editingPartner.id, partnerData);
     
     // Get the updated partner with all associations
     const updatedPartner = await API.partner.getById(editingPartner.id);
@@ -408,7 +431,7 @@ const AdminPartners = ({ user }) => {
   const handleAddPartner = (e) => {
     setGlobalLimitError('');
     if (maxExternalEntities !== null && partners.length >= maxExternalEntities) {
-      setGlobalLimitError('Vous avez atteint le nombre maximal d’entités externes. Veuillez contacter le support technique.');
+      setGlobalLimitError('Vous avez atteint le nombre maximal d entités externes. Veuillez contacter le support technique.');
       return;
     }
     navigate('/AddPartner');
@@ -492,15 +515,19 @@ const AdminPartners = ({ user }) => {
               Modifier le partenaire
             </button>
           )}
+          
           <button className="btn-primary-2" onClick={handleAddPartner}>
             Ajouter un partenaire
           </button>
         </div>
       </div>
 
-      
+      {globalLimitError && (
+        <div className="alert alert-error" style={{marginBottom: '1rem', fontWeight: 600}}>{globalLimitError}</div>
+      )}
+
+      {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
-      
       
 
       {activeTab === 'list' && (
@@ -689,16 +716,10 @@ const AdminPartners = ({ user }) => {
                       <td style={{ width: '150px' }}>{partner.unique_identifier}</td>
                       <td style={{ width: '200px' }}>{partner.company_name}</td>
                       <td style={{ width: '200px' }}>
-                        <ul className="company-tokens" style={{flexWrap: 'wrap', display: 'flex'}}>
-
-
-                        {partner.companies?.map(c => (<li key={c.id} className="company-token">{c.name}</li>))}
-                        </ul>
+                        <TokenList items={partner.companies} type="company" />
                       </td>
                       <td style={{ width: '150px' }}>
-                        <ul className="company-tokens">
-                        {partner.partnertypes?.map(pt => (<li key={pt.id} className="company-token">{pt.name}</li>))}
-                        </ul>
+                        <TokenList items={partner.partnertypes} type="partnertype" />
                       </td>
                       <td style={{ width: '80px' }}>{partner.phone1 || 'N/A'}</td>
                       <td style={{ width: '250px' }}>{partner.email}</td>
@@ -708,7 +729,7 @@ const AdminPartners = ({ user }) => {
                             className="btn-edit"
                             onClick={() => handleEdit(partner)}
                           >
-                            Modify
+                            Modifier
                           </button>
                           
                         </div>
@@ -980,8 +1001,4 @@ const AdminPartners = ({ user }) => {
 };
 
 export default AdminPartners;
-
-
-
-
 

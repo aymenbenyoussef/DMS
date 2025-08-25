@@ -146,18 +146,42 @@ const AdminPartnerTypes = ({ user }) => {
     setGlobalErrors([]);
   };
 
-  const handleDelete = async (partnerTypeId) => {
-    if (window.confirm('Are you sure you want to delete this partner type?')) {
-      try {
-        await API.partnertype.delete(partnerTypeId);
-        setSuccess('Partner type deleted successfully');
-        fetchPartnerTypes();
-      } catch (err) {
-        setError('Error deleting partner type');
-        console.error('Error deleting partner type:', err);
-      }
-    }
+  const dismissNotification = () => {
+    setShowNotification(false);
   };
+
+  // Sorting logic
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+    const sorted = [...filteredPartnerTypes].sort((a, b) => {
+      if (a[key] === undefined || b[key] === undefined) return 0;
+      if (a[key] < b[key]) return direction === 'asc' ? -1 : 1;
+      if (a[key] > b[key]) return direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+    setFilteredPartnerTypes(sorted);
+  };
+
+  // Export logic
+  const columns = [
+    { key: 'id', label: 'ID' },
+    { key: 'name', label: 'Nom' }
+  ];
+  const handleExport = (type) => {
+    const data = filteredPartnerTypes.map(pt => ({
+      id: pt.id,
+      name: pt.name
+    }));
+    if (type === 'csv') exportToCSV(data, columns, 'partnertypes.csv');
+    if (type === 'json') exportToJSON(data, 'partnertypes.json');
+    if (type === 'txt') exportToTXT(data, columns, 'partnertypes.txt');
+    if (type === 'excel') exportToExcel(data, columns, 'partnertypes.xls');
+  };
+
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -199,43 +223,7 @@ const AdminPartnerTypes = ({ user }) => {
       }
     }
   };
-
-  const dismissNotification = () => {
-    setShowNotification(false);
-  };
-
-  // Sorting logic
-  const handleSort = (key) => {
-    let direction = 'asc';
-    if (sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
-    }
-    setSortConfig({ key, direction });
-    const sorted = [...filteredPartnerTypes].sort((a, b) => {
-      if (a[key] === undefined || b[key] === undefined) return 0;
-      if (a[key] < b[key]) return direction === 'asc' ? -1 : 1;
-      if (a[key] > b[key]) return direction === 'asc' ? 1 : -1;
-      return 0;
-    });
-    setFilteredPartnerTypes(sorted);
-  };
-
-  // Export logic
-  const columns = [
-    { key: 'id', label: 'ID' },
-    { key: 'name', label: 'Nom' }
-  ];
-  const handleExport = (type) => {
-    const data = filteredPartnerTypes.map(pt => ({
-      id: pt.id,
-      name: pt.name
-    }));
-    if (type === 'csv') exportToCSV(data, columns, 'partnertypes.csv');
-    if (type === 'json') exportToJSON(data, 'partnertypes.json');
-    if (type === 'txt') exportToTXT(data, columns, 'partnertypes.txt');
-    if (type === 'excel') exportToExcel(data, columns, 'partnertypes.xls');
-  };
-
+  
   const handleResetFilters = () => {
     // Reset all filters
     setFilters({

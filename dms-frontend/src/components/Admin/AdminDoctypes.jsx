@@ -5,6 +5,50 @@ import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { exportToCSV, exportToJSON, exportToTXT, exportToExcel } from './exportUtils';
 
+// Fonction pour générer une couleur basée sur le nom de la compagnie
+const getCompanyTokenColor = (companyName) => {
+  const colors = [
+    'company-token-color-1',
+    'company-token-color-2', 
+    'company-token-color-3',
+    'company-token-color-4',
+    'company-token-color-5',
+    'company-token-color-6',
+    'company-token-color-7',
+    'company-token-color-8'
+  ];
+  
+  let hash = 0;
+  for (let i = 0; i < companyName.length; i++) {
+    const char = companyName.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  
+  return colors[Math.abs(hash) % colors.length];
+};
+
+// Composant React pour afficher les tokens de compagnies
+const CompanyTokens = ({ companies }) => {
+  if (!companies || companies.length === 0) {
+    return <span className="text-muted">Aucune entité</span>;
+  }
+
+  return (
+    <div className="company-tokens-container">
+      {companies.map((company, index) => (
+        <span 
+          key={company.id || index}
+          className={`company-token ${getCompanyTokenColor(company.name)}`}
+          title={company.name}
+        >
+          {company.name}
+        </span>
+      ))}
+    </div>
+  );
+};
+
 const AdminDoctypes = ({ user }) => {
   const [doctypes, setDoctypes] = useState([]);
   const [filteredDoctypes, setFilteredDoctypes] = useState([]);
@@ -136,6 +180,7 @@ const AdminDoctypes = ({ user }) => {
     });
   };
 
+  
   const validate = () => {
     const errors = {};
     const errorMessages = [];
@@ -180,20 +225,6 @@ const AdminDoctypes = ({ user }) => {
         status: doctype.status !== undefined ? doctype.status : true
       }));
     }
-  };
-
-  const handleDelete = async (doctypeId) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer ce type de document ?')) {
-      try {
-        await API.doctype.delete(doctypeId);
-        setSuccess('Type de document supprimé avec succès');
-        fetchDoctypes();
-      } catch (err) {
-        setError('Erreur lors de la suppression du type de document');
-        console.error('Error deleting document type:', err);
-      }
-    }
-    window.dispatchEvent(new CustomEvent('DoctypeDeleted'));
   };
 
   const handleInputChange = (e) => {
@@ -408,7 +439,7 @@ const AdminDoctypes = ({ user }) => {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '16px' }}> </span>
+                <span style={{ fontSize: '16px' }}>ℹ️</span>
                 <span>{notificationMessage}</span>
               </div>
               <button 
@@ -453,7 +484,7 @@ const AdminDoctypes = ({ user }) => {
                       type="text"
                       value={filters.id}
                       onChange={(e) => handleFilterChange(e, 'id')}
-                      placeholder="Filtrer ID"
+                      placeholder="Filtrer l'ID"
                       className="filter-input"
                     />
                   </td>
@@ -462,7 +493,7 @@ const AdminDoctypes = ({ user }) => {
                       type="text"
                       value={filters.name}
                       onChange={(e) => handleFilterChange(e, 'name')}
-                      placeholder="Filtrer nom"
+                      placeholder="Filtrer le nom"
                       className="filter-input"
                     />
                   </td>
@@ -471,7 +502,7 @@ const AdminDoctypes = ({ user }) => {
                       type="text"
                       value={filters.company}
                       onChange={(e) => handleFilterChange(e, 'company')}
-                      placeholder="Filtrer entreprise"
+                      placeholder="Filtrer les entités"
                       className="filter-input"
                     />
                   </td>
@@ -488,11 +519,7 @@ const AdminDoctypes = ({ user }) => {
                       <td>{doctype.id}</td>
                       <td>{doctype.name}</td>
                       <td>
-                        <ul className="company-tokens">
-                          {Array.isArray(doctype.companies) && doctype.companies.map(c => (
-                            <li key={c.id} className="company-token">{c.name}</li>
-                          ))}
-                        </ul>
+                        <CompanyTokens companies={doctype.companies} />
                       </td>
                       <td>
                         <div className="action-buttons">
@@ -502,7 +529,6 @@ const AdminDoctypes = ({ user }) => {
                           >
                             Modifier
                           </button>
-                         
                         </div>
                       </td>
                     </tr>
@@ -513,6 +539,7 @@ const AdminDoctypes = ({ user }) => {
           </div>
         </div>
       )}
+
       {activeTab === 'form' && (
         <div className="user-form">
           <h2>Modifier le type de document</h2>

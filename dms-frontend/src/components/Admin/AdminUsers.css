@@ -24,36 +24,182 @@
   font-weight: 600;
 }
 
+/* ONGLETS MODERNISÉS */
 .admin-tabs {
   display: flex;
-  gap: 8px;
-  border-bottom: 1px solid #eef3fb;
+  gap: 4px;
+  border-bottom: 2px solid #f0f4fa;
   width: 100%;
   margin-right: 40px;
+  padding-bottom: 0;
 }
 
 .tab-btn {
-  padding: 6px 10px;
+  padding: 12px 20px;
   border: none;
   background: transparent;
   color: #6c757d;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition: all 0.18s ease;
-  font-size: 0.9rem;
+  border-radius: 8px 8px 0 0;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  position: relative;
+  margin-bottom: -2px;
+}
+
+.tab-btn::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: transparent;
+  transition: background 0.3s ease;
 }
 
 .tab-btn:hover {
-  color: #364a63;
-  background-color: #f2f7ff;
+  color: #1976d2;
+  background: linear-gradient(135deg, rgba(25, 118, 210, 0.05), rgba(25, 118, 210, 0.1));
 }
 
 .tab-btn.active {
   color: #1976d2;
-  border-bottom-color: #1976d2;
-  background-color: #e8f0ff;
+  background: linear-gradient(135deg, rgba(25, 118, 210, 0.1), rgba(25, 118, 210, 0.05));
 }
+
+.tab-btn.active::after {
+  background: linear-gradient(90deg, #667eea, #764ba2);
+}
+
+/* BOUTON D'AJOUT MODERNISÉ */
+.btn-primary-2,
+.btn-add-modern {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  transition: all 0.3s ease;
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary-2::before,
+.btn-add-modern::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s;
+}
+
+.btn-primary-2:hover::before,
+.btn-add-modern:hover::before {
+  left: 100%;
+}
+
+.btn-primary-2:hover,
+.btn-add-modern:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+  text-decoration: none;
+}
+
+.btn-primary-2:active,
+.btn-add-modern:active {
+  transform: translateY(0);
+}
+
+.btn-add-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+/* Ajouter l'icône + automatiquement */
+.btn-primary-2::after,
+.btn-add-modern::after {
+  content: '+';
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: bold;
+  margin-left: 8px;
+}
+
+/* TOKENS DE COMPAGNIES */
+.company-tokens-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.company-token {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  cursor: default;
+  position: relative;
+  overflow: hidden;
+}
+
+.company-token::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, rgba(255,255,255,0.1), transparent);
+  pointer-events: none;
+}
+
+.company-token:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Couleurs prédéfinies pour les tokens */
+.company-token-color-1 { background: linear-gradient(135deg, #667eea, #764ba2); }
+.company-token-color-2 { background: linear-gradient(135deg, #f093fb, #f5576c); }
+.company-token-color-3 { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+.company-token-color-4 { background: linear-gradient(135deg, #43e97b, #38f9d7); }
+.company-token-color-5 { background: linear-gradient(135deg, #fa709a, #fee140); }
+.company-token-color-6 { background: linear-gradient(135deg, #a8edea, #fed6e3); }
+.company-token-color-7 { background: linear-gradient(135deg, #ff9a9e, #fecfef); }
+.company-token-color-8 { background: linear-gradient(135deg, #ffecd2, #fcb69f); }
 
 .alert {
   padding: 8px 10px;
@@ -82,31 +228,33 @@
   flex-direction: column;
 }
 
+/* TABLEAUX AMÉLIORÉS */
 .users-table-container {
   overflow-x: auto;
   overflow-y: hidden;
   background: white;
-  border-radius: 6px;
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .users-table-fixed {
   width: 100%;
   border-collapse: collapse;
-  display: table; /* Change to table display */
-  table-layout: fixed; /* Fix table layout */
+  display: table;
+  table-layout: fixed;
 }
 
 .users-table-fixed thead,
 .users-table-fixed tbody {
-  display: table-row-group; /* Change to table-row-group display */
+  display: table-row-group;
 }
 
 .users-table-fixed thead tr,
 .users-table-fixed tbody tr {
-  display: table-row; /* Change to table-row display */
+  display: table-row;
 }
 
 .users-table-fixed th,
@@ -123,12 +271,14 @@
 }
 
 .users-table-fixed th {
-  background-color: #f5f8ff !important;
-  font-weight: 600;
-  color: #364a63;
-  font-size: 0.92rem;
-  letter-spacing: 0.3px;
-  text-align: left;
+  background: linear-gradient(135deg, #f8faff 0%, #f0f4fa 100%) !important;
+  font-weight: 700;
+  color: #2c3e50;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 16px 12px;
+  border-bottom: 2px solid #e3f2fd;
 }
 
 .users-table-fixed .filter-row td {
@@ -142,7 +292,9 @@
 }
 
 .users-table-fixed tr:hover {
-  background-color: #f8f9fa;
+  background: linear-gradient(135deg, rgba(25, 118, 210, 0.02), rgba(25, 118, 210, 0.05));
+  transform: scale(1.001);
+  transition: all 0.2s ease;
 }
 
 .row-disabled {
@@ -187,37 +339,47 @@
   box-shadow: 0 0 4px rgba(108, 117, 125, 0.35);
 }
 
+/* BOUTONS D'ACTION AMÉLIORÉS */
 .action-buttons {
   display: flex;
-  gap: 6px;
-}
-
-.btn-edit,
-.btn-delete {
-  padding: 6px 10px;
-  border: none;
-  border-radius: 4px;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: all 0.18s ease;
+  gap: 8px;
+  align-items: center;
 }
 
 .btn-edit {
-  background-color: #ff9800;
+  background: linear-gradient(135deg, #ff9800, #f57c00);
   color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
 }
 
 .btn-edit:hover {
-  background-color: #e68a00;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(255, 152, 0, 0.4);
 }
 
 .btn-delete {
-  background-color: #d32f2f;
+  background: linear-gradient(135deg, #f44336, #d32f2f);
   color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(244, 67, 54, 0.3);
 }
 
 .btn-delete:hover {
-  background-color: #b82a26;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(244, 67, 54, 0.4);
 }
 
 .user-form {
@@ -300,7 +462,6 @@
   transition: all 0.18s ease;
 }
 
-/* BUTTON STYLES UPDATED TO DARK GREEN */
 .btn-primary {
   background-color: #1976d2;
   color: white;
@@ -412,12 +573,15 @@
 .checkbox-list::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
 }
+
 .company-name{
   margin-left: 8px;
 }
+
 .partnertype-name{
   margin-left: 8px;
 }
+
 /* Global error container */
 .form-error-message {
   background-color: #fee2e2;
@@ -439,6 +603,7 @@
   flex-shrink: 0;
   margin-left:3px;
 }
+
 .error-text {
   color: red;
   font-size: 0.875rem;
@@ -449,12 +614,14 @@
 .input-error {
   border: 1px solid red;
 }
+
 .field-error {
   color: red;
   font-size: 0.875rem;
   margin-top: 0.25rem;
   font-weight: 700;
 }
+
 .filter-container {
   margin-top: 8px;
 }
@@ -493,18 +660,6 @@
   padding: 20px;
   color: #6c757d;
   font-style: italic;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .filter-input {
-    padding: 4px 6px;
-    font-size: 0.7rem;
-  }
-  
-  .users-table th {
-    padding: 8px 10px;
-  }
 }
 
 .pt{
@@ -589,7 +744,6 @@
   box-sizing: border-box;
 }
 
-/* BUTTON STYLES UPDATED TO DARK GREEN */
 .btn-cancel{
   padding: 12px 24px;
   border: none;
@@ -602,13 +756,11 @@
   color : white;
   text-decoration :none;
 }
+
 .btn-cancel:hover:not(:disabled){
   background-color:rgb(59, 58, 58)
 }
-/* BUTTON STYLES UPDATED TO DARK GREEN */
 
-
-/* BUTTON STYLES UPDATED TO DARK GREEN */
 .btn {
   padding: 8px 14px;
   border: none;
@@ -636,12 +788,6 @@
   cursor: not-allowed;
 }
 
-/* Ensure the active tab button maintains its style */
-.tab-btn.active {
-  color: #1976d2;
-  border-bottom-color: #1976d2;
-  background-color: #e8f0ff;
-}
 .btn-green {
   padding: 8px 14px;
   border: none;
@@ -826,15 +972,17 @@
 .export-dropdown-container {
   position: absolute;
   top: 0;
-  right: 180px; /* Adjust this value to align with 'Ajouter un utilisateur' */
+  right: 180px;
   margin-bottom: 8px;
   z-index: 21;
 }
+
 @media (max-width: 900px) {
   .export-dropdown-container {
     right: 0;
   }
 }
+
 .export-dropdown-btn {
   background: #fff;
   border: 2px solid #1976d2;
@@ -848,11 +996,13 @@
   outline: none;
   box-shadow: none;
 }
+
 .export-dropdown-btn:hover, .export-dropdown-btn:focus {
   background: #eaf4ff;
   color: #155fa8;
   border-color: #155fa8;
 }
+
 .export-dropdown-list {
   position: absolute;
   top: 110%;
@@ -869,6 +1019,7 @@
   animation: dropdown-fade-in 0.18s cubic-bezier(.4,0,.2,1);
   transition: box-shadow 0.2s;
 }
+
 .export-dropdown-list li {
   padding: 12px 24px;
   cursor: pointer;
@@ -880,10 +1031,12 @@
   transition: background 0.15s, color 0.15s;
   font-family: inherit;
 }
+
 .export-dropdown-list li:hover {
   background: #f5f7fa;
   color: #1976d2;
 }
+
 @keyframes dropdown-fade-in {
   0% { opacity: 0; transform: translateY(-10px); }
   100% { opacity: 1; transform: translateY(0); }
@@ -897,3 +1050,4 @@
 .users-table-fixed thead tr:nth-child(2) {
   border-top: none;
 }
+

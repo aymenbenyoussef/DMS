@@ -259,7 +259,7 @@ const AdminCompanies = ({ user }) => {
   const handleAddEntity = (e) => {
     setGlobalLimitError('');
     if (maxEntities !== null && companies.length >= maxEntities) {
-      setGlobalLimitError('Vous avez atteint le nombre maximal d’entités. Veuillez contacter le support technique.');
+      setGlobalLimitError('Vous avez atteint le nombre maximal d entités. Veuillez contacter le support technique.');
       return;
     }
     else {
@@ -345,7 +345,6 @@ const AdminCompanies = ({ user }) => {
           <button
             className="btn-primary-2"
             onClick={handleAddEntity}
-            
           >
             Ajouter une entité
           </button>
@@ -634,3 +633,4 @@ const AdminCompanies = ({ user }) => {
 };
 
 export default AdminCompanies;
+

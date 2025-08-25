@@ -6,6 +6,51 @@ import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { exportToCSV, exportToJSON, exportToTXT, exportToExcel } from './exportUtils';
 
+// Fonction pour générer une couleur basée sur le nom de la compagnie
+const getCompanyTokenColor = (companyName) => {
+  const colors = [
+    'company-token-color-1',
+    'company-token-color-2', 
+    'company-token-color-3',
+    'company-token-color-4',
+    'company-token-color-5',
+    'company-token-color-6',
+    'company-token-color-7',
+    'company-token-color-8'
+  ];
+  
+  // Simple hash function pour assigner une couleur consistante
+  let hash = 0;
+  for (let i = 0; i < companyName.length; i++) {
+    const char = companyName.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  
+  return colors[Math.abs(hash) % colors.length];
+};
+
+// Composant React pour afficher les tokens de compagnies
+const CompanyTokens = ({ companies }) => {
+  if (!companies || companies.length === 0) {
+    return <span className="text-muted">Aucune entité</span>;
+  }
+
+  return (
+    <div className="company-tokens-container">
+      {companies.map((company, index) => (
+        <span 
+          key={company.id || index}
+          className={`company-token ${getCompanyTokenColor(company.name)}`}
+          title={company.name}
+        >
+          {company.name}
+        </span>
+      ))}
+    </div>
+  );
+};
+
 const AdminUsers = ({user ,loadingUser}) => {
   const [users, setUsers] = useState([]);
   const [activeTab, setActiveTab] = useState('list');
@@ -305,7 +350,7 @@ const AdminUsers = ({user ,loadingUser}) => {
     setFieldErrors({});
     setGlobalLimitError('');
     if (!editingUser && maxUsers !== null && users.length >= maxUsers) {
-      setGlobalLimitError('Vous avez atteint le nombre maximal d’utilisateurs. Veuillez contacter le support technique.');
+      setGlobalLimitError('Vous avez atteint le nombre maximal d utilisateurs. Veuillez contacter le support technique.');
       return;
     }
     if (!validate()) return;
@@ -495,7 +540,7 @@ const AdminUsers = ({user ,loadingUser}) => {
   const handleAddUser = (e) => {
     setGlobalLimitError('');
     if (maxUsers !== null && users.length >= maxUsers) {
-      setGlobalLimitError('Vous avez atteint le nombre maximal d’utilisateurs. Veuillez contacter le support technique.');
+      setGlobalLimitError('Vous avez atteint le nombre maximal d utilisateurs. Veuillez contacter le support technique');
       return;
     }
     navigate('/AddUsers');
@@ -756,15 +801,7 @@ const AdminUsers = ({user ,loadingUser}) => {
                             </span>
                           </td>
                           <td>
-                            {rowUser.companies && rowUser.companies.length > 0 ? (
-                              <ul className="company-tokens">
-                                  {rowUser.companies.map(company => (
-                                    <li key={company.id} className="company-token">{company.name}</li>
-                                  ))}
-                              </ul>
-                            ) : (
-                              <span></span>
-                            )}
+                            <CompanyTokens companies={rowUser.companies} />
                           </td>
                           <td style={{width: '180px', minWidth: '180px'}}>{new Date(rowUser.created_at).toLocaleDateString()}</td>
                           <td style={{width: '60px', minWidth: '60px'}}>
@@ -811,14 +848,14 @@ const AdminUsers = ({user ,loadingUser}) => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="surname">Entrez le nom d'utilisateur</label>
+              <label htmlFor="surname">Prénom</label>
               <input
                 type="text"
                 id="surname"
                 name="surname"
                 value={formData.surname}
                 onChange={handleInputChange}
-                placeholder="Entrez le nom d'utilisateur"
+                placeholder="Entrez le prénom"
               />
               {fieldErrors.surname && <div className="field-error">{fieldErrors.surname}</div>}
             </div>
@@ -831,69 +868,48 @@ const AdminUsers = ({user ,loadingUser}) => {
                 name="email"
                 value={formData.email}
                 onChange={handleInputChange}
-                className={fieldErrors.email ? 'error-input' : ''}
-                placeholder="Entrez l'e-mail"
+                placeholder="Entrez l'email"
               />
-              {fieldErrors.email && (
-                <div className="field-error">
-                  {fieldErrors.email}
-                </div>
-              )}
+              {fieldErrors.email && <div className="field-error">{fieldErrors.email}</div>}
             </div>
 
             <div className="form-group">
-              <label htmlFor="password">
-                Nouveau mot de passe
-              </label>
+              <label htmlFor="password">Mot de passe</label>
               <input
                 type="password"
                 id="password"
                 name="password"
                 value={formData.password}
                 onChange={handleInputChange}
-                required={!editingUser}
                 placeholder="Entrez le mot de passe"
               />
               {fieldErrors.password && <div className="field-error">{fieldErrors.password}</div>}
             </div>
+
             <div className="form-group">
-              <label>Confirmer le mot de passe</label>
+              <label htmlFor="passwordConfirm">Confirmer le mot de passe</label>
               <input
                 type="password"
+                id="passwordConfirm"
                 name="passwordConfirm"
-                placeholder="Confirmer le mot de passe"
                 value={formData.passwordConfirm}
                 onChange={handleInputChange}
-                required={!editingUser}
+                placeholder="Confirmez le mot de passe"
               />
               {fieldErrors.passwordConfirm && <div className="field-error">{fieldErrors.passwordConfirm}</div>}
             </div>
 
             <div className="form-group">
-              <label>Entités</label>
-              <div className="checkbox-list">
-                {companies.map((c) => (
-                  <label key={c.id} className="checkbox-item">
-                    <input
-                      type="checkbox"
-                      name="companies"
-                      value={c.id}
-                      checked={formData.companies.includes(c.id)}
-                      onChange={(e) => {
-                        const { value, checked } = e.target;
-                        const companyId = parseInt(value, 10);
-                        setFormData(prev => ({
-                          ...prev,
-                          companies: checked
-                            ? [...prev.companies, companyId]
-                            : prev.companies.filter(id => id !== companyId)
-                        }));
-                      }}
-                    />
-                    <span className="company-name">{c.name}</span>
-                  </label>
-                ))}
-              </div>
+              <label htmlFor="role">Rôle</label>
+              <select
+                id="role"
+                name="role"
+                value={formData.role}
+                onChange={handleInputChange}
+              >
+                <option value="user">Utilisateur</option>
+                <option value="admin">Administrateur</option>
+              </select>
             </div>
 
             <div className="form-group checkbox-group">
@@ -908,16 +924,49 @@ const AdminUsers = ({user ,loadingUser}) => {
               </label>
             </div>
 
+            <div className="form-group checklist-group">
+              <label>Entités associées</label>
+              <div className="checkbox-list">
+                {companies.map(company => (
+                  <div key={company.id} className="checkbox-item">
+                    <input
+                      type="checkbox"
+                      id={`company-${company.id}`}
+                      name="companies"
+                      value={company.id}
+                      checked={formData.companies.includes(company.id)}
+                      onChange={(e) => {
+                        const companyId = parseInt(e.target.value);
+                        setFormData(prev => ({
+                          ...prev,
+                          companies: e.target.checked
+                            ? [...prev.companies, companyId]
+                            : prev.companies.filter(id => id !== companyId)
+                        }));
+                      }}
+                    />
+                    <label htmlFor={`company-${company.id}`} className="company-name">
+                      {company.name}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <div className="form-actions">
-              <button 
-                type="button" 
-                onClick={() => handleTabChange('list')}
-                className="btn-cancel"
+              <button type="submit" className="btn-primary" disabled={loading}>
+                {loading ? 'Mise à jour...' : 'Mettre à jour'}
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => {
+                  setActiveTab('list');
+                  setShowModifyTab(false);
+                  setEditingUser(null);
+                }}
               >
                 Annuler
-              </button>
-              <button type="submit" disabled={loading} className="btn">
-                {loading ? 'Chargement...' : 'Mettre à jour'}
               </button>
             </div>
           </form>
