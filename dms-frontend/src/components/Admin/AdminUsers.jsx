@@ -594,7 +594,7 @@ const AdminUsers = ({user ,loadingUser}) => {
               Modifier l'utilisateur
             </button>
           )}
-          <button className="btn-primary-2" onClick={handleAddUser}>
+          <button className="btn-primary-2" onClick={handleAddUser} disabled={loading}>
             Ajouter un utilisateur
           </button>
         </div>

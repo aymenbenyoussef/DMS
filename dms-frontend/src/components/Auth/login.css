@@ -8,7 +8,7 @@
 }
 
 .login-card {
-  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); /* Dégradé vert très clair */
+  background: linear-gradient(135deg, #f0f7fd 0%, #ecf3fd 100%); /* Dégradé bleu très clair */
   border-radius: 12px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
   width: 100%;
@@ -16,7 +16,7 @@
   min-width: 400px; /* Largeur minimale fixe pour éviter le déplacement */
   padding: 32px;
   transition: all 0.3s ease;
-  border: 1px solid #dcfce7; /* Bordure vert clair subtile */
+  border: 1px solid #dbeafe; /* Bordure bleu clair subtile */
 }
 
 .login-card:hover {
@@ -25,7 +25,7 @@
 }
 
 .login-title {
-  color: #166534; /* Vert foncé doux */
+  color: #1d4ed8; /* Bleu foncé doux */
   font-size: 24px;
   font-weight: 700;
   margin-bottom: 8px;
@@ -33,7 +33,7 @@
 }
 
 .login-subtitle {
-  color: #4b5563; /* Gris-vert subtil */
+  color: #334155; /* Gris-bleu subtil */
   font-size: 14px;
   text-align: center;
   margin-bottom: 24px;
@@ -62,14 +62,14 @@
 }
 
 .form-label {
-  color: #166534; /* Vert foncé doux */
+  color: #1d4ed8; /* Bleu foncé doux */
   font-size: 14px;
   font-weight: 500;
 }
 
 .form-input {
   padding: 12px 16px;
-  border: 1px solid #d1fae5; /* Bordure vert très clair */
+  border: 1px solid #dbeafe; /* Bordure bleu très clair */
   border-radius: 8px;
   font-size: 14px;
   transition: border 0.3s ease;
@@ -80,8 +80,8 @@
 
 .form-input:focus {
   outline: none;
-  border-color: #10b981; /* Vert medium */
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15); /* Ombre verte subtile */
+  border-color: #2563eb; /* Bleu medium */
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15); /* Ombre bleue subtile */
 }
 
 /* Styles pour le conteneur du champ mot de passe avec icône */
@@ -106,7 +106,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #6b7280;
+  color: #64748b;
   padding: 4px;
   border-radius: 4px;
   display: flex;
@@ -120,19 +120,19 @@
 }
 
 .password-toggle-btn:hover {
-  color: #10b981;
-  background-color: rgba(16, 185, 129, 0.1);
+  color: #2563eb;
+  background-color: rgba(37, 99, 235, 0.1);
 }
 
 .password-toggle-btn:focus {
   outline: none;
-  color: #10b981;
-  background-color: rgba(16, 185, 129, 0.1);
+  color: #2563eb;
+  background-color: rgba(37, 99, 235, 0.1);
 }
 
 .password-toggle-btn:active {
-  color: #10b981;
-  background-color: rgba(16, 185, 129, 0.2);
+  color: #2563eb;
+  background-color: rgba(37, 99, 235, 0.2);
 }
 
 /* Conteneur pour le lien "Mot de passe oublié ?" */
@@ -146,7 +146,7 @@
 .forgot-password-link {
   background: none;
   border: none;
-  color: #059669;
+  color: #2563eb;
   cursor: pointer;
   font-size: 13px;
   text-decoration: none;
@@ -156,16 +156,16 @@
 }
 
 .forgot-password-link:hover {
-  color: #047857;
+  color: #1d4ed8;
 }
 
 .forgot-password-link:focus {
   outline: none;
-  color: #047857;
+  color: #1d4ed8;
 }
 
 .login-button {
-  background-color: #10b981; /* Vert medium */
+  background-color: #2563eb; /* Bleu medium */
   color: white;
   border: none;
   padding: 12px;
@@ -180,7 +180,7 @@
 }
 
 .login-button:hover {
-  background-color: #059669; /* Vert légèrement plus foncé */
+  background-color: #1d4ed8; /* Bleu légèrement plus foncé */
 }
 
 .login-button:disabled {
@@ -190,22 +190,22 @@
 
 .test-accounts {
   margin-top: 24px;
-  color: #4b5563;
+  color: #334155;
   font-size: 13px;
   text-align: center;
 }
 
 .test-account-item {
-  background-color: #f0fdf4; /* Fond vert très clair */
+  background-color: #f0f7fd; /* Fond bleu très clair */
   padding: 8px 12px;
   border-radius: 6px;
   margin-top: 8px;
-  border: 1px solid #dcfce7; /* Bordure vert clair */
+  border: 1px solid #dbeafe; /* Bordure bleu clair */
 }
 
 .test-account-label {
   font-weight: 600;
-  color: #166534; /* Vert foncé doux */
+  color: #1d4ed8; /* Bleu foncé doux */
 }
 
 .field-error {

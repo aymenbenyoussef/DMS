@@ -17,12 +17,10 @@ function RapportModal(props) {
     ocrText,
     currentDocument,
     relatedDocuments,
-    handleContextDownload,
+    
     handleSendEmail,
     formatFileSize,
-    getDoctypeName,
-    getDocumentGroup,
-    getUploaderName
+    getDoctypeName
   } = props;
 
   // État local pour la gestion des URLs et du contenu
@@ -39,6 +37,104 @@ function RapportModal(props) {
   const overlayRef = useRef(null);
   const dialogRef = useRef(null);
 
+  const getUploaderName = (doc) => {
+    return doc.owner_name || 'Utilisateur inconnu';
+  };
+  const getDocumentGroup = (doc) => {
+    return doc.group_name || 'Aucun groupe';
+  };
+  const handleRapportDownload = async (doc) => {
+    try {
+      const response = await api.documents.getRapport(doc.id);
+      if (response.status !== 200) {
+        if (response.status === 404) {
+          alert('Rapport non disponible pour ce document.');
+          return;
+        }
+        throw new Error('Network response was not ok');
+      }
+      const blob = response.data;
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = doc.filename.replace(/\.[^/.]+$/, "") + "_rapport.pdf";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download failed:', error);
+      alert('Échec du téléchargement. Veuillez réessayer.');
+    }
+  };
+  const handleOcrTextDownload = async (doc) => {
+    try {
+      const response = await api.documents.getOcrText(doc.id);
+      if (response.status !== 200) {
+        if (response.status === 404) {
+          alert('Texte OCR non disponible pour ce document.');
+          return;
+        }
+        throw new Error('Network response was not ok');
+      }
+      const blob = response.data;
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = doc.filename.replace(/\.[^/.]+$/, "") + "_ocr.txt";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download failed:', error);
+      alert('Échec du téléchargement. Veuillez réessayer.');
+    }
+  };
+  const handleDownload = async (doc) => {
+    try {
+      const response = await api.get(`/documents/${doc.id}/file`, {
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', doc.filename || 'document');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      
+      // Clean up the URL object
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download failed:', error);
+      alert(`Download failed: ${error.response?.data?.error || error.message}`);
+    }
+  };
+  const handleContextDownload = async () => {
+    if (!currentDocument) return;
+    
+    // If viewing a report (has tabs), download based on active tab
+    if (previewTitle.includes('_rapport.pdf')) {
+      switch (activeTab) {
+        case 'report':
+          await handleRapportDownload(currentDocument);
+          break;
+        case 'ocr':
+          await handleOcrTextDownload(currentDocument);
+          break;
+        case 'actions':
+          await handleDownload(currentDocument);
+          break;
+        default:
+          await handleDownload(currentDocument);
+      }
+    } else {
+      // For regular documents, download the document
+      await handleDownload(currentDocument);
+    }
+  };
   useEffect(() => {
     setLocalPreviewUrl(previewUrl || documentFileUrl || null);
     // Dérivation du type MIME
@@ -407,9 +503,7 @@ function RapportModal(props) {
                       <div className="info-item">
                         <span className="info-label">Utilisateur</span>
                         <span className="info-value">
-                          {getUploaderName
-                            ? getUploaderName(currentDocument)
-                            : (currentDocument?.owner_name || currentDocument?.uploader_name || currentDocument?.user_name || currentDocument?.uploaded_by || '-')}
+                          {getUploaderName(currentDocument)}
                         </span>
                       </div>
                       <div className="info-item">

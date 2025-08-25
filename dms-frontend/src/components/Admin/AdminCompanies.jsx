@@ -327,6 +327,7 @@ const AdminCompanies = ({ user }) => {
   return (
     <div className="admin-users">
       <div className="admin-header">
+        
         <div className="admin-tabs">
           <button
             className={`tab-btn ${activeTab === 'list' ? 'active' : ''}`}
@@ -345,13 +346,19 @@ const AdminCompanies = ({ user }) => {
           <button
             className="btn-primary-2"
             onClick={handleAddEntity}
+            disabled={loading}
           >
             Ajouter une entité
           </button>
         </div>
       </div>
 
-      
+      {/* Show global limit error if present */}
+        {globalLimitError && (
+          <div className="alert alert-error" style={{marginBottom: '12px'}}>
+            {globalLimitError}
+          </div>
+        )}
       {success && <div className="alert alert-success">{success}</div>}
       
       

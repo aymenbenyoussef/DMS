@@ -12,8 +12,9 @@ import './DocumentArchive.css';
 import RapportModal from './RapportModal';
 import ShareModal from './ShareModal';
 
-
 const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
+  const [currency, setCurrency] = useState('dt');
+
   // Helper function to get first day of current month
   const getFirstDayOfMonth = () => {
     const now = new Date();
@@ -205,6 +206,14 @@ const getOneMonthAgo = () => {
     return () => {
       document.removeEventListener('click', handleClickOutside);
     };
+  }, []);
+
+  useEffect(() => {
+    API.settings.getSettings().then(res => {
+      if (res.data && res.data.currency) {
+        setCurrency(res.data.currency);
+      }
+    }).catch(() => setCurrency('dt'));
   }, []);
 
   const openModal = () => setIsModalOpen(true);
@@ -645,9 +654,11 @@ const getOneMonthAgo = () => {
         if (key === 'billable') {
           const fv = filterValue.toString().toLowerCase();
           filtered = filtered.filter(doc => {
+            
             const isBillable = (parseFloat(doc.total_ht || 0) > 0) || (parseFloat(doc.total_ttc || 0) > 0);
             if (fv === 'oui' || fv === 'yes' || fv === 'true') return isBillable;
             if (fv === 'non' || fv === 'no' || fv === 'false') return !isBillable;
+            
             // Fallback to text match on computed value
             return (isBillable ? 'oui' : 'non').includes(fv);
           });
@@ -655,8 +666,13 @@ const getOneMonthAgo = () => {
           filtered = filtered.filter(doc => {
             const docValue = doc[key];
             if (docValue === null || docValue === undefined) return false;
+            // Use mathematical operations for TVA, HT, and TTC fields
+            if (key === 'tva' || key === 'total_ht' || key === 'total_ttc') {
+              return applyMathFilter(docValue, filterValue);
+            }
             return docValue.toString().toLowerCase().includes(filterValue.toLowerCase());
           });
+
         }
       }
     });
@@ -993,7 +1009,60 @@ const getOneMonthAgo = () => {
 
   // compute total columns dynamically (after removing the 'Type' column)
   const totalColumns = isGroupMode ? 10 : 9;
+// Function to parse mathematical operations in filters
+  const parseMathOperation = (filterValue) => {
+    const trimmed = filterValue.trim();
+    
+    // Check for mathematical operators
+    if (trimmed.startsWith('>')) {
+      return { operator: '>', value: parseFloat(trimmed.substring(1)) };
+    } else if (trimmed.startsWith('<')) {
+      return { operator: '<', value: parseFloat(trimmed.substring(1)) };
+    } else if (trimmed.startsWith('>=')) {
+      return { operator: '>=', value: parseFloat(trimmed.substring(2)) };
+    } else if (trimmed.startsWith('<=')) {
+      return { operator: '<=', value: parseFloat(trimmed.substring(2)) };
+    } else if (trimmed.startsWith('=')) {
+      return { operator: '=', value: parseFloat(trimmed.substring(1)) };
+    } else if (trimmed.startsWith('==')) {
+      return { operator: '=', value: parseFloat(trimmed.substring(2)) };
+    }
+    
+    // If no operator, treat as contains search
+    return { operator: 'contains', value: trimmed };
+  };
 
+  // Function to apply mathematical filter
+  const applyMathFilter = (docValue, filterValue) => {
+    if (!docValue || isNaN(parseFloat(docValue))) return false;
+    
+    const docNum = parseFloat(docValue);
+    const parsed = parseMathOperation(filterValue);
+    
+    if (parsed.operator === 'contains') {
+      // Fall back to string contains for non-mathematical fields
+      const lowerFilterValue = filterValue.toLowerCase();
+      const lowerDocValue = String(docValue).toLowerCase();
+      return lowerDocValue.includes(lowerFilterValue);
+    }
+    
+    if (isNaN(parsed.value)) return false;
+    
+    switch (parsed.operator) {
+      case '>':
+        return docNum > parsed.value;
+      case '<':
+        return docNum < parsed.value;
+      case '>=':
+        return docNum >= parsed.value;
+      case '<=':
+        return docNum <= parsed.value;
+      case '=':
+        return docNum === parsed.value;
+      default:
+        return false;
+    }
+  };
   return (
     <div className="document-archive">
       <div className="container-fluid h-100">
@@ -1419,13 +1488,13 @@ const getOneMonthAgo = () => {
                             )}
                           </td>
                           <td className="text-end">
-                            {document.tva ? `${parseFloat(document.tva).toFixed(2)}€` : '-'}
+                            {document.tva ? `${parseFloat(document.tva).toFixed(2)}${currency}` : '-'}
                           </td>
                           <td className="text-end">
-                            {document.total_ht ? `${parseFloat(document.total_ht).toFixed(2)}€` : '-'}
+                            {document.total_ht ? `${parseFloat(document.total_ht).toFixed(2)}${currency}` : '-'}
                           </td>
                           <td className="text-end">
-                            {document.total_ttc ? `${parseFloat(document.total_ttc).toFixed(2)}€` : '-'}
+                            {document.total_ttc ? `${parseFloat(document.total_ttc).toFixed(2)}${currency}` : '-'}
                           </td>
                           <td className="text-center">
                             <small className="text-muted">
@@ -1491,13 +1560,13 @@ const getOneMonthAgo = () => {
                           Total ({totals.count} documents):
                         </td>
                         <td className="text-end">
-                          {totals.totalTVA.toFixed(2)}€
+                          {totals.totalTVA.toFixed(2)}{currency}
                         </td>
                         <td className="text-end">
-                          {totals.totalHT.toFixed(2)}€
+                          {totals.totalHT.toFixed(2)}{currency}
                         </td>
                         <td className="text-end">
-                          {totals.totalTTC.toFixed(2)}€
+                          {totals.totalTTC.toFixed(2)}{currency}
                         </td>
                         <td colSpan="2"></td>
                       </tr>

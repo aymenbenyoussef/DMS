@@ -130,6 +130,16 @@ const EditDocumentForm = ({ document, onSave, onCancel, isLoading }) => {
     return Object.keys(newErrors).length === 0;
   };
 
+  // TTC verification function
+  const isTTCValid = () => {
+    if (!formData.is_invoice) return true;
+    const ht = parseFloat(formData.total_ht);
+    const tva = parseFloat(formData.tva);
+    const ttc = parseFloat(formData.total_ttc);
+    if (isNaN(ht) || isNaN(tva) || isNaN(ttc)) return true;
+    return Math.abs((ht + tva) - ttc) < 0.02;
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!validateForm()) {
@@ -160,28 +170,22 @@ const EditDocumentForm = ({ document, onSave, onCancel, isLoading }) => {
   const isInvoice = !!formData.is_invoice;
 
   return (
-    <div className={`edit-document-form${isInvoice ? ' invoice' : ''}`}>  
-      {/* Modal Header - fixed */}
-      <div className="modal-header" style={{ position: 'sticky', top: 0, zIndex: 2, background: '#fff', borderBottom: '1px solid #dee2e6' }}>
-        <h5 className="modal-title">
-          <i className="fas fa-edit me-2"></i>
-          Modifier le document
-        </h5>
-        <button type="button" className="btn-close" onClick={onCancel}></button>
+    <div className={`edit-document-form document-confirmation-form${isInvoice ? ' invoice' : ''}`} style={{ maxHeight: '80vh', minHeight: '540px', display: 'flex', flexDirection: 'column' }}>
+      <div className="form-header" style={{ position: 'sticky', top: 0, zIndex: 2 }}>
+        <h3>Modifier le document</h3>
+        <p>Modifiez les informations du document et validez les champs obligatoires.</p>
       </div>
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', height: 'calc(80vh - 56px)' }}>
-        {/* Scrollable Body */}
-        <div className="scrollable-body" style={{ flex: 1, overflowY: 'auto', padding: '1.5rem 1.5rem 0 1.5rem' }}>
-          {/* Document Information (Header) */}
-          <div className="form-section">
-            <h6 className="section-title">Informations du document</h6>
-            <div className="form-group">
-              <label className="form-label">Nom du fichier</label>
+      <form onSubmit={handleSubmit} className="document-form" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+        <div className="scrollable-body" style={{ flex: 1, overflowY: 'auto', minHeight: 0, paddingBottom: 0 }}>
+          <div className="form-row">
+            <div className="form-group full-width-field">
+              <label className="form-label" htmlFor="filename">Nom du fichier</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <input
                   type="text"
-                  className="form-control"
+                  className="form-input"
                   name="filename"
+                  id="filename"
                   value={(() => {
                     const filename = formData.filename !== undefined ? formData.filename : document.filename;
                     const dotIdx = filename.lastIndexOf('.');
@@ -195,7 +199,6 @@ const EditDocumentForm = ({ document, onSave, onCancel, isLoading }) => {
                     })();
                     setFormData(prev => ({ ...prev, filename: e.target.value + ext }));
                   }}
-                  disabled={false}
                   autoComplete="off"
                   style={{ flex: 1 }}
                 />
@@ -209,15 +212,13 @@ const EditDocumentForm = ({ document, onSave, onCancel, isLoading }) => {
               </div>
             </div>
           </div>
-
-          {/* Partner Selection */}
-          <div className="form-section">
-            <h6 className="section-title">Partenaire</h6>
-            <div className="form-group">
-              <label className="form-label">Partenaire externe *</label>
+          <div className="form-row">
+            <div className="form-group full-width-field">
+              <label className="form-label" htmlFor="partner_id">Partenaire externe *</label>
               <select
                 name="partner_id"
-                className={`form-control ${errors.partner_id ? 'is-invalid' : ''}`}
+                id="partner_id"
+                className={`form-input${errors.partner_id ? ' error' : ''}`}
                 value={formData.partner_id}
                 onChange={handlePartnerChange}
                 disabled={isLoadingPartners}
@@ -226,137 +227,114 @@ const EditDocumentForm = ({ document, onSave, onCancel, isLoading }) => {
                 {partners.map(partner => (
                   <option key={partner.id} value={partner.id}>
                     {partner.company_name}
-                    {partner.partnertypes && partner.partnertypes.length > 0 && 
+                    {partner.partnertypes && partner.partnertypes.length > 0 &&
                       ` (${partner.partnertypes.map(pt => pt.name).join(', ')})`
                     }
                   </option>
                 ))}
               </select>
               {errors.partner_id && (
-                <div className="invalid-feedback">{errors.partner_id}</div>
+                <div className="error-message">{errors.partner_id}</div>
               )}
             </div>
           </div>
-
-          {/* Invoice Information */}
-          <div className="form-section">
-            <div className="form-group mb-3" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div className="checkbox-group">
+            <label>
               <input
                 type="checkbox"
-                className="form-check-input form-check-input-sm custom-checkbox"
-                id="is_invoice"
                 name="is_invoice"
                 checked={formData.is_invoice}
                 onChange={handleInputChange}
-                style={{ width: '1rem', height: '1rem', margin: 0 }}
               />
-              <label className="form-check-label mb-0" htmlFor="is_invoice" style={{ fontSize: '1rem', userSelect: 'none', margin: 0 }}>
-                Ce document est une facture
-              </label>
-            </div>
-
-            {formData.is_invoice && (
-              <>
-                <h6 className="section-title">Détails de la facture</h6>
-                <div className="row">
-                  <div className="col-md-6">
-                    <div className="form-group">
-                      <label className="form-label">Numéro de facture *</label>
-                      <input
-                        type="text"
-                        className={`form-control ${errors.invoice_number ? 'is-invalid' : ''}`}
-                        name="invoice_number"
-                        value={formData.invoice_number}
-                        onChange={handleInputChange}
-                        placeholder="Ex: FAC-2024-001"
-                      />
-                      {errors.invoice_number && (
-                        <div className="invalid-feedback">{errors.invoice_number}</div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="col-md-6">
-                    <div className="form-group">
-                      <label className="form-label">Date de facture *</label>
-                      <input
-                        type="date"
-                        className={`form-control ${errors.invoice_date ? 'is-invalid' : ''}`}
-                        name="invoice_date"
-                        value={formData.invoice_date}
-                        onChange={handleInputChange}
-                      />
-                      {errors.invoice_date && (
-                        <div className="invalid-feedback">{errors.invoice_date}</div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <div className="row">
-                  <div className="col-md-4">
-                    <div className="form-group">
-                      <label className="form-label">Montant HT  *</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        className={`form-control ${errors.total_ht ? 'is-invalid' : ''}`}
-                        name="total_ht"
-                        value={formData.total_ht}
-                        onChange={handleInputChange}
-                        placeholder="0.00"
-                      />
-                      {errors.total_ht && (
-                        <div className="invalid-feedback">{errors.total_ht}</div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="col-md-4">
-                    <div className="form-group">
-                      <label className="form-label">TVA  *</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        className={`form-control ${errors.tva ? 'is-invalid' : ''}`}
-                        name="tva"
-                        value={formData.tva}
-                        onChange={handleInputChange}
-                        placeholder="0.00"
-                      />
-                      {errors.tva && (
-                        <div className="invalid-feedback">{errors.tva}</div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="col-md-4">
-                    <div className="form-group">
-                      <label className="form-label">Montant TTC  *</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        className={`form-control ${errors.total_ttc ? 'is-invalid' : ''}`}
-                        name="total_ttc"
-                        value={formData.total_ttc}
-                        onChange={handleInputChange}
-                        placeholder="0.00"
-                      />
-                      {errors.total_ttc && (
-                        <div className="invalid-feedback">{errors.total_ttc}</div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
+              Ce document est une facture
+            </label>
           </div>
+          {formData.is_invoice && (
+            <div className="invoice-fields">
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label" htmlFor="invoice_number">Numéro de facture *</label>
+                  <input
+                    type="text"
+                    id="invoice_number"
+                    name="invoice_number"
+                    className={`form-input${errors.invoice_number ? ' error' : ''}`}
+                    value={formData.invoice_number}
+                    onChange={handleInputChange}
+                    placeholder="Ex: FAC-2024-001"
+                  />
+                  {errors.invoice_number && <div className="error-message">{errors.invoice_number}</div>}
+                </div>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="invoice_date">Date de facture *</label>
+                  <input
+                    type="date"
+                    id="invoice_date"
+                    name="invoice_date"
+                    className={`form-input${errors.invoice_date ? ' error' : ''}`}
+                    value={formData.invoice_date}
+                    onChange={handleInputChange}
+                  />
+                  {errors.invoice_date && <div className="error-message">{errors.invoice_date}</div>}
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label" htmlFor="total_ht">Montant HT *</label>
+                  <input
+                    type="number"
+                    id="total_ht"
+                    name="total_ht"
+                    className={`form-input${errors.total_ht ? ' error' : ''}`}
+                    value={formData.total_ht}
+                    onChange={handleInputChange}
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                  />
+                  {errors.total_ht && <div className="error-message">{errors.total_ht}</div>}
+                </div>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="tva">TVA *</label>
+                  <input
+                    type="number"
+                    id="tva"
+                    name="tva"
+                    className={`form-input${errors.tva ? ' error' : ''}`}
+                    value={formData.tva}
+                    onChange={handleInputChange}
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                  />
+                  {errors.tva && <div className="error-message">{errors.tva}</div>}
+                </div>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="total_ttc">Montant TTC *</label>
+                  <input
+                    type="number"
+                    id="total_ttc"
+                    name="total_ttc"
+                    className={`form-input${errors.total_ttc ? ' error' : ''}`}
+                    value={formData.total_ttc}
+                    onChange={handleInputChange}
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                  />
+                  {errors.total_ttc && <div className="error-message">{errors.total_ttc}</div>}
+                </div>
+              </div>
+              {!isTTCValid() && (
+                <div className="error-message">Le montant TTC doit être égal à HT + TVA</div>
+              )}
+            </div>
+          )}
         </div>
-
-        {/* Form Actions (Footer) - fixed */}
-        <div className="form-actions modal-footer" style={{ position: 'sticky', bottom: 0, zIndex: 2, background: '#fff', borderTop: '1px solid #dee2e6', padding: '1rem 1.5rem', justifyContent: 'flex-end', gap: '1rem' }}>
+        <div className="confirmation-actions" style={{ position: 'sticky', bottom: 0, zIndex: 2, background: '#fff' }}>
           <button
             type="button"
-            className="btn btn-secondary"
+            className="btn-secondary"
             onClick={onCancel}
             disabled={isLoading}
           >
@@ -364,17 +342,10 @@ const EditDocumentForm = ({ document, onSave, onCancel, isLoading }) => {
           </button>
           <button
             type="submit"
-            className="btn btn-primary"
+            className="btn-primary"
             disabled={isLoading}
           >
-            {isLoading ? (
-              <>
-                <span className="spinner-border spinner-border-sm me-2" role="status"></span>
-                Enregistrement...
-              </>
-            ) : (
-              'Enregistrer les modifications'
-            )}
+            {isLoading ? <span className="spinner spinner--small" /> : 'Enregistrer les modifications'}
           </button>
         </div>
       </form>

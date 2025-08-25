@@ -947,7 +947,7 @@ def update_partner(partner_id):
             # Log the update
             log_activity(
                 actor=current_user_claims["username"],
-                action="Midifier",
+                action="Modifier",
                 resource_type="partenaire",
                 resource_data={
                     "id": partner_id,
@@ -2187,7 +2187,7 @@ def update_document(document_id):
         if success:
             log_activity(
                 actor=current_user_claims['username'],
-                action="Modifer",
+                action="Modifier",
                 resource_type="document",
                 resource_data={
                     'id': document_id,

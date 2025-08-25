@@ -516,7 +516,7 @@ const AdminPartners = ({ user }) => {
             </button>
           )}
           
-          <button className="btn-primary-2" onClick={handleAddPartner}>
+          <button className="btn-primary-2" onClick={handleAddPartner} disabled={loading}>
             Ajouter un partenaire
           </button>
         </div>

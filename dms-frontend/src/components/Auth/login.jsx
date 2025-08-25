@@ -267,15 +267,7 @@ const Login = ({ onLogin, error }) => {
               </button>
             </form>
 
-            <div className="test-accounts">
-              <p>Comptes de test :</p>
-              <div className="test-account-item">
-                <span className="test-account-label">Administrateur:</span> admin@dms.local / admin123
-              </div>
-              <div className="test-account-item">
-                <span className="test-account-label">Utilisateur:</span> user@dms.local / user123
-              </div>
-            </div>
+            
           </>
         )}
       </div>
