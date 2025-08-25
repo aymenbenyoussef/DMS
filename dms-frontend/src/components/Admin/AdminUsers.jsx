@@ -140,7 +140,7 @@ const AdminUsers = ({user ,loadingUser}) => {
   };
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/settings').then(res => {
+    API.settings.getSettings().then(res => {
       setMaxUsers(res.data.maxUsers);
     });
   }, []);

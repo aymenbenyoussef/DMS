@@ -2454,6 +2454,7 @@ SETTINGS_ENV_PATH = os.path.join(os.path.dirname(__file__), ".env")
 
 @app.route('/api/settings', methods=['POST'])
 def update_settings():
+    
     data = request.json
     env_map = {
         "systemEnabled": "SYSTEM_ENABLED",
@@ -2470,7 +2471,8 @@ def update_settings():
         "smtpEmail": "SMTP_EMAIL",
         "smtpPassword": "SMTP_PASSWORD",
         "smtpHost": "SMTP_HOST",
-        "smtpPort": "SMTP_PORT"
+        "smtpPort": "SMTP_PORT",
+        "currency": "CURRENCY"
     }
     
     # Check if SMTP settings are being updated
@@ -2511,6 +2513,7 @@ def update_settings():
 
 @app.route('/api/settings', methods=['GET'])
 def get_settings():
+   
     env_map = {
         "systemEnabled": "SYSTEM_ENABLED",
         "systemName": "SYSTEM_NAME",
@@ -2526,7 +2529,8 @@ def get_settings():
         "smtpEmail": "SMTP_EMAIL",
         "smtpPassword": "SMTP_PASSWORD",
         "smtpHost": "SMTP_HOST",
-        "smtpPort": "SMTP_PORT"
+        "smtpPort": "SMTP_PORT",
+        "currency": "CURRENCY"
     }
     env_vars = {k: '' for k in env_map.keys()}
     if os.path.exists(SETTINGS_ENV_PATH):
@@ -2537,6 +2541,8 @@ def get_settings():
                     for frontend_key, env_key in env_map.items():
                         if k == env_key:
                             env_vars[frontend_key] = v
+                            
+                           
     # Convert booleans and numbers
     env_vars["systemEnabled"] = env_vars["systemEnabled"].lower() == "true"
     for key in ["maxUsers", "maxEntities", "maxExternalEntities", "maxFileSize"]:

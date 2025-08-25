@@ -205,6 +205,7 @@ input:checked + .toggle-slider:before {
   display: flex;
   justify-content: center;
   margin-top: 1rem;
+  margin-left: 220px;
 }
 
 .save-button {
@@ -236,6 +237,7 @@ input:checked + .toggle-slider:before {
   background: var(--primary-blue-light);
   color: var(--primary-blue);
   border: 1px solid rgba(13, 110, 253, 0.2);
+  width:100%;
 }
 
 .alert-success svg {

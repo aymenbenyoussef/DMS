@@ -20,7 +20,7 @@ export const AppProvider = ({ children }) => {
   useEffect(() => {
     const fetchSystemName = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/settings');
+        const response = await api.settings.getSettings();
         const settings = await response.json();
         if (settings.systemName) {
           setSystemName(settings.systemName);

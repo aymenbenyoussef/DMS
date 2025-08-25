@@ -140,7 +140,7 @@ const AdminPartners = ({ user }) => {
     fetchPartners();
     fetchCompanies();
     fetchPartnerTypes();
-    axios.get('http://localhost:5000/api/settings').then(res => {
+    API.settings.getSettings().then(res => {
       setMaxExternalEntities(res.data.maxExternalEntities);
     });
   }, []);

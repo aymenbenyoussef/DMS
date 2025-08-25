@@ -109,7 +109,7 @@ function App() {
   useEffect(() => {
     const fetchSystemSettings = async () => {
       try {
-        const response = await fetch(`${API_BASE}/api/settings`);
+        const response = await api.settings.getSettings();
         const settings = await response.json();
         if (settings.systemName) {
           document.title = settings.systemName;

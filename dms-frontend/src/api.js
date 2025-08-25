@@ -381,7 +381,10 @@ const search = {
   getAllCompanies: () => API.get("/companies/all"),
   getAllDoctypes: () => API.get("/doctypes/all"),
 };
-
+const settings = {
+  getSettings: () => API.get('/api/settings'),
+  updateSettings: (settingsData) => API.post('/api/settings', settingsData)
+};
 // Export the API instance and endpoint groups
 export default {
   ...API,
@@ -398,5 +401,6 @@ export default {
   email,
   tempDocuments,
   search, 
+  settings
 };
 

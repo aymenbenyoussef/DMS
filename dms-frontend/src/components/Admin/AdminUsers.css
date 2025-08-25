@@ -91,6 +91,9 @@
   transition: all 0.3s ease;
   text-decoration: none;
   position: relative;
+  margin-left: auto;         /* Pushes the button to the right in a flex container */
+  display: flex;             /* Ensures margin-left:auto works if parent is flex */
+  justify-content: flex-end;
   overflow: hidden;
 }
 

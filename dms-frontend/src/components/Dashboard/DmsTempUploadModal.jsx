@@ -15,7 +15,7 @@ const DmsTempUploadModal = ({ onClose, onSuccess }) => {
   useEffect(() => {
     const fetchMaxFileSize = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/settings');
+        const response = await API.settings.getSettings();
         const settings = await response.json();
         if (settings.maxFileSize) {
           setMaxFileSize(settings.maxFileSize);

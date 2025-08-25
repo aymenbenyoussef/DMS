@@ -1,6 +1,7 @@
 // src/components/Settings/Settings.jsx
 import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
+import api from '../../api';
 import { AppContext } from '../context';
 import './Settings.css';
 
@@ -32,13 +33,56 @@ const Settings = () => {
   const [smtpHost, setSmtpHost] = useState('');
   const [smtpPort, setSmtpPort] = useState('');
 
+  // Currency
+  const [currency, setCurrency] = useState('');
+
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
   // Update local system name when context system name changes
+useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await api.settings.getSettings();
+        const data = res.data;
+        setSystemEnabled(data.systemEnabled);
+        setLocalSystemName(data.systemName);
+        setSystemName(data.systemName); // Update context
+        setDbHost(data.dbHost);
+        setDbUsername(data.dbUsername);
+        setDbPassword(data.dbPassword);
+        setMaxUsers(data.maxUsers);
+        setMaxEntities(data.maxEntities);
+        setMaxExternalEntities(data.maxExternalEntities);
+        setMaxFileSize(data.maxFileSize);
+        setLogsPath(data.logsPath);
+        setEntitiesDataPath(data.entitiesDataPath);
+        setSmtpEmail(data.smtpEmail || '');
+        setSmtpPassword(data.smtpPassword || '');
+        setSmtpHost(data.smtpHost || '');
+        setSmtpPort(data.smtpPort || '');
+        setCurrency(data.currency || '');
+      } catch (err) {
+        // Optionally handle error
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSettings();
+  }, [setSystemName]);
+
+  // Update browser title when system name changes
   useEffect(() => {
-    setLocalSystemName(systemName);
-  }, [systemName]);
+    if (localSystemName) {
+      document.title = localSystemName;
+    }
+  }, [localSystemName]);
+
+  if (loading) {
+    return <div className="settings-container"><div className="settings-header"><h1 className="settings-title">Paramètres du système</h1></div><div style={{textAlign: 'center', marginTop: '3rem'}}>Chargement...</div></div>;
+  }
+
+  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -57,10 +101,11 @@ const Settings = () => {
       smtpEmail,
       smtpPassword,
       smtpHost,
-      smtpPort
+      smtpPort,
+      currency
     };
     try {
-      await axios.post('http://localhost:5000/api/settings', payload);
+      await api.settings.updateSettings(payload);
       setSystemName(localSystemName);
       setSuccessMessage('Les paramètres ont été enregistrés avec succès.');
       setTimeout(() => setSuccessMessage(''), 5000);
@@ -254,7 +299,15 @@ const Settings = () => {
                   placeholder="Chemin des données" 
                 />
               </div>
-              
+              <div className="setting-item full-width">
+                <label className="setting-label">devise</label>
+                <input 
+                  type="text" 
+                  value={currency} 
+                  onChange={e => setCurrency(e.target.value)} 
+                  placeholder="Devise" 
+                />
+              </div>
               {successMessage && (
                 <div className="alert-success full-width">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -264,15 +317,17 @@ const Settings = () => {
                   {successMessage}
                 </div>
               )}
-              
-              <div className="save-button-container full-width">
-                <button 
-                  className="save-button" 
-                  onClick={handleSubmit}
-                >
-                  Enregistrer
-                </button>
-              </div>
+
+              {!successMessage && (
+                <div className="save-button-container full-width">
+                  <button 
+                    className="save-button" 
+                    onClick={handleSubmit}
+                  >
+                    Enregistrer
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>

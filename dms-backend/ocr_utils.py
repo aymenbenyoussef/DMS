@@ -12,8 +12,12 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.lib import colors
 from datetime import datetime
+from dotenv import load_dotenv
 
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'  # Adjust path as needed
+
+load_dotenv()
+CURRENCY = os.getenv('CURRENCY', 'dt')
 
 def extract_invoice_data(text):
     """Extract structured data from OCR text - Enhanced for French invoices with comprehensive patterns"""
@@ -371,9 +375,9 @@ def generate_report_pdf(confirmed_data, output_path, original_filename):
             ['Date', confirmed_data.get('date', 'N/A')],
             ["Fournisseur", confirmed_data.get("partner", "N/A")],
             ["Client", confirmed_data.get("partner_id", "N/A")],
-            ['Total HT', f"{confirmed_data.get('total_ht', 'N/A')} dt" if confirmed_data.get('total_ht') else 'N/A'],
-            ['TVA', f"{confirmed_data.get('tva', 'N/A')} dt" if confirmed_data.get('tva') else 'N/A'],
-            ['Total TTC', f"{confirmed_data.get('total_ttc', 'N/A')} dt" if confirmed_data.get('total_ttc') else 'N/A'],
+            ['Total HT', f"{confirmed_data.get('total_ht', 'N/A')} {CURRENCY}" if confirmed_data.get('total_ht') else 'N/A'],
+            ['TVA', f"{confirmed_data.get('tva', 'N/A')} {CURRENCY}" if confirmed_data.get('tva') else 'N/A'],
+            ['Total TTC', f"{confirmed_data.get('total_ttc', 'N/A')} {CURRENCY}" if confirmed_data.get('total_ttc') else 'N/A'],
             ['Type de document', 'Facture' if confirmed_data.get('is_invoice') else 'Autre document']
         ]
         

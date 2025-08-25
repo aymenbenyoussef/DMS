@@ -46,7 +46,7 @@ const AdminCompanies = ({ user }) => {
 
   useEffect(() => {
     fetchCompanies();
-    axios.get('http://localhost:5000/api/settings').then(res => {
+    API.settings.getSettings().then(res => {
       setMaxEntities(res.data.maxEntities);
     });
   }, []);
