@@ -330,7 +330,7 @@ const NavBar = ({ user, onLogout, toggleSidebar }) => {
                       <div className="category-items">
                         <button className="dropdown-item" onClick={() => { setShowDmsTempModal(true); setShowAdminTools(false); }}>
                           <span className="dropdown-icon"><BiFile size={16} /></span>
-                          <span>{t('uploadFile')}</span>
+                          <span>{t('Téléchargement')}</span>
                         </button>
                         <Link to="/dms/rapports" className="dropdown-item" onClick={() => setShowAdminTools(false)}>
                           <span className="dropdown-icon"><BiBarChart size={16} /></span>
