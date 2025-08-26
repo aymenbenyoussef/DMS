@@ -61,15 +61,15 @@ def log_activity(actor, action, resource_type, resource_data):
     timestamp = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     
     # Format log entry based on resource type
-    if resource_type == "user":
+    if resource_type == "utilisateur":
         log_entry = (
-            f"{timestamp} - {actor} - {action} User: "
+            f"{timestamp} - {actor} - {action} Utilisateur: "
             f"{resource_data['id']}, {resource_data['username']}, "
             f"{resource_data['email']}, {'enabled' if resource_data['is_active'] else 'disabled'}"
         )
-    elif resource_type == "company":
+    elif resource_type == "entité":
         log_entry = (
-            f"{timestamp} - {actor} - {action} Entity: "
+            f"{timestamp} - {actor} - {action} Entité: "
             f"{resource_data['id']}, {resource_data['name']}"
         )
     elif resource_type == "document":
@@ -78,25 +78,25 @@ def log_activity(actor, action, resource_type, resource_data):
             f"{resource_data['id']}, {resource_data['filename']}, "
             f"company_id={resource_data['company_id']}"
         )
-    elif resource_type == "doctype":
+    elif resource_type == "typededocu":
         log_entry = (
-            f"{timestamp} - {actor} - {action} DocType: "
+            f"{timestamp} - {actor} - {action} TypeDeDoc: "
             f"{resource_data['id']}, {resource_data['name']}"
         )
-    elif resource_type == "partnertype":
+    elif resource_type == "typedepartenaire":
         log_entry = (
-            f"{timestamp} - {actor} - {action} PartnerType: "
+            f"{timestamp} - {actor} - {action} TypePartenaire: "
             f"{resource_data['id']}, {resource_data['name']}, "
             f"{'active' if resource_data.get('status', True) else 'inactive'}"
         )   
-    elif resource_type == "partner":
+    elif resource_type == "partenaire":
         log_entry = (
-            f"{timestamp} - {actor} - {action} Partner: "
+            f"{timestamp} - {actor} - {action} Partenaire: "
             f"{resource_data['id']}, {resource_data['company_name']}, "
             f"type={resource_data.get('partner_type', 'N/A')}, "
             f"status={'active' if resource_data.get('status', True) else 'inactive'}"
         )
-    elif resource_type == "login":
+    elif resource_type == "connecter":
         log_entry = (
             f"{timestamp} - {actor} - {action} Compte: "
             f"email={resource_data.get('email','')}, username={resource_data.get('username','')}, "
@@ -108,9 +108,9 @@ def log_activity(actor, action, resource_type, resource_data):
             f"email={resource_data.get('email','')}, username={resource_data.get('username','')}, "
             f"date={resource_data.get('date','')}"
         )
-    elif resource_type == "tempdocument":
+    elif resource_type == "documenttemp":
         log_entry = (
-            f"{timestamp} - {actor} - {action} TempDocument : "
+            f"{timestamp} - {actor} - {action} DocumentTemp : "
             f"{resource_data['id']}, {resource_data['filename']}, "
             
         )
@@ -180,7 +180,7 @@ def process_single_file_ocr(file, company_id, doctype_id):
             text = pytesseract.image_to_string(image, lang='fra+eng')
         elif filename.lower().endswith('.pdf'):
             with open(temp_file_path, 'rb') as pdf_file:
-                images = convert_from_bytes(pdf_file.read(), poppler_path=r'/usr/bin')
+                images = convert_from_bytes(pdf_file.read(), poppler_path=r'C:\poppler-24.08.0\Library\bin')
                 for idx, img in enumerate(images):
                     t = pytesseract.image_to_string(img, lang='fra+eng')
                     text += t + "\n"
@@ -264,8 +264,8 @@ def login():
     # Log the login event
     log_activity(
         actor=user["username"],
-        action="Login",
-        resource_type="login",
+        action="connecter",
+        resource_type="connecter",
         resource_data={
             "email": user["email"],
             "username": user["username"],
@@ -298,7 +298,7 @@ def forgot_password():
     # Log the password reset event
     log_activity(
         actor=user["username"],
-        action="PasswordReset",
+        action="MdpReinitialiser",
         resource_type="MDPreinitialisation",
         resource_data={
             "email": user["email"],
@@ -311,8 +311,8 @@ def forgot_password():
     # Reload environment variables to get the latest SMTP settings
     load_dotenv(SETTINGS_ENV_PATH, override=True)
     
-    smtp_host = "smtp.gmail.com"  # Change as needed
-    smtp_port = 587
+    smtp_host = os.environ.get('SMTP_HOST', 'smtp.gmail.com')
+    smtp_port = os.environ.get('SMTP_PORT', 587)
     smtp_user = os.environ.get('SMTP_EMAIL', 'ranesmerald358@gmail.com')  # Get from .env
     smtp_pass = os.environ.get('SMTP_PASSWORD', 'tvkw cnff wpge eccz')     # Get from .env
 
@@ -426,8 +426,8 @@ def create_user():
         # Log the user creation event
         log_activity(
             actor=current_user_claims['username'],
-            action="Create",
-            resource_type="user",
+            action="Creation",
+            resource_type="utilisateur",
             resource_data={
                 'id': user_id,
                 'username': data['username'],
@@ -476,8 +476,8 @@ def update_user(user_id):
             # Log user update
             log_activity(
                 actor=current_user_claims['username'],
-                action="Update",
-                resource_type="user",
+                action="Modifier",
+                resource_type="utilisateur",
                 resource_data={
                     'id': user_id,
                     'username': data.get('username', '[unchanged]'),
@@ -509,8 +509,8 @@ def delete_user(user_id):
             # Log user deletion
             log_activity(
                 actor=current_user_claims['username'],
-                action="Delete",
-                resource_type="user",
+                action="Supprission",
+                resource_type="utilisateur",
                 resource_data={
                     'id': user_id,
                     'username': user['username'],
@@ -555,8 +555,8 @@ def create_partner_type():
         # Log the creation
         log_activity(
             actor=current_user_claims['username'],
-            action="Create",
-            resource_type="partnertype",
+            action="Creation",
+            resource_type="typedepartenaire",
             resource_data={
                 'id': partner_type_id,
                 'name': data['name'].strip(),
@@ -596,8 +596,8 @@ def update_partner_type(partner_type_id):
             
             log_activity(
                 actor=current_user_claims['username'],
-                action="Update",
-                resource_type="partnertype",
+                action="Modifier",
+                resource_type="typedepartenaire",
                 resource_data={
                     'id': partner_type_id,
                     'name': data.get('name'),
@@ -646,8 +646,8 @@ def delete_partner_type(partner_type_id):
             
             log_activity(
                 actor=current_user_claims['username'],
-                action="Delete",
-                resource_type="partnertype",
+                action="Supprission",
+                resource_type="typedepartenaire",
                 resource_data={
                     'id': partner_type_id,
                     'name': partner_type['name'],
@@ -700,8 +700,8 @@ def create_company():
         # Log company creation
         log_activity(
             actor=current_user_claims['username'],
-            action="Create",
-            resource_type="company",
+            action="Creation",
+            resource_type="entité",
             resource_data={
                 'id': company_id,
                 'name': data.get('name')
@@ -759,8 +759,8 @@ def update_company(company_id):
         # Log company update
         log_activity(
             actor=current_user_claims['username'],
-            action="Update",
-            resource_type="company",
+            action="Modifier",
+            resource_type="entité",
             resource_data={
                 'id': company_id,
                 'name': company['name']
@@ -789,8 +789,8 @@ def delete_company(company_id):
         if success:
             log_activity(
                 actor=current_user_claims['username'],
-                action="Delete",
-                resource_type="company",
+                action="Supprission",
+                resource_type="entité",
                 resource_data={
                     'id': company_id,
                     'name': company['name']
@@ -884,8 +884,8 @@ def create_partner():
         # Log partner creation
         log_activity(
             actor=current_user_claims['username'],
-            action="Create",
-            resource_type="partner",
+            action="Creation",
+            resource_type="partenaire",
             resource_data={
                 'id': partner_id,
                 'company_name': partner['company_name'],
@@ -947,8 +947,8 @@ def update_partner(partner_id):
             # Log the update
             log_activity(
                 actor=current_user_claims["username"],
-                action="Update",
-                resource_type="partner",
+                action="Modifier",
+                resource_type="partenaire",
                 resource_data={
                     "id": partner_id,
                     "company_name": partner["company_name"],
@@ -983,8 +983,8 @@ def delete_partner(partner_id):
             # Log the status change
             log_activity(
                 actor=current_user_claims['username'],
-                action="Delete",
-                resource_type="partner",
+                action="Supprission",
+                resource_type="partenaire",
                 resource_data={
                     'id': partner_id,
                     'company_name': partner['company_name'],
@@ -1145,8 +1145,8 @@ def create_doctype():
         # Log creation
         log_activity(
             actor=current_user_claims['username'],
-            action="Create",
-            resource_type="doctype",
+            action="Creation",
+            resource_type="typededocu",
             resource_data={
                 'id': doctype_id,
                 'name': data['name'].strip()
@@ -1222,8 +1222,8 @@ def update_doctype(doctype_id):
             # Log doctype update
             log_activity(
                 actor=current_user_claims['username'],
-                action="Update",
-                resource_type="doctype",
+                action="Modifier",
+                resource_type="typededocu",
                 resource_data={
                     'id': doctype_id,
                     'name': data.get('name', '[unchanged]')
@@ -1253,8 +1253,8 @@ def delete_doctype(doctype_id):
             # Log doctype deletion
             log_activity(
                 actor=current_user_claims['username'],
-                action="Delete",
-                resource_type="doctype",
+                action="Supprission",
+                resource_type="typededocu",
                 resource_data={
                     'id': doctype_id,
                     'name': doctype['name']
@@ -1347,7 +1347,7 @@ def create_document():
         # Log document creation
         log_activity(
             actor=current_user_claims['username'],
-            action="Create",
+            action="Creation",
             resource_type="document",
             resource_data={
                 'id': document_id,
@@ -1630,7 +1630,7 @@ def confirm_document():
                     except Exception as e:
                         extracted_text = ''
                 rapport = None
-                print(extracted_text)
+                
                 if is_invoice and confirmed_info:
                     # Generate report PDF for invoices
                     report_filename = f"{os.path.splitext(unique_final_filename)[0]}_report.pdf"
@@ -1693,7 +1693,7 @@ def confirm_document():
                 # Log document creation
                 log_activity(
                     actor=f"{current_user_claims.get('username', 'Unknown')} (id={current_user_id})",
-                    action="Create",
+                    action="Creation",
                     resource_type="document",
                     resource_data={
                         'id': document_id,
@@ -2145,7 +2145,7 @@ def download_document_ocr_text(document_id):
 @app.route('/documents/<int:document_id>', methods=['PUT'])
 @jwt_required()
 def update_document(document_id):
-    """Update document name and partner only"""
+    """Update document fields: name, partner, invoice fields, etc."""
     current_user_claims = get_jwt()
     data = request.get_json()
     if not data:
@@ -2154,13 +2154,40 @@ def update_document(document_id):
         doc = db.get_document_by_id(document_id)
         if not doc:
             return jsonify({"msg": "Document not found"}), 404
+        # Accept all possible fields from the frontend
         name = data.get('filename')
         partner_id = data.get('partner_id')
-        success = db.update_document(document_id, name=name, partner_id=partner_id)
+        confirmed_data = data.get('confirmed_data')
+        # If confirmed_data is present, extract invoice fields
+        invoice_fields = {}
+        if confirmed_data:
+            invoice_fields['is_invoice'] = confirmed_data.get('is_invoice')
+            invoice_fields['invoice_number'] = confirmed_data.get('invoice_number')
+            invoice_fields['date'] = confirmed_data.get('date')
+            invoice_fields['total_ht'] = confirmed_data.get('total_ht')
+            invoice_fields['tva'] = confirmed_data.get('tva')
+            invoice_fields['total_ttc'] = confirmed_data.get('total_ttc')
+            invoice_fields['partner'] = confirmed_data.get('partner')
+            invoice_fields['partner_id'] = confirmed_data.get('partner_id')
+        else:
+            invoice_fields = None
+        # Update all fields in the DB
+        success = db.update_document(
+            document_id,
+            name=name,
+            partner_id=partner_id,
+            
+            is_invoice=invoice_fields.get('is_invoice') if invoice_fields else None,
+            invoice_number=invoice_fields.get('invoice_number') if invoice_fields else None,
+            invoice_date=invoice_fields.get('date') if invoice_fields else None,
+            total_ht=invoice_fields.get('total_ht') if invoice_fields else None,
+            tva=invoice_fields.get('tva') if invoice_fields else None,
+            total_ttc=invoice_fields.get('total_ttc') if invoice_fields else None
+        )
         if success:
             log_activity(
                 actor=current_user_claims['username'],
-                action="Update",
+                action="Modifier",
                 resource_type="document",
                 resource_data={
                     'id': document_id,
@@ -2174,7 +2201,6 @@ def update_document(document_id):
     except Exception as e:
         app.logger.error(f"Error updating document {document_id}: {str(e)}")
         return jsonify({"msg": f"Error updating document: {str(e)}"}), 500
-
 @app.route('/documents/<int:document_id>', methods=['DELETE'])
 @jwt_required()
 def delete_document(document_id):
@@ -2211,7 +2237,7 @@ def delete_document(document_id):
             # Log document deletion
             log_activity(
                 actor=current_user_claims['username'],
-                action="Delete",
+                action="Supprission",
                 resource_type="document",
                 resource_data={
                     'id': document_id,
@@ -2428,6 +2454,7 @@ SETTINGS_ENV_PATH = os.path.join(os.path.dirname(__file__), ".env")
 
 @app.route('/api/settings', methods=['POST'])
 def update_settings():
+    
     data = request.json
     env_map = {
         "systemEnabled": "SYSTEM_ENABLED",
@@ -2442,12 +2469,15 @@ def update_settings():
         "logsPath": "SYSTEM_LOGS_PATH",
         "entitiesDataPath": "ENTITIES_DATA_PATH",
         "smtpEmail": "SMTP_EMAIL",
-        "smtpPassword": "SMTP_PASSWORD"
+        "smtpPassword": "SMTP_PASSWORD",
+        "smtpHost": "SMTP_HOST",
+        "smtpPort": "SMTP_PORT",
+        "currency": "CURRENCY"
     }
     
     # Check if SMTP settings are being updated
     smtp_updated = False
-    if 'smtpEmail' in data or 'smtpPassword' in data:
+    if 'smtpEmail' in data or 'smtpPassword' in data or 'smtpHost' in data or 'smtpPort' in data:
         smtp_updated = True
     
     # Read current .env
@@ -2483,6 +2513,7 @@ def update_settings():
 
 @app.route('/api/settings', methods=['GET'])
 def get_settings():
+   
     env_map = {
         "systemEnabled": "SYSTEM_ENABLED",
         "systemName": "SYSTEM_NAME",
@@ -2496,7 +2527,10 @@ def get_settings():
         "logsPath": "SYSTEM_LOGS_PATH",
         "entitiesDataPath": "ENTITIES_DATA_PATH",
         "smtpEmail": "SMTP_EMAIL",
-        "smtpPassword": "SMTP_PASSWORD"
+        "smtpPassword": "SMTP_PASSWORD",
+        "smtpHost": "SMTP_HOST",
+        "smtpPort": "SMTP_PORT",
+        "currency": "CURRENCY"
     }
     env_vars = {k: '' for k in env_map.keys()}
     if os.path.exists(SETTINGS_ENV_PATH):
@@ -2507,6 +2541,8 @@ def get_settings():
                     for frontend_key, env_key in env_map.items():
                         if k == env_key:
                             env_vars[frontend_key] = v
+                            
+                           
     # Convert booleans and numbers
     env_vars["systemEnabled"] = env_vars["systemEnabled"].lower() == "true"
     for key in ["maxUsers", "maxEntities", "maxExternalEntities", "maxFileSize"]:
@@ -2661,8 +2697,8 @@ L'équipe RAN ESMERALD
         # Reload environment variables to get the latest SMTP settings
         load_dotenv(SETTINGS_ENV_PATH, override=True)
         
-        smtp_host = "smtp.gmail.com"
-        smtp_port = 587
+        smtp_host = os.environ.get('SMTP_HOST', 'smtp.gmail.com')
+        smtp_port = os.environ.get('SMTP_PORT', 587)
         smtp_user = os.environ.get('SMTP_EMAIL', 'ranesmerald@gmail.com')
         smtp_pass = os.environ.get('SMTP_PASSWORD', 'tvkw cnff wpge eccz')
         
@@ -2731,7 +2767,7 @@ L'équipe RAN ESMERALD
         # Log activity
         log_activity(
             actor=current_username,
-            action="Send Email",
+            action="envoi d\'Email",
             resource_type="document",
             resource_data={
                 'id': document_id,
@@ -2861,8 +2897,8 @@ def upload_temp_documents():
         # Log the temporary document creation
         log_activity(
             actor=current_user_claims['username'],
-            action="Create",
-            resource_type="tempdocument",
+            action="Creation",
+            resource_type="documenttemp",
             resource_data={
                 'id': temp_doc_id,
                 'filename': filename,
@@ -2906,8 +2942,8 @@ def delete_temp_document(doc_id):
         # Log the temporary document deletion before deleting
         log_activity(
             actor=current_user_claims['username'],
-            action="Delete",
-            resource_type="tempdocument",
+            action="Supprission",
+            resource_type="documenttemp",
             resource_data={
                 'id': doc_id,
                 'filename': temp_doc_data['filename'],
@@ -2916,6 +2952,7 @@ def delete_temp_document(doc_id):
         )
         
         db.execute_query("DELETE FROM temp_documents WHERE id = %s", (doc_id,))
+        print("deleted")
         # Optionally delete the file from disk
         if file_path and os.path.exists(file_path):
             os.remove(file_path)

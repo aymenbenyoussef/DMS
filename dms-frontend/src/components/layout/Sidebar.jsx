@@ -3,8 +3,10 @@ import API from '../../api';
 import './Sidebar.css';
 import { useNavigate } from 'react-router-dom'; 
 import { AppContext } from '../context';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const Sidebar = ({ user, loadingUser, isOpen }) => {
+  const { t } = useLanguage();
   const [companies, setCompanies] = useState([]);
   const [folders, setFolders] = useState({});
   const [error, setError] = useState('');
@@ -220,18 +222,10 @@ const Sidebar = ({ user, loadingUser, isOpen }) => {
         <svg xmlns="http://www.w3.org/2000/svg" className="company-icon" viewBox="0 0 24 24" fill="currentColor">
           <path d="M3 21v-2h18v2H3zm2-3V3h6v15H5zm8 0V7h6v11h-6z" />
         </svg>
-        <h2>Entités</h2>
+        <h2>{t('company')}</h2>
       </header>
 
       {/* A verifier button */}
-      
-
-      {(error || timeoutError) && (
-        <div className="error-message" style={{display:'flex',flexDirection:'column',alignItems:'center',gap:'8px'}}>
-          {error || (timeoutError && 'Le chargement prend trop de temps.')}<br/>
-          <button className="btn btn-primary" onClick={handleRetry} style={{marginTop:'8px'}}>Réessayer</button>
-        </div>
-      )}
       <li 
           className="folder-item2"
           onClick={() => {
@@ -240,17 +234,21 @@ const Sidebar = ({ user, loadingUser, isOpen }) => {
           }}
           style={{ listStyle: 'none' }}
         >
-          <span className="folder-name2">À verifier ({tempDocumentsCount})</span>
+          <span className="folder-name2">{t('toVerify')} ({tempDocumentsCount})</span>
         </li>
+      {(error || timeoutError) && (
+        <div className="error-message" style={{display:'flex',flexDirection:'column',alignItems:'center',gap:'8px'}}>
+          {error || (timeoutError && t('loadingTimeout'))}<br/>
+          <button className="btn btn-primary" onClick={handleRetry} style={{marginTop:'8px'}}>{t('retry')}</button>
+        </div>
+      )}
       <ul className="folder-list" role="list">
-        
         {loadingStates.companies && !timeoutError ? (
           <div className="loading-container">
             <div className="loading-spinner"></div>
-            
           </div>
         ) : (!error && !timeoutError && companies.length === 0) ? (
-          <div className="no-results">Aucune entreprise trouvée</div>
+          <div className="no-results">{t('noCompaniesFound')}</div>
         ) : (!error && !timeoutError && companies.map) ? (
           companies.filter(company => {
             // Show all companies for admin and superuser, only active ones for regular users
@@ -281,12 +279,12 @@ const Sidebar = ({ user, loadingUser, isOpen }) => {
                   </svg>
                 )}
               </li>
-              {expandedCompany === company.id && company.name !== 'À verifier' && (
+              {expandedCompany === company.id && company.name !== t('toVerify') && (
                 <div className="folder-subitems">
                   {loadingStates.folders[company.id] ? (
                     <div className="loading-container small">
                       <div className="loading-spinner"></div>
-                      <span>Chargement des dossiers...</span>
+                      <span>{t('loadingFolders')}</span>
                     </div>
                   ) : (
                     folders[company.id]?.length > 0 ? (
@@ -312,7 +310,7 @@ const Sidebar = ({ user, loadingUser, isOpen }) => {
                         </li>
                       ))
                     ) : (
-                      <div className="no-results small">Aucun dossier trouvé</div>
+                      <div className="no-results small">{t('noFoldersFound')}</div>
                     )
                   )}
                 </div>

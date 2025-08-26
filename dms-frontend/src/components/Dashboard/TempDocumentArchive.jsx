@@ -5,9 +5,11 @@ import { AppContext } from '../context';
 import DocumentConfirmationForm from './DocumentConfirmationForm';
 import DmsTempUploadModal from './DmsTempUploadModal';
 import { exportToCSV, exportToJSON, exportToTXT, exportToExcel } from '../Admin/exportUtils';
+import { useLanguage } from '../../contexts/LanguageContext';
 import './TempDocumentArchive.css';
 
 const TempDocumentArchive = ({ user }) => {
+  const { t } = useLanguage();
   const { selectedCompany, selectedDoctype, setSelectedCompany, setSelectedDoctype } = useContext(AppContext);
 
   const getOneMonthAgo = () => {
@@ -133,11 +135,11 @@ const TempDocumentArchive = ({ user }) => {
 
   const getNoDataMessage = () => {
     if (documents.length === 0) {
-      return "Il n'y a pas de données";
+      return t('noData');
     } else if (hasActiveFilters()) {
-      return "Aucune donnée ne correspond aux filtres actuels";
+      return t('noResultsFound');
     } else {
-      return "Il n'y a pas de données";
+      return t('noData');
     }
   };
 
@@ -158,7 +160,7 @@ const TempDocumentArchive = ({ user }) => {
       setCurrentDocument(doc);
       setIsPreviewModalOpen(true);
     } catch (error) {
-      alert('Erreur lors de la prévisualisation.');
+      alert(t('previewError'));
     }
   };
 
@@ -179,7 +181,7 @@ const TempDocumentArchive = ({ user }) => {
       setIsDeleteModalOpen(false);
       setDeletingDocument(null);
     } catch (error) {
-      setDeleteError('Erreur lors de la suppression.');
+      setDeleteError(t('deleteError'));
     } finally {
       setIsDeleting(false);
     }
@@ -218,7 +220,7 @@ const TempDocumentArchive = ({ user }) => {
       setShowConfirmationModal(true);
     } catch (error) {
       console.error('Error processing document:', error);
-      alert('Erreur lors du traitement du document: ' + (error.response?.data?.msg || error.message));
+      alert(t('processError') + (error.response?.data?.msg || error.message));
     } finally {
       setProcessingDocId(null);
     }
@@ -253,7 +255,7 @@ const TempDocumentArchive = ({ user }) => {
         await API.tempDocuments.delete(currentDocument.id);
         console.log('Temp document deleted successfully');
         // Show success message, close modal, refresh documents
-        setSuccessMessage('Déplacement fait avec succès');
+        setSuccessMessage(t('moveSuccess'));
         setShowConfirmationModal(false);
         setConfirmationData(null);
         fetchDocuments();
@@ -263,7 +265,7 @@ const TempDocumentArchive = ({ user }) => {
       }
     } catch (error) {
       console.error('Error confirming document:', error);
-      alert('Erreur lors de la confirmation: ' + (error.response?.data?.msg || error.message));
+      alert(t('confirmError') + (error.response?.data?.msg || error.message));
     }
   };
 
@@ -338,9 +340,9 @@ const TempDocumentArchive = ({ user }) => {
 
   const handleExport = (type) => {
     const columns = [
-      { key: 'id', label: 'ID' },
-      { key: 'filename', label: 'Document' },
-      { key: 'created_at', label: 'Date d\'upload' }
+      { key: 'id', label: t('id') },
+      { key: 'filename', label: t('filename') },
+      { key: 'created_at', label: t('uploadDate') }
     ];
     const data = filteredDocuments.map(doc => ({
       id: doc.id,
@@ -403,17 +405,17 @@ const TempDocumentArchive = ({ user }) => {
             <div className="d-flex justify-content-between align-items-center mb-2">
               <h4 className="mb-0 text-dark fw-bold d-flex align-items-center gap-2">
                 <i className="fas fa-history me-2 text-primary"></i>
-                Documents Temporaires
+                {t('tempDocuments')}
               </h4>
               <div className="d-flex gap-2">
                 
                 <button
                   className="btn btn-outline-secondary btn-sm"
                   onClick={() => setIsFilterCollapsed(!isFilterCollapsed)}
-                  title={isFilterCollapsed ? "Afficher les filtres" : "Masquer les filtres"}
+                  title={isFilterCollapsed ? t('showFilters') : t('hideFilters')}
                 >
                   <i className={`fas fa-${isFilterCollapsed ? 'filter' : 'times'}`}></i>
-                  <span className="ms-1">Filtres</span>
+                  <span className="ms-1">{t('filters')}</span>
                 </button>
                 <div className="dropdown">
                   <button
@@ -422,21 +424,21 @@ const TempDocumentArchive = ({ user }) => {
                     ref={exportMenuRef}
                   >
                     <i className="fas fa-download me-1"></i>
-                    Exporter
+                    {t('export')}
                   </button>
                   {exportMenuOpen && (
                     <div className="dropdown-menu show">
                       <button className="dropdown-item" onClick={() => handleExport('csv')}>
-                        <i className="fas fa-file-csv me-2"></i>CSV
+                        <i className="fas fa-file-csv me-2"></i>{t('exportCSV')}
                       </button>
                       <button className="dropdown-item" onClick={() => handleExport('excel')}>
-                        <i className="fas fa-file-excel me-2"></i>Excel
+                        <i className="fas fa-file-excel me-2"></i>{t('exportExcel')}
                       </button>
                       <button className="dropdown-item" onClick={() => handleExport('json')}>
-                        <i className="fas fa-file-code me-2"></i>JSON
+                        <i className="fas fa-file-code me-2"></i>{t('exportJSON')}
                       </button>
                       <button className="dropdown-item" onClick={() => handleExport('txt')}>
-                        <i className="fas fa-file-alt me-2"></i>TXT
+                        <i className="fas fa-file-alt me-2"></i>{t('exportTXT')}
                       </button>
                     </div>
                   )}
@@ -446,7 +448,7 @@ const TempDocumentArchive = ({ user }) => {
                   onClick={() => setIsUploadModalOpen(true)}
                 >
                   <i className="fas fa-upload me-1"></i>
-                  Télécharger
+                  {t('upload')}
                 </button>
               </div>
             </div>
@@ -457,19 +459,19 @@ const TempDocumentArchive = ({ user }) => {
                 <table className="table table-sm table-hover mb-0" style={{tableLayout: 'fixed', width: '100%'}}>
                   <thead className="table-light sticky-top">
                     <tr>
-                      <th style={{ width: '20px', cursor: 'pointer' }} className="text-center" onClick={() => handleSort('id')} title="Trier par ID">ID</th>
-                      <th style={{ width: '120px', cursor: 'pointer' }} onClick={() => handleSort('filename')} title="Trier par nom de fichier">Fichier</th>
+                      <th style={{ width: '20px', cursor: 'pointer' }} className="text-center" onClick={() => handleSort('id')} title={t('sortById')}>{t('id')}</th>
+                      <th style={{ width: '120px', cursor: 'pointer' }} onClick={() => handleSort('filename')} title={t('sortByFilename')}>{t('filename')}</th>
                       {(user?.role === 'admin' || user?.role === 'superuser') && (
-                        <th style={{ width: '120px', cursor: 'pointer' }} onClick={() => handleSort('owner')} title="Trier par propriétaire">Propriétaire</th>
+                        <th style={{ width: '120px', cursor: 'pointer' }} onClick={() => handleSort('owner')} title={t('sortByOwner')}>{t('owner')}</th>
                       )}
-                      <th style={{ width: '90px', cursor: 'pointer' }} className="text-center" onClick={() => handleSort('created_at')} title="Trier par date">Date</th>
-                      <th style={{ width: '120px' }} className="text-center">Actions</th>
+                      <th style={{ width: '90px', cursor: 'pointer' }} className="text-center" onClick={() => handleSort('created_at')} title={t('sortByDate')}>{t('date')}</th>
+                      <th style={{ width: '120px' }} className="text-center">{t('actions')}</th>
                     </tr>
                     <tr className="bg-light">
-                      <th><input type="text" className="form-control form-control-sm" placeholder="ID..." value={columnFilters.id} onChange={(e) => handleColumnFilterChange('id', e.target.value)} /></th>
-                      <th><input type="text" className="form-control form-control-sm" placeholder="Nom du fichier..." value={columnFilters.filename} onChange={(e) => handleColumnFilterChange('filename', e.target.value)} /></th>
+                      <th><input type="text" className="form-control form-control-sm" placeholder={t('idPlaceholder')} value={columnFilters.id} onChange={(e) => handleColumnFilterChange('id', e.target.value)} /></th>
+                      <th><input type="text" className="form-control form-control-sm" placeholder={t('filenamePlaceholder')} value={columnFilters.filename} onChange={(e) => handleColumnFilterChange('filename', e.target.value)} /></th>
                       {(user?.role === 'admin' || user?.role === 'superuser') && (
-                        <th><input type="text" className="form-control form-control-sm" placeholder="Propriétaire..." value={columnFilters.owner} onChange={(e) => handleColumnFilterChange('owner', e.target.value)} /></th>
+                        <th><input type="text" className="form-control form-control-sm" placeholder={t('ownerPlaceholder')} value={columnFilters.owner} onChange={(e) => handleColumnFilterChange('owner', e.target.value)} /></th>
                       )}
                       <th></th>
                       <th></th>
@@ -487,7 +489,7 @@ const TempDocumentArchive = ({ user }) => {
                     </colgroup>
                     <tbody>
                       {isLoading ? (
-                        <tr><td colSpan={user?.role === 'admin' || user?.role === 'superuser' ? "5" : "4"} className="text-center py-4">Chargement...</td></tr>
+                        <tr><td colSpan={user?.role === 'admin' || user?.role === 'superuser' ? "5" : "4"} className="text-center py-4">{t('loading')}</td></tr>
                       ) : filteredDocuments.length > 0 ? (
                         filteredDocuments.map(doc => (
                           <tr 
@@ -510,7 +512,7 @@ const TempDocumentArchive = ({ user }) => {
                                 }} 
                                 disabled={processingDocId === doc.id}
                               >
-                                {processingDocId === doc.id ? 'Déplacement...' : 'Déplacer'}
+                                {processingDocId === doc.id ? t('moving') : t('move')}
                               </button>
                               <button 
                                 className="btn btn-sm btn-outline-danger me-1" 
@@ -520,7 +522,7 @@ const TempDocumentArchive = ({ user }) => {
                                   handleDeleteDocument(doc);
                                 }}
                               >
-                                Supprimer
+                                {t('delete')}
                               </button>
                             </td>
                           </tr>
@@ -541,11 +543,11 @@ const TempDocumentArchive = ({ user }) => {
                 <div className="card-header bg-light py-2">
                   <h6 className="mb-0 d-flex align-items-center">
                     <i className="fas fa-filter me-2 text-primary"></i>
-                    Filtres
+                    {t('filters')}
                     <button
                       className="btn btn-link btn-sm ms-auto p-0"
                       onClick={handleResetFilters}
-                      title="Effacer tous les filtres"
+                      title={t('clearAllFilters')}
                     >
                       <i className="fas fa-times text-muted"></i>
                     </button>
@@ -554,12 +556,12 @@ const TempDocumentArchive = ({ user }) => {
                 <div className="card-body p-3 overflow-auto">
                   {/* Search */}
                   <div className="mb-3">
-                    <label className="form-label small fw-bold">Recherche</label>
+                    <label className="form-label small fw-bold">{t('search')}</label>
                     <div className="input-group input-group-sm">
                       <input
                         type="text"
                         className="form-control"
-                        placeholder="Rechercher..."
+                        placeholder={t('searchPlaceholder')}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                       />
@@ -568,7 +570,7 @@ const TempDocumentArchive = ({ user }) => {
 
                   {/* Date Range */}
                   <div className="mb-3">
-                    <label className="form-label small fw-bold">Période</label>
+                    <label className="form-label small fw-bold">{t('dateRange')}</label>
                     <div className="row g-2">
                       <div className="col-6">
                         <input
@@ -740,7 +742,7 @@ const TempDocumentArchive = ({ user }) => {
                       display: 'block'
                     }}></i>
                     <p style={{ fontSize: '18px', marginBottom: '24px' }}>
-                      Prévisualisation non supportée pour ce type de fichier
+                      {t('previewNotSupported')}
                     </p>
                   </div>
                 )}
@@ -761,7 +763,7 @@ const TempDocumentArchive = ({ user }) => {
                   fontWeight: 600,
                   color: '#1f2937'
                 }}>
-                  Informations du document
+                  {t('documentInfo')}
                 </h4>
                 
                 <div style={{ marginBottom: '16px' }}>
@@ -772,7 +774,7 @@ const TempDocumentArchive = ({ user }) => {
                     display: 'block',
                     marginBottom: '4px'
                   }}>
-                    Nom du fichier
+                    {t('filename')}
                   </label>
                   <p style={{
                     margin: 0,
@@ -792,7 +794,7 @@ const TempDocumentArchive = ({ user }) => {
                     display: 'block',
                     marginBottom: '4px'
                   }}>
-                    Date d'upload
+                    {t('uploadDate')}
                   </label>
                   <p style={{
                     margin: 0,
@@ -811,7 +813,7 @@ const TempDocumentArchive = ({ user }) => {
                     display: 'block',
                     marginBottom: '4px'
                   }}>
-                    ID du document
+                    {t('documentId')}
                   </label>
                   <p style={{
                     margin: 0,
@@ -836,21 +838,21 @@ const TempDocumentArchive = ({ user }) => {
               <div className="modal-header">
                 <h5 className="modal-title d-flex align-items-center">
                   <i className="bi bi-trash me-2 text-danger" style={{ fontSize: '1.5rem' }}></i>
-                  Confirmation de suppression
+                  {t('confirmDelete')}
                 </h5>
                 <button 
                   type="button" 
                   className="btn-close" 
                   onClick={handleCancelDelete}
-                  aria-label="Fermer"
+                  aria-label={t('close')}
                 ></button>
               </div>
               <div className="modal-body" style={{ padding: '2rem 2.5rem', textAlign: 'center' }}>
                 <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>
-                  Êtes-vous sûr de vouloir supprimer ce document&nbsp;?
+                  {t('deleteConfirmation')}
                 </p>
                 <p className="text-muted" style={{ fontSize: '0.98rem', marginBottom: 0 }}>
-                  Cette action est <strong>irréversible</strong> et entraînera la suppression définitive du document.
+                  {t('deleteWarning')}
                 </p>
                 {deleteError && <div className="alert alert-danger mt-3">{deleteError}</div>}
               </div>
@@ -862,7 +864,7 @@ const TempDocumentArchive = ({ user }) => {
                   disabled={isDeleting}
                   style={{backgroundColor: '#6c757d', color: 'white'}}
                 >
-                  Annuler
+                  {t('cancel')}
                 </button>
                 <button 
                   type="button" 
@@ -872,11 +874,11 @@ const TempDocumentArchive = ({ user }) => {
                   style={{backgroundColor: 'orangered'}}
                 >
                   {isDeleting ? (
-                    'Suppression...'
+                    t('deleting')
                   ) : (
                     <>
                       <i className="bi bi-trash me-2"></i>
-                      Supprimer
+                      {t('delete')}
                     </>
                   )}
                 </button>
@@ -906,9 +908,9 @@ const TempDocumentArchive = ({ user }) => {
             <div className="modal-header">
               <div className="modal-header__content">
                 <div className="modal-header__icon">📋</div>
-                <h2 className="modal-title">Confirmation du document</h2>
+                <h2 className="modal-title">{t('documentConfirmation')}</h2>
               </div>
-              <button className="modal-close-btn" onClick={handleCancelConfirmation} aria-label="Fermer">
+              <button className="modal-close-btn" onClick={handleCancelConfirmation} aria-label={t('close')}>
                 ×
               </button>
             </div>

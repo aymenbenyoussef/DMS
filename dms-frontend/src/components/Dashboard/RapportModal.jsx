@@ -114,25 +114,18 @@ function RapportModal(props) {
   };
   const handleContextDownload = async () => {
     if (!currentDocument) return;
-    
-    // If viewing a report (has tabs), download based on active tab
-    if (previewTitle.includes('_rapport.pdf')) {
-      switch (activeTab) {
-        case 'report':
-          await handleRapportDownload(currentDocument);
-          break;
-        case 'ocr':
-          await handleOcrTextDownload(currentDocument);
-          break;
-        case 'actions':
-          await handleDownload(currentDocument);
-          break;
-        default:
-          await handleDownload(currentDocument);
-      }
-    } else {
-      // For regular documents, download the document
-      await handleDownload(currentDocument);
+
+    switch (activeTab) {
+      case 'rapport':
+        await handleRapportDownload(currentDocument);
+        break;
+      case 'ocr':
+        await handleOcrTextDownload(currentDocument);
+        break;
+      case 'report':
+      default:
+        await handleDownload(currentDocument);
+        break;
     }
   };
   useEffect(() => {
@@ -530,7 +523,7 @@ function RapportModal(props) {
                   <div className="sidebar-actions">
                     <button 
                       className="action-btn action-btn--primary"
-                      onClick={() => handleContextDownload && handleContextDownload('pdf')}
+                      onClick={handleContextDownload}
                     >
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
