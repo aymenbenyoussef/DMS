@@ -22,26 +22,84 @@ const EditDocumentForm = ({ document, onSave, onCancel, isLoading }) => {
   // Initialize form data when document changes
   useEffect(() => {
     if (document) {
-      // Extract data from confirmed_data if it exists, otherwise use direct document properties
-      const confirmedData = document.confirmed_data ? 
-        (typeof document.confirmed_data === 'string' ? 
-          JSON.parse(document.confirmed_data) : 
-          document.confirmed_data) : {};
+      console.log("Document data:", document);
+      
+      // Extract data from confirmed_data if it exists
+      let confirmedData = {};
+      if (document.confirmed_data) {
+        try {
+          confirmedData = typeof document.confirmed_data === 'string' 
+            ? JSON.parse(document.confirmed_data) 
+            : document.confirmed_data;
+          console.log("Confirmed data:", confirmedData);
+        } catch (e) {
+          console.error("Error parsing confirmed_data:", e);
+        }
+      }
+      
       // Extract data from extracted_data if it exists
-      const extractedData = document.extracted_data ? 
-        (typeof document.extracted_data === 'string' ? 
-          JSON.parse(document.extracted_data) : 
-          document.extracted_data) : {};
+      let extractedData = {};
+      if (document.extracted_data) {
+        try {
+          extractedData = typeof document.extracted_data === 'string' 
+            ? JSON.parse(document.extracted_data) 
+            : document.extracted_data;
+          console.log("Extracted data:", extractedData);
+        } catch (e) {
+          console.error("Error parsing extracted_data:", e);
+        }
+      }
+
+      // Helper function to get value from multiple sources
+      const getValue = (confirmedKey, documentKey, extractedKey, defaultValue = '') => {
+        if (confirmedData[confirmedKey] !== undefined && confirmedData[confirmedKey] !== null && confirmedData[confirmedKey] !== '') {
+          console.log(`Using confirmedData.${confirmedKey}:`, confirmedData[confirmedKey]);
+          return confirmedData[confirmedKey];
+        }
+        if (document[documentKey] !== undefined && document[documentKey] !== null && document[documentKey] !== '') {
+          console.log(`Using document.${documentKey}:`, document[documentKey]);
+          return document[documentKey];
+        }
+        if (extractedData[extractedKey] !== undefined && extractedData[extractedKey] !== null && extractedData[extractedKey] !== '') {
+          console.log(`Using extractedData.${extractedKey}:`, extractedData[extractedKey]);
+          return extractedData[extractedKey];
+        }
+        console.log(`No value found for ${confirmedKey}/${documentKey}/${extractedKey}, using default:`, defaultValue);
+        return defaultValue;
+      };
+
+      // For date fields, we need to handle both string and Date objects
+      const getDateValue = (confirmedKey, documentKey, extractedKey, defaultValue = '') => {
+        let value = getValue(confirmedKey, documentKey, extractedKey, defaultValue);
+        
+        if (value instanceof Date) {
+          return value.toISOString().split('T')[0];
+        }
+        
+        if (typeof value === 'string') {
+          // Handle MySQL date format (YYYY-MM-DD)
+          if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+            return value;
+          }
+          // Handle ISO string format
+          if (value.includes('T')) {
+            return value.split('T')[0];
+          }
+          // Handle other date formats if needed
+        }
+        
+        return value;
+      };
 
       setFormData({
-        partner_id: confirmedData.partner_id !== undefined ? confirmedData.partner_id : (document.partner_id !== undefined ? document.partner_id : (extractedData.partner_id !== undefined ? extractedData.partner_id : '')),
-        partner_name: confirmedData.partner !== undefined ? confirmedData.partner : (document.partner_name !== undefined ? document.partner_name : (extractedData.partner !== undefined ? extractedData.partner : '')),
-        is_invoice: confirmedData.is_invoice !== undefined ? confirmedData.is_invoice : (document.is_invoice !== undefined ? document.is_invoice : (extractedData.is_invoice !== undefined ? extractedData.is_invoice : false)),
-        invoice_number: confirmedData.invoice_number !== undefined ? confirmedData.invoice_number : (document.invoice_number !== undefined ? document.invoice_number : (extractedData.invoice_number !== undefined ? extractedData.invoice_number : (confirmedData.invoice_number !== undefined ? confirmedData.invoice_number : ''))),
-        invoice_date: confirmedData.date !== undefined ? confirmedData.date : (document.invoice_date !== undefined ? document.invoice_date : (extractedData.date !== undefined ? extractedData.date : (confirmedData.invoice_date !== undefined ? confirmedData.invoice_date : (extractedData.invoice_date !== undefined ? extractedData.invoice_date : '')))),
-        total_ht: confirmedData.total_ht !== undefined ? confirmedData.total_ht : (document.total_ht !== undefined ? document.total_ht : (extractedData.total_ht !== undefined ? extractedData.total_ht : '')),
-        tva: confirmedData.tva !== undefined ? confirmedData.tva : (document.tva !== undefined ? document.tva : (extractedData.tva !== undefined ? extractedData.tva : '')),
-        total_ttc: confirmedData.total_ttc !== undefined ? confirmedData.total_ttc : (document.total_ttc !== undefined ? document.total_ttc : (extractedData.total_ttc !== undefined ? extractedData.total_ttc : '')),
+        partner_id: getValue('partner_id', 'partner_id', 'partner_id'),
+        partner_name: getValue('partner', 'partner_name', 'partner'),
+        is_invoice: getValue('is_invoice', 'is_invoice', 'is_invoice', false),
+        invoice_number: getValue('invoice_number', 'invoice_number', 'invoice_number'),
+        invoice_date: getDateValue('date', 'invoice_date', 'date'),
+        total_ht: getValue('total_ht', 'total_ht', 'total_ht'),
+        tva: getValue('tva', 'tva', 'tva'),
+        total_ttc: getValue('total_ttc', 'total_ttc', 'total_ttc'),
         filename: document.filename || '',
       });
     }
@@ -354,4 +412,3 @@ const EditDocumentForm = ({ document, onSave, onCancel, isLoading }) => {
 };
 
 export default EditDocumentForm;
-

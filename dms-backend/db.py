@@ -1121,6 +1121,7 @@ class DatabaseManager:
                 ORDER BY d.created_at DESC
             """
             return self.execute_query(query, (company_id,), fetch=True)
+        
     def update_document(self, document_id, name=None, partner_id=None,  is_invoice=None, invoice_number=None, invoice_date=None, total_ht=None, tva=None, total_ttc=None):
         updates = []
         params = []
