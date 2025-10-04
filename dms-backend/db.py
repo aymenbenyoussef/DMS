@@ -19,6 +19,15 @@ DB_CONFIG = {
 }
 
 class DatabaseManager:
+    def delete_multiple_documents(self, document_ids):
+        if not document_ids:
+            return 0
+        query = "UPDATE documents SET flag = FALSE WHERE id IN (%s)" % (', '.join(['%s'] * len(document_ids)))
+        try:
+            self.execute_query(query, tuple(document_ids))
+            return len(document_ids)
+        except:
+            return 0
     def __init__(self):
         self.pool = pooling.MySQLConnectionPool(pool_name='mypool', pool_size=20, **DB_CONFIG)
 
@@ -1727,7 +1736,7 @@ class DatabaseManager:
 
     def get_all_temp_documents(self, start_date=None, end_date=None, owner_id=None, user_role=None):
         query = """
-            SELECT td.*, u.username as owner_name 
+            SELECT td.*, u.username as owner_name , u.surname as owner_surname
             FROM temp_documents td 
             LEFT JOIN users u ON td.owner_id = u.id 
             WHERE 1=1

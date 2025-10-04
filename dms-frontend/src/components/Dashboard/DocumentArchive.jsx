@@ -13,6 +13,31 @@ import RapportModal from './RapportModal';
 import ShareModal from './ShareModal';
 
 const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
+  // Bulk delete handler
+  const handleBulkDelete = async (documentIds) => {
+    try {
+      await API.documents.deleteMultiple(documentIds);
+      // Remove deleted documents from state
+      setDocuments(prev => prev.filter(doc => !documentIds.includes(doc.id)));
+      setFilteredDocuments(prev => prev.filter(doc => !documentIds.includes(doc.id)));
+      setCheckedDocuments([]);
+      setSuccessMessage('Documents supprimés avec succès');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (error) {
+      setError('Erreur lors de la suppression multiple');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
+  // State for bulk delete modal
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
+  // State and ref for Action Global dropdown
+  const [globalActionMenuOpen, setGlobalActionMenuOpen] = useState(false);
+  const globalActionMenuRef = useRef(null);
+  // State for global action selection mode
+  const [isGlobalActionMode, setIsGlobalActionMode] = useState(false);
+  const [globalActionType, setGlobalActionType] = useState(''); // 'delete' or 'send'
+  const [checkedDocuments, setCheckedDocuments] = useState([]);
   const [currency, setCurrency] = useState('dt');
 
   // Helper function to get first day of current month
@@ -654,25 +679,22 @@ const getOneMonthAgo = () => {
         if (key === 'billable') {
           const fv = filterValue.toString().toLowerCase();
           filtered = filtered.filter(doc => {
-            
             const isBillable = (parseFloat(doc.total_ht || 0) > 0) || (parseFloat(doc.total_ttc || 0) > 0);
             if (fv === 'oui' || fv === 'yes' || fv === 'true') return isBillable;
             if (fv === 'non' || fv === 'no' || fv === 'false') return !isBillable;
-            
-            // Fallback to text match on computed value
             return (isBillable ? 'oui' : 'non').includes(fv);
           });
+        } else if (key === 'partner_name' && Array.isArray(filterValue) && filterValue.length > 0) {
+          filtered = filtered.filter(doc => filterValue.includes(doc.partner_name));
         } else {
           filtered = filtered.filter(doc => {
             const docValue = doc[key];
             if (docValue === null || docValue === undefined) return false;
-            // Use mathematical operations for TVA, HT, and TTC fields
             if (key === 'tva' || key === 'total_ht' || key === 'total_ttc') {
               return applyMathFilter(docValue, filterValue);
             }
-            return docValue.toString().toLowerCase().includes(filterValue.toLowerCase());
+            return docValue.toString().toLowerCase().includes(filterValue.toString().toLowerCase());
           });
-
         }
       }
     });
@@ -1075,7 +1097,7 @@ const getOneMonthAgo = () => {
                 <i className="fas fa-building me-2 text-primary"></i>
                 {selectedCompany ? (
                   <>
-                    <span className="text-truncate" style={{ maxWidth: '320px' }}>{selectedCompany.name}</span>
+                    <span className="text-truncate" style={{ maxWidth: '320px' }}>&gt; {selectedCompany.name}</span>
                     {selectedDoctype && (
                       <span className="badge bg-primary ms-2 fs-6">
                         {selectedDoctype.name}
@@ -1090,6 +1112,112 @@ const getOneMonthAgo = () => {
                 )}
               </h4>
               <div className="d-flex gap-2">
+                {isGlobalActionMode && (
+                  <>
+                    <button
+                      className="btn btn-outline-secondary btn-sm"
+                      onClick={() => {
+                        setIsGlobalActionMode(false);
+                        setGlobalActionType('');
+                        setCheckedDocuments([]);
+                      }}
+                    >
+                      <i className="fas fa-times me-1"></i>
+                      Annuler
+                    </button>
+                    <button
+                      className="btn btn-outline-success btn-sm"
+                      disabled={checkedDocuments.length === 0}
+                      style={checkedDocuments.length === 0 ? { color: 'black' } : {}}
+                      onClick={() => {
+                        if (checkedDocuments.length === 0) return;
+                        if (globalActionType === 'delete') {
+                          setIsBulkDeleteModalOpen(true);
+                        } else if (globalActionType === 'send') {
+                          // Call send logic for checkedDocuments
+                          // Example: handleBulkSend(checkedDocuments);
+                        }
+                      }}
+                    >
+                      <i className="fas fa-check me-1"></i>
+                      Confirmer
+                    </button>
+                  </>
+                )}
+      {/* Bulk Delete Confirmation Modal - matches single delete modal design */}
+      {isBulkDeleteModalOpen && (
+        <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog" style={{ marginTop: '120px' }}>
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title d-flex align-items-center">
+                  <i className="bi bi-trash me-2 text-danger" style={{ fontSize: '1.5rem' }}></i>
+                  Confirmation de suppression
+                </h5>
+                <button 
+                  type="button" 
+                  className="btn-close" 
+                  onClick={() => setIsBulkDeleteModalOpen(false)}
+                  aria-label="Fermer"
+                ></button>
+              </div>
+              <div className="modal-body" style={{ padding: '2rem 2.5rem', textAlign: 'center' }}>
+                <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>
+                  Êtes-vous sûr de vouloir supprimer {checkedDocuments.length} document(s)&nbsp;?
+                </p>
+                <p className="text-muted" style={{ fontSize: '0.98rem', marginBottom: 0 }}>
+                  Cette action est <strong>irréversible</strong> et entraînera la suppression définitive des documents sélectionnés.
+                </p>
+              </div>
+              <div className="modal-footer" style={{ justifyContent: 'center', gap: '1rem' }}>
+                <button 
+                  type="button" 
+                  className="btn btn-secondary"
+                  onClick={() => setIsBulkDeleteModalOpen(false)}
+                  style={{backgroundColor: '#6c757d', color: 'white'}}
+                >
+                  Annuler
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-danger"
+                  onClick={async () => {
+                    await handleBulkDelete(checkedDocuments);
+                    setIsBulkDeleteModalOpen(false);
+                    setIsGlobalActionMode(false);
+                    setGlobalActionType('');
+                    setCheckedDocuments([]);
+                  }}
+                  style={{backgroundColor: 'orangered'}}
+                >
+                  <i className="bi bi-trash me-2"></i>
+                  Supprimer
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+                <div className="dropdown">
+                  <button
+                    className="btn btn-outline-secondary btn-sm dropdown-toggle"
+                    onClick={() => setGlobalActionMenuOpen(!globalActionMenuOpen)}
+                    ref={globalActionMenuRef}
+                  >
+                    <i className="fas fa-cogs me-1"></i>
+                    Action Global
+                  </button>
+                  {globalActionMenuOpen && (
+                    <div className="dropdown-menu show">
+                      <button className="dropdown-item" onClick={() => { setIsGlobalActionMode(true); setGlobalActionType('delete'); setGlobalActionMenuOpen(false); }}>
+                        <i className="fas fa-trash-alt me-2"></i>Supprimer
+                      </button>
+                      <button className="dropdown-item" onClick={() => { setIsGlobalActionMode(true); setGlobalActionType('send'); setGlobalActionMenuOpen(false); }}>
+                        <i className="fas fa-paper-plane me-2"></i>Envoyer
+                      </button>
+                    </div>
+                  )}
+                </div>
                 <button
                   className="btn btn-outline-secondary btn-sm"
                   onClick={() => setIsFilterCollapsed(!isFilterCollapsed)}
@@ -1099,33 +1227,11 @@ const getOneMonthAgo = () => {
                   <span className="ms-1">Filtres</span>
                 </button>
                 <button
-                  className="btn-outline-primary btn-sm"
+                  className="btn btn-outline-secondary btn-sm"
                   onClick={openUploadModal}
                 >
                   <i className="fas fa-upload me-1"></i>
-                  Télécharger
-                </button>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="d-flex gap-2 mb-2 flex-column">
-              <div className="d-flex gap-2">
-                <button
-                  className="btn-outline-primary btn-sm"
-                  onClick={handleAddToGroup}
-                  title="Ajouter les documents sélectionnés à un groupe"
-                >
-                  <i className="fas fa-plus me-1"></i>
-                  Ajouter au groupe
-                </button>
-                <button
-                  className="btn-outline-primary btn-sm"
-                  onClick={handleCreateGroup}
-                  title="Créer un nouveau groupe"
-                >
-                  <i className="fas fa-layer-group me-1"></i>
-                  Créer un groupe
+                  Chargement
                 </button>
                 <div className="dropdown">
                   <button
@@ -1154,6 +1260,11 @@ const getOneMonthAgo = () => {
                   )}
                 </div>
               </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="d-flex gap-2 mb-2 flex-column">
+              
 
               {/* Inline group action row shown under action buttons (does not float) */}
               {isGroupMode && (
@@ -1232,123 +1343,162 @@ const getOneMonthAgo = () => {
                 <table className="table table-sm table-hover mb-0">
                   <thead className="table-light sticky-top">
                     <tr>
-                      {isGroupMode && (
+                      {isGlobalActionMode && (
                         <th style={{ width: '40px' }}>
-                          <input
-                            type="checkbox"
-                            className="form-check-input"
-                            onClick={(e) => e.stopPropagation()} /* Prevent header checkbox click from opening modal */
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedDocuments(filteredDocuments.map(doc => doc.id));
-                              } else {
-                                setSelectedDocuments([]);
-                              }
-                            }}
-                            checked={selectedDocuments.length === filteredDocuments.length && filteredDocuments.length > 0}
-                          />
+                          
                         </th>
                       )}
 
                       <th
                         style={{ width: '60px', cursor: 'pointer' }}
-                        className="text-center"
+                        className="text-start"
                         onClick={() => handleSort('id')}
                         title="Trier par ID"
                       >
-                        <div className="d-flex align-items-center justify-content-center gap-1">
+                        <div className="d-flex align-items-center justify-content-start gap-1">
                           {getSortIcon('id')}
                           <span>ID</span>
+                          <span style={{ fontSize: '1em', color: sortConfig.key === 'id' ? '#1976d2' : '#888' }}>
+                          {sortConfig.key === 'id' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}
+                        </span>
                         </div>
                       </th>
 
                       <th
                         style={{ width: '200px', cursor: 'pointer' }}
+                        className="text-start"
                         onClick={() => handleSort('filename')}
-                        title="Trier par nom de fichier"
+                        title="Trier par nom de document"
                       >
-                        <div className="d-flex align-items-center gap-1">
+                        <div className="d-flex align-items-center justify-content-start gap-1">
                           {getSortIcon('filename')}
-                          <span>Fichier</span>
+                          <span>Document</span>
+                          <span style={{ fontSize: '1em', color: sortConfig.key === 'filename' ? '#1976d2' : '#888' }}>
+                          {sortConfig.key === 'filename' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}
+                        </span>
                         </div>
                       </th>
 
                       <th
                         style={{ width: '120px', cursor: 'pointer' }}
+                        className="text-start"
                         onClick={() => handleSort('partner_name')}
                         title="Trier par partenaire"
                       >
-                        <div className="d-flex align-items-center gap-1">
+                        <div className="d-flex align-items-center justify-content-start gap-1">
                           {getSortIcon('partner_name')}
                           <span>Partenaire</span>
+                          <span style={{ fontSize: '1em', color: sortConfig.key === 'partner_name' ? '#1976d2' : '#888' }}>
+                          {sortConfig.key === 'partner_name' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}
+                        </span>
                         </div>
                       </th>
 
                       <th
                         style={{ width: '80px', cursor: 'pointer' }}
-                        className="text-center"
+                        className="text-start"
                         onClick={() => handleSort('billable')}
                         title="Trier par facturable"
                       >
-                        <div className="d-flex align-items-center justify-content-center gap-1">
+                        <div className="d-flex align-items-center justify-content-start gap-1">
                           {getSortIcon('billable')}
                           <span>Facturable</span>
+                          <span style={{ fontSize: '1em', color: sortConfig.key === 'billable' ? '#1976d2' : '#888' }}>
+                          {sortConfig.key === 'billable' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}
+                        </span>
                         </div>
                       </th>
 
                       <th
                         style={{ width: '90px', cursor: 'pointer' }}
-                        className="text-end"
+                        className="text-start"
                         onClick={() => handleSort('tva')}
                         title="Trier par TVA"
                       >
-                        <div className="d-flex align-items-center justify-content-end gap-1">
+                        <div className="d-flex align-items-center justify-content-start gap-1">
                           {getSortIcon('tva')}
                           <span>TVA</span>
+                          <span style={{ fontSize: '1em', color: sortConfig.key === 'tva' ? '#1976d2' : '#888' }}>
+                          {sortConfig.key === 'tva' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}
+                        </span>
                         </div>
                       </th>
 
                       <th
                         style={{ width: '90px', cursor: 'pointer' }}
-                        className="text-end"
+                        className="text-start"
                         onClick={() => handleSort('total_ht')}
                         title="Trier par Total HT"
                       >
-                        <div className="d-flex align-items-center justify-content-end gap-1">
+                        <div className="d-flex align-items-center justify-content-start gap-1">
                           {getSortIcon('total_ht')}
                           <span>Total HT</span>
+                          <span style={{ fontSize: '1em', color: sortConfig.key === 'total_ht' ? '#1976d2' : '#888' }}>
+                          {sortConfig.key === 'total_ht' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}
+                        </span>
                         </div>
                       </th>
 
                       <th
                         style={{ width: '90px', cursor: 'pointer' }}
-                        className="text-end"
+                        className="text-start"
                         onClick={() => handleSort('total_ttc')}
                         title="Trier par Total TTC"
                       >
-                        <div className="d-flex align-items-center justify-content-end gap-1">
+                        <div className="d-flex align-items-center justify-content-start gap-1">
                           {getSortIcon('total_ttc')}
                           <span>Total TTC</span>
+                          <span style={{ fontSize: '1em', color: sortConfig.key === 'total_ttc' ? '#1976d2' : '#888' }}>
+                          {sortConfig.key === 'total_ttc' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}
+                        </span>
+                        </div>
+                      </th>
+                      <th
+                        style={{ width: '70px', cursor: 'pointer' }}
+                        className="text-start"
+                        title="Devise"
+                      >
+                        <div className="d-flex align-items-center justify-content-start gap-1">
+                          <span>Devise</span>
                         </div>
                       </th>
 
                       <th
                         style={{ width: '90px', cursor: 'pointer' }}
-                        className="text-center"
+                        className="text-start"
                         onClick={() => handleSort('created_at')}
                         title="Trier par date"
                       >
-                        <div className="d-flex align-items-center justify-content-center gap-1">
+                        <div className="d-flex align-items-center justify-content-start gap-1">
                           {getSortIcon('created_at')}
                           <span>Date</span>
+                          <span style={{ fontSize: '1em', color: sortConfig.key === 'created_at' ? '#1976d2' : '#888' }}>
+                          {sortConfig.key === 'created_at' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}
+                        </span>
                         </div>
                       </th>
 
-                      <th style={{ width: '80px' }} className="text-center">Actions</th>
+                      <th style={{ width: '80px' }} className="text-center"></th>
                     </tr>
                     {/* Filter Row */}
-                    <tr className="bg-light">
-                      {isGroupMode && <th></th>}
+                    <tr className="bg-light" style={{paddingTop: '0px', paddingBottom: '0px', margin: 0}}>
+                      {isGlobalActionMode && (
+                        <th>
+                          <input
+                            type="checkbox"
+                            className="form-check-input"
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setCheckedDocuments(filteredDocuments.map(doc => doc.id));
+                              } else {
+                                setCheckedDocuments([]);
+                              }
+                            }}
+                            checked={checkedDocuments.length === filteredDocuments.length && filteredDocuments.length > 0}
+                          />
+                        </th>
+                      )}
                       <th>
                         <input
                           type="text"
@@ -1368,13 +1518,56 @@ const getOneMonthAgo = () => {
                         />
                       </th>
                       <th>
-                        <input
-                          type="text"
-                          className="form-control form-control-sm"
-                          placeholder="Partenaire..."
-                          value={columnFilters.partner_name}
-                          onChange={(e) => handleColumnFilterChange('partner_name', e.target.value)}
-                        />
+                        <div className="dropdown" style={{ position: 'relative' }}>
+                          <button
+                            className="form-select form-select-sm text-start"
+                            type="button"
+                            style={{ minWidth: '120px' }}
+                            onClick={() => setOpenDropdownId(openDropdownId === 'partner' ? null : 'partner')}
+                          >
+                            {columnFilters.partner_name && Array.isArray(columnFilters.partner_name) && columnFilters.partner_name.length > 0
+                              ? `Partenaire (${columnFilters.partner_name.length})`
+                              : 'Partenaire...'}
+                          </button>
+                          {openDropdownId === 'partner' && (
+                            <div
+                              className="dropdown-menu show"
+                              style={{ maxHeight: '160px', overflowY: 'auto', minWidth: '180px', padding: '8px', zIndex: 10 }}
+                            >
+                              {Array.from(new Set(documents.map(doc => doc.partner_name).filter(Boolean))).length === 0 ? (
+                                <div className="text-muted small">Aucun partenaire</div>
+                              ) : (
+                                Array.from(new Set(documents.map(doc => doc.partner_name).filter(Boolean))).map((partner, idx) => (
+                                  <div key={partner} className="form-check d-flex align-items-center" style={{ whiteSpace: 'nowrap', paddingLeft: '0.5rem' }}>
+                                    <input
+                                      className="form-check-input me-2"
+                                      type="checkbox"
+                                      id={`partner-filter-${idx}`}
+                                      checked={Array.isArray(columnFilters.partner_name) && columnFilters.partner_name.includes(partner)}
+                                      onChange={e => {
+                                        let newSelected = Array.isArray(columnFilters.partner_name) ? [...columnFilters.partner_name] : [];
+                                        if (e.target.checked) {
+                                          newSelected.push(partner);
+                                        } else {
+                                          newSelected = newSelected.filter(p => p !== partner);
+                                        }
+                                        handleColumnFilterChange('partner_name', newSelected);
+                                      }}
+                                    />
+                                    <label
+                                      className="form-check-label"
+                                      htmlFor={`partner-filter-${idx}`}
+                                      style={{ marginBottom: 0, cursor: 'pointer', textTransform: 'none', maxWidth: '110px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'middle' }}
+                                      title={partner}
+                                    >
+                                      {partner.length > 18 ? partner.slice(0, 15) + '...' : partner}
+                                    </label>
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </th>
                       <th>
                         <select
@@ -1448,14 +1641,20 @@ const getOneMonthAgo = () => {
                           }}
                           style={{ cursor: 'pointer' }}
                         >
-                          {isGroupMode && (
+                          {isGlobalActionMode && (
                             <td>
                               <input
                                 type="checkbox"
                                 className="form-check-input"
-                                onClick={(e) => e.stopPropagation()} /* Prevent row click when toggling checkbox */
-                                checked={selectedDocuments.includes(document.id)}
-                                onChange={() => handleDocumentSelection(document.id)}
+                                onClick={(e) => e.stopPropagation()}
+                                checked={checkedDocuments.includes(document.id)}
+                                onChange={() => {
+                                  if (checkedDocuments.includes(document.id)) {
+                                    setCheckedDocuments(checkedDocuments.filter(id => id !== document.id));
+                                  } else {
+                                    setCheckedDocuments([...checkedDocuments, document.id]);
+                                  }
+                                }}
                               />
                             </td>
                           )}
@@ -1488,13 +1687,16 @@ const getOneMonthAgo = () => {
                             )}
                           </td>
                           <td className="text-end">
-                            {document.tva ? `${parseFloat(document.tva).toFixed(2)}${currency}` : '-'}
+                            {document.tva ? parseFloat(document.tva).toFixed(2) : '-'}
                           </td>
                           <td className="text-end">
-                            {document.total_ht ? `${parseFloat(document.total_ht).toFixed(2)}${currency}` : '-'}
+                            {document.total_ht ? parseFloat(document.total_ht).toFixed(2) : '-'}
                           </td>
                           <td className="text-end">
-                            {document.total_ttc ? `${parseFloat(document.total_ttc).toFixed(2)}${currency}` : '-'}
+                            {document.total_ttc ? parseFloat(document.total_ttc).toFixed(2) : '-'}
+                          </td>
+                          <td className="text-center">
+                            {currency || '-'}
                           </td>
                           <td className="text-center">
                             <small className="text-muted">
@@ -1879,11 +2081,10 @@ const getOneMonthAgo = () => {
           getDoctypeName={getDoctypeName}
           getDocumentGroup={getDocumentGroup}
           getUploaderName={getUploaderName}
-        />   }
-
-      
+        />
+      }
     </div>
   );
-};
+}
 
 export default DocumentArchive;

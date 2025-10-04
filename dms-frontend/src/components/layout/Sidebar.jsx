@@ -219,9 +219,7 @@ const Sidebar = ({ user, loadingUser, isOpen }) => {
   return (
     <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
       <header className="sidebar-header" onClick={handleHeaderClick}>
-        <svg xmlns="http://www.w3.org/2000/svg" className="company-icon" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M3 21v-2h18v2H3zm2-3V3h6v15H5zm8 0V7h6v11h-6z" />
-        </svg>
+        
         <h2>{t('company')}</h2>
       </header>
 
@@ -262,12 +260,8 @@ const Sidebar = ({ user, loadingUser, isOpen }) => {
                 className={`folder-item ${selectedCompany?.id === company.id ? 'selected' : ''} ${!company.is_active ? 'inactive' : ''}`}
                 onClick={() => handleCompanyClick(company)}
               >
-                {company.name  && (
-                  <svg xmlns="http://www.w3.org/2000/svg" className="company-icon" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M3 21v-2h18v2H3zm2-3V3h6v15H5zm8 0V7h6v11h-6z" />
-                  </svg>
-                )}
-                <span className="company-name">{company.name}</span>
+                
+                <span className="company-name" title={company.name}>{company.name}</span>
                 {company.name  && (
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -303,9 +297,7 @@ const Sidebar = ({ user, loadingUser, isOpen }) => {
                             navigate('/');
                           }}
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="folder-icon" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M10 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-8l-2-2z" />
-                          </svg>
+                          
                           <span className="folder-name">{folder.name}</span>
                         </li>
                       ))

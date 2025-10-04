@@ -5,7 +5,7 @@ import SideBar from './Sidebar';
 import './layout.css';
 
 const Layout = ({ children, user, onLogout }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);

@@ -407,7 +407,7 @@ const TempDocumentArchive = ({ user }) => {
                 <i className="fas fa-history me-2 text-primary"></i>
                 {t('tempDocuments')}
               </h4>
-              <div className="d-flex gap-2">
+              <div className="d-flex gap-2 align-items-center">
                 
                 <button
                   className="btn btn-outline-secondary btn-sm"
@@ -444,7 +444,8 @@ const TempDocumentArchive = ({ user }) => {
                   )}
                 </div>
                 <button
-                  className="btn-outline-primary btn-sm"
+                  className="btn btn-outline-secondary btn-sm align-items-center d-flex"
+                  style={{ height: '32px' }}
                   onClick={() => setIsUploadModalOpen(true)}
                 >
                   <i className="fas fa-upload me-1"></i>
@@ -459,16 +460,28 @@ const TempDocumentArchive = ({ user }) => {
                 <table className="table table-sm table-hover mb-0" style={{tableLayout: 'fixed', width: '100%'}}>
                   <thead className="table-light sticky-top">
                     <tr>
-                      <th style={{ width: '20px', cursor: 'pointer' }} className="text-center" onClick={() => handleSort('id')} title={t('sortById')}>{t('id')}</th>
-                      <th style={{ width: '120px', cursor: 'pointer' }} onClick={() => handleSort('filename')} title={t('sortByFilename')}>{t('filename')}</th>
+                      {/* ID column removed */}
+                      <th style={{ width: '120px', cursor: 'pointer' }} onClick={() => handleSort('filename')} title={t('sortByFilename')}>{t('filename')}
+                        <span style={{ fontSize: '1em', color: sortConfig.key === 'filename' ? '#1976d2' : '#888' }}>
+                          {sortConfig.key === 'filename' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}
+                        </span>
+                      </th>
                       {(user?.role === 'admin' || user?.role === 'superuser') && (
-                        <th style={{ width: '120px', cursor: 'pointer' }} onClick={() => handleSort('owner')} title={t('sortByOwner')}>{t('owner')}</th>
+                        <th style={{ width: '120px', cursor: 'pointer' }} onClick={() => handleSort('owner')} title={t('sortByOwner')}>
+                          {t('owner')}
+                          <span style={{ fontSize: '1em', color: sortConfig.key === 'owner' ? '#1976d2' : '#888' }}>
+                          {sortConfig.key === 'owner' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}
+                        </span></th>
                       )}
-                      <th style={{ width: '90px', cursor: 'pointer' }} className="text-center" onClick={() => handleSort('created_at')} title={t('sortByDate')}>{t('date')}</th>
-                      <th style={{ width: '120px' }} className="text-center">{t('actions')}</th>
+                      <th style={{ width: '90px', cursor: 'pointer' }} className="text-center" onClick={() => handleSort('created_at')} title={t('sortByDate')}>
+                        {t('date')}
+                        <span style={{ fontSize: '1em', color: sortConfig.key === 'created_at' ? '#1976d2' : '#888' }}>
+                          {sortConfig.key === 'created_at' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}
+                        </span></th>
+                      <th style={{ width: '120px' }} className="text-center"></th>
                     </tr>
                     <tr className="bg-light">
-                      <th><input type="text" className="form-control form-control-sm" placeholder={t('idPlaceholder')} value={columnFilters.id} onChange={(e) => handleColumnFilterChange('id', e.target.value)} /></th>
+                      {/* ID filter removed */}
                       <th><input type="text" className="form-control form-control-sm" placeholder={t('filenamePlaceholder')} value={columnFilters.filename} onChange={(e) => handleColumnFilterChange('filename', e.target.value)} /></th>
                       {(user?.role === 'admin' || user?.role === 'superuser') && (
                         <th><input type="text" className="form-control form-control-sm" placeholder={t('ownerPlaceholder')} value={columnFilters.owner} onChange={(e) => handleColumnFilterChange('owner', e.target.value)} /></th>
@@ -481,7 +494,6 @@ const TempDocumentArchive = ({ user }) => {
                 <div style={{flex: 1, overflowY: 'auto', minHeight: 0}}>
                   <table className="table table-sm table-hover mb-0" style={{tableLayout: 'fixed', width: '100%'}}>
                     <colgroup>
-                      <col style={{width: '20px'}} />
                       <col style={{width: '120px'}} />
                       {(user?.role === 'admin' || user?.role === 'superuser') && <col style={{width: '120px'}} />}
                       <col style={{width: '90px'}} />
@@ -498,9 +510,9 @@ const TempDocumentArchive = ({ user }) => {
                             style={{ cursor: 'pointer' }}
                             className="table-row-hover"
                           >
-                            <td className="text-center" style={{width: '20px'}}>{doc.id}</td>
+                            {/* ID cell removed */}
                             <td style={{width: '120px'}}>{doc.filename}</td>
-                            {(user?.role === 'admin' || user?.role === 'superuser') && <td style={{width: '120px'}}>{doc.owner_name || doc.owner}</td>}
+                            {(user?.role === 'admin' || user?.role === 'superuser') && <td style={{width: '120px'}}>{`${doc.owner_name || doc.owner || ''} ${doc.owner_surname || ''}`.trim()}</td>}
                             <td className="text-center" style={{width: '90px'}}>{new Date(doc.created_at).toLocaleDateString()}</td>
                             <td className="text-center" style={{width: '120px'}}>
                               <button 

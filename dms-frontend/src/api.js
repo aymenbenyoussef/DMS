@@ -145,6 +145,8 @@ const documents = {
   getHistory: (documentId) => API.get(`/documents/${documentId}/history`),
   update: (documentId, documentData) => API.put(`/documents/${documentId}`, documentData),
   delete: (documentId) => API.delete(`/documents/${documentId}`),
+  // Bulk delete documents
+  deleteMultiple: (documentIds) => API.post('/documents/delete-multiple', { document_ids: documentIds }),
   
   // NEW: Single file upload function with OCR processing
   uploadSingleFile: (file, company_id, doctype_id) => {

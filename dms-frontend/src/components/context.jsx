@@ -14,7 +14,7 @@ export const useAppContext = () => {
 export const AppProvider = ({ children }) => {
   const [selectedCompany, setSelectedCompany] = useState(null);
   const [selectedDoctype, setSelectedDoctype] = useState(null);
-  const [systemName, setSystemName] = useState('DocuManager'); // Default system name
+  const [systemName, setSystemName] = useState(''); // Always read from settings
 
   // Fetch system name on app load
   useEffect(() => {

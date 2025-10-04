@@ -8,6 +8,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import './NavBar.css';
 
 const NavBar = ({ user, onLogout, toggleSidebar }) => {
+  const { setSystemName } = useContext(AppContext);
   const { language, changeLanguage, t } = useLanguage();
   const { systemName, setSelectedCompany: setContextCompany, setSelectedDoctype: setContextDoctype } = useContext(AppContext);
   const [showAdminTools, setShowAdminTools] = useState(false);
@@ -25,7 +26,7 @@ const NavBar = ({ user, onLogout, toggleSidebar }) => {
   const [selectedCompany, setSelectedCompany] = useState('');
   const [selectedDoctype, setSelectedDoctype] = useState('');
   const [isInvoice, setIsInvoice] = useState('');
-  
+  const [loading, setLoading] = useState(false);
   // Admin tools links grouped by category
   const adminToolsCategories = {
     systemConfig: {
@@ -54,6 +55,21 @@ const NavBar = ({ user, onLogout, toggleSidebar }) => {
   const isActive = (path) => {
     return navigate.pathname === path ? 'active' : '';
   };
+
+  useEffect(() => {
+      const fetchSettings = async () => {
+        try {
+          const res = await api.settings.getSettings();
+          const data = res.data;
+          setSystemName(data.systemName);
+        } catch (err) {
+          // Optionally handle error
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchSettings();
+    }, [setSystemName]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -321,23 +337,8 @@ const NavBar = ({ user, onLogout, toggleSidebar }) => {
               {showAdminTools && (
                 <div className="admin-tools-dropdown">
                   <div className="dropdown-columns">
-                    {/* DMS Column */}
-                    <div className="dropdown-column">
-                      <div className="category-header">
-                        <span className="category-icon"><BiData size={16} /></span>
-                        <span className="category-title">{t('documentManagement')}</span>
-                      </div>
-                      <div className="category-items">
-                        <button className="dropdown-item" onClick={() => { setShowDmsTempModal(true); setShowAdminTools(false); }}>
-                          <span className="dropdown-icon"><BiFile size={16} /></span>
-                          <span>{t('Téléchargement')}</span>
-                        </button>
-                        <Link to="/dms/rapports" className="dropdown-item" onClick={() => setShowAdminTools(false)}>
-                          <span className="dropdown-icon"><BiBarChart size={16} /></span>
-                          <span>{t('dms')}</span>
-                        </Link>
-                      </div>
-                    </div>
+                    
+                    
                     {/* System Configuration Column */}
                     <div className="dropdown-column">
                       <div className="category-header">

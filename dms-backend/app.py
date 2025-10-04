@@ -1,3 +1,4 @@
+
 from flask import Flask, request, jsonify, send_from_directory, send_file, make_response, abort
 from flask_cors import CORS, cross_origin
 from flask_jwt_extended import (
@@ -1362,7 +1363,55 @@ def create_document():
         }), 201
     except Exception as e:
         return jsonify({"msg": str(e)}), 400
-
+@app.route('/documents/delete-multiple', methods=['POST'])
+@jwt_required()
+def delete_multiple_documents():
+    """Delete multiple documents by IDs"""
+    current_user_claims = get_jwt()
+    data = request.get_json()
+    document_ids = data.get('document_ids', [])
+    if not isinstance(document_ids, list) or not document_ids:
+        return jsonify({"msg": "No document IDs provided"}), 400
+    deleted = []
+    failed = []
+    for doc_id in document_ids:
+        try:
+            doc = db.get_document_by_id(doc_id)
+            if not doc:
+                failed.append(doc_id)
+                continue
+            files_to_delete = []
+            if doc.get('file_path') and os.path.exists(doc['file_path']):
+                files_to_delete.append(doc['file_path'])
+            if doc.get('rapport') and os.path.exists(doc['rapport']):
+                files_to_delete.append(doc['rapport'])
+            if doc.get('ocr_text') and os.path.exists(doc['ocr_text']):
+                files_to_delete.append(doc['ocr_text'])
+            success = db.delete_document(doc_id)
+            if success:
+                for file_path in files_to_delete:
+                    try:
+                        os.remove(file_path)
+                        app.logger.info(f"Deleted file: {file_path}")
+                    except Exception as e:
+                        app.logger.warning(f"Could not delete file {file_path}: {str(e)}")
+                log_activity(
+                    actor=current_user_claims['username'],
+                    action="Supprission",
+                    resource_type="document",
+                    resource_data={
+                        'id': doc_id,
+                        'filename': doc['filename'],
+                        'company_id': doc['company_id']
+                    }
+                )
+                deleted.append(doc_id)
+            else:
+                failed.append(doc_id)
+        except Exception as e:
+            app.logger.error(f"Error deleting document {doc_id}: {str(e)}")
+            failed.append(doc_id)
+    return jsonify({"deleted": deleted, "failed": failed}), 200
 @app.route('/documents/company/<int:company_id>/type/<int:doctype_id>', methods=['GET'])
 @jwt_required()
 def get_documents_by_company_and_type(company_id, doctype_id):
