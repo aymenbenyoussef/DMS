@@ -303,7 +303,7 @@ const DocumentConfirmationForm = ({
                   value={doc.company_id || ''} 
                   onChange={e => { 
                     const companyId = parseInt(e.target.value);
-                    setSelectedCompany(companies.find(c => c.id === companyId));
+                    /*setSelectedCompany(companies.find(c => c.id === companyId));*/
                     updateConfirmedDocument(0, 'company_id', companyId);
                   }}
                   className={`form-input ${doc.company_id !== (initialCompany || selectedCompany)?.id ? 'changed' : ''} ${err.company_id ? 'error' : ''}`}
@@ -325,7 +325,7 @@ const DocumentConfirmationForm = ({
                   value={doc.doctype_id || ''} 
                   onChange={e => { 
                     const doctypeId = parseInt(e.target.value);
-                    setSelectedDoctype(currentFileDoctypes.find(d => d.id === doctypeId));
+                    /*setSelectedDoctype(currentFileDoctypes.find(d => d.id === doctypeId));*/
                     updateConfirmedDocument(0, 'doctype_id', doctypeId);
                   }}
                   disabled={!doc.company_id}

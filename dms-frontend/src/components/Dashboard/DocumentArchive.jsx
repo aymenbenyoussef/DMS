@@ -215,8 +215,10 @@ const getOneMonthAgo = () => {
   const [openDropdownId, setOpenDropdownId] = useState(null);
   const [dropdownPosition, setDropdownPosition] = useState(null);
 
-  // Filter panel collapse state
-  const [isFilterCollapsed, setIsFilterCollapsed] = useState(false);
+  // Filter panel state (now dropdown overlay)
+  const [isFilterCollapsed, setIsFilterCollapsed] = useState(true); // default collapsed because filters are now a dropdown
+  const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
+  const filterDropdownRef = useRef(null);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -232,6 +234,18 @@ const getOneMonthAgo = () => {
       document.removeEventListener('click', handleClickOutside);
     };
   }, []);
+
+  // Close filter dropdown when clicking outside
+  useEffect(() => {
+    const handleOutside = (e) => {
+      if (!filterDropdownOpen) return;
+      if (filterDropdownRef.current && !filterDropdownRef.current.contains(e.target) && !e.target.closest('.btn-filter-toggle')) {
+        setFilterDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, [filterDropdownOpen]);
 
   useEffect(() => {
     API.settings.getSettings().then(res => {
@@ -1219,11 +1233,11 @@ const getOneMonthAgo = () => {
                   )}
                 </div>
                 <button
-                  className="btn btn-outline-secondary btn-sm"
-                  onClick={() => setIsFilterCollapsed(!isFilterCollapsed)}
-                  title={isFilterCollapsed ? "Afficher les filtres" : "Masquer les filtres"}
+                  className="btn btn-outline-secondary btn-sm btn-filter-toggle"
+                  onClick={() => setFilterDropdownOpen(!filterDropdownOpen)}
+                  title={filterDropdownOpen ? "Masquer les filtres" : "Filtres"}
                 >
-                  <i className={`fas fa-${isFilterCollapsed ? 'filter' : 'times'}`}></i>
+                  <i className="fas fa-filter"></i>
                   <span className="ms-1">Filtres</span>
                 </button>
                 <button
@@ -1704,50 +1718,58 @@ const getOneMonthAgo = () => {
                             </small>
                           </td>
                           <td className="text-center">
-                            <div className="dropdown">
-                              <button
-                                className="btn btn-outline-secondary btn-sm"
-                                onClick={(e) => handleDropdownToggle(document.id, e)}
-                              >
-                                <i className="fas fa-ellipsis-v">...</i>
-                              </button>
-                              {openDropdownId === document.id && (
-                                <div
-                                  className="dropdown-menu show"
-                                  style={{
-                                    position: 'fixed',
-                                    top: dropdownPosition?.top,
-                                    left: dropdownPosition?.left,
-                                    zIndex: 9999
-                                  }}
+                            <div className="d-flex align-items-center justify-content-center">
+                              <div className="dropdown">
+                                <button
+                                  className="btn btn-outline-secondary btn-sm"
+                                  onClick={(e) => handleDropdownToggle(document.id, e)}
                                 >
-                                  <button
-                                    className="dropdown-item"
-                                    onClick={() => handleRapport(document)}
+                                  <i className="fas fa-ellipsis-v">...</i>
+                                </button>
+                                {openDropdownId === document.id && (
+                                  <div
+                                    className="dropdown-menu show"
+                                    style={{
+                                      position: 'fixed',
+                                      top: dropdownPosition?.top,
+                                      left: dropdownPosition?.left,
+                                      zIndex: 9999
+                                    }}
                                   >
-                                    <i className="fas fa-eye me-2"></i>Aperçu
-                                  </button>
-                                  <button
-                                    className="dropdown-item"
-                                    onClick={() => handleSendEmail(document)}
-                                  >
-                                    <i className="fas fa-envelope me-2"></i>Envoyer
-                                  </button>
-                                  <button
-                                    className="dropdown-item"
-                                    onClick={() => handleEditDocument(document)}
-                                  >
-                                    <i className="fas fa-edit me-2"></i>Modifier
-                                  </button>
-                                  <div className="dropdown-divider"></div>
-                                  <button
-                                    className="dropdown-item text-danger"
-                                    onClick={() => handleDeleteDocument(document)}
-                                  >
-                                    <i className="fas fa-trash me-2"></i>Supprimer
-                                  </button>
-                                </div>
-                              )}
+                                    <button
+                                      className="dropdown-item"
+                                      onClick={() => handleRapport(document)}
+                                    >
+                                      <i className="fas fa-eye me-2"></i>Aperçu
+                                    </button>
+                                    <button
+                                      className="dropdown-item"
+                                      onClick={() => handleSendEmail(document)}
+                                    >
+                                      <i className="fas fa-envelope me-2"></i>Envoyer
+                                    </button>
+                                    <button
+                                      className="dropdown-item"
+                                      onClick={() => handleEditDocument(document)}
+                                    >
+                                      <i className="fas fa-edit me-2"></i>Modifier
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Quick delete button to the right of the options button */}
+                              <button
+                                className="btn btn-outline-danger btn-sm ms-2"
+                                title="Supprimer"
+                                onClick={(e) => { e.stopPropagation(); handleDeleteDocument(document); }}
+                                aria-label={`Supprimer ${document.filename || 'document'}`}
+                              >
+                                {/* Inline SVG trash icon (uses currentColor) */}
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                                  <path d="M5.5 5.5A.5.5 0 0 1 6 5h4a.5.5 0 0 1 .5.5V6h3v1h-1v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7H2V6h3v-.5zM14 3H10l-.5-1A1 1 0 0 0 8.6 1H7.4a1 1 0 0 0-.9.5L6 3H2v1h12V3z" />
+                                </svg>
+                              </button>
                             </div>
                           </td>
                         </tr>
@@ -1779,120 +1801,119 @@ const getOneMonthAgo = () => {
             </div>
           </div>
 
-          {/* Sidebar - Filters */}
-          {!isFilterCollapsed && (
-            <div className="col-lg-3 col-md-4 h-100">
-              <div className="card h-100">
-                <div className="card-header bg-light py-2">
-                  <h6 className="mb-0 d-flex align-items-center">
-                    <i className="fas fa-filter me-2 text-primary"></i>
-                    Filtres
-                    <button
-                      className="btn btn-link btn-sm ms-auto p-0"
-                      onClick={clearAllFilters}
-                      title="Effacer tous les filtres"
-                    >
+          {/* Filter Dropdown Overlay - renders as absolute overlay so it doesn't affect table width */}
+          <div style={{ position: 'relative' }}>
+            {filterDropdownOpen && (
+              <div ref={filterDropdownRef} className="filter-dropdown-overlay" style={{ position: 'fixed', right: 12, top: 64, zIndex: 1050 }}>
+                <div className="card" style={{ width: 360, maxHeight: '70vh', overflow: 'auto' }}>
+                  <div className="card-header bg-light py-2 d-flex align-items-center">
+                    <h6 className="mb-0 d-flex align-items-center">
+                      <i className="fas fa-filter me-2 text-primary"></i>
+                      Filtres
+                    </h6>
+                    <button className="btn btn-link btn-sm ms-auto p-0" onClick={clearAllFilters} title="Effacer tous les filtres">
                       <i className="fas fa-times text-muted"></i>
                     </button>
-                  </h6>
-                </div>
-                <div className="card-body p-3 overflow-auto">
-                  {/* Search */}
-                  <div className="mb-3">
-                    <label className="form-label small fw-bold">Recherche</label>
-                    <div className="input-group input-group-sm">
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Rechercher..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                      />
-                    </div>
                   </div>
-
-                  {/* Date Range */}
-                  <div className="mb-3">
-                    <label className="form-label small fw-bold">Période</label>
-                    <div className="row g-2">
-                      <div className="col-6">
+                  <div className="card-body p-3">
+                    {/* Search */}
+                    <div className="mb-3">
+                      <label className="form-label small fw-bold">Recherche</label>
+                      <div className="input-group input-group-sm">
                         <input
-                          type="date"
-                          className="form-control form-control-sm"
-                          value={startDate}
-                          onChange={(e) => setStartDate(e.target.value)}
-                        />
-                      </div>
-                      <div className="col-6">
-                        <input
-                          type="date"
-                          className="form-control form-control-sm"
-                          value={endDate}
-                          onChange={(e) => setEndDate(e.target.value)}
+                          type="text"
+                          className="form-control"
+                          placeholder="Rechercher..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
                         />
                       </div>
                     </div>
-                  </div>
 
-                  {/* Document Types */}
-                  <div className="mb-3">
-                    <label className="form-label small fw-bold">Types de documents</label>
-                    <div className="max-height-150 overflow-auto">
-                      {availableDoctypes.map(doctype => (
-                        <div key={doctype.id} className="form-check form-check-sm">
+                    {/* Date Range */}
+                    <div className="mb-3">
+                      <label className="form-label small fw-bold">Période</label>
+                      <div className="row g-2">
+                        <div className="col-6">
                           <input
-                            className="form-check-input"
-                            type="checkbox"
-                            id={`doctype-${doctype.id}`}
-                            checked={selectedDoctypeFilters.includes(doctype.id)}
-                            onChange={() => handleDoctypeFilterChange(doctype.id)}
+                            type="date"
+                            className="form-control form-control-sm"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
                           />
-                          <label className="form-check-label small" htmlFor={`doctype-${doctype.id}`}>
-                            {doctype.name}
-                          </label>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Billable Filter */}
-                  <div className="mb-3">
-                    <label className="form-label small fw-bold">Facturable</label>
-                    <select
-                      className="form-select form-select-sm"
-                      value={billableFilter}
-                      onChange={(e) => setBillableFilter(e.target.value)}
-                    >
-                      <option value="all">Tous</option>
-                      <option value="billable">Facturable</option>
-                      <option value="non-billable">Non facturable</option>
-                    </select>
-                  </div>
-
-                  {/* Groups */}
-                  <div className="mb-3">
-                    <label className="form-label small fw-bold">Groupes</label>
-                    <div className="max-height-150 overflow-auto">
-                      {groups.map(group => (
-                        <div key={group.id} className="form-check form-check-sm">
+                        <div className="col-6">
                           <input
-                            className="form-check-input"
-                            type="checkbox"
-                            id={`group-${group.id}`}
-                            checked={selectedGroupFilters.includes(group.id)}
-                            onChange={() => handleGroupFilterChange(group.id)}
+                            type="date"
+                            className="form-control form-control-sm"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
                           />
-                          <label className="form-check-label small" htmlFor={`group-${group.id}`}>
-                            {group.name}
-                          </label>
                         </div>
-                      ))}
+                      </div>
                     </div>
+
+                    {/* Document Types */}
+                    <div className="mb-3">
+                      <label className="form-label small fw-bold">Types de documents</label>
+                      <div className="max-height-150 overflow-auto">
+                        {availableDoctypes.map(doctype => (
+                          <div key={doctype.id} className="form-check form-check-sm">
+                            <input
+                              className="form-check-input"
+                              type="checkbox"
+                              id={`doctype-${doctype.id}-overlay`}
+                              checked={selectedDoctypeFilters.includes(doctype.id)}
+                              onChange={() => handleDoctypeFilterChange(doctype.id)}
+                            />
+                            <label className="form-check-label small" htmlFor={`doctype-${doctype.id}-overlay`}>
+                              {doctype.name}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Billable Filter */}
+                    <div className="mb-3">
+                      <label className="form-label small fw-bold">Facturable</label>
+                      <select
+                        className="form-select form-select-sm"
+                        value={billableFilter}
+                        onChange={(e) => setBillableFilter(e.target.value)}
+                      >
+                        <option value="all">Tous</option>
+                        <option value="billable">Facturable</option>
+                        <option value="non-billable">Non facturable</option>
+                      </select>
+                    </div>
+
+                    {/* Groups */}
+                    <div className="mb-3">
+                      <label className="form-label small fw-bold">Groupes</label>
+                      <div className="max-height-150 overflow-auto">
+                        {groups.map(group => (
+                          <div key={group.id} className="form-check form-check-sm">
+                            <input
+                              className="form-check-input"
+                              type="checkbox"
+                              id={`group-${group.id}-overlay`}
+                              checked={selectedGroupFilters.includes(group.id)}
+                              onChange={() => handleGroupFilterChange(group.id)}
+                            />
+                            <label className="form-check-label small" htmlFor={`group-${group.id}-overlay`}>
+                              {group.name}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    {/* Buttons removed as requested */}
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 

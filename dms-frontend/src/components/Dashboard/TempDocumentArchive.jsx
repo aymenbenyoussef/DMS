@@ -63,7 +63,21 @@ const TempDocumentArchive = ({ user }) => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const exportMenuRef = useRef(null);
-  const [isFilterCollapsed, setIsFilterCollapsed] = useState(false);
+  // Filters overlay state
+  const [filterOverlayOpen, setFilterOverlayOpen] = useState(false);
+  const filterOverlayRef = useRef(null);
+
+  // close filter overlay when clicking outside
+  useEffect(() => {
+    const handleOutside = (e) => {
+      if (!filterOverlayOpen) return;
+      if (filterOverlayRef.current && !filterOverlayRef.current.contains(e.target) && !e.target.closest('.btn-filter-toggle')) {
+        setFilterOverlayOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, [filterOverlayOpen]);
 
   useEffect(() => {
     fetchDocuments();
@@ -400,7 +414,7 @@ const TempDocumentArchive = ({ user }) => {
       <div className="container-fluid h-100">
         <div className="row h-100">
           {/* Main Content Area - Table */}
-          <div className={`col-lg-${isFilterCollapsed ? '12' : '9'} col-md-${isFilterCollapsed ? '12' : '8'} h-100 d-flex flex-column`}>
+          <div className={`col-lg-12 col-md-12 h-100 d-flex flex-column`}>
             {/* Header with Upload Button */}
             <div className="d-flex justify-content-between align-items-center mb-2">
               <h4 className="mb-0 text-dark fw-bold d-flex align-items-center gap-2">
@@ -410,13 +424,45 @@ const TempDocumentArchive = ({ user }) => {
               <div className="d-flex gap-2 align-items-center">
                 
                 <button
-                  className="btn btn-outline-secondary btn-sm"
-                  onClick={() => setIsFilterCollapsed(!isFilterCollapsed)}
-                  title={isFilterCollapsed ? t('showFilters') : t('hideFilters')}
+                  className="btn btn-outline-secondary btn-sm btn-filter-toggle"
+                  onClick={() => setFilterOverlayOpen(!filterOverlayOpen)}
+                  title={filterOverlayOpen ? t('hideFilters') : t('showFilters')}
                 >
-                  <i className={`fas fa-${isFilterCollapsed ? 'filter' : 'times'}`}></i>
+                  <i className={`fas fa-${filterOverlayOpen ? 'times' : 'filter'}`}></i>
                   <span className="ms-1">{t('filters')}</span>
                 </button>
+                {filterOverlayOpen && (
+                  <div ref={filterOverlayRef} className="filter-dropdown-overlay card" style={{ position: 'fixed', top: 72, right: 24, width: 340, zIndex: 3000 }}>
+                    <div className="card-header bg-light py-2">
+                      <h6 className="mb-0 d-flex align-items-center">
+                        <i className="fas fa-filter me-2 text-primary"></i>
+                        {t('filters')}
+                        <button className="btn btn-link btn-sm ms-auto p-0" onClick={handleResetFilters} title={t('clearAllFilters')}>
+                          <i className="fas fa-times text-muted"></i>
+                        </button>
+                      </h6>
+                    </div>
+                    <div className="card-body p-3 overflow-auto">
+                      <div className="mb-3">
+                        <label className="form-label small fw-bold">{t('search')}</label>
+                        <div className="input-group input-group-sm">
+                          <input type="text" className="form-control" placeholder={t('searchPlaceholder')} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                        </div>
+                      </div>
+                      <div className="mb-3">
+                        <label className="form-label small fw-bold">{t('dateRange')}</label>
+                        <div className="row g-2">
+                          <div className="col-6">
+                            <input type="date" className="form-control form-control-sm" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                          </div>
+                          <div className="col-6">
+                            <input type="date" className="form-control form-control-sm" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <div className="dropdown">
                   <button
                     className="btn btn-outline-secondary btn-sm dropdown-toggle"
@@ -548,66 +594,7 @@ const TempDocumentArchive = ({ user }) => {
               </div>
             </div>
           </div>
-          {/* Filter Sidebar */}
-          {!isFilterCollapsed && (
-            <div className="col-lg-3 col-md-4 h-100">
-              <div className="card h-100">
-                <div className="card-header bg-light py-2">
-                  <h6 className="mb-0 d-flex align-items-center">
-                    <i className="fas fa-filter me-2 text-primary"></i>
-                    {t('filters')}
-                    <button
-                      className="btn btn-link btn-sm ms-auto p-0"
-                      onClick={handleResetFilters}
-                      title={t('clearAllFilters')}
-                    >
-                      <i className="fas fa-times text-muted"></i>
-                    </button>
-                  </h6>
-                </div>
-                <div className="card-body p-3 overflow-auto">
-                  {/* Search */}
-                  <div className="mb-3">
-                    <label className="form-label small fw-bold">{t('search')}</label>
-                    <div className="input-group input-group-sm">
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder={t('searchPlaceholder')}
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Date Range */}
-                  <div className="mb-3">
-                    <label className="form-label small fw-bold">{t('dateRange')}</label>
-                    <div className="row g-2">
-                      <div className="col-6">
-                        <input
-                          type="date"
-                          className="form-control form-control-sm"
-                          value={startDate}
-                          onChange={(e) => setStartDate(e.target.value)}
-                        />
-                      </div>
-                      <div className="col-6">
-                        <input
-                          type="date"
-                          className="form-control form-control-sm"
-                          value={endDate}
-                          onChange={(e) => setEndDate(e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  
-                  
-                </div>
-              </div>
-            </div>
-          )}
+          {/* filters removed - table is full-width */}
         </div>
       </div>
 

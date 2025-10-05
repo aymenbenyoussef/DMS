@@ -81,7 +81,7 @@ export const LanguageProvider = ({ children }) => {
           'exportExcel': 'Exporter en Excel',
           'exportJSON': 'Exporter en JSON',
           'exportTXT': 'Exporter en TXT',
-          'upload': 'Téléverser',
+          'upload': 'Charger un document',
           'loading': 'Chargement...',
           'sortById': 'Trier par ID',
           'sortByFilename': 'Trier par nom de document',

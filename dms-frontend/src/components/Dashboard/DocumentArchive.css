@@ -113,6 +113,44 @@
   --da-header-offset: 220px; /* hauteur totale probablement occupée par header, filtres et actions */
 }
 
+/* Filter dropdown overlay used by DocumentArchive to show filters without resizing the table */
+.filter-dropdown-overlay {
+  box-shadow: 0 18px 50px rgba(2,6,23,0.14);
+  border-radius: 12px;
+  border: 1px solid rgba(15,23,42,0.06);
+  background: #fff;
+}
+
+.btn-filter-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (max-width: 992px) {
+  .filter-dropdown-overlay { right: 8px !important; left: 8px; top: 56px !important; width: auto !important; }
+}
+
+/* Inner overlay tweaks */
+.filter-dropdown-overlay .card-header { border-bottom: none; padding: 0.75rem 1rem; }
+.filter-dropdown-overlay .card-body { padding: 0.75rem 1rem; }
+.filter-dropdown-overlay .form-label { color: #374151; }
+.filter-dropdown-overlay .form-check-label { color: #4b5563; }
+.filter-dropdown-overlay .form-check-input { width: 16px; height: 16px; }
+
+/* Make overlay slightly elevated on hover to hint interactivity */
+.filter-dropdown-overlay:hover { transform: translateY(-2px); transition: transform 0.12s ease; }
+
+/* Quick delete button in table row */
+.documents-table-container .btn-outline-danger {
+  color: #c92a2a;
+  border-color: rgba(201,42,42,0.12);
+  background: transparent;
+}
+.documents-table-container .btn-outline-danger:hover {
+  background: rgba(201,42,42,0.06);
+}
+
 .document-archive .container-fluid { padding: 0; height: calc(100vh - 1.5rem); }
 .document-archive .row { margin: 0; height: 100%; }
 .document-archive .row > [class*="col-"] { padding-left: 0.5rem; padding-right: 0.5rem; }

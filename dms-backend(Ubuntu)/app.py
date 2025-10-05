@@ -180,7 +180,7 @@ def process_single_file_ocr(file, company_id, doctype_id):
             text = pytesseract.image_to_string(image, lang='fra+eng')
         elif filename.lower().endswith('.pdf'):
             with open(temp_file_path, 'rb') as pdf_file:
-                images = convert_from_bytes(pdf_file.read(), poppler_path=r'C:\poppler-24.08.0\Library\bin')
+                images = convert_from_bytes(pdf_file.read(), poppler_path=r'/usr/bin')
                 for idx, img in enumerate(images):
                     t = pytesseract.image_to_string(img, lang='fra+eng')
                     text += t + "\n"

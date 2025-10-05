@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import DocumentArchive from './DocumentArchive';
 import TempDocumentArchive from './TempDocumentArchive';
-import WelcomePanel from './WelcomePanel';
+/*import WelcomePanel from './WelcomePanel';*/
 import { AppContext } from '../context';
 
 const Dashboard = ({ user }) => {
@@ -18,8 +18,8 @@ const Dashboard = ({ user }) => {
   return (
     <DocumentArchive 
       user={user} 
-      selectedCompany={selectedCompany} 
-      selectedDoctype={selectedDoctype} 
+      selectedCompany={selectedCompany}
+      selectedDoctype={selectedDoctype}
     />
   );
 };
