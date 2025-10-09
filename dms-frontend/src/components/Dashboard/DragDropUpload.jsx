@@ -353,7 +353,7 @@ const DragDropUpload = ({ onUpload, onClose }) => {
         <div className="modal-container modal-container--large" ref={dialogRef}>
           <div className="modal-header">
             <div className="modal-header__content">
-              <div className="modal-header__icon">✅</div>
+              
               <h2 className="modal-title">Confirmation des documents</h2>
             </div>
             <button className="modal-close-btn" onClick={onClose} aria-label="Fermer">
@@ -509,7 +509,7 @@ const DragDropUpload = ({ onUpload, onClose }) => {
                 {files.length > 0 ? 'Ajouter' : 'Parcourir'}
               </label>
               <p className="file-types">
-                PDF, JPG, PNG, TIFF, DOC, DOCX
+                PDF, JPG, PNG, TIFF
               </p>
               {maxFileSize && (
                 <p className="single-file-note">

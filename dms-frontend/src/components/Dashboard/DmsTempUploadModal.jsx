@@ -214,7 +214,7 @@ const DmsTempUploadModal = ({ onClose, onSuccess }) => {
                 Parcourir les fichiers
               </label>
               <p className="file-types">
-                Formats acceptés : PDF, JPG, PNG, TIFF, DOC, DOCX
+                Formats acceptés : PDF, JPG, PNG, TIFF
               </p>
             </div>
           </div>

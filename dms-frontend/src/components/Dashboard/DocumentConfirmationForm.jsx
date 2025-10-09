@@ -277,33 +277,56 @@ const DocumentConfirmationForm = ({
     const currentFileGroups = groups[doc.company_id] || [];
     
     return (
+
       <div className="document-confirmation-form">
-        {/*<div className="form-header">
-          <h3>Confirmation du document</h3>
-          <p>Vérifiez et modifiez les informations extraites si nécessaire</p>
-          {hasChanges && (
-            <div className="changes-notice">
-              Des modifications ont été apportées à la configuration initiale
-            </div>
-          )}
-        </div>*/}
-        
+        {/* ...existing code... */}
         <div className="confirmation-form-scroll-area">
           <div className="document-form">
-            <h4 className="document-title">{files[0].filename}</h4>
-            
-            {/* Première ligne : Entité et Type de document */}
+            {/* Editable file name (without extension) */}
             <div className="form-row">
+              <div className="form-group full-width-field">
+                <label className="form-label">Nom du fichier *</label>
+                {(() => {
+                  const fullName = doc.filename || '';
+                  const dotIdx = fullName.lastIndexOf('.')
+                  const base = dotIdx > 0 ? fullName.slice(0, dotIdx) : fullName;
+                  const ext = dotIdx > 0 ? fullName.slice(dotIdx) : '';
+                  return (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <input
+                        type="text"
+                        value={base}
+                        onChange={e => {
+                          const newBase = e.target.value.replace(/\s+/g, '_');
+                          const newName = newBase + ext;
+                          setConfirmedDocuments(prev => {
+                            const updated = [...prev];
+                            updated[0] = { ...updated[0], filename: newName };
+                            return updated;
+                          });
+                        }}
+                        className="form-input"
+                        style={{ flex: 1 }}
+                        required
+                      />
+                      <span style={{ fontWeight: 600, color: '#888' }}>{ext}</span>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+            
+            {/* Première ligne : Entité, Type de document et Partenaire externe */}
+            <div className="form-row three-cols">
               <div className="form-group">
                 <label className="form-label">
-                  <CompanyIcon />
+                  
                   Entité *
                 </label>
                 <select 
                   value={doc.company_id || ''} 
                   onChange={e => { 
                     const companyId = parseInt(e.target.value);
-                    /*setSelectedCompany(companies.find(c => c.id === companyId));*/
                     updateConfirmedDocument(0, 'company_id', companyId);
                   }}
                   className={`form-input ${doc.company_id !== (initialCompany || selectedCompany)?.id ? 'changed' : ''} ${err.company_id ? 'error' : ''}`}
@@ -315,17 +338,15 @@ const DocumentConfirmationForm = ({
                 </select>
                 {err.company_id && <div className="error-message">{err.company_id}</div>}
               </div>
-              
               <div className="form-group">
                 <label className="form-label">
-                  <DocumentIcon />
+                  
                   Type de document *
                 </label>
                 <select 
                   value={doc.doctype_id || ''} 
                   onChange={e => { 
                     const doctypeId = parseInt(e.target.value);
-                    /*setSelectedDoctype(currentFileDoctypes.find(d => d.id === doctypeId));*/
                     updateConfirmedDocument(0, 'doctype_id', doctypeId);
                   }}
                   disabled={!doc.company_id}
@@ -338,27 +359,9 @@ const DocumentConfirmationForm = ({
                 </select>
                 {err.doctype_id && <div className="error-message">{err.doctype_id}</div>}
               </div>
-            </div>
-
-            {/* Deuxième ligne : Groupe (optionnel) et Partenaire côte-à-côte */}
-            <div className="form-row">
-              <div className="form-group">
-                <label className="form-label">Groupe (optionnel)</label>
-                <select
-                  value={doc.confirmed_data.group_id || ''}
-                  onChange={e => updateConfirmedDocument(0, 'group_id', parseInt(e.target.value) || '')}
-                  className="form-input"
-                >
-                  <option value="">Aucun groupe</option>
-                  {currentFileGroups.map(group => (
-                    <option key={group.id} value={group.id}>{group.name}</option>
-                  ))}
-                </select>
-              </div>
-
               <div className="form-group">
                 <label className="form-label">
-                  <PartnerIcon />
+                  
                   Partenaire externe *
                 </label>
                 <select
@@ -405,7 +408,7 @@ const DocumentConfirmationForm = ({
                 <div className="form-row">
                   <div className="form-group">
                     <label className="form-label">
-                      <InvoiceIcon />
+                      
                       Numéro de facture *
                     </label>
                     <input
@@ -420,7 +423,7 @@ const DocumentConfirmationForm = ({
                   
                   <div className="form-group">
                     <label className="form-label">
-                      <CalendarIcon />
+                      
                       Date *
                     </label>
                     <input
@@ -436,7 +439,7 @@ const DocumentConfirmationForm = ({
                 <div className="form-row">
                   <div className="form-group">
                     <label className="form-label">
-                      <MoneyIcon />
+                      
                       Total HT *
                     </label>
                     <input
@@ -452,7 +455,7 @@ const DocumentConfirmationForm = ({
                   
                   <div className="form-group">
                     <label className="form-label">
-                      <MoneyIcon />
+                      
                       TVA *
                     </label>
                     <input
@@ -470,7 +473,7 @@ const DocumentConfirmationForm = ({
                 <div className="form-row">
                   <div className="form-group">
                     <label className="form-label">
-                      <MoneyIcon />
+                     
                       Total TTC *
                     </label>
                     <input
@@ -542,43 +545,68 @@ const DocumentConfirmationForm = ({
         </div>*/}
 
         {/* Navigation des fichiers */}
-        <div className="file-navigation">
+        <div className="file-navigation" style={{ gap: '0.15rem', marginBottom: '0.5rem', padding: '0.1rem' }}>
           {files.map((file, idx) => (
             <button
               key={idx}
               className={`file-tab ${idx === activeFileIndex ? 'active' : ''}`}
+              style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', minHeight: '1.5rem', gap: '0.2rem' }}
               onClick={() => setActiveFileIndex(idx)}
             >
               {file.filename}
               {Object.keys(errors[idx] || {}).length > 0 && (
-                <span style={{ color: 'var(--error)', marginLeft: '0.25rem' }}>⚠️</span>
+                <span style={{ color: 'var(--error)', marginLeft: '0.15rem' }}>⚠️</span>
               )}
             </button>
           ))}
         </div>
 
-        <div className="confirmation-form-scroll-area">
+        <div className="confirmation-form-scroll-area" style={{ padding: '0.25rem 0.25rem 0 0.25rem' }}>
           {files.map((file, idx) => {
             if (idx !== activeFileIndex) return null;
-            
             const doc = confirmedDocuments[idx];
             const err = errors[idx];
             const currentFileDoctypes = doctypes[doc.company_id] || [];
             const currentFilePartners = partners[doc.company_id] || [];
             const currentFileGroups = groups[doc.company_id] || [];
-
             return (
               <div key={idx} className="multi-file-section">
-                <div className="document-form">
-                  <h4 className="document-title">{file.filename}</h4>
-                  
-                  {/* Première ligne : Entité et Type de document */}
+                <div className="document-form" style={{ padding: '0.5rem 0.75rem', marginBottom: '0.25rem' }}>
+                  {/* Editable file name (without extension) */}
                   <div className="form-row">
+                    <div className="form-group full-width-field">
+                      <label className="form-label">Nom du fichier *</label>
+                      {(() => {
+                        const fullName = doc.filename || '';
+                        const dotIdx = fullName.lastIndexOf('.')
+                        const base = dotIdx > 0 ? fullName.slice(0, dotIdx) : fullName;
+                        const ext = dotIdx > 0 ? fullName.slice(dotIdx) : '';
+                        return (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <input
+                              type="text"
+                              value={base}
+                              onChange={e => {
+                                const newBase = e.target.value;
+                                const newFilename = newBase + ext;
+                                const updated = [...confirmedDocuments];
+                                updated[idx] = { ...updated[idx], filename: newFilename };
+                                setConfirmedDocuments(updated);
+                              }}
+                              className="form-input"
+                              style={{ flex: 1 }}
+                              required
+                            />
+                            <span style={{ fontWeight: 600, color: '#888' }}>{ext}</span>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                  {/* Première ligne : Entité, Type de document et Partenaire externe alignés et encadrés */}
+                  <div className="form-row three-cols">
                     <div className="form-group">
-                      <label className="form-label">
-                        <CompanyIcon />
-                        Entité *
-                      </label>
+                      <label className="form-label">Entité *</label>
                       <select 
                         value={doc.company_id || ''} 
                         onChange={e => { 
@@ -594,12 +622,8 @@ const DocumentConfirmationForm = ({
                       </select>
                       {err.company_id && <div className="error-message">{err.company_id}</div>}
                     </div>
-                    
                     <div className="form-group">
-                      <label className="form-label">
-                        <DocumentIcon />
-                        Type de document *
-                      </label>
+                      <label className="form-label">Type de document *</label>
                       <select 
                         value={doc.doctype_id || ''} 
                         onChange={e => { 
@@ -616,29 +640,8 @@ const DocumentConfirmationForm = ({
                       </select>
                       {err.doctype_id && <div className="error-message">{err.doctype_id}</div>}
                     </div>
-                  </div>
-
-                  {/* Deuxième ligne : Groupe (optionnel) et Partenaire côte-à-côte */}
-                  <div className="form-row">
                     <div className="form-group">
-                      <label className="form-label">Groupe (optionnel)</label>
-                      <select
-                        value={doc.confirmed_data.group_id || ''}
-                        onChange={e => updateConfirmedDocument(idx, 'group_id', parseInt(e.target.value) || '')}
-                        className="form-input"
-                      >
-                        <option value="">Aucun groupe</option>
-                        {currentFileGroups.map(group => (
-                          <option key={group.id} value={group.id}>{group.name}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="form-group">
-                      <label className="form-label">
-                        <PartnerIcon />
-                        Partenaire externe *
-                      </label>
+                      <label className="form-label">Partenaire externe *</label>
                       <select
                         value={doc.confirmed_data.partner_id || ''}
                         onChange={e => { 
@@ -664,9 +667,8 @@ const DocumentConfirmationForm = ({
                       {err.partner_id && <div className="error-message">{err.partner_id}</div>}
                     </div>
                   </div>
-
                   {/* Case à cocher pour facture */}
-                  <div className="checkbox-group">
+                  <div className="checkbox-group" style={{ margin: '0.25rem 0 0.1rem 0' }}>
                     <label>
                       <input
                         type="checkbox"
@@ -676,14 +678,13 @@ const DocumentConfirmationForm = ({
                       Ce document est une facture
                     </label>
                   </div>
-
                   {/* Champs spécifiques aux factures */}
                   {doc.is_invoice && (
-                    <div className="invoice-fields">
-                      <div className="form-row">
+                    <div className="invoice-fields" style={{ padding: '0.5rem 0.75rem', marginTop: '0.25rem' }}>
+                      <div className="form-row" style={{ gap: '0.25rem', marginBottom: '0.1rem' }}>
                         <div className="form-group">
                           <label className="form-label">
-                            <InvoiceIcon />
+                            
                             Numéro de facture *
                           </label>
                           <input
@@ -695,10 +696,9 @@ const DocumentConfirmationForm = ({
                           />
                           {err.invoice_number && <div className="error-message">{err.invoice_number}</div>}
                         </div>
-                        
                         <div className="form-group">
                           <label className="form-label">
-                            <CalendarIcon />
+                            
                             Date *
                           </label>
                           <input
@@ -710,11 +710,10 @@ const DocumentConfirmationForm = ({
                           {err.date && <div className="error-message">{err.date}</div>}
                         </div>
                       </div>
-
-                      <div className="form-row">
+                      <div className="form-row" style={{ gap: '0.25rem', marginBottom: '0.1rem' }}>
                         <div className="form-group">
                           <label className="form-label">
-                            <MoneyIcon />
+                           
                             Total HT *
                           </label>
                           <input
@@ -727,10 +726,9 @@ const DocumentConfirmationForm = ({
                           />
                           {err.total_ht && <div className="error-message">{err.total_ht}</div>}
                         </div>
-                        
                         <div className="form-group">
                           <label className="form-label">
-                            <MoneyIcon />
+                            
                             TVA *
                           </label>
                           <input
@@ -744,11 +742,10 @@ const DocumentConfirmationForm = ({
                           {err.tva && <div className="error-message">{err.tva}</div>}
                         </div>
                       </div>
-
-                      <div className="form-row">
+                      <div className="form-row" style={{ gap: '0.25rem', marginBottom: '0.1rem' }}>
                         <div className="form-group">
                           <label className="form-label">
-                            <MoneyIcon />
+                            
                             Total TTC *
                           </label>
                           <input
@@ -761,8 +758,6 @@ const DocumentConfirmationForm = ({
                           />
                           {err.total_ttc && <div className="error-message">{err.total_ttc}</div>}
                         </div>
-                        
-                        
                       </div>
                     </div>
                   )}

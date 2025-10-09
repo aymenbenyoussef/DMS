@@ -14,14 +14,11 @@ const TempDocumentArchive = ({ user }) => {
 
   const getOneMonthAgo = () => {
     const now = new Date();
-    const lastMonth = new Date(now);
-    lastMonth.setMonth(now.getMonth() - 1);
-    if (lastMonth.getMonth() === now.getMonth()) {
-      lastMonth.setDate(0);
-    }
-    const year = lastMonth.getFullYear();
-    const month = String(lastMonth.getMonth() + 1).padStart(2, '0');
-    const day = String(lastMonth.getDate()).padStart(2, '0');
+    // Go to the first day of the previous month
+    const firstDayLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const year = firstDayLastMonth.getFullYear();
+    const month = String(firstDayLastMonth.getMonth() + 1).padStart(2, '0');
+    const day = '01';
     return `${year}-${month}-${day}`;
   };
 

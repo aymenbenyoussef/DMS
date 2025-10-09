@@ -1630,14 +1630,12 @@ def confirm_document():
                     except Exception as e:
                         extracted_text = ''
                 rapport = None
-                
-                if is_invoice and confirmed_info:
-                    # Generate report PDF for invoices
+                # Always generate rapport PDF for all documents
+                if confirmed_info:
                     report_filename = f"{os.path.splitext(unique_final_filename)[0]}_report.pdf"
                     report_path = os.path.join(summary_folder, report_filename)
                     generate_report_pdf(confirmed_info, report_path, unique_final_filename)
                     rapport = report_path
-                # For non-invoice documents, ocr_text and rapport remain None
                 document_id = db.create_document_with_ocr_data(
                     owner_id=current_user_id,
                     company_id=company_id,
@@ -1667,7 +1665,9 @@ def confirm_document():
                 
                 company = db.get_company_by_id(company_id)
                 doctype = db.get_doctype_by_id(doctype_id)
-                
+                # Define json_path for saving document summary
+                json_filename = f"{os.path.splitext(unique_final_filename)[0]}_summary.json"
+                json_path = os.path.join(summary_folder, json_filename)
                 with open(json_path, 'w', encoding='utf-8') as json_file:
                     json.dump({
                         'filename': unique_final_filename,

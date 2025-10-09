@@ -360,7 +360,7 @@ def generate_report_pdf(confirmed_data, output_path, original_filename):
             spaceAfter=30,
             alignment=1  # Center alignment
         )
-        story.append(Paragraph("RAPPORT DE FACTURE", title_style))
+        story.append(Paragraph("RAPPORT", title_style))
         story.append(Spacer(1, 20))
         
         # Document info
@@ -378,7 +378,7 @@ def generate_report_pdf(confirmed_data, output_path, original_filename):
             ['Total HT', f"{confirmed_data.get('total_ht', 'N/A')} {CURRENCY}" if confirmed_data.get('total_ht') else 'N/A'],
             ['TVA', f"{confirmed_data.get('tva', 'N/A')} {CURRENCY}" if confirmed_data.get('tva') else 'N/A'],
             ['Total TTC', f"{confirmed_data.get('total_ttc', 'N/A')} {CURRENCY}" if confirmed_data.get('total_ttc') else 'N/A'],
-            ['Type de document', 'Facture' if confirmed_data.get('is_invoice') else 'Autre document']
+            ['Facturable', 'Oui' if confirmed_data.get('is_invoice') else 'Non']
         ]
         
         table = Table(data, colWidths=[2*inch, 3*inch])

@@ -38,7 +38,10 @@ function RapportModal(props) {
   const dialogRef = useRef(null);
 
   const getUploaderName = (doc) => {
-    return doc.owner_name || 'Utilisateur inconnu';
+    const name = doc.owner_name || '';
+    const surname = doc.owner_surname || '';
+    const fullName = `${name} ${surname}`.trim();
+    return fullName || 'Utilisateur inconnu';
   };
   const getDocumentGroup = (doc) => {
     return doc.group_name || 'Aucun groupe';
@@ -171,7 +174,7 @@ function RapportModal(props) {
   useEffect(() => {
     let cancelled = false;
     async function fetchRapport() {
-      if (!currentDocument || !isFacture) return;
+      if (!currentDocument ) return;
       try {
         setLoadingRapport(true);
         const res = await api.documents.getRapport(currentDocument.id);
@@ -190,12 +193,12 @@ function RapportModal(props) {
       }
     }
 
-    if (activeTab === 'rapport' && isFacture && !localRapportUrl) {
+    if (activeTab === 'rapport'  && !localRapportUrl) {
       fetchRapport();
     }
 
     return () => { cancelled = true; };
-  }, [activeTab, currentDocument, isFacture, localRapportUrl]);
+  }, [activeTab, currentDocument, localRapportUrl]);
 
   // Récupération de l'OCR à la demande
   useEffect(() => {
@@ -288,29 +291,29 @@ function RapportModal(props) {
   const tabs = [
     {
       id: 'report',
-      label: 'Document',
+      label: 'Document original',
       icon: '📄',
       hasContent: !!(localPreviewUrl || previewUrl || localDocumentFileUrl)
     },
     {
       id: 'ocr',
-      label: 'OCR Extraits',
+      label: 'Extrait ocr',
       icon: '🔍',
       hasContent: !!localOcrText,
       isLoading: loadingOcr
-    }
-  ];
+    },
+  
 
-  if (isFacture) {
-    tabs.push({
+  {
+   
       id: 'rapport',
       label: 'Rapport',
       icon: '📊',
       hasContent: !!localRapportUrl,
       isLoading: loadingRapport
-    });
+    
   }
-
+];
   const content = (
     <div
       className="modal-overlay"
@@ -437,7 +440,7 @@ function RapportModal(props) {
                 </div>
               )}
 
-              {activeTab === 'rapport' && isFacture && (
+              {activeTab === 'rapport' && (
                 <div className="tab-panel tab-panel--rapport">
                   {loadingRapport ? (
                     <div className="loading-state">
@@ -503,20 +506,22 @@ function RapportModal(props) {
                         <span className="info-label">Type</span>
                         <span className="info-value">{doctypeName || '-'}</span>
                       </div>
-                      <div className="info-item">
-                        <span className="info-label">Groupe</span>
-                        <span className="info-value">{getDocumentGroup ? getDocumentGroup(currentDocument) : '-'}</span>
-                      </div>
+                      
                       <div className="info-item">
                         <span className="info-label">Taille</span>
                         <span className="info-value">{formatFileSize ? formatFileSize(currentDocument.file_size || currentDocument.size || 0) : '-'}</span>
                       </div>
                       <div className="info-item">
-                        <span className="info-label">Date</span>
+                        <span className="info-label">Date de téléchargement</span>
                         <span className="info-value">
                           {currentDocument.created_at ? new Date(currentDocument.created_at).toLocaleDateString('fr-FR') : '-'}
                         </span>
                       </div>
+                      <div className="info-item">
+                        <span className="info-label">Date de document</span>
+                        <span className="info-value">{currentDocument.invoice_date  ? new Date(currentDocument.invoice_date || currentDocument.date).toLocaleDateString('fr-FR') : '-'}</span>
+                      </div>
+                      
                     </div>
                   </div>
 

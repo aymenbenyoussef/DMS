@@ -54,16 +54,11 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
 
 const getOneMonthAgo = () => {
   const now = new Date();
-  const lastMonth = new Date(now);
-  lastMonth.setMonth(now.getMonth() - 1);
-  // Handle month wrap-around (e.g., March 31 -> Feb 28/29)
-  if (lastMonth.getMonth() === now.getMonth()) {
-    // If setMonth overflowed, set to last day of previous month
-    lastMonth.setDate(0);
-  }
-  const year = lastMonth.getFullYear();
-  const month = String(lastMonth.getMonth() + 1).padStart(2, '0');
-  const day = String(lastMonth.getDate()).padStart(2, '0');
+  // Go to the first day of the previous month
+  const firstDayLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const year = firstDayLastMonth.getFullYear();
+  const month = String(firstDayLastMonth.getMonth() + 1).padStart(2, '0');
+  const day = '01';
   return `${year}-${month}-${day}`;
 };
   // Helper function to get today's date
@@ -94,6 +89,7 @@ const getOneMonthAgo = () => {
 
   // Helper function for uploader name (placeholder)
   const getUploaderName = (document) => {
+    
     // This would typically involve looking up the uploader's name from user data
     // For now, return a placeholder or implement actual logic if user data is available
     if (document && document.uploaded_by_user_id) {
@@ -132,6 +128,9 @@ const getOneMonthAgo = () => {
   const [selectedDoctypeFilters, setSelectedDoctypeFilters] = useState([]);
   const [startDate, setStartDate] = useState(getOneMonthAgo());
   const [endDate, setEndDate] = useState(getToday());
+  // Invoice date filter states
+  const [invoiceStartDate, setInvoiceStartDate] = useState('');
+  const [invoiceEndDate, setInvoiceEndDate] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [availableDoctypes, setAvailableDoctypes] = useState([]);
   const [billableFilter, setBillableFilter] = useState('all'); // 'all', 'billable', 'non-billable'
@@ -617,6 +616,7 @@ const getOneMonthAgo = () => {
   };
 
   // Filter functions
+
   const applyFilters = () => {
     let filtered = [...documents];
 
@@ -658,6 +658,22 @@ const getOneMonthAgo = () => {
         if (!doc.created_at) return false;
         const docDate = new Date(doc.created_at).toISOString().split('T')[0];
         return docDate >= startDate && docDate <= endDate;
+      });
+    }
+
+    // Apply invoice date range filter (allow filtering with only start or end date)
+    if (invoiceStartDate || invoiceEndDate) {
+      filtered = filtered.filter(doc => {
+        if (!doc.invoice_date) return false;
+        const invoiceDate = new Date(doc.invoice_date).toISOString().split('T')[0];
+        if (invoiceStartDate && invoiceEndDate) {
+          return invoiceDate >= invoiceStartDate && invoiceDate <= invoiceEndDate;
+        } else if (invoiceStartDate) {
+          return invoiceDate >= invoiceStartDate;
+        } else if (invoiceEndDate) {
+          return invoiceDate <= invoiceEndDate;
+        }
+        return true;
       });
     }
 
@@ -740,6 +756,8 @@ const getOneMonthAgo = () => {
     searchTerm,
     startDate,
     endDate,
+    invoiceStartDate,
+    invoiceEndDate,
     selectedDoctypeFilters,
     billableFilter,
     selectedGroupFilters,
@@ -829,6 +847,8 @@ const getOneMonthAgo = () => {
   const clearAllFilters = () => {
     setSearchTerm('');
     setStartDate(getOneMonthAgo());
+    setInvoiceStartDate(getOneMonthAgo());
+    setInvoiceEndDate(getToday());
     setEndDate(getToday());
     setSelectedDoctypeFilters([]);
     setBillableFilter('all');
@@ -857,10 +877,12 @@ const getOneMonthAgo = () => {
       const rect = event.currentTarget.getBoundingClientRect();
       const tableContainer = document.querySelector('.documents-table-container');
       const containerRect = tableContainer?.getBoundingClientRect() || { top: 0, left: 0 };
-
+      // Always open upwards: estimate dropdown height (adjust if needed)
+      const dropdownHeight = 120;
       setDropdownPosition({
-        top: rect.bottom - containerRect.top,
-        left: rect.left - containerRect.left - 100
+        top: rect.top - containerRect.top - dropdownHeight,
+        left: rect.left - containerRect.left - 100,
+        openUpwards: true
       });
       setOpenDropdownId(documentId);
     }
@@ -1044,7 +1066,7 @@ const getOneMonthAgo = () => {
   }
 
   // compute total columns dynamically (after removing the 'Type' column)
-  const totalColumns = isGroupMode ? 10 : 9;
+  const totalColumns = isGroupMode ? 10 : 10;
 // Function to parse mathematical operations in filters
   const parseMathOperation = (filterValue) => {
     const trimmed = filterValue.trim();
@@ -1623,179 +1645,195 @@ const getOneMonthAgo = () => {
                       </th>
                       <th></th>
                       <th></th>
+                      <th></th>
                     </tr>
                   </thead>
                   <tbody>
                     {isLoading ? (
                       <tr>
-                        <td colSpan={isGroupMode ? "9" : "8"} className="text-center py-4">
-                          <div className="spinner-border spinner-border-sm me-2" role="status">
-                            <span className="visually-hidden">Chargement...</span>
-                          </div>
+                        <td colSpan={isGroupMode ? "10" : "9"} className="text-center py-4">
+                          
                           Chargement des documents...
                         </td>
                       </tr>
                     ) : filteredDocuments.length === 0 ? (
                       <tr>
-                        <td colSpan={isGroupMode ? "9" : "8"} className="text-center py-4 text-muted">
+                        <td colSpan={isGroupMode ? "10" : "9"} className="text-center py-4 text-muted">
                           <i className="fas fa-inbox fa-2x mb-2 d-block"></i>
                           Aucun document trouvé
                         </td>
                       </tr>
                     ) : (
-                      filteredDocuments.map((document) => (
-                        <tr
-                          key={document.id}
-                          className="align-middle document-row"
-                          onClick={(e) => {
-                            // If click originated from an interactive element (checkbox, button, dropdown, link, select), do nothing
-                            const ignored = e.target?.closest && e.target.closest('input, button, .dropdown, a, select, .form-check-input, .dropdown-menu');
-                            if (ignored) return;
-                            handleRapport(document);
-                          }}
-                          style={{ cursor: 'pointer' }}
-                        >
-                          {isGlobalActionMode && (
-                            <td>
-                              <input
-                                type="checkbox"
-                                className="form-check-input"
-                                onClick={(e) => e.stopPropagation()}
-                                checked={checkedDocuments.includes(document.id)}
-                                onChange={() => {
-                                  if (checkedDocuments.includes(document.id)) {
-                                    setCheckedDocuments(checkedDocuments.filter(id => id !== document.id));
-                                  } else {
-                                    setCheckedDocuments([...checkedDocuments, document.id]);
-                                  }
-                                }}
-                              />
-                            </td>
-                          )}
-                          <td className="text-center">
-                            <span className="badge bg-secondary">{document.id}</span>
-                          </td>
-                          <td>
-                            <div className="d-flex align-items-center">
-                              <i className="fas fa-file-alt me-2 text-muted"></i>
-                              <span
-                                className="text-truncate document-filename-link"
-                                title={document.filename}
-                                style={{ cursor: 'pointer', textDecoration: 'none', color: '#212529' }}
-                                onClick={() => handleRapport(document)}
-                              >
-                                {document.filename}
-                              </span>
-                            </div>
-                          </td>
-                          <td>
-                            <span className="text-truncate" title={document.partner_name}>
-                              {document.partner_name || '-'}
-                            </span>
-                          </td>
-                          <td className="text-center">
-                            {(document.total_ht > 0 || document.total_ttc > 0) ? (
-                              <span className="badge bg-success">Oui</span>
-                            ) : (
-                              <span className="badge bg-secondary">Non</span>
+                      // Render document rows and pad with empty rows if less than 3
+                      [
+                        ...filteredDocuments.map((document) => (
+                          <tr
+                            key={document.id}
+                            className="align-middle document-row"
+                            onClick={(e) => {
+                              const ignored = e.target?.closest && e.target.closest('input, button, .dropdown, a, select, .form-check-input, .dropdown-menu');
+                              if (ignored) return;
+                              handleRapport(document);
+                            }}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            {isGlobalActionMode && (
+                              <td>
+                                <input
+                                  type="checkbox"
+                                  className="form-check-input"
+                                  onClick={(e) => e.stopPropagation()}
+                                  checked={checkedDocuments.includes(document.id)}
+                                  onChange={() => {
+                                    if (checkedDocuments.includes(document.id)) {
+                                      setCheckedDocuments(checkedDocuments.filter(id => id !== document.id));
+                                    } else {
+                                      setCheckedDocuments([...checkedDocuments, document.id]);
+                                    }
+                                  }}
+                                />
+                              </td>
                             )}
-                          </td>
-                          <td className="text-end">
-                            {document.tva ? parseFloat(document.tva).toFixed(2) : '-'}
-                          </td>
-                          <td className="text-end">
-                            {document.total_ht ? parseFloat(document.total_ht).toFixed(2) : '-'}
-                          </td>
-                          <td className="text-end">
-                            {document.total_ttc ? parseFloat(document.total_ttc).toFixed(2) : '-'}
-                          </td>
-                          <td className="text-center">
-                            {currency || '-'}
-                          </td>
-                          <td className="text-center">
-                            <small className="text-muted">
-                              {document.created_at ? new Date(document.created_at).toLocaleDateString() : '-'}
-                            </small>
-                          </td>
-                          <td className="text-center">
-                            <div className="d-flex align-items-center justify-content-center">
-                              <div className="dropdown">
-                                <button
-                                  className="btn btn-outline-secondary btn-sm"
-                                  onClick={(e) => handleDropdownToggle(document.id, e)}
+                            <td className="text-center">
+                              <span className="badge bg-secondary">{document.id}</span>
+                            </td>
+                            <td style={{ maxWidth: '180px', minWidth: '140px', width: '180px' }}>
+                              <div className="d-flex align-items-center">
+                                <i className="fas fa-file-alt me-2 text-muted"></i>
+                                <span
+                                  className="document-filename-ellipsis"
+                                  title={document.filename}
+                                  style={{
+                                    cursor: 'pointer',
+                                    textDecoration: 'none',
+                                    color: '#212529',
+                                    display: 'inline-block',
+                                    maxWidth: '200px',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                    verticalAlign: 'middle',
+                                  }}
+                                  onClick={() => handleRapport(document)}
                                 >
-                                  <i className="fas fa-ellipsis-v">...</i>
-                                </button>
-                                {openDropdownId === document.id && (
-                                  <div
-                                    className="dropdown-menu show"
-                                    style={{
-                                      position: 'fixed',
-                                      top: dropdownPosition?.top,
-                                      left: dropdownPosition?.left,
-                                      zIndex: 9999
-                                    }}
-                                  >
-                                    <button
-                                      className="dropdown-item"
-                                      onClick={() => handleRapport(document)}
-                                    >
-                                      <i className="fas fa-eye me-2"></i>Aperçu
-                                    </button>
-                                    <button
-                                      className="dropdown-item"
-                                      onClick={() => handleSendEmail(document)}
-                                    >
-                                      <i className="fas fa-envelope me-2"></i>Envoyer
-                                    </button>
-                                    <button
-                                      className="dropdown-item"
-                                      onClick={() => handleEditDocument(document)}
-                                    >
-                                      <i className="fas fa-edit me-2"></i>Modifier
-                                    </button>
-                                  </div>
-                                )}
+                                  {document.filename}
+                                </span>
                               </div>
+                            </td>
+                            <td>
+                              <span className="text-truncate" title={document.partner_name}>
+                                {document.partner_name || '-'}
+                              </span>
+                            </td>
+                            <td className="text-center">
+                              {(document.total_ht > 0 || document.total_ttc > 0) ? (
+                                <span className="badge bg-success">Oui</span>
+                              ) : (
+                                <span className="badge bg-secondary">Non</span>
+                              )}
+                            </td>
+                            <td className="text-end">
+                              {document.tva ? parseFloat(document.tva).toFixed(2) : '-'}
+                            </td>
+                            <td className="text-end">
+                              {document.total_ht ? parseFloat(document.total_ht).toFixed(2) : '-'}
+                            </td>
+                            <td className="text-end">
+                              {document.total_ttc ? parseFloat(document.total_ttc).toFixed(2) : '-'}
+                            </td>
+                            <td className="text-center">
+                              {currency || '-'}
+                            </td>
+                            <td className="text-center">
+                              <small className="text-muted">
+                                {document.created_at ? new Date(document.created_at).toLocaleDateString() : '-'}
+                              </small>
+                            </td>
+                            <td className="text-center">
+                              <div className="d-flex align-items-center justify-content-center">
+                                <div className="dropdown">
+                                  <button
+                                    className="btn btn-outline-secondary btn-sm"
+                                    onClick={(e) => handleDropdownToggle(document.id, e)}
+                                  >
+                                    <i className="fas fa-ellipsis-v">...</i>
+                                  </button>
+                                  {openDropdownId === document.id && (
+                                    <div
+                                      className="dropdown-menu show dropdown-menu-up"
+                                      style={{
+                                        position: 'fixed',
+                                        top: dropdownPosition?.top,
+                                        left: dropdownPosition?.left,
+                                        zIndex: 9999
+                                      }}
+                                    >
+                                      <button
+                                        className="dropdown-item"
+                                        onClick={() => handleRapport(document)}
+                                      >
+                                        <i className="fas fa-eye me-2"></i>Aperçu
+                                      </button>
+                                      <button
+                                        className="dropdown-item"
+                                        onClick={() => handleSendEmail(document)}
+                                      >
+                                        <i className="fas fa-envelope me-2"></i>Envoyer
+                                      </button>
+                                      <button
+                                        className="dropdown-item"
+                                        onClick={() => handleEditDocument(document)}
+                                      >
+                                        <i className="fas fa-edit me-2"></i>Modifier
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
 
-                              {/* Quick delete button to the right of the options button */}
-                              <button
-                                className="btn btn-outline-danger btn-sm ms-2"
-                                title="Supprimer"
-                                onClick={(e) => { e.stopPropagation(); handleDeleteDocument(document); }}
-                                aria-label={`Supprimer ${document.filename || 'document'}`}
-                              >
-                                {/* Inline SVG trash icon (uses currentColor) */}
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
-                                  <path d="M5.5 5.5A.5.5 0 0 1 6 5h4a.5.5 0 0 1 .5.5V6h3v1h-1v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7H2V6h3v-.5zM14 3H10l-.5-1A1 1 0 0 0 8.6 1H7.4a1 1 0 0 0-.9.5L6 3H2v1h12V3z" />
-                                </svg>
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
+                                {/* Quick delete button to the right of the options button */}
+                                <button
+                                  className="btn btn-outline-danger btn-sm ms-2"
+                                  title="Supprimer"
+                                  onClick={(e) => { e.stopPropagation(); handleDeleteDocument(document); }}
+                                  aria-label={`Supprimer ${document.filename || 'document'}`}
+                                >
+                                  {/* Inline SVG trash icon (uses currentColor) */}
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                                    <path d="M5.5 5.5A.5.5 0 0 1 6 5h4a.5.5 0 0 1 .5.5V6h3v1h-1v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7H2V6h3v-.5zM14 3H10l-.5-1A1 1 0 0 0 8.6 1H7.4a1 1 0 0 0-.9.5L6 3H2v1h12V3z" />
+                                  </svg>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        )),
+                      ]
                     )}
                   </tbody>
                   {/* Totals Footer */}
                   {filteredDocuments.length > 0 && (
-                    <tfoot className="table-light border-top">
-                      <tr className="fw-bold">
-                        <td colSpan={isGroupMode ? "5" : "4"} className="text-end">
-                          Total ({totals.count} documents):
-                        </td>
-                        <td className="text-end">
-                          {totals.totalTVA.toFixed(2)}{currency}
-                        </td>
-                        <td className="text-end">
-                          {totals.totalHT.toFixed(2)}{currency}
-                        </td>
-                        <td className="text-end">
-                          {totals.totalTTC.toFixed(2)}{currency}
-                        </td>
-                        <td colSpan="2"></td>
-                      </tr>
-                    </tfoot>
+                    <>
+                      <tfoot className="table-light border-top">
+                        <tr className="fw-bold">
+                          <td colSpan={isGroupMode ? "6" : "5"} className="text-end">
+                            Total ({totals.count} documents):
+                          </td>
+                          <td className="text-end">
+                            {totals.totalTVA.toFixed(2)}{currency}
+                          </td>
+                          <td className="text-end">
+                            {totals.totalHT.toFixed(2)}{currency}
+                          </td>
+                          <td className="text-end">
+                            {totals.totalTTC.toFixed(2)}{currency}
+                          </td>
+                          <td colSpan="2"></td>
+                        </tr>
+                      </tfoot>
+                      {/* Add two empty rows for spacing after the footer, as part of the table */}
+                      
+                    </>
                   )}
+                  
                 </table>
               </div>
             </div>
@@ -1804,7 +1842,7 @@ const getOneMonthAgo = () => {
           {/* Filter Dropdown Overlay - renders as absolute overlay so it doesn't affect table width */}
           <div style={{ position: 'relative' }}>
             {filterDropdownOpen && (
-              <div ref={filterDropdownRef} className="filter-dropdown-overlay" style={{ position: 'fixed', right: 12, top: 64, zIndex: 1050 }}>
+              <div ref={filterDropdownRef} className="filter-dropdown-overlay" style={{ position: 'fixed', right: 40, top: 64, zIndex: 1050 }}>
                 <div className="card" style={{ width: 360, maxHeight: '70vh', overflow: 'auto' }}>
                   <div className="card-header bg-light py-2 d-flex align-items-center">
                     <h6 className="mb-0 d-flex align-items-center">
@@ -1832,7 +1870,7 @@ const getOneMonthAgo = () => {
 
                     {/* Date Range */}
                     <div className="mb-3">
-                      <label className="form-label small fw-bold">Période</label>
+                      <label className="form-label small fw-bold">Date de téléchargement</label>
                       <div className="row g-2">
                         <div className="col-6">
                           <input
@@ -1852,25 +1890,79 @@ const getOneMonthAgo = () => {
                         </div>
                       </div>
                     </div>
+                    {/* Invoice Date Range */}
+                    <div className="mb-3">
+                      <label className="form-label small fw-bold">Date de document</label>
+                      <div className="row g-2">
+                        <div className="col-6">
+                          <input
+                            type="date"
+                            className="form-control form-control-sm"
+                            value={invoiceStartDate}
+                            onChange={(e) => setInvoiceStartDate(e.target.value)}
+                          />
+                        </div>
+                        <div className="col-6">
+                          <input
+                            type="date"
+                            className="form-control form-control-sm"
+                            value={invoiceEndDate}
+                            onChange={(e) => setInvoiceEndDate(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </div>
 
-                    {/* Document Types */}
+                    {/* Document Types - Multi-select Dropdown */}
                     <div className="mb-3">
                       <label className="form-label small fw-bold">Types de documents</label>
-                      <div className="max-height-150 overflow-auto">
-                        {availableDoctypes.map(doctype => (
-                          <div key={doctype.id} className="form-check form-check-sm">
-                            <input
-                              className="form-check-input"
-                              type="checkbox"
-                              id={`doctype-${doctype.id}-overlay`}
-                              checked={selectedDoctypeFilters.includes(doctype.id)}
-                              onChange={() => handleDoctypeFilterChange(doctype.id)}
-                            />
-                            <label className="form-check-label small" htmlFor={`doctype-${doctype.id}-overlay`}>
-                              {doctype.name}
-                            </label>
+                      <div className="dropdown" style={{ position: 'relative' }}>
+                        <button
+                          className="form-select form-select-sm text-start"
+                          type="button"
+                          style={{ minWidth: '325px' }}
+                          onClick={() => setOpenDropdownId(openDropdownId === 'doctype-filter' ? null : 'doctype-filter')}
+                        >
+                          {selectedDoctypeFilters.length === 0
+                            ? 'Sélectionner...'
+                            : `${selectedDoctypeFilters.length} sélectionné(s)`}
+                        </button>
+                        {openDropdownId === 'doctype-filter' && (
+                          <div
+                            className="dropdown-menu show"
+                            style={{
+                              maxHeight: '210px', // 7 * 30px (approx height per item)
+                              overflowY: availableDoctypes.length > 7 ? 'auto' : 'visible',
+                              minWidth: '2220px',
+                              padding: '8px',
+                              zIndex: 10
+                            }}
+                          >
+                            {availableDoctypes.length === 0 ? (
+                              <div className="text-muted small">Aucun type</div>
+                            ) : (
+                              availableDoctypes.map((doctype, idx) => (
+                                <div key={doctype.id} className="form-check d-flex align-items-center" style={{ whiteSpace: 'nowrap', paddingLeft: '0.5rem', height: '30px' }}>
+                                  <input
+                                    className="form-check-input me-2"
+                                    type="checkbox"
+                                    id={`doctype-filter-${idx}`}
+                                    checked={selectedDoctypeFilters.includes(doctype.id)}
+                                    onChange={() => handleDoctypeFilterChange(doctype.id)}
+                                  />
+                                  <label
+                                    className="form-check-label"
+                                    htmlFor={`doctype-filter-${idx}`}
+                                    style={{ marginBottom: 0, cursor: 'pointer', textTransform: 'none', maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'middle' }}
+                                    title={doctype.name}
+                                  >
+                                    {doctype.name.length > 20 ? doctype.name.slice(0, 18) + '...' : doctype.name}
+                                  </label>
+                                </div>
+                              ))
+                            )}
                           </div>
-                        ))}
+                        )}
                       </div>
                     </div>
 
@@ -1889,25 +1981,7 @@ const getOneMonthAgo = () => {
                     </div>
 
                     {/* Groups */}
-                    <div className="mb-3">
-                      <label className="form-label small fw-bold">Groupes</label>
-                      <div className="max-height-150 overflow-auto">
-                        {groups.map(group => (
-                          <div key={group.id} className="form-check form-check-sm">
-                            <input
-                              className="form-check-input"
-                              type="checkbox"
-                              id={`group-${group.id}-overlay`}
-                              checked={selectedGroupFilters.includes(group.id)}
-                              onChange={() => handleGroupFilterChange(group.id)}
-                            />
-                            <label className="form-check-label small" htmlFor={`group-${group.id}-overlay`}>
-                              {group.name}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                    
                     {/* Buttons removed as requested */}
                   </div>
                 </div>

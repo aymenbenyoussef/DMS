@@ -1437,7 +1437,7 @@ class DatabaseManager:
         """Get all documents for a company regardless of document type, with optional date filtering"""
         query = """
             SELECT d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size, d.file_path, d.extracted_text, d.is_invoice, d.ocr_text, d.rapport, d.invoice_date, d.total_ht, d.tva, d.total_ttc, d.owner_id, p.company_name as partner_name,
-                   u.username as owner_name,
+                   u.username as owner_name,u.surname as owner_surname ,
                    GROUP_CONCAT(g.name SEPARATOR ', ') as group_name
             FROM documents d
             LEFT JOIN partners p ON d.partner_id = p.id
@@ -1445,7 +1445,7 @@ class DatabaseManager:
             LEFT JOIN documents_group dg ON d.id = dg.document_id
             LEFT JOIN `groups` g ON dg.group_id = g.id
             WHERE d.company_id = %s AND d.flag = TRUE
-            GROUP BY d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size, d.file_path, d.extracted_text, d.is_invoice, d.ocr_text, d.rapport, d.invoice_date, d.total_ht, d.tva, d.total_ttc, d.owner_id, p.company_name, u.username
+            GROUP BY d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size, d.file_path, d.extracted_text, d.is_invoice, d.ocr_text, d.rapport, d.invoice_date, d.total_ht, d.tva, d.total_ttc, d.owner_id, p.company_name, u.username,u.surname
             ORDER BY d.created_at DESC
         """
         params = [company_id]

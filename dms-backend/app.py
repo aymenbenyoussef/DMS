@@ -1680,12 +1680,12 @@ def confirm_document():
                         extracted_text = ''
                 rapport = None
                 
-                if is_invoice and confirmed_info:
-                    # Generate report PDF for invoices
-                    report_filename = f"{os.path.splitext(unique_final_filename)[0]}_report.pdf"
-                    report_path = os.path.join(summary_folder, report_filename)
-                    generate_report_pdf(confirmed_info, report_path, unique_final_filename)
-                    rapport = report_path
+                
+                # Generate report PDF for invoices
+                report_filename = f"{os.path.splitext(unique_final_filename)[0]}_report.pdf"
+                report_path = os.path.join(summary_folder, report_filename)
+                generate_report_pdf(confirmed_info, report_path, unique_final_filename)
+                rapport = report_path
                 # For non-invoice documents, ocr_text and rapport remain None
                 document_id = db.create_document_with_ocr_data(
                     owner_id=current_user_id,

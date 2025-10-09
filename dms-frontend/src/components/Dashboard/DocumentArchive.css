@@ -1,3 +1,7 @@
+/* Force dropdown to open upwards visually */
+.dropdown-menu.dropdown-menu-up {
+  transform: translateY(-100%) !important;
+}
 /* ===== DOCUMENT ARCHIVE STYLES (Optimized, neutral palette) ===== */
 
 :root {
@@ -402,7 +406,7 @@
 .document-archive .btn:active { transform: none; box-shadow: none; }
 
 /* Remove dropdown entrance animations */
-.dropdown-menu { transition: none !important; transform: none !important; opacity: 1 !important; }
+.dropdown-menu { transition: none !important; opacity: 1 !important; }
 
 /* Action cells: small opacity hint only */
 .action-cell { opacity: 0.95; transition: opacity 0.08s ease; }
