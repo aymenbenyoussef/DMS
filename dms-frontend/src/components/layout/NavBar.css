@@ -8,7 +8,7 @@
   /*background: #0f5132;*/
   background-color: #093f93;
   color: white;
-  padding: 0 12px;
+  padding: 0 12px; /* outer gutter */
   height: var(--navbar-height) !important;
   box-shadow: none !important;
   top: 0;
@@ -16,21 +16,37 @@
   display: flex;
   align-items: center;
   width: 100%;
-  justify-content: center;
+  justify-content: center; /* keep center alignment on navbar bar, inner container handles spacing */
   backdrop-filter: blur(10px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+/* Ensure the navbar uses border-box sizing to avoid zoom overflow issues */
+.navbar, .navbar * {
+  box-sizing: border-box;
+}
+
 .navbar-container {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start; /* allow center search with auto margins */
   align-items: center;
+  position: relative; /* allow absolute centering of inner elements like .search-container */
   width: 100%;
-  max-width: 1400px;
-  /*margin: 0 auto;*/
-  padding: 0 12px;
+  /* Allow full fluid width so elements stick to left/right when zooming */
+  max-width: none;
+  margin: 0;
+  padding: 0 12px; /* keep some internal gutter */
   gap: 0.75rem !important;
   height: 100% !important;
+}
+
+/* Stronger rule to override global centering (e.g., Tailwind/App.css) */
+nav.navbar > .navbar-container {
+  max-width: none !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding-left: 12px !important;
+  padding-right: 12px !important;
 }
 
 .navbar-brand {
@@ -93,9 +109,13 @@
 }
 
 .search-container {
-  flex-grow: 1;
-  max-width: 420px !important;
-  margin: 0 0.5rem !important;
+  /* Center the search bar using flex auto margins so it's truly centered between brand and links */
+  position: relative; /* keep positioned for absolute dropdowns inside */
+  flex: 0 1 420px;
+  width: 420px;
+  max-width: calc(100% - 240px); /* leave space for left/right items */
+  margin: 0 auto; /* auto margins center the flex item */
+  z-index: 1200; /* above navbar content but below dropdowns */
 }
 
 .search-bar {
@@ -104,9 +124,10 @@
   background: rgba(255, 255, 255, 0.12);
   border-radius: 24px !important;
   padding: 6px 10px !important;
-  height: 38px; /* réduit pour s'adapter à la nouvelle navbar */
+  height: 38px; /* reduced to fit navbar */
   transition: all 0.3s ease;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(4px);
 }
 
 .search-bar:hover {

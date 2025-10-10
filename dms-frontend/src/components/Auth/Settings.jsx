@@ -38,6 +38,8 @@ const Settings = () => {
 
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  // Toast state
+  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
 
   // Update local system name when context system name changes
 useEffect(() => {
@@ -107,21 +109,46 @@ useEffect(() => {
     try {
       await api.settings.updateSettings(payload);
       setSystemName(localSystemName);
-      setSuccessMessage('Les paramètres ont été enregistrés avec succès.');
-      setTimeout(() => setSuccessMessage(''), 5000);
+      const msg = 'Les paramètres ont été enregistrés avec succès.';
+      setSuccessMessage(msg);
+      // show toast from top
+      setToast({ visible: true, message: msg, type: 'success' });
+      // auto-dismiss after 4s
+      setTimeout(() => {
+        setToast(t => ({ ...t, visible: false }));
+        setSuccessMessage('');
+      }, 4000);
     } catch (err) {
-      alert('Erreur lors de la sauvegarde des paramètres.');
+      const errMsg = 'Erreur lors de la sauvegarde des paramètres.';
+      // show error toast
+      setToast({ visible: true, message: errMsg, type: 'error' });
+      setTimeout(() => setToast(t => ({ ...t, visible: false })), 5000);
+      alert(errMsg);
     }
   };
 
   return (
     <div className="settings-container">
+      {/* Top toast */}
+      {toast.visible && (
+        <div className={`top-toast ${toast.type === 'error' ? 'top-toast-error' : 'top-toast-success'}`} role="status" aria-live="polite">
+          <div className="top-toast-inner">
+            <div className="top-toast-icon">{toast.type === 'error' ? '✖️' : '✓'}</div>
+            <div className="top-toast-message">{toast.message}</div>
+            <button className="top-toast-close" onClick={() => setToast(t => ({ ...t, visible: false }))} aria-label="Fermer la notification">✕</button>
+          </div>
+        </div>
+      )}
+
+      {/* Header with Save button top-right */}
       <div className="settings-header">
         <h1 className="settings-title">Paramètres du système</h1>
-        <p className="settings-subtitle">Configurez les paramètres de votre application</p>
+        <div className="settings-header-actions">
+          <button className="save-button save-button-header" onClick={handleSubmit}>Enregistrer</button>
+        </div>
       </div>
 
-      <div className="settings-grid">
+  <div className="settings-grid">
         {/* System Settings Card */}
         <div className="settings-card">
           <div className="settings-card-header">
@@ -432,26 +459,7 @@ useEffect(() => {
                   <option value="ETH">ETH - Ethereum</option>
                 </select>
               </div>
-              {successMessage && (
-                <div className="alert-success full-width">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                    <polyline points="22,4 12,14.01 9,11.01"/>
-                  </svg>
-                  {successMessage}
-                </div>
-              )}
-
-              {!successMessage && (
-                <div className="save-button-container full-width">
-                  <button 
-                    className="save-button" 
-                    onClick={handleSubmit}
-                  >
-                    Enregistrer
-                  </button>
-                </div>
-              )}
+              {/* Removed inline success message: top toast will be used instead */}
             </div>
           </div>
         </div>
