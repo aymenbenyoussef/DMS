@@ -1170,8 +1170,20 @@ const getOneMonthAgo = () => {
                         if (globalActionType === 'delete') {
                           setIsBulkDeleteModalOpen(true);
                         } else if (globalActionType === 'send') {
-                          // Call send logic for checkedDocuments
-                          // Example: handleBulkSend(checkedDocuments);
+                          // Multi-file send: collect checked documents and open ShareModal
+                          const docsToSend = documents.filter(doc => checkedDocuments.includes(doc.id));
+                          setSelectedDocuments(docsToSend);
+                          setIsEmailModalOpen(true);
+                          setCurrentDocument(null); // Not a single doc
+                          setDisplayedEmailFilename('');
+                          setEmailSubject('');
+                          setEmailMessage('');
+                          setSelectedRecipients([]);
+                          setSelectedEmailTypes([]);
+                          setEmailError('');
+                          setEmailSuccess('');
+                          setAvailableEmailTypes([]);
+                          setEmailUsers([]);
                         }
                       }}
                     >
@@ -2082,6 +2094,7 @@ const getOneMonthAgo = () => {
         handleConfirmSendEmail={handleSendEmailConfirm}
         handleCloseEmailModal={handleCloseEmailModal}
         formatFileSize={formatFileSize}
+        selectedDocuments={selectedDocuments}
       />
 
       {/* Edit Modal */}
