@@ -346,6 +346,13 @@ const email = {
   },
   getDocumentInfo: (documentId) => API.get(`/documents/${documentId}/email-info`),
   sendDocument: (documentId, emailData) => API.post(`/documents/${documentId}/send-email`, emailData),
+  sendMultipleDocuments: (documentIds, emailData) => {
+    // emailData should include recipients, email_type, subject, message
+    return API.post('/documents/send-multiple-email', {
+      document_ids: documentIds,
+      ...emailData
+    });
+  },
 };
 
 const tempDocuments = {

@@ -24,7 +24,8 @@ function ShareModal(props) {
     isEmailSending,
     handleConfirmSendEmail,
     handleCloseEmailModal,
-    formatFileSize = (b) => (b ? `${b} B` : '0 B')
+    formatFileSize = (b) => (b ? `${b} B` : '0 B'),
+    selectedDocuments = [] // New prop for multiple documents
   } = props;
 
   const overlayRef = useRef(null);
@@ -103,9 +104,9 @@ function ShareModal(props) {
 
         {/* Corps de la modale avec défilement interne */}
         <div className="modal-body modal-body--scrollable">
-          {currentDocument ? (
+          {currentDocument || (selectedDocuments && selectedDocuments.length > 0) ? (
             <div className="share-content">
-              {/* Carte du document */}
+              {/* Carte du document ou liste de documents */}
               <div className="document-card">
                 <div className="document-card__icon">
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -113,25 +114,40 @@ function ShareModal(props) {
                   </svg>
                 </div>
                 <div className="document-card__content">
-                  <h3 className="document-card__title">{displayedEmailFilename || currentDocument.filename}</h3>
+                  <h3 className="document-card__title">
+                    {selectedDocuments && selectedDocuments.length > 1 ? (
+                      <>
+                        {selectedDocuments.map((doc, idx) => (
+                          <span key={doc.id || doc.filename}>
+                            {doc.filename} ({formatFileSize(doc.file_size || 0)}){idx < selectedDocuments.length - 1 ? ', ' : ''}
+                          </span>
+                        ))}
+                      </>
+                    ) : (
+                      displayedEmailFilename || (currentDocument && currentDocument.filename)
+                    )}
+                  </h3>
                   <div className="document-card__meta">
-                    <span className="document-meta__item">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                        <polyline points="7,10 12,15 17,10"/>
-                        <line x1="12" y1="15" x2="12" y2="3"/>
-                      </svg>
-                      {formatFileSize(currentDocument.file_size || 0)}
-                    </span>
-                    <span className="document-meta__item">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                        <line x1="16" y1="2" x2="16" y2="6"/>
-                        <line x1="8" y1="2" x2="8" y2="6"/>
-                        <line x1="3" y1="10" x2="21" y2="10"/>
-                      </svg>
-                      {currentDocument.created_at ? new Date(currentDocument.created_at).toLocaleDateString('fr-FR') : 'N/A'}
-                    </span>
+                    {selectedDocuments && selectedDocuments.length === 1 && (
+                      <span className="document-meta__item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                          <polyline points="7,10 12,15 17,10"/>
+                          <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        {formatFileSize((selectedDocuments[0] && selectedDocuments[0].file_size) || 0)}
+                      </span>
+                    )}
+                    {(!selectedDocuments || selectedDocuments.length <= 1) && (
+                      <span className="document-meta__item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                          <polyline points="7,10 12,15 17,10"/>
+                          <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        {formatFileSize(currentDocument?.file_size || 0)}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
