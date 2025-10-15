@@ -292,25 +292,27 @@ input:checked + .toggle-slider:before {
 }
 
 .save-button {
-  background: var(--primary-blue);
+  /* Reprise du style du bouton 'modifier' (AdminUsers.css .btn-edit) */
+  background: linear-gradient(135deg, #ff9800, #f57c00);
   color: white;
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: 8px; /* plus net que la variable pour coller à AdminUsers */
   padding: 0.625rem 1.5rem;
   font-size: 0.8125rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   gap: 0.5rem;
   min-height: 2.5rem;
+  box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
 }
 
 .save-button:hover {
-  background: var(--primary-blue-hover);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
+  /* Hover mimic du bouton modifier */
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(255, 152, 0, 0.4);
 }
 
 .save-button:active {

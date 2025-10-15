@@ -259,9 +259,29 @@ const AdminPartnerTypes = ({ user }) => {
             </button>
           )}
           
-          <Link to="/AddPartnerType" className="btn-primary-2">
-            Ajouter un type de partenaire
-          </Link>
+          <div className="admin-tabs-right">
+            <button className="btn-reset" onClick={handleResetFilters} disabled={loading}>
+              Reset Filter
+            </button>
+
+            <div className="export-wrapper">
+              <button className="export-dropdown-btn" onClick={() => setExportMenuOpen(v => !v)}>
+                Export ▾
+              </button>
+              {exportMenuOpen && (
+                <ul ref={exportMenuRef} className="export-dropdown-list">
+                  <li onClick={() => { handleExport('csv'); setExportMenuOpen(false); }} style={{padding: '8px 16px', cursor: 'pointer'}}>CSV</li>
+                  <li onClick={() => { handleExport('json'); setExportMenuOpen(false); }} style={{padding: '8px 16px', cursor: 'pointer'}}>JSON</li>
+                  <li onClick={() => { handleExport('txt'); setExportMenuOpen(false); }} style={{padding: '8px 16px', cursor: 'pointer'}}>TXT</li>
+                  <li onClick={() => { handleExport('excel'); setExportMenuOpen(false); }} style={{padding: '8px 16px', cursor: 'pointer'}}>Excel</li>
+                </ul>
+              )}
+            </div>
+
+            <Link to="/AddPartnerType" className="btn-primary-2">
+              Ajouter un type de partenaire
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -270,48 +290,7 @@ const AdminPartnerTypes = ({ user }) => {
       
       {activeTab === 'list' && (
         <div className="users-list">
-          {/* Export dropdown */}
-          <div style={{ position: 'relative', display: 'flex', justifyContent: 'flex-end', marginBottom: '8px', gap: '8px' }}>
-            <button 
-              style={{
-                backgroundColor: '#6c757d',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                padding: '8px 16px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '500'
-              }}
-              onClick={handleResetFilters}
-            >
-              Reset Filter
-            </button>
-            <button className="export-dropdown-btn" onClick={() => setExportMenuOpen(v => !v)}>
-              Export ▼
-            </button>
-            {exportMenuOpen && (
-              <ul ref={exportMenuRef} style={{
-                position: 'absolute',
-                top: '110%',
-                right: 0,
-                background: '#fff',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                zIndex: 10,
-                minWidth: '140px',
-                padding: 0,
-                margin: 0,
-                listStyle: 'none',
-              }}>
-                <li style={{padding: '8px 16px', cursor: 'pointer', transition: 'background-color 0.2s ease, color 0.2s ease'}} onMouseOver={(e) => { e.target.style.backgroundColor = '#f8f9fa'; e.target.style.color = '#1976d2'; }} onMouseOut={(e) => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = 'inherit'; }} onClick={() => { handleExport('csv'); setExportMenuOpen(false); }}>CSV</li>
-                <li style={{padding: '8px 16px', cursor: 'pointer', transition: 'background-color 0.2s ease, color 0.2s ease'}} onMouseOver={(e) => { e.target.style.backgroundColor = '#f8f9fa'; e.target.style.color = '#1976d2'; }} onMouseOut={(e) => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = 'inherit'; }} onClick={() => { handleExport('json'); setExportMenuOpen(false); }}>JSON</li>
-                <li style={{padding: '8px 16px', cursor: 'pointer', transition: 'background-color 0.2s ease, color 0.2s ease'}} onMouseOver={(e) => { e.target.style.backgroundColor = '#f8f9fa'; e.target.style.color = '#1976d2'; }} onMouseOut={(e) => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = 'inherit'; }} onClick={() => { handleExport('txt'); setExportMenuOpen(false); }}>TXT</li>
-                <li style={{padding: '8px 16px', cursor: 'pointer', transition: 'background-color 0.2s ease, color 0.2s ease'}} onMouseOver={(e) => { e.target.style.backgroundColor = '#f8f9fa'; e.target.style.color = '#1976d2'; }} onMouseOut={(e) => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = 'inherit'; }} onClick={() => { handleExport('excel'); setExportMenuOpen(false); }}>Excel</li>
-              </ul>
-            )}
-          </div>
+          {/* Header-level controls are used now; duplicate list controls removed */}
 
           {loading && (
             <div className="loading-message">

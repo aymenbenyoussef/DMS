@@ -19,6 +19,7 @@
   background-color: #f1f5f9;
   transition: margin-left 0.28s ease, padding 0.2s ease;
   margin-left: 0; /* occupy full width by default */
+  min-width: 0; /* allow flex children to shrink properly */
 }
 
 .main-content.sidebar-open {
@@ -26,9 +27,13 @@
 }
 
 .content-container {
-  max-width: 1400px;
-  margin: 0 auto;
+  /* Make the container fluid so it stretches to available space and sticks to the sidebar.
+     Keep internal padding and box-sizing so children don't overflow when zooming. */
+  max-width: none;
+  margin: 0; /* don't center - keep left aligned to the main content area */
   width: 100%;
+  padding: 1rem 1rem; /* safe horizontal padding */
+  box-sizing: border-box;
 }
 
 @media (max-width: 1024px) {
@@ -37,6 +42,7 @@
     margin-left: 0;
     padding: 1rem;
   }
+  .content-container { padding: 1rem; }
 }
 
 @media (max-width: 768px) {

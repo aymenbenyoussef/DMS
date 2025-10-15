@@ -594,9 +594,30 @@ const AdminUsers = ({user ,loadingUser}) => {
               Modifier l'utilisateur
             </button>
           )}
-          <button className="btn-primary-2" onClick={handleAddUser} disabled={loading}>
-            Ajouter un utilisateur
-          </button>
+
+          <div className="admin-tabs-right">
+            <button className="btn-reset" onClick={handleResetFilters} disabled={loading}>
+              Reset Filter
+            </button>
+
+            <div className="export-wrapper">
+              <button className="export-dropdown-btn" onClick={() => setExportMenuOpen(v => !v)}>
+                Export ▾
+              </button>
+              {exportMenuOpen && (
+                <ul ref={exportMenuRef} className="export-dropdown-list">
+                  <li onClick={() => { handleExport('csv'); setExportMenuOpen(false); }} style={{padding: '8px 16px', cursor: 'pointer'}}>CSV</li>
+                  <li onClick={() => { handleExport('json'); setExportMenuOpen(false); }} style={{padding: '8px 16px', cursor: 'pointer'}}>JSON</li>
+                  <li onClick={() => { handleExport('txt'); setExportMenuOpen(false); }} style={{padding: '8px 16px', cursor: 'pointer'}}>TXT</li>
+                  <li onClick={() => { handleExport('excel'); setExportMenuOpen(false); }} style={{padding: '8px 16px', cursor: 'pointer'}}>Excel</li>
+                </ul>
+              )}
+            </div>
+
+            <button className="btn-primary-2" onClick={handleAddUser} disabled={loading}>
+              Ajouter un utilisateur
+            </button>
+          </div>
         </div>
       </div>
 
@@ -613,34 +634,7 @@ const AdminUsers = ({user ,loadingUser}) => {
 
       {activeTab === 'list' && (
         <div className="users-list">
-          <div style={{ position: 'relative', display: 'flex', justifyContent: 'flex-end', marginBottom: '8px', gap: '8px' }}>
-            <button 
-              style={{
-                backgroundColor: '#6c757d',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                padding: '8px 16px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '500'
-              }}
-              onClick={handleResetFilters}
-            >
-              Reset Filter
-            </button>
-            <button className="export-dropdown-btn" onClick={() => setExportMenuOpen(v => !v)}>
-              Export ▼
-            </button>
-            {exportMenuOpen && (
-              <ul ref={exportMenuRef} className="export-dropdown-list">
-                <li onClick={() => { handleExport('csv'); setExportMenuOpen(false); }} style={{padding: '8px 16px', cursor: 'pointer', transition: 'background-color 0.2s ease, color 0.2s ease'}} onMouseOver={(e) => { e.target.style.backgroundColor = '#f8f9fa'; e.target.style.color = '#1976d2'; }} onMouseOut={(e) => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = 'inherit'; }}>CSV</li>
-                <li onClick={() => { handleExport('json'); setExportMenuOpen(false); }} style={{padding: '8px 16px', cursor: 'pointer', transition: 'background-color 0.2s ease, color 0.2s ease'}} onMouseOver={(e) => { e.target.style.backgroundColor = '#f8f9fa'; e.target.style.color = '#1976d2'; }} onMouseOut={(e) => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = 'inherit'; }}>JSON</li>
-                <li onClick={() => { handleExport('txt'); setExportMenuOpen(false); }} style={{padding: '8px 16px', cursor: 'pointer', transition: 'background-color 0.2s ease, color 0.2s ease'}} onMouseOver={(e) => { e.target.style.backgroundColor = '#f8f9fa'; e.target.style.color = '#1976d2'; }} onMouseOut={(e) => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = 'inherit'; }}>TXT</li>
-                <li onClick={() => { handleExport('excel'); setExportMenuOpen(false); }} style={{padding: '8px 16px', cursor: 'pointer', transition: 'background-color 0.2s ease, color 0.2s ease'}} onMouseOver={(e) => { e.target.style.backgroundColor = '#f8f9fa'; e.target.style.color = '#1976d2'; }} onMouseOut={(e) => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = 'inherit'; }}>Excel</li>
-              </ul>
-            )}
-          </div>
+          {/* Header-level controls moved to the top; removed duplicate buttons here */}
           
           {success && (
             <div className="alert alert-success" style={{marginBottom: '16px', textAlign: 'left'}}>
@@ -698,7 +692,7 @@ const AdminUsers = ({user ,loadingUser}) => {
                   <thead>
                     <tr>
                       <th style={{width: '24px', minWidth: '24px', maxWidth: '24px', padding: 0}}></th>
-                      <th style={{cursor:'pointer', background: sortConfig.key === 'id' ? '#f0f4fa' : undefined, color: sortConfig.key === 'id' ? '#1976d2' : undefined}} onClick={() => handleSort('id')}>
+                      <th className="col-id" style={{cursor:'pointer', background: sortConfig.key === 'id' ? '#f0f4fa' : undefined, color: sortConfig.key === 'id' ? '#1976d2' : undefined}} onClick={() => handleSort('id')}>
                         Id <span style={{fontSize:'1em'}}>{sortConfig.key === 'id' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
                       </th>
                       <th style={{cursor:'pointer', background: sortConfig.key === 'username' ? '#f0f4fa' : undefined, color: sortConfig.key === 'username' ? '#1976d2' : undefined, width: '250px', minWidth: '250px'}} onClick={() => handleSort('username')}>
@@ -722,7 +716,7 @@ const AdminUsers = ({user ,loadingUser}) => {
                     </tr>
                     <tr className="filter-row">
                       <td></td>
-                      <td>
+                      <td className="col-id">
                         <input
                           type="text"
                           value={filters.id}
@@ -791,7 +785,7 @@ const AdminUsers = ({user ,loadingUser}) => {
                           <td style={{width: '24px', minWidth: '24px', maxWidth: '24px', padding: 0, textAlign: 'center'}}>
                             <div className={`status-led ${rowUser.is_active ? 'status-led-active' : 'status-led-inactive'}`}></div>
                           </td>
-                          <td>{rowUser.id}</td>
+                          <td className="col-id">{rowUser.id}</td>
                           <td style={{width: '250px', minWidth: '250px'}}>{`${rowUser.username} ${rowUser.surname}`}</td>
                           
                           <td className="email-col" style={{wordBreak: 'break-all', width: '300px', minWidth: '300px'}}>{rowUser.email}</td>

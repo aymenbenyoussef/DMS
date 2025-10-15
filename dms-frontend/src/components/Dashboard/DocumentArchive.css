@@ -218,13 +218,14 @@
 .documents-table-container .table thead th {
   background: transparent; /* inherits thead gradient */
   border-bottom: 1px solid var(--border);
-  font-weight: 700;
+  font-weight: 600;
   color: #111827 !important;
-  padding: 0.65rem 0.5rem;
+  /* More readable header size and spacing */
+  padding: 0.45rem 0.5rem;
   vertical-align: middle;
-  font-size: 0.72rem;
+  font-size: 0.85rem;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
   white-space: nowrap;
 }
 
@@ -234,15 +235,17 @@
 
 /* Optional filter row below header */
 .documents-table-container .table thead tr.filter-row th {
-  position: sticky; top: 48px; z-index: 99; background: var(--header-bg); border-bottom:1px solid var(--border); padding: 0.35rem 0.5rem; font-weight:500; font-size:0.75rem;
+  position: sticky; top: 48px; z-index: 99; background: var(--header-bg); border-bottom:1px solid var(--border);
+  padding: 0.45rem 0.5rem; font-weight:500; font-size:0.85rem;
 }
 
 .documents-table-container .table tbody td {
-  padding: 0.5rem 0.5rem;
+  padding: 0.12rem 0.18rem; /* passe finale: très compact */
   vertical-align: middle;
   border-bottom: 1px solid #f1f5f9;
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   color: var(--text) !important;
+  line-height: 0.95; /* compact line-height */
 }
 
 .documents-table-container .table tbody tr:hover { background-color: #fbfdff; transition: background-color 0.12s ease; }

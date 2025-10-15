@@ -13,7 +13,7 @@
 .admin-header {
   margin-bottom: 12px;
   flex-shrink: 0;
-  overflow: hidden;
+  overflow: visible; /* allow dropdowns to overflow the header */
   max-height: 80px;
 }
 
@@ -32,6 +32,7 @@
   width: 100%;
   margin-right: 40px;
   padding-bottom: 0;
+  overflow: visible; /* ensure child dropdowns are not clipped */
 }
 
 .tab-btn {
@@ -126,6 +127,35 @@
 .btn-add-modern:active {
   transform: translateY(0);
 }
+
+/* Right-side controls: reset, export, add */
+.admin-tabs-right {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn-reset {
+  background: #f5f5f5;
+  color: #333;
+  border: 1px solid #d6d6d6;
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.btn-reset:hover {
+  background: #eef3fb;
+  color: #0b62b3;
+  border-color: #cfe0fb;
+  transform: translateY(-2px);
+}
+
+.export-wrapper { position: relative; }
 
 .btn-add-icon {
   width: 18px;
@@ -232,73 +262,158 @@
   flex-direction: column;
 }
 
-/* TABLEAUX AMÉLIORÉS */
+/* ===== UNIFIED TABLE STYLES (from DocumentArchive) ===== */
 .users-table-container {
-  overflow-x: auto;
-  overflow-y: hidden;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  display: flex;
-  flex-direction: column;
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  background-color: var(--surface, #ffffff);
+  border-radius: 10px;
+  border: 1px solid var(--border, #e6e9ee);
+  box-shadow: 0 6px 18px rgba(16,24,40,0.06);
+  overflow: hidden;
+  height: 100%;
+  display:flex;
+  flex-direction:column;
+  max-height: calc(100vh - 220px);
+  position: relative;
 }
 
-.users-table-fixed {
-  width: 100%;
-  border-collapse: collapse;
-  display: table;
-  table-layout: fixed;
+.users-table-container .table-responsive {
+  max-height: calc(100vh - 220px - 16px);
+  overflow: auto;
+  flex:1;
+  position:relative;
 }
 
-.users-table-fixed thead,
-.users-table-fixed tbody {
-  display: table-row-group;
+
+.users-table-container .table,
+.users-table-container table,
+.users-table-container .users-table-fixed {
+  margin-bottom: 0;
+  font-size: 0.85rem;
+  color: var(--text, #111827) !important;
+  border-collapse: separate; /* allow rounded corners on header */
+  width: 100%; /* make table use full available width */
+  table-layout: auto !important; /* allow columns to size to content and header */
 }
 
-.users-table-fixed thead tr,
-.users-table-fixed tbody tr {
-  display: table-row;
+.users-table-container .table td,
+.users-table-container .table th { color: var(--text, #111827) !important; box-sizing: border-box; }
+
+/* Sticky header */
+.users-table-container .table thead {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: linear-gradient(180deg, var(--header-bg, #f8fafc), var(--surface, #fff));
+  border-bottom: 1px solid var(--border, #e6e9ee);
 }
 
-.users-table-fixed th,
-.users-table-fixed td {
-  padding: 6px 8px;
-  text-align: left;
-  border-bottom: 1px solid #eef3fb;
-  width: auto;
-  white-space: normal;
-  overflow: visible;
-  text-overflow: clip;
-  box-sizing: border-box;
-  font-size: 0.9rem;
-}
-
-.users-table-fixed th {
-  background: linear-gradient(135deg, #f8faff 0%, #f0f4fa 100%) !important;
-  font-weight: 700;
-  color: #2c3e50;
-  font-size: 13px;
-  letter-spacing: 0.5px;
+.users-table-container .table thead th,
+.users-table-container .users-table-fixed thead th,
+.users-table-container table thead th {
+  background: transparent;
+  border-bottom: 1px solid var(--border, #e6e9ee);
+  font-weight: 600;
+  color: #111827 !important;
+  /* Increase header padding and font-size for readability */
+  padding: 0.45rem 0.5rem;
+  vertical-align: middle;
+  font-size: 0.85rem;
   text-transform: uppercase;
-  padding: 16px 12px;
-  border-bottom: 2px solid #e3f2fd;
+  letter-spacing: 0.02em;
+  white-space: nowrap; /* keep header label on one line */
+  min-width: 40px;
 }
 
-.users-table-fixed .filter-row td {
-  background-color: #f8f9fa !important;
-  padding: 8px 12px;
+.users-table-container .table thead th:first-child { border-top-left-radius: 8px; }
+.users-table-container .table thead th:last-child { border-top-right-radius: 8px; }
+
+.users-table-container .table thead tr.filter-row th {
+  position: sticky; top: 48px; z-index: 99; background: var(--header-bg, #f8fafc); border-bottom:1px solid var(--border, #e6e9ee);
+  padding: 0.45rem 0.5rem; font-weight:500; font-size:0.85rem;
 }
 
-.table-body-scrollable {
-  overflow-y: auto;
-  max-height: 60vh;
+.users-table-container .table tbody td,
+.users-table-container .users-table-fixed tbody td,
+.users-table-container table tbody td {
+  padding: 0.12rem 0.2rem; /* passe finale: très compact */
+  vertical-align: middle;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.8rem;
+  color: var(--text, #111827) !important;
+  white-space: nowrap; /* avoid cells compressing; will be overridden on small screens */
+  min-width: 28px;
+  line-height: 0.95; /* compact line-height */
 }
 
-.users-table-fixed tr:hover {
-  background: linear-gradient(135deg, rgba(25, 118, 210, 0.02), rgba(25, 118, 210, 0.05));
-  transform: scale(1.001);
-  transition: all 0.2s ease;
+.users-table-container .table tbody tr:hover { background-color: #fbfdff; transition: background-color 0.12s ease; }
+
+/* Helper: allow a column to flex/grow when given class on th/td */
+.users-table-container .col-flex {
+  width: 1%; /* small base width so flex can grow */
+}
+
+/* On smaller screens allow wrapping and horizontal scroll instead of crushing columns */
+@media (max-width: 992px) {
+  .users-table-container .table {
+    table-layout: auto;
+  }
+  .users-table-container .table td,
+  .users-table-container .table th {
+    white-space: normal; /* allow wrapping on narrow screens */
+  }
+  .users-table-container { overflow-x: auto; }
+}
+
+/* When you want a column to take remaining space, add .col-expand to the TH/TD in markup */
+.users-table-container .col-expand {
+  width: auto; /* default auto - will take remaining space */
+}
+
+.users-table-container .table tfoot { position: sticky; bottom: 0; z-index: 98; background: var(--header-bg, #f8fafc); border-top:2px solid var(--border, #e6e9ee); font-weight:600; }
+.users-table-container .table tfoot td { background: var(--header-bg, #f8fafc); border-top:1px solid var(--border, #e6e9ee); padding:0.5rem 0.5rem; color:var(--text, #111827) !important; }
+
+/* Subtle row striping */
+.users-table-container .table tbody tr:nth-child(odd) { background: transparent; }
+.users-table-container .table tbody tr:nth-child(even) { background: rgba(15,23,42,0.01); }
+
+.users-table-container .text-truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+
+/* Reduced-motion friendly hover */
+.users-table-container .table tbody tr { transition: background-color 0.08s ease; will-change: auto; transform: none !important; box-shadow: none !important; }
+.users-table-container .table tbody tr:hover { background-color: #f8fafc; }
+
+/* Specific: compact ID column and align filter input */
+.users-table-container th.col-id,
+.users-table-container td.col-id,
+.users-table-container .users-table-fixed th.col-id,
+.users-table-container .users-table-fixed td.col-id {
+  width: 80px; /* target width */
+  max-width: 120px;
+  min-width: 60px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-left: 0.6rem;
+  padding-right: 0.6rem;
+}
+
+/* Ensure filter input inside the ID header aligns and doesn't push column */
+.users-table-container thead tr.filter-row th.col-id .filter-input,
+.users-table-container thead tr.filter-row td.col-id .filter-input,
+.users-table-container .users-table-fixed thead tr.filter-row th.col-id .filter-input,
+.users-table-container .users-table-fixed thead tr.filter-row td.col-id .filter-input {
+  width: 100%;
+  min-width: 28px;
+  box-sizing: border-box;
+  padding: 1px 3px; /* filtre ultra-compact */
+  font-size: 0.76rem;
+}
+
+.users-table-container th.col-id,
+.users-table-container td.col-id,
+.users-table-container .users-table-fixed th.col-id,
+.users-table-container .users-table-fixed td.col-id {
+  text-align: left; /* align text with filter input */
 }
 
 .row-disabled {
@@ -348,6 +463,48 @@
   display: flex;
   gap: 8px;
   align-items: center;
+}
+
+/* Keep the actions column always visible even when sidebar is open
+   - Make the last column sticky to the right
+   - Ensure header and filter rows keep sticky behavior with higher z-index
+   - Give a matching background and subtle left shadow so it reads above content
+*/
+.users-table-container .table th:last-child,
+.users-table-container .table td:last-child,
+.users-table-container .users-table-fixed th:last-child,
+.users-table-container .users-table-fixed td:last-child {
+  position: -webkit-sticky; /* Safari */
+  position: sticky;
+  right: 0;
+  z-index: 115; /* above normal rows but below modal overlays */
+  background: var(--surface, #ffffff);
+  /* Ensure column is wide enough for buttons */
+  min-width: 140px;
+  box-shadow: -6px 0 12px rgba(16,24,40,0.06);
+  white-space: nowrap;
+}
+
+/* Header cell must keep its top sticky and be above the action cells when both sticky */
+.users-table-container .table thead th:last-child,
+.users-table-container .users-table-fixed thead th:last-child {
+  top: 0; /* keep header sticky behavior */
+  z-index: 120; /* above other sticky cells in table */
+}
+
+/* Filter row (if present) sits just under header; keep it visible with sticky and right offset */
+.users-table-container .table thead tr.filter-row th:last-child,
+.users-table-container .table thead tr.filter-row td:last-child {
+  position: sticky;
+  right: 0;
+  top: 48px; /* matches earlier CSS where filter-row is sticky at 48px */
+  z-index: 119;
+  background: var(--header-bg, #f8fafc);
+}
+
+/* Give the table container a small right padding so the sticky column is never clipped by adjacent UI like the sidebar */
+.users-table-container {
+  padding-right: 8px; /* small safety space */
 }
 
 .btn-edit {
@@ -988,29 +1145,30 @@
 }
 
 .export-dropdown-btn {
-  background: #fff;
-  border: 2px solid #1976d2;
-  color: #1976d2;
-  border-radius: 6px;
-  padding: 6px 14px;
-  font-size: 0.95rem;
-  font-weight: 500;
+  background: linear-gradient(135deg, #ffffff, #f7fbff);
+  border: 1px solid #cfe6ff;
+  color: #0b62b3;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 0.12s, color 0.12s, border 0.12s;
+  transition: all 0.18s ease;
   outline: none;
-  box-shadow: none;
+  box-shadow: 0 6px 18px rgba(11,98,179,0.06);
 }
 
 .export-dropdown-btn:hover, .export-dropdown-btn:focus {
   background: #eaf4ff;
-  color: #155fa8;
-  border-color: #155fa8;
+  color: #084a85;
+  border-color: #bcdfff;
+  transform: translateY(-2px);
 }
 
 .export-dropdown-list {
   position: absolute;
-  top: 110%;
-  right: 0;
+  top: calc(100% + 8px);
+  left: 0; /* align to left edge of the wrapper (the button) */
   background: #fff;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
@@ -1022,6 +1180,12 @@
   list-style: none;
   animation: dropdown-fade-in 0.18s cubic-bezier(.4,0,.2,1);
   transition: box-shadow 0.2s;
+}
+
+/* When the dropdown is inside the .export-wrapper in the header, make sure it stays above table contents */
+.export-wrapper .export-dropdown-list {
+  min-width: 180px;
+  z-index: 3000;
 }
 
 .export-dropdown-list li {
