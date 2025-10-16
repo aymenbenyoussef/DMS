@@ -1983,16 +1983,18 @@ const getOneMonthAgo = () => {
                             style={{
                               maxHeight: '210px', // 7 * 30px (approx height per item)
                               overflowY: availableDoctypes.length > 7 ? 'auto' : 'visible',
-                              minWidth: '2220px',
+                              minWidth: '400px',
+                              width: '330px',
                               padding: '8px',
-                              zIndex: 10
+                              zIndex: 10,
+                              marginRight: '0px'
                             }}
                           >
                             {availableDoctypes.length === 0 ? (
                               <div className="text-muted small">Aucun type</div>
                             ) : (
                               availableDoctypes.map((doctype, idx) => (
-                                <div key={doctype.id} className="form-check d-flex align-items-center" style={{ whiteSpace: 'nowrap', paddingLeft: '0.5rem', height: '30px' }}>
+                                <div key={doctype.id} className="form-check d-flex align-items-center" style={{ whiteSpace: 'nowrap', paddingLeft: '2rem', height: '30px' }}>
                                   <input
                                     className="form-check-input me-2"
                                     type="checkbox"
