@@ -73,9 +73,9 @@
 .edit-modal-content-fixed-height {
   display: flex;
   flex-direction: column;
-  height: 80vh;
+  
   max-height: 90vh;
-  min-height: 400px;
+  min-height: 330px;
 }
 .edit-modal-content-fixed-height .modal-header {
   flex-shrink: 0;
@@ -266,7 +266,7 @@
 .document-archive .card-header h6 { font-size: 0.9rem; font-weight:700; color:var(--text); margin:0; }
 .document-archive .card-body { padding: 0.75rem; font-size:0.86rem; color:var(--text); }
 
-.document-archive .form-label { font-size:0.78rem; font-weight:600; color:var(--muted); margin-bottom:0.25rem; }
+.document-archive .form-label { font-size:0.78rem; font-weight:600; color:var(--muted); margin-bottom:0.1rem; }
 .document-archive .form-control, .document-archive .form-select { font-size:0.85rem; padding:0.4rem 0.6rem; border-radius:6px; border:1px solid var(--border); color:var(--text); background-color:var(--surface); }
 .document-archive .form-control:focus, .document-archive .form-select:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(37,99,235,0.07); }
 

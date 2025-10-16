@@ -1,8 +1,8 @@
 .edit-document-form {
   display: flex;
   flex-direction: column;
-  min-height: 540px;
-  max-height: 70vh;
+  min-height: 360px;
+  max-height: 60vh;
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.12);
@@ -12,12 +12,13 @@
 
 .edit-document-form.invoice {
   min-height: 540px;
+
   max-height: 720px;
 }
 
 .edit-document-form:not(.invoice) {
-  min-height: 540px;
-  max-height: 720px;
+  min-height: 280px;
+  max-height: 380px;
 }
 
 .edit-document-form form {
@@ -31,18 +32,18 @@
 @import './DocumentConfirmationForm.css';
 
 .edit-document-form .row {
-  margin-left: -0.5rem;
-  margin-right: -0.5rem;
+  margin-left: 0;
+  margin-right: 0;
 }
 
 .edit-document-form .row > [class*="col-"] {
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
+  padding-left: 0;
+  padding-right: 0;
 }
 
 .edit-document-form .form-section {
-  padding: 1.5rem 1.5rem 1rem 1.5rem;
-  margin-bottom: 0.5rem;
+  padding: 0.08rem 0.12rem 0.06rem 0.12rem;
+  margin-bottom: 0rem;
   background: #fafbfc;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.03);
@@ -52,36 +53,36 @@
 .edit-document-form .form-section:first-child {
   flex-shrink: 0;
   border-bottom: none;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0rem;
   background: #f5f7fa;
   z-index: 2;
 }
 
 .edit-document-form .section-title {
-  font-size: 1.1rem;
+  font-size: 0.82rem;
   font-weight: 600;
   color: #2563eb;
-  margin-bottom: 1rem;
+  margin-bottom: 0rem;
   letter-spacing: 0.01em;
 }
 
 .edit-document-form .form-group {
-  margin-bottom: 1.1rem;
+  margin-bottom: 0rem;
 }
 
 .edit-document-form .form-label {
-  font-size: 0.97rem;
+  font-size: 0.82rem;
   font-weight: 500;
   color: #374151;
-  margin-bottom: 0.3rem;
+  margin-bottom: 0rem;
 }
 
 .edit-document-form .form-control,
 .edit-document-form .form-select {
   border-radius: 6px;
   border: 1px solid #e5e7eb;
-  font-size: 1rem;
-  padding: 0.55rem 0.9rem;
+  font-size: 0.88rem;
+  padding: 0.22rem 0.4rem;
   background: #fff;
   color: #222;
   transition: border-color 0.15s;
@@ -93,7 +94,7 @@
 }
 
 .edit-document-form .form-check-input {
-  margin-right: 0.5rem;
+  margin-right: 0.18rem;
 }
 
 .edit-document-form .form-check-input.form-check-input-sm {
@@ -105,11 +106,11 @@
 }
 
 .edit-document-form .form-group.d-flex.align-items-center.mb-3 {
-  margin-bottom: 0.7rem !important;
+  margin-bottom: 0.18rem !important;
 }
 
 .edit-document-form .form-check-label {
-  font-size: 1rem;
+  font-size: 0.85rem;
   color: #374151;
   margin-bottom: 0;
   user-select: none;
@@ -137,15 +138,15 @@
   background: #fff;
   display: flex;
   justify-content: flex-end;
-  gap: 1rem;
-  padding: 1.25rem 1.5rem;
+  gap: 0.04rem;
+  padding: 0.08rem 0.3rem;
   border-top: 1px solid #e9ecef;
   border-radius: 0 0 12px 12px;
   box-shadow: 0 -2px 8px rgba(0,0,0,0.03);
-  margin: 0 -1.5rem -1.5rem -1.5rem;
-  height: 72px; /* Fixed height for footer */
-  min-height: 72px;
-  max-height: 72px;
+  margin: 0 -0.3rem -0.3rem -0.3rem;
+  height: 26px; /* Further reduced height for footer */
+  min-height: 26px;
+  max-height: 26px;
   align-items: center;
 }
 
@@ -153,18 +154,18 @@
 .edit-document-form .scrollable-body {
   flex: 1 1 auto;
   overflow-y: auto;
-  padding: 0 1.5rem 1.5rem 1.5rem;
+  padding: 0 0.12rem 0.12rem 0.12rem;
   background: #fff;
 }
 
 .edit-document-form .btn {
-  padding: 0 1.5rem;
+  padding: 0 0.6rem;
   font-weight: 600;
   border-radius: 6px;
-  font-size: 1rem;
+  font-size: 0.88rem;
   transition: all 0.15s;
-  height: 44px; /* Fixed height for all buttons */
-  min-height: 44px;
+  height: 30px; /* Smaller buttons */
+  min-height: 30px;
   display: flex;
   align-items: center;
 }

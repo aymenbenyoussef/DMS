@@ -337,10 +337,11 @@
 /* ===== CHAMPS DE FACTURE ===== */
 .invoice-fields {
   background: var(--primary-blue-light);
-  padding: 0.5rem 0.75rem;
+  padding: 0.4rem 0.75rem;
   border-radius: var(--radius-lg);
   border: 1px solid var(--primary-blue);
-  margin-top: 0.25rem;
+  margin-top: 0.0rem;
+  
 }
 
 .invoice-fields .form-row:last-child {
@@ -352,7 +353,7 @@
   display: block;
   font-weight: 600;
   color: var(--primary-blue);
-  margin-bottom: 1rem;
+  margin-bottom: 0.3rem;
   font-size: 0.875rem;
 }
 

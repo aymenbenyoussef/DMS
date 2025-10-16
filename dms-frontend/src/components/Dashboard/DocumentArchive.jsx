@@ -360,23 +360,7 @@ const getOneMonthAgo = () => {
     }
   };
 
-  // Group management functions
-  const handleAddToGroup = () => {
-    setGroupAction('add');
-    setIsGroupMode(true);
-    setSelectedDocuments([]);
-    setGroupError('');
-    setGroupSuccess('');
-  };
 
-  const handleCreateGroup = () => {
-    setGroupAction('create');
-    setIsGroupMode(true);
-    setSelectedDocuments([]);
-    setNewGroupName('');
-    setGroupError('');
-    setGroupSuccess('');
-  };
 
   const handleCancelGroupAction = () => {
     setIsGroupMode(false);

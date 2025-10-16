@@ -9,9 +9,9 @@ const EditDocumentForm = ({ document, onSave, onCancel, isLoading }) => {
     is_invoice: false,
     invoice_number: '',
     invoice_date: '',
-    total_ht: '',
-    tva: '',
-    total_ttc: '',
+    total_ht: null,
+    tva: null,
+    total_ttc: null,
     filename: '',
   });
   
@@ -39,16 +39,16 @@ const EditDocumentForm = ({ document, onSave, onCancel, isLoading }) => {
       
       // Extract data from extracted_data if it exists
       let extractedData = {};
-      if (document.extracted_data) {
-        try {
-          extractedData = typeof document.extracted_data === 'string' 
-            ? JSON.parse(document.extracted_data) 
-            : document.extracted_data;
-          console.log("Extracted data:", extractedData);
-        } catch (e) {
-          console.error("Error parsing extracted_data:", e);
-        }
-      }
+      if (document.extracted_text) {
+  try {
+    const maybeJson = JSON.parse(document.extracted_text);
+    if (typeof maybeJson === 'object') {
+      extractedData = maybeJson;
+    }
+  } catch (e) {
+    console.log("Extracted_text is not JSON, ignoring...");
+  }
+}
 
       // Helper function to get value from multiple sources
       const getValue = (confirmedKey, documentKey, extractedKey, defaultValue = '') => {
@@ -69,39 +69,35 @@ const EditDocumentForm = ({ document, onSave, onCancel, isLoading }) => {
       };
 
       // For date fields, we need to handle both string and Date objects
-      const getDateValue = (confirmedKey, documentKey, extractedKey, defaultValue = '') => {
-        let value = getValue(confirmedKey, documentKey, extractedKey, defaultValue);
-        
-        if (value instanceof Date) {
-          return value.toISOString().split('T')[0];
-        }
-        
-        if (typeof value === 'string') {
-          // Handle MySQL date format (YYYY-MM-DD)
-          if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-            return value;
-          }
-          // Handle ISO string format
-          if (value.includes('T')) {
-            return value.split('T')[0];
-          }
-          // Handle other date formats if needed
-        }
-        
-        return value;
-      };
+     const getDateValue = (confirmedKey, documentKey, extractedKey, defaultValue = '') => {
+  let value = getValue(confirmedKey, documentKey, extractedKey, defaultValue);
+
+  if (!value) return defaultValue;
+
+  const date = new Date(value);
+  if (isNaN(date)) return value;
+
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+
+  return `${year}-${month}-${day}`; // 👈 input type="date" format
+};
+
+
+
 
       setFormData({
-        partner_id: getValue('partner_id', 'partner_id', 'partner_id'),
-        partner_name: getValue('partner', 'partner_name', 'partner'),
-        is_invoice: getValue('is_invoice', 'is_invoice', 'is_invoice', false),
-        invoice_number: getValue('invoice_number', 'invoice_number', 'invoice_number'),
-        invoice_date: getDateValue('date', 'invoice_date', 'date'),
-        total_ht: getValue('total_ht', 'total_ht', 'total_ht'),
-        tva: getValue('tva', 'tva', 'tva'),
-        total_ttc: getValue('total_ttc', 'total_ttc', 'total_ttc'),
-        filename: document.filename || '',
-      });
+  partner_id: String(getValue('partner_id', 'partner_id', 'partner_id') ?? ''),
+  partner_name: getValue('partner', 'partner_name', 'partner'),
+  is_invoice: getValue('is_invoice', 'is_invoice', 'is_invoice', false),
+  invoice_number: getValue('invoice_number', 'invoice_number', 'invoice_number') ?? '',
+  invoice_date: getDateValue('invoice_date', 'invoice_date', 'date'),
+  total_ht: getValue('total_ht', 'total_ht', 'total_ht'),
+  tva: getValue('tva', 'tva', 'tva'),
+  total_ttc: getValue('total_ttc', 'total_ttc', 'total_ttc'),
+  filename: document.filename || '',
+});
     }
   }, [document]);
 
@@ -209,7 +205,7 @@ const EditDocumentForm = ({ document, onSave, onCancel, isLoading }) => {
         partner_id: formData.partner_id,
         partner: formData.partner_name,
         is_invoice: formData.is_invoice,
-        invoice_number: formData.is_invoice ? formData.invoice_number : '',
+        invoice_number: formData.is_invoice ? (formData.invoice_number ? parseFloat(formData.invoice_number) : null) : '',
         date: formData.is_invoice ? formData.invoice_date : '',
         total_ht: formData.is_invoice ? (formData.total_ht ? parseFloat(formData.total_ht) : null) : '',
         tva: formData.is_invoice ? (formData.tva ? parseFloat(formData.tva) : null) : '',
@@ -228,7 +224,7 @@ const EditDocumentForm = ({ document, onSave, onCancel, isLoading }) => {
   const isInvoice = !!formData.is_invoice;
 
   return (
-    <div className={`edit-document-form document-confirmation-form${isInvoice ? ' invoice' : ''}`} style={{ maxHeight: '80vh', minHeight: '540px', display: 'flex', flexDirection: 'column' }}>
+  <div className={`edit-document-form document-confirmation-form${isInvoice ? ' invoice' : ''}`}> 
       <div className="form-header" style={{ position: 'sticky', top: 0, zIndex: 2 }}>
         <h3>Modifier le document</h3>
         <p>Modifiez les informations du document et validez les champs obligatoires.</p>
@@ -307,7 +303,8 @@ const EditDocumentForm = ({ document, onSave, onCancel, isLoading }) => {
               Ce document est une facture
             </label>
           </div>
-          {formData.is_invoice && (
+          {formData.is_invoice ? (
+            // Your existing invoice fields code
             <div className="invoice-fields">
               <div className="form-row">
                 <div className="form-group">
@@ -387,7 +384,10 @@ const EditDocumentForm = ({ document, onSave, onCancel, isLoading }) => {
                 <div className="error-message">Le montant TTC doit être égal à HT + TVA</div>
               )}
             </div>
+          ) : (
+            <div></div> // <-- This will render nothing if not an invoice
           )}
+
         </div>
         <div className="confirmation-actions" style={{ position: 'sticky', bottom: 0, zIndex: 2, background: '#fff' }}>
           <button

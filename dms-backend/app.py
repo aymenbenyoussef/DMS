@@ -2214,7 +2214,9 @@ def update_document(document_id):
             return jsonify({"msg": "Document not found"}), 404
         # Accept all possible fields from the frontend
         name = data.get('filename')
-        partner_id = data.get('partner_id')
+        partner_id = data.get('partner_id') or (
+        data.get('confirmed_data', {}).get('partner_id') if data.get('confirmed_data') else None
+        )
         confirmed_data = data.get('confirmed_data')
         # If confirmed_data is present, extract invoice fields
         invoice_fields = {}
