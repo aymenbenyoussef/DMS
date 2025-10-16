@@ -27,6 +27,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email import encoders
+import traceback
 
 import os
 from dotenv import load_dotenv, dotenv_values
@@ -114,6 +115,14 @@ def log_activity(actor, action, resource_type, resource_data):
             f"{timestamp} - {actor} - {action} DocumentTemp : "
             f"{resource_data['id']}, {resource_data['filename']}, "
             
+        )
+    elif resource_type == "documents":
+        log_entry = (
+            f"{timestamp} - {actor} - {action} Documents: "
+            f"ids={resource_data.get('ids')}, "
+            f"email_type={resource_data.get('email_type')}, "
+            f"recipients_count={resource_data.get('recipients_count')}, "
+            f"failed_count={resource_data.get('failed_count')}"
         )
     else:
         return  # Unsupported resource type
@@ -2853,6 +2862,7 @@ L'équipe RAN ESMERALD
 @jwt_required()
 def send_multiple_documents():
     """Send multiple documents via email to selected users (same file types and destinations for all)"""
+    
     try:
         current_user_claims = get_jwt()
         current_user_id = current_user_claims.get('id')
@@ -2886,8 +2896,11 @@ def send_multiple_documents():
         documents_info = []
         for doc_id in document_ids:
             try:
+                app.logger.debug(f"Fetching document details for id={doc_id}")
                 document = db.get_document_with_details(doc_id)
+                
                 if not document:
+                    app.logger.warning(f"Document id={doc_id} not found, skipping")
                     continue
                 documents_info.append(document)
                 for email_type in email_types:
@@ -2902,6 +2915,7 @@ def send_multiple_documents():
                     elif email_type == 'ocr_text' and document.get('ocr_text'):
                         attachment_path = document['ocr_text']
                         attachment_name = f"{os.path.splitext(document['filename'])[0]}_ocr.txt"
+                    app.logger.debug(f"Evaluating attachment for doc={doc_id} type={email_type} -> path={attachment_path}")
                     if attachment_path and os.path.exists(attachment_path):
                         attachments.append({
                             'path': attachment_path,
@@ -2909,8 +2923,13 @@ def send_multiple_documents():
                             'type': email_type,
                             'doc_id': doc_id
                         })
+                        app.logger.debug(f"Added attachment: {attachment_name} (path={attachment_path}) for doc={doc_id}")
+                    else:
+                        if attachment_path:
+                            app.logger.warning(f"Attachment path does not exist: {attachment_path} (doc={doc_id}, type={email_type})")
             except Exception as e:
-                print(f"Error fetching document {doc_id}: {e}")
+                app.logger.error(f"Error fetching document {doc_id}: {e}")
+                app.logger.error(traceback.format_exc())
 
         if not attachments:
             return jsonify({"msg": "Aucun fichier disponible pour les types sélectionnés"}), 404
@@ -2935,6 +2954,7 @@ Détails des documents:\n"""
         email_body += f"\n\nFichiers joints:\n"
         for attachment in attachments:
             email_body += f"- {attachment['name']} (doc_id: {attachment['doc_id']}, type: {attachment['type']})\n"
+        app.logger.debug(f"Prepared email body. Attachments count: {len(attachments)}")
 
         email_body += f"""
 Envoyé par: {current_username}
@@ -2954,6 +2974,7 @@ L'équipe RAN ESMERALD
         failed_sends = []
         for recipient_email in recipient_emails:
             try:
+                app.logger.debug(f"Preparing email to {recipient_email}")
                 msg = MIMEMultipart()
                 msg["From"] = smtp_user
                 msg["To"] = recipient_email
@@ -2961,6 +2982,7 @@ L'équipe RAN ESMERALD
                 msg.attach(MIMEText(email_body, "plain", "utf-8"))
                 for attachment in attachments:
                     try:
+                        app.logger.debug(f"Attaching file {attachment['path']} for recipient {recipient_email}")
                         with open(attachment['path'], "rb") as attachment_file:
                             part = MIMEBase('application', 'octet-stream')
                             part.set_payload(attachment_file.read())
@@ -2971,34 +2993,43 @@ L'équipe RAN ESMERALD
                             )
                             msg.attach(part)
                     except FileNotFoundError:
+                        app.logger.error(f"File not found during attachment: {attachment['path']}")
                         failed_sends.append({"email": recipient_email, "error": f"Fichier non trouvé: {attachment['path']}"})
                         continue
                     except Exception as file_error:
+                        app.logger.error(f"Error attaching file {attachment.get('path')}: {file_error}")
+                        app.logger.error(traceback.format_exc())
                         failed_sends.append({"email": recipient_email, "error": f"Erreur lors de l'attachement du fichier: {str(file_error)}"})
                         continue
+                app.logger.debug(f"Connecting to SMTP {smtp_host}:{smtp_port} (user hidden)")
                 server = smtplib.SMTP(smtp_host, smtp_port)
                 server.starttls()
                 server.login(smtp_user, smtp_pass)
                 server.sendmail(smtp_user, recipient_email, msg.as_string())
                 server.quit()
                 successful_sends.append(recipient_email)
+                app.logger.info(f"Email sent to {recipient_email}")
             except Exception as e:
                 error_msg = str(e)
-                print(f"Error sending email to {recipient_email}: {error_msg}")
+                app.logger.error(f"Error sending email to {recipient_email}: {error_msg}")
+                app.logger.error(traceback.format_exc())
                 failed_sends.append({"email": recipient_email, "error": error_msg})
 
         # Log activity for each document
         for document in documents_info:
             try:
+                if not isinstance(document, dict) or 'id' not in document:
+                    print(f"[ERROR] Invalid document in documents_info: {document}")
+                    continue
                 db.log_email_activity(document['id'], current_user_id, recipient_emails, email_types, "sent" if successful_sends and not failed_sends else "failed")
             except Exception as log_error:
-                print(f"Error logging email activity for doc {document['id']}: {log_error}")
-
+                print(f"Error logging email activity for doc {getattr(document, 'id', None)}: {log_error}")
+        print("pass")
         # Log global activity
         log_activity(
             actor=current_username,
             action="envoi d'Email (multiple)",
-            resource_type="document",
+            resource_type="documents",  # <-- use a new type
             resource_data={
                 'ids': document_ids,
                 'email_type': email_types,
@@ -3006,7 +3037,7 @@ L'équipe RAN ESMERALD
                 'failed_count': len(failed_sends)
             }
         )
-
+        print("pass2")
         if successful_sends and not failed_sends:
             return jsonify({
                 "msg": f"Email envoyé avec succès à {len(successful_sends)} destinataire(s)",

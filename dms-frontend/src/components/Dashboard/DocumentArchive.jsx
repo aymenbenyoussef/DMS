@@ -504,8 +504,10 @@ const getOneMonthAgo = () => {
       closeFullscreenModal();
     }
 
-    // Toujours ouvrir le modal, même si l'API échoue
-    setCurrentDocument(document);
+  // Toujours ouvrir le modal, même si l'API échoue
+  // Clear any previous multi-selection so the modal shows only the current document
+  setSelectedDocuments([]);
+  setCurrentDocument(document);
     setDisplayedEmailFilename(document.filename || '');
     setEmailSubject(`Document: ${document.filename}`);
     setEmailMessage('');
@@ -1011,20 +1013,48 @@ const getOneMonthAgo = () => {
     setEmailError('');
 
     try {
-      // Appel corrigé : envoyer l'id du document en premier paramètre puis les données
-      await API.email.sendDocument(currentDocument.id, {
-        recipients: selectedRecipients,
-        subject: emailSubject,
-        message: emailMessage,
-        email_type: selectedEmailTypes
-      });
+      // If multiple documents are selected (global action), call the dedicated endpoint
+      if (selectedDocuments && selectedDocuments.length > 0) {
+        const documentIds = selectedDocuments.map(d => d.id);
+        const payload = {
+          recipients: selectedRecipients,
+          email_type: selectedEmailTypes,
+          subject: emailSubject,
+          message: emailMessage
+        };
+        const res = await API.email.sendMultipleDocuments(documentIds, payload);
+        // Backend may return partial failures; show appropriate message
+        if (res?.data) {
+          const msg = res.data.msg || 'Email envoyé (multiple)';
+          setEmailSuccess(msg);
+        } else {
+          setEmailSuccess('Email envoyé (multiple)');
+        }
+      } else {
+        // Single document send (existing behavior)
+        if (!currentDocument || !currentDocument.id) {
+          throw new Error('Aucun document sélectionné pour l\'envoi');
+        }
+        await API.email.sendDocument(currentDocument.id, {
+          recipients: selectedRecipients,
+          subject: emailSubject,
+          message: emailMessage,
+          email_type: selectedEmailTypes
+        });
+        setEmailSuccess('Email envoyé avec succès');
+      }
 
-      setEmailSuccess('Email envoyé avec succès');
       setTimeout(() => {
         handleCloseEmailModal();
       }, 1200);
     } catch (error) {
-      setEmailError(error.response?.data?.msg || 'Erreur lors de l\'envoi de l\'email');
+      // Prefer server-provided structured errors when available
+      const serverMsg = error.response?.data?.msg || error.response?.data || null;
+      if (serverMsg) {
+        setEmailError(typeof serverMsg === 'string' ? serverMsg : JSON.stringify(serverMsg));
+      } else {
+        setEmailError(error.message || 'Erreur lors de l\'envoi de l\'email');
+      }
     } finally {
       setIsEmailSending(false);
     }
@@ -1173,7 +1203,6 @@ const getOneMonthAgo = () => {
                           // Multi-file send: collect checked documents and open ShareModal
                           const docsToSend = documents.filter(doc => checkedDocuments.includes(doc.id));
                           setSelectedDocuments(docsToSend);
-                          setIsEmailModalOpen(true);
                           setCurrentDocument(null); // Not a single doc
                           setDisplayedEmailFilename('');
                           setEmailSubject('');
@@ -1182,8 +1211,33 @@ const getOneMonthAgo = () => {
                           setSelectedEmailTypes([]);
                           setEmailError('');
                           setEmailSuccess('');
-                          setAvailableEmailTypes([]);
-                          setEmailUsers([]);
+                          // Fetch available email types and users for multi-file
+                          // For multi-file, intersect available types and union users
+                          if (docsToSend.length > 0) {
+                            Promise.all([
+                              Promise.all(docsToSend.map(doc => API.email.getDocumentInfo(doc.id))),
+                              API.email.getUsersForSelection(selectedCompany?.id)
+                            ]).then(([typesResponses, usersResponse]) => {
+                              // Intersect available types across all selected docs
+                              const allTypes = typesResponses.map(r => r.data.available_types || []);
+                              let intersectedTypes = allTypes[0] || [];
+                              for (let i = 1; i < allTypes.length; i++) {
+                                intersectedTypes = intersectedTypes.filter(typeObj =>
+                                  allTypes[i].some(t => t.type === typeObj.type)
+                                );
+                              }
+                              setAvailableEmailTypes(intersectedTypes);
+                              setEmailUsers(usersResponse.data.users || []);
+                              setIsEmailModalOpen(true);
+                            }).catch(error => {
+                              setEmailError("Erreur lors de la préparation de l'email : " + (error.response?.data?.msg || error.message));
+                              setIsEmailModalOpen(true);
+                            });
+                          } else {
+                            setAvailableEmailTypes([]);
+                            setEmailUsers([]);
+                            setIsEmailModalOpen(true);
+                          }
                         }
                       }}
                     >

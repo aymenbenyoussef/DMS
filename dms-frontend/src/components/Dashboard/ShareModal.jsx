@@ -123,32 +123,14 @@ function ShareModal(props) {
                           </span>
                         ))}
                       </>
+                    ) : selectedDocuments && selectedDocuments.length === 1 ? (
+                      // Single selected document from global action
+                      `${selectedDocuments[0].filename} (${formatFileSize(selectedDocuments[0].file_size || 0)})`
                     ) : (
                       displayedEmailFilename || (currentDocument && currentDocument.filename)
                     )}
                   </h3>
-                  <div className="document-card__meta">
-                    {selectedDocuments && selectedDocuments.length === 1 && (
-                      <span className="document-meta__item">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                          <polyline points="7,10 12,15 17,10"/>
-                          <line x1="12" y1="15" x2="12" y2="3"/>
-                        </svg>
-                        {formatFileSize((selectedDocuments[0] && selectedDocuments[0].file_size) || 0)}
-                      </span>
-                    )}
-                    {(!selectedDocuments || selectedDocuments.length <= 1) && (
-                      <span className="document-meta__item">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                          <polyline points="7,10 12,15 17,10"/>
-                          <line x1="12" y1="15" x2="12" y2="3"/>
-                        </svg>
-                        {formatFileSize(currentDocument?.file_size || 0)}
-                      </span>
-                    )}
-                  </div>
+                  
                 </div>
               </div>
 
@@ -186,40 +168,46 @@ function ShareModal(props) {
                     </div>
                   ) : (
                     <div className="checkbox-list">
-                      {types.map((type) => {
-                        let fileLabel = '';
-                        if (type.type === 'rapport' && currentDocument.rapport) {
-                          fileLabel = currentDocument.rapport.split(/[\\/]/).pop();
-                        } else if (type.type === 'ocr_text' && currentDocument.ocr_text) {
-                          fileLabel = currentDocument.ocr_text.split(/[\\/]/).pop();
-                        } else {
-                          fileLabel = currentDocument.filename;
-                        }
-                        const checked = selectedEmailTypes?.includes(type.type);
-                        
-                        return (
-                          <label key={type.type} className="checkbox-item">
-                            <input 
-                              className="checkbox-item__input" 
-                              type="checkbox" 
-                              id={`type-${type.type}`}
-                              checked={checked} 
-                              onChange={() => toggleEmailType(type.type)}
-                            />
-                            <div className="checkbox-item__content">
-                              <div className="checkbox-item__title">{type.label}</div>
-                              <div className="checkbox-item__subtitle">Fichier: {fileLabel}</div>
-                            </div>
-                            <div className="checkbox-item__indicator">
-                              {checked && (
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                  <polyline points="20,6 9,17 4,12"/>
-                                </svg>
-                              )}
-                            </div>
-                          </label>
-                        );
-                      })}
+                      {
+                        // Always show these three options. If a type is not available for the selected documents,
+                        // disable its checkbox.
+                        (() => {
+                          const allOptions = [
+                            { type: 'document', label: 'Document original' },
+                            { type: 'rapport', label: 'Rapport' },
+                            { type: 'ocr_text', label: 'Texte OCR' }
+                          ];
+                          const availableSet = new Set((types || []).map(t => t.type));
+                          return allOptions.map(option => {
+                            const isAvailable = availableSet.has(option.type);
+                            const checked = selectedEmailTypes?.includes(option.type);
+                            return (
+                              <label key={option.type} className={`checkbox-item ${!isAvailable ? 'checkbox-item--disabled' : ''}`}>
+                                <input
+                                  className="checkbox-item__input"
+                                  type="checkbox"
+                                  id={`type-${option.type}`}
+                                  checked={checked}
+                                  disabled={!isAvailable}
+                                  onChange={() => isAvailable && toggleEmailType(option.type)}
+                                />
+                                <div className="checkbox-item__content">
+                                  <div className="checkbox-item__title">{option.label}</div>
+                                  {/* intentionally hide file names in the subtitle */}
+                                  <div className="checkbox-item__subtitle">{isAvailable ? '' : 'Non disponible'}</div>
+                                </div>
+                                <div className="checkbox-item__indicator">
+                                  {checked && (
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                      <polyline points="20,6 9,17 4,12"/>
+                                    </svg>
+                                  )}
+                                </div>
+                              </label>
+                            );
+                          });
+                        })()
+                      }
                     </div>
                   )}
                 </div>
