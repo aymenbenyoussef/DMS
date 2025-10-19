@@ -1103,7 +1103,7 @@ const getOneMonthAgo = () => {
                 </button>
                 <button 
                   type="button" 
-                  className="btn btn-danger"
+                  className="btn btn-secondary"
                   onClick={handleConfirmDelete}
                   disabled={isDeleting}
                   style={{backgroundColor: 'orangered'}}

@@ -118,7 +118,10 @@ const getOneMonthAgo = () => {
   const [selectedDocTypes, setSelectedDocTypes] = useState([]);
   const [newDocTypeName, setNewDocTypeName] = useState('');
   const [newDocTypeStatus, setNewDocTypeStatus] = useState(true);
-  
+  const [dateFilterType, setDateFilterType] = useState('upload');
+  const [partnerFilter, setPartnerFilter] = useState([]);
+  const [partnerSearchTerm, setPartnerSearchTerm] = useState('');
+
   // New state for documents and filters
   const [documents, setDocuments] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -148,7 +151,8 @@ const getOneMonthAgo = () => {
     billable: '',
     tva: '',
     total_ht: '',
-    total_ttc: ''
+    total_ttc: '',
+    devise: '',
   });
 
   // Group management states
@@ -173,6 +177,7 @@ const getOneMonthAgo = () => {
   const [ocrText, setOcrText] = useState('');
   const [documentFileUrl, setDocumentFileUrl] = useState(''); // For File tab
   const [documentFileType, setDocumentFileType] = useState(''); // For File tab
+  const [doctypeSearchTerm, setDoctypeSearchTerm] = useState('');
 
   // Email sending states
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
@@ -212,6 +217,7 @@ const getOneMonthAgo = () => {
 
   // Dropdown menu states
   const [openDropdownId, setOpenDropdownId] = useState(null);
+  const [openDropdownId2, setOpenDropdownId2] = useState(null);
   const [dropdownPosition, setDropdownPosition] = useState(null);
 
   // Filter panel state (now dropdown overlay)
@@ -336,7 +342,14 @@ const getOneMonthAgo = () => {
       setGroups([]);
     }
   };
-
+    const filteredDoctypes = availableDoctypes.filter((d) =>
+    d.name.toLowerCase().includes(doctypeSearchTerm.toLowerCase())
+  );
+  const filteredPartners = Array.from(
+    new Set(documents.map((doc) => doc.partner_name).filter(Boolean))
+  ).filter((partner) =>
+    partner.toLowerCase().includes(partnerSearchTerm.toLowerCase())
+  );
   // Function to fetch related documents for a document
   const fetchRelatedDocuments = async (documentId) => {
     try {
@@ -847,7 +860,8 @@ const getOneMonthAgo = () => {
       billable: '',
       tva: '',
       total_ht: '',
-      total_ttc: ''
+      total_ttc: '',
+      devise: '',
     });
     setSortConfig({ key: null, direction: 'asc' });
   };
@@ -1147,7 +1161,7 @@ const getOneMonthAgo = () => {
                 <i className="fas fa-building me-2 text-primary"></i>
                 {selectedCompany ? (
                   <>
-                    <span className="text-truncate" style={{ maxWidth: '320px' }}>&gt; {selectedCompany.name}</span>
+                    <span className="text-truncate" style={{ maxWidth: '320px' }}>DMS &gt; {selectedCompany.name}</span>
                     {selectedDoctype && (
                       <span className="badge bg-primary ms-2 fs-6">
                         {selectedDoctype.name}
@@ -1249,10 +1263,10 @@ const getOneMonthAgo = () => {
               </div>
               <div className="modal-body" style={{ padding: '2rem 2.5rem', textAlign: 'center' }}>
                 <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>
-                  Êtes-vous sûr de vouloir supprimer {checkedDocuments.length} document(s)&nbsp;?
+                  Cette action supprimera les fichiers sélectionnés.
                 </p>
                 <p className="text-muted" style={{ fontSize: '0.98rem', marginBottom: 0 }}>
-                  Cette action est <strong>irréversible</strong> et entraînera la suppression définitive des documents sélectionnés.
+                 Êtes-vous certain de vouloir continuer?
                 </p>
               </div>
               <div className="modal-footer" style={{ justifyContent: 'center', gap: '1rem' }}>
@@ -1266,7 +1280,7 @@ const getOneMonthAgo = () => {
                 </button>
                 <button 
                   type="button" 
-                  className="btn btn-danger"
+                  className="btn btn-secondary"
                   onClick={async () => {
                     await handleBulkDelete(checkedDocuments);
                     setIsBulkDeleteModalOpen(false);
@@ -1277,7 +1291,7 @@ const getOneMonthAgo = () => {
                   style={{backgroundColor: 'orangered'}}
                 >
                   <i className="bi bi-trash me-2"></i>
-                  Supprimer
+                  Oui, supprimer
                 </button>
               </div>
             </div>
@@ -1291,7 +1305,7 @@ const getOneMonthAgo = () => {
                     ref={globalActionMenuRef}
                   >
                     <i className="fas fa-cogs me-1"></i>
-                    Action Global
+                    Edition en masse
                   </button>
                   {globalActionMenuOpen && (
                     <div className="dropdown-menu show">
@@ -1317,7 +1331,7 @@ const getOneMonthAgo = () => {
                   onClick={openUploadModal}
                 >
                   <i className="fas fa-upload me-1"></i>
-                  Chargement
+                  Importer des documents
                 </button>
                 <div className="dropdown">
                   <button
@@ -1605,55 +1619,81 @@ const getOneMonthAgo = () => {
                       </th>
                       <th>
                         <div className="dropdown" style={{ position: 'relative' }}>
-                          <button
-                            className="form-select form-select-sm text-start"
-                            type="button"
-                            style={{ minWidth: '120px' }}
-                            onClick={() => setOpenDropdownId(openDropdownId === 'partner' ? null : 'partner')}
+                        <button
+                          className="form-select form-select-sm text-start"
+                          type="button"
+                          style={{ minWidth: '120px' }}
+                          onClick={() => setOpenDropdownId(openDropdownId === 'partner' ? null : 'partner')}
+                        >
+                          {columnFilters.partner_name && Array.isArray(columnFilters.partner_name) && columnFilters.partner_name.length > 0
+                            ? `Partenaire (${columnFilters.partner_name.length})`
+                            : 'Partenaire...'}
+                        </button>
+
+                        {openDropdownId === 'partner' && (
+                          <div
+                            className="dropdown-menu show"
+                            style={{ maxHeight: '200px', overflowY: 'auto', minWidth: '200px', padding: '8px', zIndex: 10 }}
                           >
-                            {columnFilters.partner_name && Array.isArray(columnFilters.partner_name) && columnFilters.partner_name.length > 0
-                              ? `Partenaire (${columnFilters.partner_name.length})`
-                              : 'Partenaire...'}
-                          </button>
-                          {openDropdownId === 'partner' && (
-                            <div
-                              className="dropdown-menu show"
-                              style={{ maxHeight: '160px', overflowY: 'auto', minWidth: '180px', padding: '8px', zIndex: 10 }}
-                            >
-                              {Array.from(new Set(documents.map(doc => doc.partner_name).filter(Boolean))).length === 0 ? (
-                                <div className="text-muted small">Aucun partenaire</div>
-                              ) : (
-                                Array.from(new Set(documents.map(doc => doc.partner_name).filter(Boolean))).map((partner, idx) => (
-                                  <div key={partner} className="form-check d-flex align-items-center" style={{ whiteSpace: 'nowrap', paddingLeft: '0.5rem' }}>
-                                    <input
-                                      className="form-check-input me-2"
-                                      type="checkbox"
-                                      id={`partner-filter-${idx}`}
-                                      checked={Array.isArray(columnFilters.partner_name) && columnFilters.partner_name.includes(partner)}
-                                      onChange={e => {
-                                        let newSelected = Array.isArray(columnFilters.partner_name) ? [...columnFilters.partner_name] : [];
-                                        if (e.target.checked) {
-                                          newSelected.push(partner);
-                                        } else {
-                                          newSelected = newSelected.filter(p => p !== partner);
-                                        }
-                                        handleColumnFilterChange('partner_name', newSelected);
-                                      }}
-                                    />
-                                    <label
-                                      className="form-check-label"
-                                      htmlFor={`partner-filter-${idx}`}
-                                      style={{ marginBottom: 0, cursor: 'pointer', textTransform: 'none', maxWidth: '110px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'middle' }}
-                                      title={partner}
-                                    >
-                                      {partner.length > 18 ? partner.slice(0, 15) + '...' : partner}
-                                    </label>
-                                  </div>
-                                ))
-                              )}
-                            </div>
-                          )}
-                        </div>
+                            {/* Search input */}
+                            <input
+                              type="text"
+                              placeholder="Rechercher..."
+                              className="form-control form-control-sm mb-2"
+                              value={partnerSearchTerm}
+                              onChange={(e) => setPartnerSearchTerm(e.target.value)}
+                            />
+
+                            {filteredPartners.length === 0 ? (
+                              <div className="text-muted small">Aucun partenaire</div>
+                            ) : (
+                              filteredPartners.map((partner, idx) => (
+                                <div
+                                  key={partner}
+                                  className="form-check d-flex align-items-center"
+                                  style={{ whiteSpace: 'nowrap', paddingLeft: '0.5rem' }}
+                                >
+                                  <input
+                                    className="form-check-input me-2"
+                                    type="checkbox"
+                                    id={`partner-filter-${idx}`}
+                                    checked={Array.isArray(columnFilters.partner_name) && columnFilters.partner_name.includes(partner)}
+                                    onChange={(e) => {
+                                      let newSelected = Array.isArray(columnFilters.partner_name)
+                                        ? [...columnFilters.partner_name]
+                                        : [];
+                                      if (e.target.checked) {
+                                        newSelected.push(partner);
+                                      } else {
+                                        newSelected = newSelected.filter((p) => p !== partner);
+                                      }
+                                      handleColumnFilterChange('partner_name', newSelected);
+                                    }}
+                                  />
+                                  <label
+                                    className="form-check-label"
+                                    htmlFor={`partner-filter-${idx}`}
+                                    style={{
+                                      marginBottom: 0,
+                                      cursor: 'pointer',
+                                      textTransform: 'none',
+                                      maxWidth: '200px',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                      whiteSpace: 'nowrap',
+                                      verticalAlign: 'middle',
+                                    }}
+                                    title={partner}
+                                  >
+                                    {partner.length > 18 ? partner.slice(0, 15) + '...' : partner}
+                                  </label>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        )}
+                      </div>
+
                       </th>
                       <th>
                         <select
@@ -1693,7 +1733,15 @@ const getOneMonthAgo = () => {
                           onChange={(e) => handleColumnFilterChange('total_ttc', e.target.value)}
                         />
                       </th>
-                      <th></th>
+                      <th>
+                        <input
+                          type="text"
+                          className="form-control form-control-sm"
+                          placeholder="Devise..."
+                          value={columnFilters.devise}
+                          onChange={(e) => handleColumnFilterChange('devise', e.target.value)}
+                        />
+                      </th>
                       <th></th>
                       <th></th>
                     </tr>
@@ -1890,156 +1938,296 @@ const getOneMonthAgo = () => {
           </div>
 
           {/* Filter Dropdown Overlay - renders as absolute overlay so it doesn't affect table width */}
-          <div style={{ position: 'relative' }}>
-            {filterDropdownOpen && (
-              <div ref={filterDropdownRef} className="filter-dropdown-overlay" style={{ position: 'fixed', right: 40, top: 64, zIndex: 1050 }}>
-                <div className="card" style={{ width: 360, maxHeight: '70vh', overflow: 'auto' }}>
-                  <div className="card-header bg-light py-2 d-flex align-items-center">
-                    <h6 className="mb-0 d-flex align-items-center">
-                      <i className="fas fa-filter me-2 text-primary"></i>
-                      Filtres
-                    </h6>
-                    <button className="btn btn-link btn-sm ms-auto p-0" onClick={clearAllFilters} title="Effacer tous les filtres">
-                      <i className="fas fa-times text-muted"></i>
-                    </button>
-                  </div>
-                  <div className="card-body p-3">
-                    {/* Search */}
-                    <div className="mb-3">
-                      <label className="form-label small fw-bold">Recherche</label>
-                      <div className="input-group input-group-sm">
-                        <input
-                          type="text"
-                          className="form-control"
-                          placeholder="Rechercher..."
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                      </div>
-                    </div>
+          {filterDropdownOpen && (
+  <div
+    ref={filterDropdownRef}
+    className="filter-dropdown-overlay"
+    style={{
+      position: 'fixed',
+      right: 40,
+      top: 64,
+      zIndex: 1050,
+      width: '90%',
+      maxWidth: '1220px'
+    }}
+  >
+    <div className="card shadow-sm" style={{ borderRadius: '8px' }}>
+      <div className="card-header bg-light py-2 d-flex align-items-center justify-content-between">
+        <h6 className="mb-0 d-flex align-items-center">
+          <i className="fas fa-filter me-2 text-primary"></i>
+          Filtres
+        </h6>
+        <button
+          className="btn btn-link btn-sm p-0"
+          onClick={clearAllFilters}
+          title="Effacer tous les filtres"
+        >
+          <i className="fas fa-times text-muted"></i>
+        </button>
+      </div>
 
-                    {/* Date Range */}
-                    <div className="mb-3">
-                      <label className="form-label small fw-bold">Date de téléchargement</label>
-                      <div className="row g-2">
-                        <div className="col-6">
-                          <input
-                            type="date"
-                            className="form-control form-control-sm"
-                            value={startDate}
-                            onChange={(e) => setStartDate(e.target.value)}
-                          />
-                        </div>
-                        <div className="col-6">
-                          <input
-                            type="date"
-                            className="form-control form-control-sm"
-                            value={endDate}
-                            onChange={(e) => setEndDate(e.target.value)}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    {/* Invoice Date Range */}
-                    <div className="mb-3">
-                      <label className="form-label small fw-bold">Date de document</label>
-                      <div className="row g-2">
-                        <div className="col-6">
-                          <input
-                            type="date"
-                            className="form-control form-control-sm"
-                            value={invoiceStartDate}
-                            onChange={(e) => setInvoiceStartDate(e.target.value)}
-                          />
-                        </div>
-                        <div className="col-6">
-                          <input
-                            type="date"
-                            className="form-control form-control-sm"
-                            value={invoiceEndDate}
-                            onChange={(e) => setInvoiceEndDate(e.target.value)}
-                          />
-                        </div>
-                      </div>
-                    </div>
+      <div className="card-body">
+        <div className="row g-3 align-items-end">
 
-                    {/* Document Types - Multi-select Dropdown */}
-                    <div className="mb-3">
-                      <label className="form-label small fw-bold">Types de documents</label>
-                      <div className="dropdown" style={{ position: 'relative' }}>
-                        <button
-                          className="form-select form-select-sm text-start"
-                          type="button"
-                          style={{ minWidth: '325px' }}
-                          onClick={() => setOpenDropdownId(openDropdownId === 'doctype-filter' ? null : 'doctype-filter')}
-                        >
-                          {selectedDoctypeFilters.length === 0
-                            ? 'Sélectionner...'
-                            : `${selectedDoctypeFilters.length} sélectionné(s)`}
-                        </button>
-                        {openDropdownId === 'doctype-filter' && (
-                          <div
-                            className="dropdown-menu show"
-                            style={{
-                              maxHeight: '210px', // 7 * 30px (approx height per item)
-                              overflowY: availableDoctypes.length > 7 ? 'auto' : 'visible',
-                              minWidth: '400px',
-                              width: '330px',
-                              padding: '8px',
-                              zIndex: 10,
-                              marginRight: '0px'
-                            }}
-                          >
-                            {availableDoctypes.length === 0 ? (
-                              <div className="text-muted small">Aucun type</div>
-                            ) : (
-                              availableDoctypes.map((doctype, idx) => (
-                                <div key={doctype.id} className="form-check d-flex align-items-center" style={{ whiteSpace: 'nowrap', paddingLeft: '2rem', height: '30px' }}>
-                                  <input
-                                    className="form-check-input me-2"
-                                    type="checkbox"
-                                    id={`doctype-filter-${idx}`}
-                                    checked={selectedDoctypeFilters.includes(doctype.id)}
-                                    onChange={() => handleDoctypeFilterChange(doctype.id)}
-                                  />
-                                  <label
-                                    className="form-check-label"
-                                    htmlFor={`doctype-filter-${idx}`}
-                                    style={{ marginBottom: 0, cursor: 'pointer', textTransform: 'none', maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'middle' }}
-                                    title={doctype.name}
-                                  >
-                                    {doctype.name.length > 20 ? doctype.name.slice(0, 18) + '...' : doctype.name}
-                                  </label>
-                                </div>
-                              ))
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Billable Filter */}
-                    <div className="mb-3">
-                      <label className="form-label small fw-bold">Facturable</label>
-                      <select
-                        className="form-select form-select-sm"
-                        value={billableFilter}
-                        onChange={(e) => setBillableFilter(e.target.value)}
-                      >
-                        <option value="all">Tous</option>
-                        <option value="billable">Facturable</option>
-                        <option value="non-billable">Non facturable</option>
-                      </select>
-                    </div>
-
-                    {/* Groups */}
-                    
-                    {/* Buttons removed as requested */}
-                  </div>
-                </div>
-              </div>
-            )}
+          {/* Search */}
+          <div className="col-md-4">
+            <label className="form-label small fw-bold">Recherche</label>
+            <input
+              type="text"
+              className="form-control form-control-sm"
+              placeholder="Rechercher..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{width:'570px'}}
+            />
           </div>
+
+         {/* Date Filter Type */}
+          <div className="col-md-4">
+            <div className="fw-bold small mb-1" style={{alignItems: 'right',justifyContent: 'flex-end', paddingLeft:'190px'}}>Filtrer par la date de :</div>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'row',
+                gap: '12px',
+                lineHeight: '1.1',
+                justifyContent: 'flex-end', // <-- push items to the right
+                alignItems: 'center',       // <-- vertically align radio buttons
+              }}
+            >
+              <label className="form-check-label small d-flex align-items-center" style={{ margin: 0 }}>
+                <input
+                  className="form-check-input me-1"
+                  type="radio"
+                  name="dateFilterType"
+                  id="dateUpload"
+                  value="upload"
+                  checked={dateFilterType === 'upload'}
+                  onChange={() => setDateFilterType('upload')}
+                  style={{ marginTop: 0 }}
+                />
+                Chargement
+              </label>
+
+              <label className="form-check-label small d-flex align-items-center" style={{ margin: 0 }}>
+                <input
+                  className="form-check-input me-1"
+                  type="radio"
+                  name="dateFilterType"
+                  id="dateDocument"
+                  value="document"
+                  checked={dateFilterType === 'document'}
+                  onChange={() => setDateFilterType('document')}
+                  style={{ marginTop: 0 }}
+                />
+                Document
+              </label>
+            </div>
+          </div>
+
+
+
+          {/* Date Range */}
+          <div className="col-md-4 d-flex align-items-center gap-2">
+            <input
+              type="date"
+              className="form-control form-control-sm"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+            />
+            <input
+              type="date"
+              className="form-control form-control-sm"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+            />
+          </div>
+        </div>
+
+       
+
+        {/* Second row: dropdowns */}
+        <div className="row g-3">
+          <div className="col-md-4">
+  <label className="form-label small fw-bold">Types de documents</label>
+  <div className="dropdown" style={{ position: 'relative' }}>
+    <button
+      className="form-select form-select-sm text-start"
+      type="button"
+      onClick={() =>
+        setOpenDropdownId(openDropdownId === 'doctype-filter' ? null : 'doctype-filter')
+      }
+    >
+      {selectedDoctypeFilters.length === 0
+        ? 'Sélectionner...'
+        : `${selectedDoctypeFilters.length} sélectionné(s)`}
+    </button>
+
+    {openDropdownId === 'doctype-filter' && (
+      <div
+        className="dropdown-menu show"
+        style={{
+          maxHeight: '250px',
+          overflowY: 'auto',
+          width: '380px',
+          padding: '8px',
+          
+          zIndex: 10,
+        }}
+      >
+        {/* Search input */}
+        <input
+          type="text"
+          placeholder="Rechercher..."
+          className="form-control form-control-sm mb-2"
+          value={doctypeSearchTerm}
+          onChange={(e) => setDoctypeSearchTerm(e.target.value)}
+        />
+
+        {filteredDoctypes.length === 0 ? (
+          <div className="text-muted small">Aucun type</div>
+        ) : (
+          filteredDoctypes.map((doctype, idx) => (
+            <div
+              key={doctype.id}
+              className="form-check d-flex align-items-center"
+              style={{ paddingLeft: '1.5rem', height: '30px' }}
+            >
+              <input
+                className="form-check-input me-2"
+                type="checkbox"
+                id={`doctype-filter-${idx}`}
+                checked={selectedDoctypeFilters.includes(doctype.id)}
+                onChange={() => handleDoctypeFilterChange(doctype.id)}
+              />
+              <label
+                className="form-check-label"
+                htmlFor={`doctype-filter-${idx}`}
+                title={doctype.name}
+                style={{
+                  marginBottom: 0,
+                  cursor: 'pointer',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  maxWidth: '200px',
+                }}
+              >
+                {doctype.name}
+              </label>
+            </div>
+          ))
+        )}
+      </div>
+    )}
+  </div>
+</div>
+
+
+          <div className="col-md-4">
+            <label className="form-label small fw-bold">Facturable</label>
+            <select
+              className="form-select form-select-sm"
+              value={billableFilter}
+              onChange={(e) => setBillableFilter(e.target.value)}
+            >
+              <option value="all">Tous</option>
+              <option value="billable">Facturable</option>
+              <option value="non-billable">Non facturable</option>
+            </select>
+          </div>
+
+          <div className="col-md-4">
+  <label className="form-label small fw-bold">Partenaire</label>
+  <div className="dropdown" style={{ position: 'relative' }}>
+    <button
+      className="form-select form-select-sm text-start"
+      type="button"
+      onClick={() =>
+        setOpenDropdownId(openDropdownId === 'partner_filter' ? null : 'partner_filter')
+      } // 👈 unique ID
+    >
+      {columnFilters.partner_name && Array.isArray(columnFilters.partner_name) && columnFilters.partner_name.length > 0
+        ? `Partenaire (${columnFilters.partner_name.length})`
+        : 'Sélectionner...'}
+    </button>
+
+    {openDropdownId === 'partner_filter' && ( // 👈 same unique ID
+      <div
+        className="dropdown-menu show"
+        style={{
+          maxHeight: '210px',
+          overflowY: 'auto',
+          width: '100%',
+          padding: '8px',
+          zIndex: 10
+        }}
+      >
+        {/* Search input */}
+        <input
+          type="text"
+          placeholder="Rechercher..."
+          className="form-control form-control-sm mb-2"
+          value={partnerSearchTerm}
+          onChange={(e) => setPartnerSearchTerm(e.target.value)}
+        />
+
+        {filteredPartners.length === 0 ? (
+          <div className="text-muted small">Aucun partenaire</div>
+        ) : (
+          filteredPartners.map((partner, idx) => (
+            <div
+              key={partner}
+              className="form-check d-flex align-items-center"
+              style={{ paddingLeft: '1.5rem', height: '30px' }}
+            >
+              <input
+                className="form-check-input me-2"
+                type="checkbox"
+                id={`partner-filter-${idx}`}
+                checked={Array.isArray(columnFilters.partner_name) && columnFilters.partner_name.includes(partner)}
+                onChange={(e) => {
+                  let newSelected = Array.isArray(columnFilters.partner_name)
+                    ? [...columnFilters.partner_name]
+                    : [];
+                  if (e.target.checked) {
+                    newSelected.push(partner);
+                  } else {
+                    newSelected = newSelected.filter(p => p !== partner);
+                  }
+                  handleColumnFilterChange('partner_name', newSelected);
+                }}
+              />
+              <label
+                className="form-check-label"
+                htmlFor={`partner-filter-${idx}`}
+                style={{
+                  marginBottom: 0,
+                  cursor: 'pointer',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  maxWidth: '200px'
+                }}
+                title={partner}
+              >
+                {partner.length > 18 ? partner.slice(0, 15) + '...' : partner}
+              </label>
+            </div>
+          ))
+        )}
+      </div>
+    )}
+  </div>
+</div>
+
+         
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
         </div>
       </div>
 
@@ -2174,10 +2362,10 @@ const getOneMonthAgo = () => {
               </div>
               <div className="modal-body" style={{ padding: '2rem 2.5rem', textAlign: 'center' }}>
                 <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>
-                  Êtes-vous sûr de vouloir supprimer ce document&nbsp;?
+                  Cette action supprimera les fichiers sélectionnés.
                 </p>
                 <p className="text-muted" style={{ fontSize: '0.98rem', marginBottom: 0 }}>
-                  Cette action est <strong>irréversible</strong> et entraînera la suppression définitive du document.
+                  Êtes-vous certain de vouloir continuer?
                 </p>
                 {deleteError && <div className="alert alert-danger mt-3">{deleteError}</div>}
               </div>
@@ -2193,7 +2381,7 @@ const getOneMonthAgo = () => {
                 </button>
                 <button 
                   type="button" 
-                  className="btn btn-danger"
+                  className="btn btn-secondary"
                   onClick={handleConfirmDelete}
                   disabled={isDeleting}
                   style={{backgroundColor: 'orangered'}}
@@ -2203,7 +2391,7 @@ const getOneMonthAgo = () => {
                   ) : (
                     <>
                       <i className="bi bi-trash me-2"></i>
-                      Supprimer
+                      Oui, supprimer
                     </>
                   )}
                 </button>

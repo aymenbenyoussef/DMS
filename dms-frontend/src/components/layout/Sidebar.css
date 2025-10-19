@@ -1,6 +1,6 @@
 /* Sidebar container */
 .sidebar {
-  width: 350px !important;
+  width: 64px !important;
   min-height: 90vh;
   padding: 12px 8px !important;
   background-color: #fff;
@@ -10,7 +10,7 @@
 }
 
 .sidebar:hover {
-  width: 350px !important;
+  width: 220px !important;
   box-shadow: 0 6px 20px rgba(2,6,23,0.06);
   position: absolute;
   left: 0;
