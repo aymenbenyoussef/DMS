@@ -1,6 +1,6 @@
 /* Sidebar container */
 .sidebar {
-  width: 64px !important;
+  width: 350px !important;
   min-height: 90vh;
   padding: 12px 8px !important;
   background-color: #fff;
@@ -10,7 +10,7 @@
 }
 
 .sidebar:hover {
-  width: 220px !important;
+  width: 350px !important;
   box-shadow: 0 6px 20px rgba(2,6,23,0.06);
   position: absolute;
   left: 0;
@@ -465,4 +465,15 @@
 .sidebar-toggle.active, .sidebar-collapse:focus {
   background: rgba(0,0,0,0.06);
 }
+.folder-item2 {
+  cursor: pointer;
+  padding: 8px 1px;
+  border-radius: 6px;
+  transition: background-color 0.3s, box-shadow 0.3s;
 
+}
+
+.folder-item2.active {
+  background-color: #FFC107;
+  box-shadow: inset 4px 0 0 #FF9800;
+}

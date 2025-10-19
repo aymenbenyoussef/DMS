@@ -327,7 +327,7 @@ const NavBar = ({ user, onLogout, toggleSidebar }) => {
                 className={`nav-link ${isActive('/admin/tools')}`}
                 onClick={() => setShowAdminTools(!showAdminTools)}
               >
-                <span className="nav-icon"><BiGroup size={20} /></span>
+                
                 <span>{t('tools')}</span>
                 <span className={`dropdown-icon ${showAdminTools ? 'open' : ''}`}>
                   <BiChevronDown size={14} />
@@ -340,9 +340,9 @@ const NavBar = ({ user, onLogout, toggleSidebar }) => {
                     
                     
                     {/* System Configuration Column */}
-                    <div className="dropdown-column">
+                    <div className="dropdown-column" style={{width:'230px'}}>
                       <div className="category-header">
-                        <span className="category-icon">{adminToolsCategories.systemConfig.icon}</span>
+                        <span className="dropdown-icon"><BiCog size={20} /></span>
                         <span className="category-title">{adminToolsCategories.systemConfig.title}</span>
                       </div>
                       <div className="category-items">

@@ -26,6 +26,7 @@ const Sidebar = ({ user, loadingUser, isOpen }) => {
   } = useContext(AppContext);
   const [expandedCompany, setExpandedCompany] = useState(null);
   const [tempDocumentsCount, setTempDocumentsCount] = useState(0);
+  const [isPreClassementActive, setIsPreClassementActive] = useState(false);
 
   const fetchTempDocumentsCount = async () => {
     try {
@@ -192,6 +193,7 @@ const Sidebar = ({ user, loadingUser, isOpen }) => {
   const handleCompanyClick = (company) => {
     setSelectedCompany(company);
     setSelectedDoctype(null);
+    setIsPreClassementActive(false);
     navigate('/');
     if (expandedCompany === company.id) {
       setExpandedCompany(null);
@@ -218,22 +220,22 @@ const Sidebar = ({ user, loadingUser, isOpen }) => {
 
   return (
     <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
-      <header className="sidebar-header" onClick={handleHeaderClick}>
-        
-        <h2>{t('company')}</h2>
-      </header>
+      
 
       {/* A verifier button */}
       <li 
-          className="folder-item2"
-          onClick={() => {
-            resetSelection();
-            navigate('/temp-documents');
-          }}
-          style={{ listStyle: 'none' }}
-        >
-          <span className="folder-name2">{t('toVerify')} ({tempDocumentsCount})</span>
-        </li>
+  className={`folder-item2 ${isPreClassementActive ? 'active' : ''}`}
+  onClick={() => {
+    resetSelection();
+    navigate('/temp-documents');
+    setIsPreClassementActive(true);
+    setSelectedCompany(null);
+    setSelectedDoctype(null);
+  }}
+  style={{ listStyle: 'none' }}
+>
+  <span className="folder-name2">{t('toVerify')} ({tempDocumentsCount})</span>
+</li>
       {(error || timeoutError) && (
         <div className="error-message" style={{display:'flex',flexDirection:'column',alignItems:'center',gap:'8px'}}>
           {error || (timeoutError && t('loadingTimeout'))}<br/>
@@ -298,7 +300,18 @@ const Sidebar = ({ user, loadingUser, isOpen }) => {
                           }}
                         >
                           
-                          <span className="folder-name">{folder.name}</span>
+                          <span className="folder-name">
+                          <svg xmlns="http://www.w3.org/2000/svg" 
+                              width="16" height="16" 
+                              viewBox="0 0 24 24" 
+                              fill="currentColor" 
+                              style={{ marginRight: '6px', verticalAlign: 'middle' }}>
+                            <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18
+                                    c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8
+                                    c0-1.1-.9-2-2-2h-8l-2-2z" />
+                          </svg>
+                          {folder.name}
+                        </span>
                         </li>
                       ))
                     ) : (
