@@ -14,12 +14,12 @@
 
 .main-content {
   flex: 1;
-  /*padding: 1.5rem;*/
   overflow-y: auto;
   background-color: #f1f5f9;
   transition: margin-left 0.28s ease, padding 0.2s ease;
   margin-left: 0; /* occupy full width by default */
   min-width: 0; /* allow flex children to shrink properly */
+  padding: 0; /* remove excessive outer padding - container will manage inner spacing */
 }
 
 .main-content.sidebar-open {
@@ -27,12 +27,10 @@
 }
 
 .content-container {
-  /* Make the container fluid so it stretches to available space and sticks to the sidebar.
-     Keep internal padding and box-sizing so children don't overflow when zooming. */
+  /* Compact container: stretch but keep minimal internal padding for readability */
   max-width: none;
-  margin: 0; /* don't center - keep left aligned to the main content area */
+  margin: 0; /* keep left aligned to the main content area */
   width: 100%;
-  padding: 1rem 1rem; /* safe horizontal padding */
   box-sizing: border-box;
 }
 
@@ -40,9 +38,9 @@
   /* On medium screens keep compact but allow slight inset */
   .main-content {
     margin-left: 0;
-    padding: 1rem;
+    padding: 0; /* keep main content tight on medium screens */
   }
-  .content-container { padding: 1rem; }
+  .content-container { padding: 0.5rem 0.75rem; }
 }
 
 @media (max-width: 768px) {
@@ -52,7 +50,7 @@
 
   .main-content {
     margin-left: 0; /* sidebar overlays on small screens */
-    padding: 0.75rem;
+    padding: 0; /* minimal padding on small screens */
   }
 }
 

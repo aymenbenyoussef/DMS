@@ -114,7 +114,14 @@
   min-height: 100vh;
   font-size: 0.9rem;
   color: var(--text);
-  --da-header-offset: 220px; /* hauteur totale probablement occupée par header, filtres et actions */
+  /* hauteur totale probablement occupée par header, filtres et actions.
+     Use clamp to keep it within reasonable bounds on very small/large screens.
+     --da-bottom-offset is a small bottom space (for fixed action bars, safe-area on mobile, etc.)
+  */
+  --da-header-offset: clamp(160px, 12vh, 260px);
+  --da-bottom-offset: max(env(safe-area-inset-bottom), 12px);
+  /* Small positive value to increase the visible table height when needed. Adjust as desired. */
+  --da-height-bump: 80px; /* increased from 40px */
 }
 
 /* Filter dropdown overlay used by DocumentArchive to show filters without resizing the table */
@@ -169,12 +176,15 @@
   height: 100%;
   display:flex;
   flex-direction:column;
-  max-height: calc(100vh - var(--da-header-offset));
+  /* Make max-height responsive to viewport and offsets. Subtract a bottom offset
+     so the table won't touch the bottom of the screen (helps on mobile with fixed bars). */
+  max-height: calc(100vh - var(--da-header-offset) - var(--da-bottom-offset) + var(--da-height-bump));
   position: relative;
 }
 
 .documents-table-container .table-responsive {
-  max-height: calc(100vh - var(--da-header-offset) - 16px); /* small padding compensation */
+  /* The inner scrollable area also adapts. Keep a small visual padding (16px) but respect bottom offset. */
+  max-height: calc(100vh - var(--da-header-offset) - var(--da-bottom-offset) - 16px + var(--da-height-bump));
   overflow: auto;
   flex:1;
   position:relative;
@@ -183,17 +193,18 @@
 /* If an expanded side filter exists on wide screens, increase offset to avoid overflow */
 @media (min-width: 992px) {
   .document-archive {
-    --da-header-offset: 240px;
+    --da-header-offset: clamp(180px, 11vh, 240px);
   }
 }
 
 /* On small screens, header + controls are taller, increase offset accordingly */
 @media (max-width: 768px) {
   .document-archive {
-    --da-header-offset: 260px;
+    /* On small screens header and controls can be taller */
+    --da-header-offset: clamp(200px, 22vh, 320px);
   }
   .documents-table-container { max-height: calc(100vh - var(--da-header-offset)); }
-  .documents-table-container .table-responsive { max-height: calc(100vh - var(--da-header-offset) - 12px); }
+  .documents-table-container .table-responsive { max-height: calc(100vh - var(--da-header-offset) - var(--da-bottom-offset) - 12px); }
 }
 
 .documents-table-container .table {
@@ -424,6 +435,28 @@
 
 /* Ensure table container can host absolute overlays without shifting content */
 .documents-table-container { position: relative; }
+
+/* Strong overrides to ensure responsive heights inside the DocumentArchive component.
+   These rules are intentionally specific and use !important to neutralize legacy
+   or temporary CSS (e.g. TempDocumentArchive.css) that set fixed max-heights,
+   large padding-bottoms or !important flags. */
+.document-archive .documents-table-container {
+  /* Enforce responsive max-height based on header + bottom offsets (with optional bump) */
+  max-height: calc(100vh - var(--da-header-offset) - var(--da-bottom-offset) + var(--da-height-bump)) !important;
+  height: auto !important;
+  overflow: hidden !important; /* parent hides overflow, inner .table-responsive scrolls */
+  padding-bottom: 0 !important; /* cancel any large padding-bottom from other CSS */
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important; /* allow flex children to shrink */
+}
+
+.document-archive .documents-table-container .table-responsive {
+  max-height: calc(100vh - var(--da-header-offset) - var(--da-bottom-offset) - 16px + var(--da-height-bump)) !important;
+  height: auto !important;
+  overflow-y: auto !important; /* make the table body scrollable */
+  overflow-x: auto !important;
+}
 
 /* Compact overlay action bar for group actions (does not push layout) */
 .group-action-bar {
