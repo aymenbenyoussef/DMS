@@ -309,6 +309,76 @@
 .icon-btn { display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:6px; background:transparent; border:1px solid transparent; }
 .icon-btn:hover { background:#f3f4f6; }
 
+/* Import button style matching screenshot: rounded pill, blue background, white text, subtle shadow */
+.document-archive .btn-import {
+  background: #5471b8;
+  border: 1px solid #5471b8;
+  color: #fff !important;
+  padding: 0.45rem 0.9rem;
+  font-weight: 700;
+  border-radius: 10px; /* reduced curve */
+  box-shadow: 0 8px 18px rgba(84,113,184,0.14);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.document-archive .btn-import i { font-size: 0.95rem; }
+.document-archive .btn-import:focus { outline: none; box-shadow: 0 10px 22px rgba(37,99,235,0.14); }
+.document-archive .btn-import:active { transform: translateY(0); }
+
+/* Utility class to remove hover/active/focus visual effects for specified buttons */
+.document-archive .no-hover,
+.document-archive .no-hover:hover,
+.document-archive .no-hover:focus,
+.document-archive .no-hover:active {
+  background-color: transparent !important;
+  color: inherit !important;
+  border-color: var(--border) !important;
+  box-shadow: none !important;
+  transform: none !important;
+  transition: none !important;
+}
+
+/* Ensure dropdown-toggle caret still shows but without hover background change */
+.document-archive .no-hover.dropdown-toggle::after { margin-left: 6px; }
+
+/* Also specifically neutralize hover on outline-secondary when no-hover is present */
+.document-archive .btn-outline-secondary.no-hover:hover {
+  background-color: transparent !important;
+  color: var(--muted) !important;
+  border-color: var(--border) !important;
+}
+
+/* Ensure action buttons align perfectly in the header */
+.document-archive .action-buttons { display: flex; align-items: center; gap: 0.5rem; }
+.document-archive .action-buttons > * { display: inline-flex; align-items: center; justify-content: center; }
+
+/* Force uniform height and vertical centering for header action buttons */
+.document-archive .action-buttons .btn {
+  height: 40px; /* uniform height */
+  padding-top: 0; padding-bottom: 0; /* rely on height */
+  line-height: 1; /* prevent vertical misalignment */
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Make import button slightly taller and horizontally balanced with icon */
+.document-archive .btn-import {
+  height: 42px;
+  padding-left: 14px;
+  padding-right: 18px;
+}
+
+/* Adjust small button sizes to match height */
+.document-archive .action-buttons .btn-sm {
+  height: 40px;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+/* Ensure dropdown toggles show caret but keep vertical alignment */
+.document-archive .action-buttons .dropdown-toggle::after { margin-left: 6px; }
+
 /* ===== DROPDOWNS ===== */
 .dropdown { position: relative; }
 .dropdown-menu { position: fixed !important; z-index: 9999 !important; min-width:160px; font-size:0.85rem; border:1px solid var(--border); border-radius:8px; box-shadow:0 10px 30px rgba(2,6,23,0.08); background:var(--surface); padding:0.25rem 0; }

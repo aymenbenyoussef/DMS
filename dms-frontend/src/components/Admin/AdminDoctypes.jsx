@@ -28,22 +28,23 @@ const getCompanyTokenColor = (companyName) => {
   return colors[Math.abs(hash) % colors.length];
 };
 
-// Composant React pour afficher les tokens de compagnies
+// Composant React pour afficher les tokens (inline gris, séparés par des virgules)
 const CompanyTokens = ({ companies }) => {
-  if (!companies || companies.length === 0) {
-    return <span className="text-muted">Aucune entité</span>;
-  }
+  if (!companies || companies.length === 0) return <span className="text-muted">Aucune entité</span>;
+
+  const names = companies.map(c => c.name).filter(Boolean);
+  if (names.length === 0) return <span className="text-muted">Aucune entité</span>;
 
   return (
     <div className="company-tokens-container">
       {companies.map((company, index) => (
-        <span 
-          key={company.id || index}
-          className={`company-token ${getCompanyTokenColor(company.name)}`}
-          title={company.name}
-        >
-          {company.name}
-        </span>
+        <React.Fragment key={company.id || index}>
+          <span className="company-token" title={company.name}>
+            {company.name}
+          </span>
+          {index < companies.length - 1 ? <span className="company-sep">,</span> : null}
+          <br />
+        </React.Fragment>
       ))}
     </div>
   );
@@ -388,8 +389,12 @@ const AdminDoctypes = ({ user }) => {
               )}
             </div>
 
-            <Link to="/AddDoctype" className="btn-primary-2">
-              Ajouter un type de document
+            <Link to="/AddDoctype" className="btn-primary-2" aria-label="Ajouter un type de document" style={{fontWeight: 700, display: 'inline-flex', alignItems: 'center'}}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: '8px', verticalAlign: 'middle'}} aria-hidden="true">
+                <line x1="12" y1="4" x2="12" y2="20"></line>
+                <line x1="4" y1="12" x2="20" y2="12"></line>
+              </svg>
+              Type de document
             </Link>
           </div>
         </div>
@@ -506,6 +511,10 @@ const AdminDoctypes = ({ user }) => {
                             className="btn-edit"
                             onClick={() => handleEdit(doctype)}
                           >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{marginRight: '6px'}}>
+                              <path d="M12 20h9" />
+                              <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+                            </svg>
                             Modifier
                           </button>
                         </div>

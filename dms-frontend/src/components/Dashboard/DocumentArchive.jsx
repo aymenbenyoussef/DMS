@@ -8,6 +8,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import EditDocumentForm from './EditDocumentForm';
 import { exportToCSV, exportToJSON, exportToTXT, exportToExcel } from '../Admin/exportUtils';
 import { ReactComponent as FullscreenIcon } from './fullscreen.svg';
+import { ReactComponent as UploadIcon } from './upload.svg';
 import './DocumentArchive.css';
 import RapportModal from './RapportModal';
 import ShareModal from './ShareModal';
@@ -1175,7 +1176,7 @@ const getOneMonthAgo = () => {
                   </>
                 )}
               </h4>
-              <div className="d-flex gap-2">
+              <div className="d-flex gap-2 action-buttons align-items-center">
                 {isGlobalActionMode && (
                   <>
                     <button
@@ -1300,7 +1301,7 @@ const getOneMonthAgo = () => {
       )}
                 <div className="dropdown">
                   <button
-                    className="btn btn-outline-secondary btn-sm dropdown-toggle"
+                    className="btn btn-outline-secondary btn-sm dropdown-toggle no-hover"
                     onClick={() => setGlobalActionMenuOpen(!globalActionMenuOpen)}
                     ref={globalActionMenuRef}
                   >
@@ -1319,7 +1320,7 @@ const getOneMonthAgo = () => {
                   )}
                 </div>
                 <button
-                  className="btn btn-outline-secondary btn-sm btn-filter-toggle"
+                  className="btn btn-outline-secondary btn-sm btn-filter-toggle no-hover"
                   onClick={() => setFilterDropdownOpen(!filterDropdownOpen)}
                   title={filterDropdownOpen ? "Masquer les filtres" : "Filtres"}
                 >
@@ -1327,15 +1328,15 @@ const getOneMonthAgo = () => {
                   <span className="ms-1">Filtres</span>
                 </button>
                 <button
-                  className="btn btn-outline-secondary btn-sm"
+                  className="btn btn-outline-secondary btn-sm btn-import"
                   onClick={openUploadModal}
                 >
-                  <i className="fas fa-upload me-1"></i>
+                  <UploadIcon className="me-1" width="16" height="16" />
                   Importer des documents
                 </button>
                 <div className="dropdown">
                   <button
-                    className="btn btn-outline-secondary btn-sm dropdown-toggle"
+                    className="btn btn-outline-secondary btn-sm dropdown-toggle no-hover"
                     onClick={() => setExportMenuOpen(!exportMenuOpen)}
                     ref={exportMenuRef}
                   >
@@ -2236,8 +2237,8 @@ const getOneMonthAgo = () => {
           <div className="modal-dialog modal-lg">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title">
-                  <i className="fas fa-upload me-2"></i>
+                <h5 className="modal-title d-flex align-items-center">
+                  <UploadIcon className="me-2" width="16" height="16" />
                   Télécharger des documents
                 </h5>
                 <button type="button" className="btn-close" onClick={closeUploadModal}></button>

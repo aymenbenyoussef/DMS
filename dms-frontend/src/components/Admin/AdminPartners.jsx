@@ -29,22 +29,23 @@ const getTokenColor = (name) => {
   return colors[Math.abs(hash) % colors.length];
 };
 
-// Composant pour afficher les tokens
+// Composant pour afficher les tokens (inline gris, séparés par des virgules)
 const TokenList = ({ items, type = 'company' }) => {
-  if (!items || items.length === 0) {
-    return <span className="text-muted">Aucun</span>;
-  }
+  if (!items || items.length === 0) return <span className="text-muted">Aucun</span>;
+
+  const names = items.map(i => i.name).filter(Boolean);
+  if (names.length === 0) return <span className="text-muted">Aucun</span>;
 
   return (
     <div className="company-tokens-container">
       {items.map((item, index) => (
-        <span 
-          key={item.id || index}
-          className={`company-token ${getTokenColor(item.name)}`}
-          title={item.name}
-        >
-          {item.name}
-        </span>
+        <React.Fragment key={item.id || index}>
+          <span className="company-token" title={item.name}>
+            {item.name}
+          </span>
+          {index < items.length - 1 ? <span className="company-sep">,</span> : null}
+          <br />
+        </React.Fragment>
       ))}
     </div>
   );
@@ -535,8 +536,12 @@ const AdminPartners = ({ user }) => {
               )}
             </div>
 
-            <button className="btn-primary-2" onClick={handleAddPartner} disabled={loading}>
-              Ajouter un partenaire
+            <button className="btn-primary-2" onClick={handleAddPartner} disabled={loading} aria-label="Ajouter un partenaire" style={{fontWeight: 700, display: 'inline-flex', alignItems: 'center'}}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: '8px', verticalAlign: 'middle'}} aria-hidden="true">
+                <line x1="12" y1="4" x2="12" y2="20"></line>
+                <line x1="4" y1="12" x2="20" y2="12"></line>
+              </svg>
+              Partenaire
             </button>
           </div>
         </div>
@@ -708,6 +713,10 @@ const AdminPartners = ({ user }) => {
                             className="btn-edit"
                             onClick={() => handleEdit(partner)}
                           >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{marginRight: '6px'}}>
+                              <path d="M12 20h9" />
+                              <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+                            </svg>
                             Modifier
                           </button>
                           
