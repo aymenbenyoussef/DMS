@@ -266,7 +266,7 @@
   border-radius: 10px;
   border: 1px solid var(--border, #e6e9ee);
   box-shadow: 0 6px 18px rgba(16,24,40,0.06);
-  overflow: hidden;
+  overflow: auto;
   height: 100%;
   display:flex;
   flex-direction:column;
@@ -463,47 +463,7 @@
   align-items: center;
 }
 
-/* Keep the actions column always visible even when sidebar is open
-   - Make the last column sticky to the right
-   - Ensure header and filter rows keep sticky behavior with higher z-index
-   - Give a matching background and subtle left shadow so it reads above content
-*/
-.users-table-container .table th:last-child,
-.users-table-container .table td:last-child,
-.users-table-container .users-table-fixed th:last-child,
-.users-table-container .users-table-fixed td:last-child {
-  position: -webkit-sticky; /* Safari */
-  position: sticky;
-  right: 0;
-  z-index: 115; /* above normal rows but below modal overlays */
-  background: var(--surface, #ffffff);
-  /* Ensure column is wide enough for buttons */
-  min-width: 140px;
-  box-shadow: -6px 0 12px rgba(16,24,40,0.06);
-  white-space: nowrap;
-}
 
-/* Header cell must keep its top sticky and be above the action cells when both sticky */
-.users-table-container .table thead th:last-child,
-.users-table-container .users-table-fixed thead th:last-child {
-  top: 0; /* keep header sticky behavior */
-  z-index: 120; /* above other sticky cells in table */
-}
-
-/* Filter row (if present) sits just under header; keep it visible with sticky and right offset */
-.users-table-container .table thead tr.filter-row th:last-child,
-.users-table-container .table thead tr.filter-row td:last-child {
-  position: sticky;
-  right: 0;
-  top: 48px; /* matches earlier CSS where filter-row is sticky at 48px */
-  z-index: 119;
-  background: var(--header-bg, #f8fafc);
-}
-
-/* Give the table container a small right padding so the sticky column is never clipped by adjacent UI like the sidebar */
-.users-table-container {
-  padding-right: 8px; /* small safety space */
-}
 
 .btn-edit {
   background: linear-gradient(135deg, #ff9800, #f57c00);
@@ -1217,3 +1177,49 @@
   border-top: none;
 }
 
+/* Top toast (fixed above everything, including navbar) */
+.top-toast {
+  position: fixed;
+  top: -100px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--success);
+  color: white;
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 99999; /* very high to be above any navbar */
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  transition: top var(--transition-slow) cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  min-width: 250px;
+  text-align: center;
+  justify-content: center;
+}
+
+.top-toast.show {
+  top: 1.5rem;
+}
+
+.top-toast-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.top-toast-icon { font-size: 1rem; }
+.top-toast-message { font-weight: 600; }
+.top-toast-close {
+  background: transparent;
+  border: none;
+  color: white;
+  margin-left: 0.5rem;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.top-toast-error { background: #ef4444; }
+.top-toast-success { background: var(--success); }

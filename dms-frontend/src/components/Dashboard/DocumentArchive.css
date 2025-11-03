@@ -132,6 +132,11 @@
   background: #fff;
 }
 
+/* Tighter padding for the inline filter card to reduce vertical whitespace */
+.document-archive .filter-card .card-body {
+  padding: 0.45rem 0.6rem; /* slightly smaller than default 0.75rem */
+}
+
 .btn-filter-toggle {
   display: inline-flex;
   align-items: center;
@@ -512,7 +517,7 @@
    large padding-bottoms or !important flags. */
 .document-archive .documents-table-container {
   /* Enforce responsive max-height based on header + bottom offsets (with optional bump) */
-  max-height: calc(100vh - var(--da-header-offset) - var(--da-bottom-offset) + var(--da-height-bump)) !important;
+  max-height: calc(100vh - var(--da-header-offset) - var(--da-filter-height, 0px) - var(--da-bottom-offset) + var(--da-height-bump)) !important;
   height: auto !important;
   overflow: hidden !important; /* parent hides overflow, inner .table-responsive scrolls */
   padding-bottom: 0 !important; /* cancel any large padding-bottom from other CSS */
@@ -522,7 +527,7 @@
 }
 
 .document-archive .documents-table-container .table-responsive {
-  max-height: calc(100vh - var(--da-header-offset) - var(--da-bottom-offset) - 16px + var(--da-height-bump)) !important;
+  max-height: calc(100vh - var(--da-header-offset) - var(--da-filter-height, 0px) - var(--da-bottom-offset) - 16px + var(--da-height-bump)) !important;
   height: auto !important;
   overflow-y: auto !important; /* make the table body scrollable */
   overflow-x: auto !important;

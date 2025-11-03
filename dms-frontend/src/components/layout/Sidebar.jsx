@@ -28,6 +28,14 @@ const Sidebar = ({ user, loadingUser, isOpen }) => {
   const [tempDocumentsCount, setTempDocumentsCount] = useState(0);
   const [isPreClassementActive, setIsPreClassementActive] = useState(false);
 
+  // Helper function to truncate text
+  const truncate = (text, length) => {
+    if (text.length <= length) {
+      return text;
+    }
+    return text.substring(0, length) + '...';
+  };
+
   const fetchTempDocumentsCount = async () => {
     try {
       const response = await API.tempDocuments.getAll();
@@ -263,7 +271,7 @@ const Sidebar = ({ user, loadingUser, isOpen }) => {
                 onClick={() => handleCompanyClick(company)}
               >
                 
-                <span className="company-name" title={company.name}>{company.name}</span>
+                <span className="company-name" title={company.name}>{truncate(company.name, 20)}</span>
                 {company.name  && (
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -310,7 +318,7 @@ const Sidebar = ({ user, loadingUser, isOpen }) => {
                                     c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8
                                     c0-1.1-.9-2-2-2h-8l-2-2z" />
                           </svg>
-                          {folder.name}
+                          {truncate(folder.name, 20)}
                         </span>
                         </li>
                       ))

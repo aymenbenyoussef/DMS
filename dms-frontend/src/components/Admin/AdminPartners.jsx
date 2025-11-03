@@ -54,9 +54,8 @@ const TokenList = ({ items, type = 'company' }) => {
 const AdminPartners = ({ user }) => {
   const [partners, setPartners] = useState([]);
   const [filteredPartners, setFilteredPartners] = useState([]);
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState('');
+  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
   const [editingPartner, setEditingPartner] = useState(null);
   const [activeTab, setActiveTab] = useState('list');
   const [showModifyTab, setShowModifyTab] = useState(false);
@@ -79,6 +78,7 @@ const AdminPartners = ({ user }) => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const exportMenuRef = useRef(null);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
   const [formData, setFormData] = useState({
     company_name: '',
@@ -99,18 +99,6 @@ const AdminPartners = ({ user }) => {
     companies: [],
     partnertypes: []
   });
-
-  const [showNotification, setShowNotification] = useState(false);
-  const [notificationMessage, setNotificationMessage] = useState('');
-
-  useEffect(() => {
-    if (success) {
-      const timer = setTimeout(() => {
-        setSuccess('');
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [success]);
 
   useEffect(() => {
     if (globalLimitError) {
@@ -152,21 +140,16 @@ const AdminPartners = ({ user }) => {
 
   // New useEffect to handle notification display
   useEffect(() => {
-    if (!loading && filteredPartners.length === 0) {
+    if (initialLoadComplete && !loading && filteredPartners.length === 0) {
       const message = partners.length === 0 ? 'Aucun partenaire disponible' : 'Aucun partenaire trouvé correspondant à vos filtres';
-      setNotificationMessage(message);
-      setShowNotification(true);
-      
-      // Auto-hide notification after 5 seconds
-      const timer = setTimeout(() => {
-        setShowNotification(false);
-      }, 5000);
-      
-      return () => clearTimeout(timer);
-    } else {
-      setShowNotification(false);
+        setToast({ visible: true, message: message, type: 'success' });
+        const timer = setTimeout(() => {
+            setToast(t => ({ ...t, visible: false }));
+        }, 5000);
+        
+        return () => clearTimeout(timer);
     }
-  }, [loading, filteredPartners, partners]);
+  }, [initialLoadComplete, loading, filteredPartners, partners]);
 
   const fetchPartners = async () => {
     try {
@@ -174,9 +157,12 @@ const AdminPartners = ({ user }) => {
       const response = await API.partner.getAll();
       setPartners(response.data);
       setFilteredPartners(response.data);
+      setInitialLoadComplete(true);
     } catch (err) {
-      setError('Error loading partners');
-      console.error('Error details:', err.response?.data || err.message);
+        const errMsg = 'Error loading partners';
+        setToast({ visible: true, message: errMsg, type: 'error' });
+        setTimeout(() => setToast(t => ({ ...t, visible: false })), 5000);
+        console.error('Error details:', err.response?.data || err.message);
     } finally {
       setLoading(false);
     }
@@ -271,7 +257,6 @@ const AdminPartners = ({ user }) => {
       setFieldErrors({});
       setGlobalErrors([]);
     } catch (err) {
-      setError('Error loading partner details');
       console.error('Error loading partner details:', err);
     }
   };
@@ -359,8 +344,6 @@ const AdminPartners = ({ user }) => {
 
  const handleUpdate = async (e) => {
   e.preventDefault();
-  setError('');
-  setSuccess('');
   setGlobalErrors([]);
   
   if (!validate()) return;
@@ -391,7 +374,11 @@ const AdminPartners = ({ user }) => {
     // Get the updated partner with all associations
     const updatedPartner = await API.partner.getById(editingPartner.id);
     
-    setSuccess('Partner updated successfully');
+    const msg = 'Partner updated successfully';
+    setToast({ visible: true, message: msg, type: 'success' });
+    setTimeout(() => {
+        setToast(t => ({ ...t, visible: false }));
+    }, 5000);
     setEditingPartner(null);
     setShowModifyTab(false);
     setActiveTab('list');
@@ -418,15 +405,17 @@ const AdminPartners = ({ user }) => {
       setFieldErrors({ phone1: 'Numéro de téléphone exist déja' });
       setGlobalErrors(['Numéro de téléphone exist déja']);
     }else {
-      setError(errorMessage); // Show the actual error message from the server
-      setGlobalErrors([errorMessage]);
+        const errMsg = errorMessage;
+        setToast({ visible: true, message: errMsg, type: 'error' });
+        setTimeout(() => setToast(t => ({ ...t, visible: false })), 5000);
+        setGlobalErrors([errorMessage]);
       console.error('Error updating partner:', err);
     }
   }
 };
 
   const dismissNotification = () => {
-    setShowNotification(false);
+    setToast(t => ({ ...t, visible: false }));
   };
 
   const handleAddPartner = (e) => {
@@ -495,8 +484,14 @@ const AdminPartners = ({ user }) => {
   };
 
   return (
-    <div className="admin-users">
-      <div className="admin-header">
+          <div className="admin-users">
+            <div className={`top-toast ${toast.type === 'error' ? 'top-toast-error' : 'top-toast-success'} ${toast.visible ? 'show' : ''}`} role="status" aria-live="polite">
+              <div className="top-toast-inner">
+                <div className="top-toast-icon">{toast.type === 'error' ? '✖️' : '✓'}</div>
+                <div className="top-toast-message">{toast.message}</div>
+                <button className="top-toast-close" onClick={() => setToast(t => ({ ...t, visible: false }))} aria-label="Fermer la notification">✕</button>
+              </div>
+            </div>      <div className="admin-header">
         <div className="admin-tabs">
           <button
             className={`tab-btn ${activeTab === 'list' ? 'active' : ''}`}
@@ -551,8 +546,6 @@ const AdminPartners = ({ user }) => {
         <div className="alert alert-error" style={{marginBottom: '1rem', fontWeight: 600}}>{globalLimitError}</div>
       )}
 
-      {error && <div className="alert alert-error">{error}</div>}
-      {success && <div className="alert alert-success">{success}</div>}
       
 
       {activeTab === 'list' && (
@@ -562,44 +555,6 @@ const AdminPartners = ({ user }) => {
           {loading && (
             <div className="loading-message">
               Chargement des partenaires...
-            </div>
-          )}
-
-          {/* Notification using existing alert classes with inline styles for positioning */}
-          {showNotification && (
-            <div 
-              className="alert alert-error" 
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                backgroundColor: '#e3f2fd',
-                color: '#1565c0',
-                border: '1px solid #2196f3',
-                marginBottom: '20px'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '16px' }}>ℹ️</span>
-                <span>{notificationMessage}</span>
-              </div>
-              <button 
-                onClick={dismissNotification}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#1976d2',
-                  fontSize: '18px',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  padding: '4px 8px',
-                  borderRadius: '4px'
-                }}
-                onMouseOver={(e) => e.target.style.backgroundColor = 'rgba(33, 150, 243, 0.1)'}
-                onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
-              >
-                ×
-              </button>
             </div>
           )}
 

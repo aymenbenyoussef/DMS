@@ -8,9 +8,8 @@ import { exportToCSV, exportToJSON, exportToTXT, exportToExcel } from './exportU
 const AdminPartnerTypes = ({ user }) => {
   const [partnerTypes, setPartnerTypes] = useState([]);
   const [filteredPartnerTypes, setFilteredPartnerTypes] = useState([]);
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState('');
+  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
   const [editingPartnerType, setEditingPartnerType] = useState(null);
   const [activeTab, setActiveTab] = useState('list');
   const [showModifyTab, setShowModifyTab] = useState(false);
@@ -27,11 +26,10 @@ const AdminPartnerTypes = ({ user }) => {
     status: true
   });
 
-  const [showNotification, setShowNotification] = useState(false);
-  const [notificationMessage, setNotificationMessage] = useState('');
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const exportMenuRef = useRef(null);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
   useEffect(() => {
     fetchPartnerTypes();
@@ -43,22 +41,16 @@ const AdminPartnerTypes = ({ user }) => {
       const response = await API.partnertype.getAll();
       setPartnerTypes(response.data);
       setFilteredPartnerTypes(response.data);
+      setInitialLoadComplete(true);
     } catch (err) {
-      setError('Error loading partner types');
-      console.error('Error details:', err.response?.data || err.message);
+        const errMsg = 'Error loading partner types';
+        setToast({ visible: true, message: errMsg, type: 'error' });
+        setTimeout(() => setToast(t => ({ ...t, visible: false })), 5000);
+        console.error('Error details:', err.response?.data || err.message);
     } finally {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (success) {
-      const timer = setTimeout(() => {
-        setSuccess('');
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [success]);
 
   useEffect(() => {
     applyFilters();
@@ -66,21 +58,16 @@ const AdminPartnerTypes = ({ user }) => {
 
   // New useEffect to handle notification display
   useEffect(() => {
-    if (!loading && filteredPartnerTypes.length === 0) {
+    if (initialLoadComplete && !loading && filteredPartnerTypes.length === 0) {
       const message = partnerTypes.length === 0 ? 'No partner types available' : 'No partner types found matching your filters';
-      setNotificationMessage(message);
-      setShowNotification(true);
-      
-      // Auto-hide notification after 5 seconds
-      const timer = setTimeout(() => {
-        setShowNotification(false);
-      }, 5000);
-      
-      return () => clearTimeout(timer);
-    } else {
-      setShowNotification(false);
+        setToast({ visible: true, message: message, type: 'success' });
+        const timer = setTimeout(() => {
+            setToast(t => ({ ...t, visible: false }));
+        }, 5000);
+        
+        return () => clearTimeout(timer);
     }
-  }, [loading, filteredPartnerTypes, partnerTypes]);
+  }, [initialLoadComplete, loading, filteredPartnerTypes, partnerTypes]);
 
   // Close export menu on outside click
   useEffect(() => {
@@ -146,9 +133,6 @@ const AdminPartnerTypes = ({ user }) => {
     setGlobalErrors([]);
   };
 
-  const dismissNotification = () => {
-    setShowNotification(false);
-  };
 
   // Sorting logic
   const handleSort = (key) => {
@@ -196,8 +180,6 @@ const AdminPartnerTypes = ({ user }) => {
 
   const handleUpdate = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
     setGlobalErrors([]);
     
     if (!validate()) return;
@@ -205,7 +187,11 @@ const AdminPartnerTypes = ({ user }) => {
     
     try {
       await API.partnertype.update(editingPartnerType.id, formData);
-      setSuccess('Type de partenaire mis à jour avec succès');
+        const msg = 'Type de partenaire mis à jour avec succès';
+        setToast({ visible: true, message: msg, type: 'success' });
+        setTimeout(() => {
+            setToast(t => ({ ...t, visible: false }));
+        }, 5000);
       setEditingPartnerType(null);
       setShowModifyTab(false);
       setActiveTab('list');
@@ -218,7 +204,9 @@ const AdminPartnerTypes = ({ user }) => {
         setFieldErrors({ name: 'Le nom du type de partenaire existe déjà' });
         setGlobalErrors(['Le nom du type de partenaire existe déjà']);
       } else {
-        setError('Erreur lors de la mise à jour du type de partenaire');
+        const errMsg = 'Erreur lors de la mise à jour du type de partenaire';
+        setToast({ visible: true, message: errMsg, type: 'error' });
+        setTimeout(() => setToast(t => ({ ...t, visible: false })), 5000);
         console.error('Erreur lors de la mise à jour du type de partenaire:', err);
       }
     }
@@ -238,6 +226,13 @@ const AdminPartnerTypes = ({ user }) => {
 
   return (
     <div className="admin-users">
+        <div className={`top-toast ${toast.type === 'error' ? 'top-toast-error' : 'top-toast-success'} ${toast.visible ? 'show' : ''}`} role="status" aria-live="polite">
+            <div className="top-toast-inner">
+            <div className="top-toast-icon">{toast.type === 'error' ? '✖️' : '✓'}</div>
+            <div className="top-toast-message">{toast.message}</div>
+            <button className="top-toast-close" onClick={() => setToast(t => ({ ...t, visible: false }))} aria-label="Fermer la notification">✕</button>
+            </div>
+        </div>
       <div className="admin-header">
         <div className="admin-tabs">
           <button
@@ -289,8 +284,6 @@ const AdminPartnerTypes = ({ user }) => {
         </div>
       </div>
 
-      {error && <div className="alert alert-error">{error}</div>}
-      {success && <div className="alert alert-success">{success}</div>}
       
       {activeTab === 'list' && (
         <div className="users-list">
@@ -299,44 +292,6 @@ const AdminPartnerTypes = ({ user }) => {
           {loading && (
             <div className="loading-message">
               Chargement des types de partenaires...
-            </div>
-          )}
-
-          {/* Notification using existing alert classes with inline styles for positioning */}
-          {showNotification && (
-            <div 
-              className="alert alert-error" 
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                backgroundColor: '#e3f2fd',
-                color: '#1565c0',
-                border: '1px solid #2196f3',
-                marginBottom: '20px'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '16px' }}>ℹ️</span>
-                <span>{notificationMessage}</span>
-              </div>
-              <button 
-                onClick={dismissNotification}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#1976d2',
-                  fontSize: '18px',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  padding: '4px 8px',
-                  borderRadius: '4px'
-                }}
-                onMouseOver={(e) => e.target.style.backgroundColor = 'rgba(33, 150, 243, 0.1)'}
-                onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
-              >
-                ×
-              </button>
             </div>
           )}
 

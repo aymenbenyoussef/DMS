@@ -70,8 +70,7 @@ const AdminUsers = ({user ,loadingUser}) => {
   });
   const [editingUser, setEditingUser] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
   const [companies, setCompanies] = useState([]);
   const [userCompanies, setUserCompanies] = useState({});
   const [showModifyTab, setShowModifyTab] = useState(false);
@@ -86,8 +85,6 @@ const AdminUsers = ({user ,loadingUser}) => {
     role: '',
     companies:''
   });
-  const [showNotification, setShowNotification] = useState(false);
-  const [notificationMessage, setNotificationMessage] = useState('');
   const [timeoutError, setTimeoutError] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   // New: separate loading/error state for users and companies
@@ -102,13 +99,13 @@ const AdminUsers = ({user ,loadingUser}) => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const exportMenuRef = useRef(null);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
   const navigate = useNavigate();
 
   // Move loadData to top level so it can be called after updates
   const loadData = async () => {
     setLoading(true);
-    setError('');
     setTimeoutError(false);
     let timeoutId;
     timeoutId = setTimeout(() => {
@@ -135,9 +132,10 @@ const AdminUsers = ({user ,loadingUser}) => {
       });
       setUserCompanies(companiesMap);
     } catch (err) {
-      clearTimeout(timeoutId);
-      setError('Erreur lors du chargement des données: ' + (err?.message || err));
-      console.error('AdminUsers loadData error:', err);
+        const errMsg = 'Erreur lors du chargement des données: ' + (err?.message || err);
+        setToast({ visible: true, message: errMsg, type: 'error' });
+        setTimeout(() => setToast(t => ({ ...t, visible: false })), 5000);
+        console.error('AdminUsers loadData error:', err);
     } finally {
       setLoading(false);
     }
@@ -156,7 +154,6 @@ const AdminUsers = ({user ,loadingUser}) => {
 
     const loadData = async () => {
       setLoading(true);
-      setError('');
       setTimeoutError(false);
       timeoutId = setTimeout(() => {
         if (isMounted) setTimeoutError(true);
@@ -185,10 +182,13 @@ const AdminUsers = ({user ,loadingUser}) => {
           companiesMap[u.id] = u.companies;
         });
         setUserCompanies(companiesMap);
+        setInitialLoadComplete(true);
       } catch (err) {
         if (!isMounted) return;
         clearTimeout(timeoutId);
-        setError('Erreur lors du chargement des données: ' + (err?.message || err));
+        const errMsg = 'Erreur lors du chargement des données: ' + (err?.message || err);
+        setToast({ visible: true, message: errMsg, type: 'error' });
+        setTimeout(() => setToast(t => ({ ...t, visible: false })), 5000);
         console.error('AdminUsers loadData error:', err);
       } finally {
         if (isMounted) setLoading(false);
@@ -203,25 +203,14 @@ const AdminUsers = ({user ,loadingUser}) => {
   }, [loadingUser, user, retryCount]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (success || error || Object.keys(fieldErrors).length > 0) {
-        setError('');
-        setSuccess('');
-      }
-    }, 3000);
-
-    return () => clearTimeout(timer);
-  }, [success, error, fieldErrors]);
-  
-  useEffect(() => {
     const timer2 = setTimeout(() => {
-      if (error || Object.keys(fieldErrors).length > 0) {
+      if (Object.keys(fieldErrors).length > 0) {
         setFieldErrors({});
       }
     }, 9999999999); 
 
     return () => clearTimeout(timer2);
-  }, [error, fieldErrors]);
+  }, [fieldErrors]);
 
   useEffect(() => {
     if (globalLimitError) {
@@ -233,11 +222,8 @@ const AdminUsers = ({user ,loadingUser}) => {
   const handleTabChange = (tab) => {
     setGlobalLimitError('');
     if (tab !== 'list') {
-      setError('');
-      setSuccess('');
       setFieldErrors({});
     } else {
-      setError('');
       setFieldErrors({});
     }
     setActiveTab(tab);
@@ -253,21 +239,16 @@ const AdminUsers = ({user ,loadingUser}) => {
 
   // New useEffect to handle notification display
   useEffect(() => {
-    if (!loading && filteredUsers.length === 0) {
+    if (initialLoadComplete && !loading && filteredUsers.length === 0) {
       const message = users.length === 0 ? 'No users available' : 'No users found matching your filters';
-      setNotificationMessage(message);
-      setShowNotification(true);
-      
-      // Auto-hide notification after 5 seconds
+      setToast({ visible: true, message: message, type: 'success' });
       const timer = setTimeout(() => {
-        setShowNotification(false);
+        setToast(t => ({ ...t, visible: false }));
       }, 5000);
       
       return () => clearTimeout(timer);
-    } else {
-      setShowNotification(false);
     }
-  }, [loading, filteredUsers, users]);
+  }, [initialLoadComplete, loading, filteredUsers, users]);
 
   const applyFilters = () => {
     let result = [...users];
@@ -348,8 +329,6 @@ const AdminUsers = ({user ,loadingUser}) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
     setGlobalErrors([]);
     setFieldErrors({});
     setGlobalLimitError('');
@@ -363,7 +342,9 @@ const AdminUsers = ({user ,loadingUser}) => {
     try {
       if (editingUser) {
         await API.admin.updateUser(editingUser.id, formData);
-        setSuccess('Utilisateur mis à jour avec succès');
+        setTimeout(() => {
+            setToast(t => ({ ...t, visible: false }));
+        }, 5000);
         setShowModifyTab(false);
         setFormData({
           id:'',
@@ -421,34 +402,39 @@ const AdminUsers = ({user ,loadingUser}) => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) {
       try {
         await API.admin.deleteUser(userId);
-        setSuccess('Utilisateur supprimé avec succès');
+        const msg = 'Utilisateur supprimé avec succès';
+        setToast({ visible: true, message: msg, type: 'success' });
+        setTimeout(() => {
+            setToast(t => ({ ...t, visible: false }));
+        }, 5000);
         //fetchUsers();
       } catch (err) {
-        setError('Erreur lors de la suppression');
+        const errMsg = 'Erreur lors de la suppression';
+        setToast({ visible: true, message: errMsg, type: 'error' });
+        setTimeout(() => setToast(t => ({ ...t, visible: false })), 5000);
         console.error('Error deleting user:', err);
       }
     }
   };
 
   const dismissNotification = () => {
-    setShowNotification(false);
+    setToast(t => ({ ...t, visible: false }));
   };
 
   // Retry handler: retry both
   const handleRetry = () => {
     setRetryCount(c => c + 1);
-    setError('');
     setTimeoutError(false);
   };
 
   // Determine loading/error state for both
   const isLoading = loading && !timeoutError;
   const isTimeout = timeoutError;
-  const isError = !!error || timeoutError;
+  const isError = timeoutError;
   const showSpinner = isLoading && !isTimeout;
   const showError = isError || isTimeout;
-  const errorMsg = error || (timeoutError && 'Le chargement prend trop de temps.');
-  const canShowList = !loading && !timeoutError && !error;
+  const errorMsg = (timeoutError && 'Le chargement prend trop de temps.');
+  const canShowList = !loading && !timeoutError;
 
   // Sorting logic
   const handleSort = (key) => {
@@ -569,6 +555,13 @@ const AdminUsers = ({user ,loadingUser}) => {
 
   return (
     <div className="admin-users">
+        <div className={`top-toast ${toast.type === 'error' ? 'top-toast-error' : 'top-toast-success'} ${toast.visible ? 'show' : ''}`} role="status" aria-live="polite">
+          <div className="top-toast-inner">
+            <div className="top-toast-icon">{toast.type === 'error' ? '✖️' : '✓'}</div>
+            <div className="top-toast-message">{toast.message}</div>
+            <button className="top-toast-close" onClick={() => setToast(t => ({ ...t, visible: false }))} aria-label="Fermer la notification">✕</button>
+          </div>
+        </div>
       <div className="admin-header">
         <div className="admin-tabs">
           <button 
@@ -644,11 +637,6 @@ const AdminUsers = ({user ,loadingUser}) => {
         <div className="users-list">
           {/* Header-level controls moved to the top; removed duplicate buttons here */}
           
-          {success && (
-            <div className="alert alert-success" style={{marginBottom: '16px', textAlign: 'left'}}>
-              {success}
-            </div>
-          )}
           {showSpinner ? (
             <div className="loading-message">
               <div className="loading-spinner" style={{marginRight:'8px',display:'inline-block',verticalAlign:'middle'}}></div>
@@ -657,43 +645,6 @@ const AdminUsers = ({user ,loadingUser}) => {
           
           ) : canShowList ? (
             <>
-              {/* Notification using existing alert classes with inline styles for positioning */}
-              {showNotification && (
-                <div 
-                  className="alert alert-error" 
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    backgroundColor: '#e3f2fd',
-                    color: '#1565c0',
-                    border: '1px solid #2196f3',
-                    marginBottom: '20px'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '16px' }}>ℹ️</span>
-                    <span>{notificationMessage}</span>
-                  </div>
-                  <button 
-                    onClick={dismissNotification}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: '#1976d2',
-                      fontSize: '18px',
-                      fontWeight: 'bold',
-                      cursor: 'pointer',
-                      padding: '4px 8px',
-                      borderRadius: '4px'
-                    }}
-                    onMouseOver={(e) => e.target.style.backgroundColor = 'rgba(33, 150, 243, 0.1)'}
-                    onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
-                  >
-                    ×
-                  </button>
-                </div>
-              )}
               
               <div className="users-table-container">
                 <table className="users-table-fixed">

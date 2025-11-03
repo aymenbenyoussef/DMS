@@ -202,7 +202,7 @@ const DmsTempUploadModal = ({ onClose, onSuccess }) => {
           >
             <div className="drop-zone-content">
               <div className="upload-icon">📄</div>
-              <p>Téléchargez votre/vos fichier(s) ici</p>
+              <p>Glisser des fichiers ici</p>
               <label className="file-input-label">
                 <input
                   type="file"
@@ -211,10 +211,10 @@ const DmsTempUploadModal = ({ onClose, onSuccess }) => {
                   className="file-input"
                   multiple
                 />
-                Parcourir les fichiers
+                Parcourir
               </label>
               <p className="file-types">
-                Formats acceptés : PDF, JPG, PNG, TIFF
+                Formats acceptés: PDF, JPG, PNG, TIFF, DOC, DOCX
               </p>
             </div>
           </div>

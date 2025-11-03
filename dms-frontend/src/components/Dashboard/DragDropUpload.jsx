@@ -354,7 +354,7 @@ const DragDropUpload = ({ onUpload, onClose }) => {
           <div className="modal-header">
             <div className="modal-header__content">
               
-              <h2 className="modal-title">Confirmation des documents</h2>
+              <h2 className="modal-title">Import vers DMS: Étape 1/2 - Chargement</h2>
             </div>
             <button className="modal-close-btn" onClick={onClose} aria-label="Fermer">
               <CloseIcon />
@@ -469,7 +469,7 @@ const DragDropUpload = ({ onUpload, onClose }) => {
         <div className="modal-header">
           <div className="modal-header__content">
             <div className="modal-header__icon">📤</div>
-            <h2 className="modal-title">Téléchargement de documents</h2>
+            <h2 className="modal-title">Import vers DMS: Étape 1/2 - Chargement</h2>
           </div>
           <button className="modal-close-btn" onClick={onClose} aria-label="Fermer">
             <CloseIcon />
@@ -497,7 +497,7 @@ const DragDropUpload = ({ onUpload, onClose }) => {
               <div className="upload-icon">
                 <UploadIcon />
               </div>
-              <p>{files.length > 0 ? 'Ajouter plus de fichiers' : 'Glissez-déposez vos fichiers ici'}</p>
+              <p>{files.length > 0 ? 'Ajouter plus de fichiers' : 'Glisser des fichiers ici'}</p>
               <label className="file-input-label">
                 <input
                   type="file"
@@ -509,7 +509,7 @@ const DragDropUpload = ({ onUpload, onClose }) => {
                 {files.length > 0 ? 'Ajouter' : 'Parcourir'}
               </label>
               <p className="file-types">
-                PDF, JPG, PNG, TIFF
+                Formats acceptés: PDF, JPG, PNG, TIFF, DOC, DOCX
               </p>
               {maxFileSize && (
                 <p className="single-file-note">

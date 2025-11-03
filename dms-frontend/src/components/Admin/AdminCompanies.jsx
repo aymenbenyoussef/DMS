@@ -9,9 +9,8 @@ import { exportToCSV, exportToJSON, exportToTXT, exportToExcel } from './exportU
 const AdminCompanies = ({ user }) => {
   const [companies, setCompanies] = useState([]);
   const [filteredCompanies, setFilteredCompanies] = useState([]);
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState('');
+  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
   const [editingCompany, setEditingCompany] = useState(null);
   const [activeTab, setActiveTab] = useState('list');
   const [showModifyTab, setShowModifyTab] = useState(false);
@@ -36,13 +35,12 @@ const AdminCompanies = ({ user }) => {
     is_active: true
   });
 
-  const [showNotification, setShowNotification] = useState(false);
-  const [notificationMessage, setNotificationMessage] = useState('');
   const [maxEntities, setMaxEntities] = useState(null);
   const [globalLimitError, setGlobalLimitError] = useState('');
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const exportMenuRef = useRef(null);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
   useEffect(() => {
     fetchCompanies();
@@ -86,9 +84,12 @@ const AdminCompanies = ({ user }) => {
       const companiesData = Array.isArray(response?.data) ? response.data : [];
       setCompanies(companiesData);
       setFilteredCompanies(companiesData);
+      setInitialLoadComplete(true);
     } catch (err) {
-      setError('Erreur lors du chargement des entreprises');
-      console.error('Error details:', err.response?.data || err.message);
+        const errMsg = 'Erreur lors du chargement des entreprises';
+        setToast({ visible: true, message: errMsg, type: 'error' });
+        setTimeout(() => setToast(t => ({ ...t, visible: false })), 5000);
+        console.error('Error details:', err.response?.data || err.message);
       setCompanies([]);
       setFilteredCompanies([]);
     } finally {
@@ -96,29 +97,16 @@ const AdminCompanies = ({ user }) => {
     }
   };
   useEffect(() => {
-    let timer;
-    if (success) {
-      timer = setTimeout(() => {
-        setSuccess('');
-      }, 3000);
-    }
-    return () => clearTimeout(timer);
-  }, [success]);
-  useEffect(() => {
-    if (!loading && filteredCompanies.length === 0) {
+    if (initialLoadComplete && !loading && filteredCompanies.length === 0) {
       const message = companies.length === 0 ? 'Aucune entreprise disponible' : 'Aucune entreprise ne correspond à vos filtres';
-      setNotificationMessage(message);
-      setShowNotification(true);
-      
-      const timer = setTimeout(() => {
-        setShowNotification(false);
-      }, 5000);
-      
-      return () => clearTimeout(timer);
-    } else {
-      setShowNotification(false);
+        setToast({ visible: true, message: message, type: 'success' });
+        const timer = setTimeout(() => {
+            setToast(t => ({ ...t, visible: false }));
+        }, 5000);
+        
+        return () => clearTimeout(timer);
     }
-  }, [loading, filteredCompanies, companies]);
+  }, [initialLoadComplete, loading, filteredCompanies, companies]);
 
   const applyFilters = () => {
     const companiesArray = Array.isArray(companies) ? companies : [];
@@ -196,10 +184,16 @@ const AdminCompanies = ({ user }) => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer cette entreprise ?')) {
       try {
         await API.companies.delete(companyId);
-        setSuccess('Entreprise supprimée avec succès');
+        const msg = 'Entreprise supprimée avec succès';
+        setToast({ visible: true, message: msg, type: 'success' });
+        setTimeout(() => {
+            setToast(t => ({ ...t, visible: false }));
+        }, 5000);
         fetchCompanies();
       } catch (err) {
-        setError('Erreur lors de la suppression de l\'entreprise');
+        const errMsg = 'Erreur lors de la suppression de l\'entreprise';
+        setToast({ visible: true, message: errMsg, type: 'error' });
+        setTimeout(() => setToast(t => ({ ...t, visible: false })), 5000);
         console.error('Error deleting company:', err);
       }
     }
@@ -220,8 +214,6 @@ const AdminCompanies = ({ user }) => {
 
   const handleUpdate = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
     setGlobalErrors([]);
     
     if (!validate()) return;
@@ -229,7 +221,11 @@ const AdminCompanies = ({ user }) => {
     
     try {
       await API.companies.update(editingCompany.id, formData);
-      setSuccess('Entreprise mise à jour avec succès');
+        const msg = 'Entreprise mise à jour avec succès';
+        setToast({ visible: true, message: msg, type: 'success' });
+        setTimeout(() => {
+            setToast(t => ({ ...t, visible: false }));
+        }, 4000);
       setEditingCompany(null);
       setShowModifyTab(false);
       setActiveTab('list');
@@ -246,14 +242,16 @@ const AdminCompanies = ({ user }) => {
         setFieldErrors({ email: 'L\'email existe déjà' });
         setGlobalErrors(['L\'email existe déjà']);
       } else {
-        setError('Erreur lors de la mise à jour de l\'entreprise');
+        const errMsg = 'Erreur lors de la mise à jour de l\'entreprise';
+        setToast({ visible: true, message: errMsg, type: 'error' });
+        setTimeout(() => setToast(t => ({ ...t, visible: false })), 5000);
         console.error('Error updating company:', err);
       }
     }
   };
 
   const dismissNotification = () => {
-    setShowNotification(false);
+    setToast(t => ({ ...t, visible: false }));
   };
 
   const handleAddEntity = (e) => {
@@ -326,6 +324,13 @@ const AdminCompanies = ({ user }) => {
 
   return (
     <div className="admin-users">
+        <div className={`top-toast ${toast.type === 'error' ? 'top-toast-error' : 'top-toast-success'} ${toast.visible ? 'show' : ''}`} role="status" aria-live="polite">
+            <div className="top-toast-inner">
+            <div className="top-toast-icon">{toast.type === 'error' ? '✖️' : '✓'}</div>
+            <div className="top-toast-message">{toast.message}</div>
+            <button className="top-toast-close" onClick={() => setToast(t => ({ ...t, visible: false }))} aria-label="Fermer la notification">✕</button>
+            </div>
+        </div>
       <div className="admin-header">
         
         <div className="admin-tabs">
@@ -385,7 +390,6 @@ const AdminCompanies = ({ user }) => {
             {globalLimitError}
           </div>
         )}
-      {success && <div className="alert alert-success">{success}</div>}
       
       
 
@@ -396,43 +400,6 @@ const AdminCompanies = ({ user }) => {
           {loading && (
             <div className="loading-message">
               Chargement des entités...
-            </div>
-          )}
-
-          {showNotification && (
-            <div 
-              className="alert alert-error" 
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                backgroundColor: '#e3f2fd',
-                color: '#1565c0',
-                border: '1px solid #2196f3',
-                marginBottom: '20px'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '16px' }}>ℹ️</span>
-                <span>{notificationMessage}</span>
-              </div>
-              <button 
-                onClick={dismissNotification}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#1976d2',
-                  fontSize: '18px',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  padding: '4px 8px',
-                  borderRadius: '4px'
-                }}
-                onMouseOver={(e) => e.target.style.backgroundColor = 'rgba(33, 150, 243, 0.1)'}
-                onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
-              >
-                ×
-              </button>
             </div>
           )}
 

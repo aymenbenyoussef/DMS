@@ -1,6 +1,6 @@
 /* Base styles */
 .document-archive {
-    font-family: 'Inter', Arial, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background-color: #f8f9fa;
     min-height: 100vh;
   }
@@ -30,25 +30,24 @@
   }
   
   /* Ensure table container allows dropdown overflow */
-  .documents-table-container {
-    overflow: visible !important;
-    height: auto !important;
-    max-height: 950px !important;
-    overflow-y: auto !important;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    padding-bottom: 400px !important;
-    background-color: #f8f9fa; /* Always use the hover background color */
-  }
-  
-  .table-responsive {
-    overflow: visible !important;
-    height: auto !important;
-    max-height: 800px !important;
-    overflow-y: auto !important;
-  }
-  
+.documents-table-container {
+  overflow: visible !important;
+  height: auto !important;
+  max-height: 950px !important;
+  overflow-y: auto !important;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  padding-bottom: 400px !important;
+  background-color: #f8f9fa; /* Always use the hover background color */
+}
+
+.table-responsive {
+  overflow: visible !important;
+  height: auto !important;
+  max-height: 800px !important;
+  overflow-y: auto !important;
+}  
   /* Ensure table cells can accommodate dropdown */
   .table td {
     position: relative;
@@ -68,32 +67,7 @@
     box-sizing: border-box; /* Include padding in height calculation */
   }
   
-  /* 2. Make the table container the main scrolling area */
-  .documents-table-container {
-    flex: 1; /* Take remaining space */
-    min-height: 0; /* Allow flex item to shrink */
-    overflow-y: auto; /* Enable vertical scrolling */
-    overflow-x: auto; /* Enable horizontal scrolling */
-    border-radius: 8px;
-    border: 1px solid #e5e7eb;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    background-color: white;
-    position: relative;
-    /* Remove fixed max-height and padding-bottom */
-    contain: layout style paint;
-  }
-  
-  /* 3. Make the table header sticky */
-  .table-responsive {
-    overflow-x: auto; /* Enable horizontal scrolling for the table */
-    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
-    height: 100%; /* Take full height of container */
-    max-height: none; /* Remove max-height constraint */
-    overflow-y: visible; /* Let parent handle vertical scrolling */
-    position: relative;
-    /* Ensure this creates a scrolling context for sticky positioning */
-    contain: layout style paint;
-  }
+
   
   .table thead {
     position: sticky;
@@ -865,16 +839,12 @@
   
   .modal-header {
     border-bottom: 1px solid #dee2e6;
-    padding: 16px 24px;
-  }
-  
-  .modal-body {
-    padding: 24px;
+    /*remove extra padding*/
   }
   
   .modal-footer {
     border-top: 1px solid #dee2e6;
-    padding: 16px 24px;
+    /*remove padding*/
   }
   
   /* Form improvements */
@@ -1539,14 +1509,9 @@ body.modal-open {
 }
 
 
-/* Add these styles to the existing CSS */
 
-.documents-table-container {
-  overflow-x: auto !important;
-  min-width: 0;
-}
 
-.table-responsive {
+.documents-table-container .table-responsive {
   min-width: 650px; /* Minimum width to prevent excessive shrinking */
 }
 

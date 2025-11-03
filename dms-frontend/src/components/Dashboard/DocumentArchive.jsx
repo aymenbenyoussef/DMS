@@ -225,6 +225,22 @@ const getOneMonthAgo = () => {
   const [isFilterCollapsed, setIsFilterCollapsed] = useState(true); // default collapsed because filters are now a dropdown
   const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
   const filterDropdownRef = useRef(null);
+  const [filterHeight, setFilterHeight] = useState(0);
+
+  useEffect(() => {
+    if (filterDropdownOpen) {
+      const element = filterDropdownRef.current;
+      if (element) {
+        const resizeObserver = new ResizeObserver(() => {
+          setFilterHeight(element.offsetHeight + 16); // 16px for mb-3
+        });
+        resizeObserver.observe(element);
+        return () => resizeObserver.disconnect();
+      }
+    } else {
+      setFilterHeight(0);
+    }
+  }, [filterDropdownOpen]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -1151,7 +1167,7 @@ const getOneMonthAgo = () => {
     }
   };
   return (
-    <div className="document-archive">
+    <div className="document-archive" style={{ '--da-filter-height': `${filterHeight}px` }}>
       <div className="container-fluid h-100">
         <div className="row h-100">
           {/* Main Content Area - Table */}
@@ -1362,6 +1378,244 @@ const getOneMonthAgo = () => {
                 </div>
               </div>
             </div>
+
+            {/* Filter Section */}
+            {filterDropdownOpen && (
+              <div ref={filterDropdownRef} className="card shadow-sm mb-3 filter-card" style={{ borderRadius: '8px', border: '1px solid #dee2e6' }}>
+
+                <div className="card-body">
+                  <div className="row g-2 align-items-center">
+                    {/* Search */}
+                    <div className="col-md-4">
+                      <label className="form-label small fw-bold">Recherche</label>
+                      <input
+                        type="text"
+                        className="form-control form-control-sm"
+                        placeholder="Rechercher..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                      />
+                    </div>
+                    {/* Date Filter Type — moved next to date inputs */}
+                    {/* Date Range */}
+                    <div className="col-md-4">
+                      <div className="d-flex align-items-center justify-content-between">
+                        <div style={{ minWidth: '160px' }}>
+                          <label className="form-label small fw-bold mb-1">Filtrer par la date de :</label>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', lineHeight: 1.1 }}>
+                            <label className="form-check-label small d-flex align-items-center mb-0">
+                              <input
+                                className="form-check-input me-2"
+                                type="radio"
+                                name="dateFilterType"
+                                id="dateUpload"
+                                value="upload"
+                                checked={dateFilterType === 'upload'}
+                                onChange={() => setDateFilterType('upload')}
+                              />
+                              Chargement
+                            </label>
+                            <label className="form-check-label small d-flex align-items-center mb-0">
+                              <input
+                                className="form-check-input me-2"
+                                type="radio"
+                                name="dateFilterType"
+                                id="dateDocument"
+                                value="document"
+                                checked={dateFilterType === 'document'}
+                                onChange={() => setDateFilterType('document')}
+                              />
+                              Document
+                            </label>
+                          </div>
+                        </div>
+                        <div className="d-flex align-items-center gap-2" style={{ flex: '1 1 auto', justifyContent: 'flex-end' }}>
+                          <input
+                            type="date"
+                            className="form-control form-control-sm"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            style={{ maxWidth: '160px' }}
+                          />
+                          <input
+                            type="date"
+                            className="form-control form-control-sm"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                            style={{ maxWidth: '160px' }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Second row: dropdowns */}
+                  <div className="row g-2 mt-1">
+                    <div className="col-md-4">
+                      <label className="form-label small fw-bold">Types de documents</label>
+                      <div className="dropdown" style={{ position: 'relative' }}>
+                        <button
+                          className="form-select form-select-sm text-start"
+                          type="button"
+                          onClick={() =>
+                            setOpenDropdownId(openDropdownId === 'doctype-filter' ? null : 'doctype-filter')
+                          }
+                        >
+                          {selectedDoctypeFilters.length === 0
+                            ? 'Sélectionner...'
+                            : `${selectedDoctypeFilters.length} sélectionné(s)`}
+                        </button>
+                        {openDropdownId === 'doctype-filter' && (
+                          <div
+                            className="dropdown-menu show"
+                            style={{
+                              maxHeight: '250px',
+                              overflowY: 'auto',
+                              width: '380px',
+                              padding: '8px',
+                              zIndex: 10,
+                            }}
+                          >
+                            <input
+                              type="text"
+                              placeholder="Rechercher..."
+                              className="form-control form-control-sm mb-2"
+                              value={doctypeSearchTerm}
+                              onChange={(e) => setDoctypeSearchTerm(e.target.value)}
+                            />
+                            {filteredDoctypes.length === 0 ? (
+                              <div className="text-muted small">Aucun type</div>
+                            ) : (
+                              filteredDoctypes.map((doctype, idx) => (
+                                <div
+                                  key={doctype.id}
+                                  className="form-check d-flex align-items-center"
+                                  style={{ paddingLeft: '1.5rem', height: '30px' }}
+                                >
+                                  <input
+                                    className="form-check-input me-2"
+                                    type="checkbox"
+                                    id={`doctype-filter-${idx}`}
+                                    checked={selectedDoctypeFilters.includes(doctype.id)}
+                                    onChange={() => handleDoctypeFilterChange(doctype.id)}
+                                  />
+                                  <label
+                                    className="form-check-label"
+                                    htmlFor={`doctype-filter-${idx}`}
+                                    title={doctype.name}
+                                    style={{
+                                      marginBottom: 0,
+                                      cursor: 'pointer',
+                                      textOverflow: 'ellipsis',
+                                      whiteSpace: 'nowrap',
+                                      overflow: 'hidden',
+                                      maxWidth: '200px',
+                                    }}
+                                  >
+                                    {doctype.name}
+                                  </label>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="col-md-4">
+                      <label className="form-label small fw-bold">Facturable</label>
+                      <select
+                        className="form-select form-select-sm"
+                        value={billableFilter}
+                        onChange={(e) => setBillableFilter(e.target.value)}
+                      >
+                        <option value="all">Tous</option>
+                        <option value="billable">Facturable</option>
+                        <option value="non-billable">Non facturable</option>
+                      </select>
+                    </div>
+                    <div className="col-md-4">
+                      <label className="form-label small fw-bold">Partenaire</label>
+                      <div className="dropdown" style={{ position: 'relative' }}>
+                        <button
+                          className="form-select form-select-sm text-start"
+                          type="button"
+                          onClick={() =>
+                            setOpenDropdownId(openDropdownId === 'partner_filter' ? null : 'partner_filter')
+                          }
+                        >
+                          {columnFilters.partner_name && Array.isArray(columnFilters.partner_name) && columnFilters.partner_name.length > 0
+                            ? `Partenaire (${columnFilters.partner_name.length})`
+                            : 'Sélectionner...'}
+                        </button>
+                        {openDropdownId === 'partner_filter' && (
+                          <div
+                            className="dropdown-menu show"
+                            style={{
+                              maxHeight: '210px',
+                              overflowY: 'auto',
+                              width: '100%',
+                              padding: '8px',
+                              zIndex: 10
+                            }}
+                          >
+                            <input
+                              type="text"
+                              placeholder="Rechercher..."
+                              className="form-control form-control-sm mb-2"
+                              value={partnerSearchTerm}
+                              onChange={(e) => setPartnerSearchTerm(e.target.value)}
+                            />
+                            {filteredPartners.length === 0 ? (
+                              <div className="text-muted small">Aucun partenaire</div>
+                            ) : (
+                              filteredPartners.map((partner, idx) => (
+                                <div
+                                  key={partner}
+                                  className="form-check d-flex align-items-center"
+                                  style={{ paddingLeft: '1.5rem', height: '30px' }}
+                                >
+                                  <input
+                                    className="form-check-input me-2"
+                                    type="checkbox"
+                                    id={`partner-filter-${idx}`}
+                                    checked={Array.isArray(columnFilters.partner_name) && columnFilters.partner_name.includes(partner)}
+                                    onChange={(e) => {
+                                      let newSelected = Array.isArray(columnFilters.partner_name)
+                                        ? [...columnFilters.partner_name]
+                                        : [];
+                                      if (e.target.checked) {
+                                        newSelected.push(partner);
+                                      } else {
+                                        newSelected = newSelected.filter(p => p !== partner);
+                                      }
+                                      handleColumnFilterChange('partner_name', newSelected);
+                                    }}
+                                  />
+                                  <label
+                                    className="form-check-label"
+                                    htmlFor={`partner-filter-${idx}`}
+                                    style={{
+                                      marginBottom: 0,
+                                      cursor: 'pointer',
+                                      textOverflow: 'ellipsis',
+                                      whiteSpace: 'nowrap',
+                                      overflow: 'hidden',
+                                      maxWidth: '200px'
+                                    }}
+                                    title={partner}
+                                  >
+                                    {partner.length > 18 ? partner.slice(0, 15) + '...' : partner}
+                                  </label>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Action Buttons */}
             <div className="d-flex gap-2 mb-2 flex-column">
@@ -1938,296 +2192,7 @@ const getOneMonthAgo = () => {
             </div>
           </div>
 
-          {/* Filter Dropdown Overlay - renders as absolute overlay so it doesn't affect table width */}
-          {filterDropdownOpen && (
-  <div
-    ref={filterDropdownRef}
-    className="filter-dropdown-overlay"
-    style={{
-      position: 'fixed',
-      right: 40,
-      top: 64,
-      zIndex: 1050,
-      width: '90%',
-      maxWidth: '1220px'
-    }}
-  >
-    <div className="card shadow-sm" style={{ borderRadius: '8px' }}>
-      <div className="card-header bg-light py-2 d-flex align-items-center justify-content-between">
-        <h6 className="mb-0 d-flex align-items-center">
-          <i className="fas fa-filter me-2 text-primary"></i>
-          Filtres
-        </h6>
-        <button
-          className="btn btn-link btn-sm p-0"
-          onClick={clearAllFilters}
-          title="Effacer tous les filtres"
-        >
-          <i className="fas fa-times text-muted"></i>
-        </button>
-      </div>
 
-      <div className="card-body">
-        <div className="row g-3 align-items-end">
-
-          {/* Search */}
-          <div className="col-md-4">
-            <label className="form-label small fw-bold">Recherche</label>
-            <input
-              type="text"
-              className="form-control form-control-sm"
-              placeholder="Rechercher..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              style={{width:'570px'}}
-            />
-          </div>
-
-         {/* Date Filter Type */}
-          <div className="col-md-4">
-            <div className="fw-bold small mb-1" style={{alignItems: 'right',justifyContent: 'flex-end', paddingLeft:'190px'}}>Filtrer par la date de :</div>
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'row',
-                gap: '12px',
-                lineHeight: '1.1',
-                justifyContent: 'flex-end', // <-- push items to the right
-                alignItems: 'center',       // <-- vertically align radio buttons
-              }}
-            >
-              <label className="form-check-label small d-flex align-items-center" style={{ margin: 0 }}>
-                <input
-                  className="form-check-input me-1"
-                  type="radio"
-                  name="dateFilterType"
-                  id="dateUpload"
-                  value="upload"
-                  checked={dateFilterType === 'upload'}
-                  onChange={() => setDateFilterType('upload')}
-                  style={{ marginTop: 0 }}
-                />
-                Chargement
-              </label>
-
-              <label className="form-check-label small d-flex align-items-center" style={{ margin: 0 }}>
-                <input
-                  className="form-check-input me-1"
-                  type="radio"
-                  name="dateFilterType"
-                  id="dateDocument"
-                  value="document"
-                  checked={dateFilterType === 'document'}
-                  onChange={() => setDateFilterType('document')}
-                  style={{ marginTop: 0 }}
-                />
-                Document
-              </label>
-            </div>
-          </div>
-
-
-
-          {/* Date Range */}
-          <div className="col-md-4 d-flex align-items-center gap-2">
-            <input
-              type="date"
-              className="form-control form-control-sm"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-            />
-            <input
-              type="date"
-              className="form-control form-control-sm"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-            />
-          </div>
-        </div>
-
-       
-
-        {/* Second row: dropdowns */}
-        <div className="row g-3">
-          <div className="col-md-4">
-  <label className="form-label small fw-bold">Types de documents</label>
-  <div className="dropdown" style={{ position: 'relative' }}>
-    <button
-      className="form-select form-select-sm text-start"
-      type="button"
-      onClick={() =>
-        setOpenDropdownId(openDropdownId === 'doctype-filter' ? null : 'doctype-filter')
-      }
-    >
-      {selectedDoctypeFilters.length === 0
-        ? 'Sélectionner...'
-        : `${selectedDoctypeFilters.length} sélectionné(s)`}
-    </button>
-
-    {openDropdownId === 'doctype-filter' && (
-      <div
-        className="dropdown-menu show"
-        style={{
-          maxHeight: '250px',
-          overflowY: 'auto',
-          width: '380px',
-          padding: '8px',
-          
-          zIndex: 10,
-        }}
-      >
-        {/* Search input */}
-        <input
-          type="text"
-          placeholder="Rechercher..."
-          className="form-control form-control-sm mb-2"
-          value={doctypeSearchTerm}
-          onChange={(e) => setDoctypeSearchTerm(e.target.value)}
-        />
-
-        {filteredDoctypes.length === 0 ? (
-          <div className="text-muted small">Aucun type</div>
-        ) : (
-          filteredDoctypes.map((doctype, idx) => (
-            <div
-              key={doctype.id}
-              className="form-check d-flex align-items-center"
-              style={{ paddingLeft: '1.5rem', height: '30px' }}
-            >
-              <input
-                className="form-check-input me-2"
-                type="checkbox"
-                id={`doctype-filter-${idx}`}
-                checked={selectedDoctypeFilters.includes(doctype.id)}
-                onChange={() => handleDoctypeFilterChange(doctype.id)}
-              />
-              <label
-                className="form-check-label"
-                htmlFor={`doctype-filter-${idx}`}
-                title={doctype.name}
-                style={{
-                  marginBottom: 0,
-                  cursor: 'pointer',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  maxWidth: '200px',
-                }}
-              >
-                {doctype.name}
-              </label>
-            </div>
-          ))
-        )}
-      </div>
-    )}
-  </div>
-</div>
-
-
-          <div className="col-md-4">
-            <label className="form-label small fw-bold">Facturable</label>
-            <select
-              className="form-select form-select-sm"
-              value={billableFilter}
-              onChange={(e) => setBillableFilter(e.target.value)}
-            >
-              <option value="all">Tous</option>
-              <option value="billable">Facturable</option>
-              <option value="non-billable">Non facturable</option>
-            </select>
-          </div>
-
-          <div className="col-md-4">
-  <label className="form-label small fw-bold">Partenaire</label>
-  <div className="dropdown" style={{ position: 'relative' }}>
-    <button
-      className="form-select form-select-sm text-start"
-      type="button"
-      onClick={() =>
-        setOpenDropdownId(openDropdownId === 'partner_filter' ? null : 'partner_filter')
-      } // 👈 unique ID
-    >
-      {columnFilters.partner_name && Array.isArray(columnFilters.partner_name) && columnFilters.partner_name.length > 0
-        ? `Partenaire (${columnFilters.partner_name.length})`
-        : 'Sélectionner...'}
-    </button>
-
-    {openDropdownId === 'partner_filter' && ( // 👈 same unique ID
-      <div
-        className="dropdown-menu show"
-        style={{
-          maxHeight: '210px',
-          overflowY: 'auto',
-          width: '100%',
-          padding: '8px',
-          zIndex: 10
-        }}
-      >
-        {/* Search input */}
-        <input
-          type="text"
-          placeholder="Rechercher..."
-          className="form-control form-control-sm mb-2"
-          value={partnerSearchTerm}
-          onChange={(e) => setPartnerSearchTerm(e.target.value)}
-        />
-
-        {filteredPartners.length === 0 ? (
-          <div className="text-muted small">Aucun partenaire</div>
-        ) : (
-          filteredPartners.map((partner, idx) => (
-            <div
-              key={partner}
-              className="form-check d-flex align-items-center"
-              style={{ paddingLeft: '1.5rem', height: '30px' }}
-            >
-              <input
-                className="form-check-input me-2"
-                type="checkbox"
-                id={`partner-filter-${idx}`}
-                checked={Array.isArray(columnFilters.partner_name) && columnFilters.partner_name.includes(partner)}
-                onChange={(e) => {
-                  let newSelected = Array.isArray(columnFilters.partner_name)
-                    ? [...columnFilters.partner_name]
-                    : [];
-                  if (e.target.checked) {
-                    newSelected.push(partner);
-                  } else {
-                    newSelected = newSelected.filter(p => p !== partner);
-                  }
-                  handleColumnFilterChange('partner_name', newSelected);
-                }}
-              />
-              <label
-                className="form-check-label"
-                htmlFor={`partner-filter-${idx}`}
-                style={{
-                  marginBottom: 0,
-                  cursor: 'pointer',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  maxWidth: '200px'
-                }}
-                title={partner}
-              >
-                {partner.length > 18 ? partner.slice(0, 15) + '...' : partner}
-              </label>
-            </div>
-          ))
-        )}
-      </div>
-    )}
-  </div>
-</div>
-
-         
-        </div>
-      </div>
-    </div>
-  </div>
-)}
 
         </div>
       </div>

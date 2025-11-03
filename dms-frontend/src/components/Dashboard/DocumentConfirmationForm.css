@@ -14,8 +14,9 @@
   box-shadow: none;
   display: flex;
   flex-direction: column;
-  max-height: none;
-  min-height: 0;
+  /* Give the whole component a little more height so previews are more visible */
+  min-height: 72vh;
+  max-height: 92vh;
 }
 
 /* ===== EN-TÊTE DU FORMULAIRE ===== */
@@ -71,14 +72,46 @@
 
 /* ===== ZONE DE DÉFILEMENT ===== */
 .confirmation-form-scroll-area {
-  max-height: 60vh;
-  overflow-y: auto;
-  overflow-x: hidden;
+  /* allow the form area to grow and avoid internal scrolling so the full form is visible.
+     The outer modal/container can scroll if needed. */
+  max-height: none;
+  overflow: visible;
   padding: 0.25rem 0.25rem 0 0.25rem;
   background: transparent;
   border-radius: 0;
   flex: 1;
   min-height: 0;
+}
+
+/* Preview container on the right: stretch to available height and allow inner content to scroll */
+.preview-container {
+  border: 1px solid var(--neutral-200);
+  border-radius: 6px;
+  padding: 8px;
+  min-height: 260px;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  background: white;
+  overflow: hidden;
+}
+
+.preview-content {
+  width: 100%;
+  height: 100%;
+  max-height: 78vh;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  overflow: auto;
+}
+
+.preview-content iframe,
+.preview-content img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border: none;
 }
 
 .confirmation-form-scroll-area::-webkit-scrollbar {
@@ -207,6 +240,15 @@
   margin-bottom: 0.1rem;
 }
 
+/* Content row that contains the left form and right preview. It expands vertically and
+   lets the left form grow without internal scrolling. */
+.form-content-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  width: 100%;
+}
+
 
 /* For the first row with three fields (Entité, Type de document, Partenaire externe) */
 .form-row.three-cols {
@@ -273,6 +315,19 @@
 .form-textarea {
   resize: vertical;
   min-height: 4rem;
+}
+
+/* Sticky footer actions */
+.confirmation-actions {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0), rgba(255,255,255,0.9));
+  border-top: 1px solid var(--neutral-200);
+  z-index: 10;
 }
 
 /* ===== INDICATEURS DE CHANGEMENT ===== */

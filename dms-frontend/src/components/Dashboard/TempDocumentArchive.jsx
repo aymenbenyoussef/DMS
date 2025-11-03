@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useRef } from 'react';
+import React, { useState, useEffect, useContext, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import API from '../../api';
 import { AppContext } from '../context';
@@ -63,6 +63,22 @@ const TempDocumentArchive = ({ user }) => {
   // Filters overlay state
   const [filterOverlayOpen, setFilterOverlayOpen] = useState(false);
   const filterOverlayRef = useRef(null);
+  const [filterHeight, setFilterHeight] = useState(0);
+
+  useEffect(() => {
+    if (filterOverlayOpen) {
+      const element = filterOverlayRef.current;
+      if (element) {
+        const resizeObserver = new ResizeObserver(() => {
+          setFilterHeight(element.offsetHeight + 16); // 16px for mb-3
+        });
+        resizeObserver.observe(element);
+        return () => resizeObserver.disconnect();
+      }
+    } else {
+      setFilterHeight(0);
+    }
+  }, [filterOverlayOpen]);
 
   // close filter overlay when clicking outside
   useEffect(() => {
@@ -76,9 +92,23 @@ const TempDocumentArchive = ({ user }) => {
     return () => document.removeEventListener('mousedown', handleOutside);
   }, [filterOverlayOpen]);
 
+  const fetchDocuments = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const response = await API.tempDocuments.getAll(startDate, endDate);
+      setDocuments(response.data || []);
+      setFilteredDocuments(response.data || []);
+    } catch (error) {
+      setDocuments([]);
+      setFilteredDocuments([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [startDate, endDate]);
+
   useEffect(() => {
     fetchDocuments();
-  }, [startDate, endDate]);
+  }, [fetchDocuments]);
 
   useEffect(() => {
     let filtered = [...documents];
@@ -119,21 +149,9 @@ const TempDocumentArchive = ({ user }) => {
     return () => {
       window.removeEventListener('TempDocumentsUploaded', handleTempDocumentUpload);
     };
-  }, []);
+  }, [fetchDocuments]);
 
-  const fetchDocuments = async () => {
-    setIsLoading(true);
-    try {
-      const response = await API.tempDocuments.getAll(startDate, endDate);
-      setDocuments(response.data || []);
-      setFilteredDocuments(response.data || []);
-    } catch (error) {
-      setDocuments([]);
-      setFilteredDocuments([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Note: fetchDocuments is defined above using useCallback
 
   const hasActiveFilters = () => {
     const hasColumnFilters = Object.values(columnFilters).some(value => value && value.trim() !== '');
@@ -224,7 +242,9 @@ const TempDocumentArchive = ({ user }) => {
       const confirmationData = {
         sessionId: ocrResponse.data?.session_id,
         extractedData: ocrResponse.data?.extracted_data,
-        filename: doc.filename
+        filename: doc.filename,
+        // include the original temp document id so the confirmation modal can fetch the file
+        temp_id: doc.id
       };
       
       setConfirmationData([confirmationData]);
@@ -428,38 +448,7 @@ const TempDocumentArchive = ({ user }) => {
                   <i className={`fas fa-${filterOverlayOpen ? 'times' : 'filter'}`}></i>
                   <span className="ms-1">{t('filters')}</span>
                 </button>
-                {filterOverlayOpen && (
-                  <div ref={filterOverlayRef} className="filter-dropdown-overlay card" style={{ position: 'fixed', top: 72, right: 24, width: 340, zIndex: 3000 }}>
-                    <div className="card-header bg-light py-2">
-                      <h6 className="mb-0 d-flex align-items-center">
-                        <i className="fas fa-filter me-2 text-primary"></i>
-                        {t('filters')}
-                        <button className="btn btn-link btn-sm ms-auto p-0" onClick={handleResetFilters} title={t('clearAllFilters')}>
-                          <i className="fas fa-times text-muted"></i>
-                        </button>
-                      </h6>
-                    </div>
-                    <div className="card-body p-3 overflow-auto">
-                      <div className="mb-3">
-                        <label className="form-label small fw-bold">{t('search')}</label>
-                        <div className="input-group input-group-sm">
-                          <input type="text" className="form-control" placeholder={t('searchPlaceholder')} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-                        </div>
-                      </div>
-                      <div className="mb-3">
-                        <label className="form-label small fw-bold">{t('dateRange')}</label>
-                        <div className="row g-2">
-                          <div className="col-6">
-                            <input type="date" className="form-control form-control-sm" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-                          </div>
-                          <div className="col-6">
-                            <input type="date" className="form-control form-control-sm" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
+
                 <div className="dropdown">
                   <button
                     className="btn btn-outline-secondary btn-sm dropdown-toggle"
@@ -497,8 +486,51 @@ const TempDocumentArchive = ({ user }) => {
               </div>
             </div>
 
+            {/* Filter Section */}
+            {filterOverlayOpen && (
+              <div ref={filterOverlayRef} className="card shadow-sm mb-3" style={{ borderRadius: '8px', border: '1px solid #dee2e6' }}>
+                <div className="card-body">
+                  <div className="row g-3 align-items-center">
+                    <div className="col-md-6">
+                      <label className="form-label small fw-bold">{t('search')}</label>
+                      <input
+                        type="text"
+                        className="form-control form-control-sm"
+                        placeholder={t('searchPlaceholder')}
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                      />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="form-label small fw-bold">{t('dateRange')}</label>
+                      <div className="d-flex align-items-center">
+                        <input
+                          type="date"
+                          className="form-control form-control-sm"
+                          value={startDate}
+                          onChange={(e) => setStartDate(e.target.value)}
+                        />
+                        <span className="mx-2">-</span>
+                        <input
+                          type="date"
+                          className="form-control form-control-sm"
+                          value={endDate}
+                          onChange={(e) => setEndDate(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div className="col-md-2 d-flex align-items-end">
+                      <button className="btn btn-sm btn-outline-secondary w-100" onClick={handleResetFilters} title={t('clearAllFilters')}>
+                        <i className="fas fa-times me-1"></i> {t('reset', 'Reset')}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Documents Table */}
-            <div className="documents-table-container flex-grow-1">
+            <div className="documents-table-container flex-grow-1" style={{ maxHeight: `calc(100vh - 180px - ${filterHeight}px)` }}>
               <div className="table-responsive h-100" style={{display: 'flex', flexDirection: 'column', height: '100%'}}>
                 <table className="table table-sm table-hover mb-0" style={{tableLayout: 'fixed', width: '100%'}}>
                   <thead className="table-light sticky-top">

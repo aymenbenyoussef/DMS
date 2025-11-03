@@ -53,9 +53,8 @@ const CompanyTokens = ({ companies }) => {
 const AdminDoctypes = ({ user }) => {
   const [doctypes, setDoctypes] = useState([]);
   const [filteredDoctypes, setFilteredDoctypes] = useState([]);
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState('');
+  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
   const [editingDoctype, setEditingDoctype] = useState(null);
   const [activeTab, setActiveTab] = useState('list');
   const [showModifyTab, setShowModifyTab] = useState(false);
@@ -77,25 +76,15 @@ const AdminDoctypes = ({ user }) => {
   const [allCompanies, setAllCompanies] = useState([]);
   const [relatedCompanies, setRelatedCompanies] = useState([]);
 
-  const [showNotification, setShowNotification] = useState(false);
-  const [notificationMessage, setNotificationMessage] = useState('');
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const exportMenuRef = useRef(null);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
   useEffect(() => {
     fetchDoctypes();
     fetchAllCompanies();
   }, []);
-
-  useEffect(() => {
-    if (success) {
-      const timer = setTimeout(() => {
-        setSuccess('');
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [success]);
 
   const fetchDoctypes = async () => {
     try {
@@ -119,9 +108,12 @@ const AdminDoctypes = ({ user }) => {
       
       setDoctypes(doctypesWithCompanies);
       setFilteredDoctypes(doctypesWithCompanies);
+      setInitialLoadComplete(true);
     } catch (err) {
-      setError('Erreur lors du chargement des types de documents');
-      console.error('Error details:', err.response?.data || err.message);
+        const errMsg = 'Erreur lors du chargement des types de documents';
+        setToast({ visible: true, message: errMsg, type: 'error' });
+        setTimeout(() => setToast(t => ({ ...t, visible: false })), 5000);
+        console.error('Error details:', err.response?.data || err.message);
     } finally {
       setLoading(false);
     }
@@ -132,7 +124,9 @@ const AdminDoctypes = ({ user }) => {
       const response = await API.companies.getAll();
       setAllCompanies(response.data);
     } catch (err) {
-      setError('Erreur lors du chargement des entreprises');
+        const errMsg = 'Erreur lors du chargement des entreprises';
+        setToast({ visible: true, message: errMsg, type: 'error' });
+        setTimeout(() => setToast(t => ({ ...t, visible: false })), 5000);
     }
   };
 
@@ -141,18 +135,15 @@ const AdminDoctypes = ({ user }) => {
   }, [filters, doctypes]);
 
   useEffect(() => {
-    if (!loading && filteredDoctypes.length === 0) {
+    if (initialLoadComplete && !loading && filteredDoctypes.length === 0) {
       const message = doctypes.length === 0 ? 'Aucun type de document disponible' : 'Aucun type de document ne correspond à vos filtres';
-      setNotificationMessage(message);
-      setShowNotification(true);
-      const timer = setTimeout(() => {
-        setShowNotification(false);
-      }, 5000);
-      return () => clearTimeout(timer);
-    } else {
-      setShowNotification(false);
+        setToast({ visible: true, message: message, type: 'success' });
+        const timer = setTimeout(() => {
+            setToast(t => ({ ...t, visible: false }));
+        }, 5000);
+        return () => clearTimeout(timer);
     }
-  }, [loading, filteredDoctypes, doctypes]);
+  }, [initialLoadComplete, loading, filteredDoctypes, doctypes]);
 
   const applyFilters = () => {
     let result = [...doctypes];
@@ -250,8 +241,6 @@ const AdminDoctypes = ({ user }) => {
 
   const handleUpdate = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
     setGlobalErrors([]);
     if (!validate()) return;
     if (!editingDoctype) return;
@@ -260,7 +249,11 @@ const AdminDoctypes = ({ user }) => {
         ...formData,
         companies: formData.companies
       });
-      setSuccess('Type de document mis à jour avec succès');
+        const msg = 'Type de document mis à jour avec succès';
+        setToast({ visible: true, message: msg, type: 'success' });
+        setTimeout(() => {
+            setToast(t => ({ ...t, visible: false }));
+        }, 5000);
       setEditingDoctype(null);
       setShowModifyTab(false);
       setActiveTab('list');
@@ -273,14 +266,16 @@ const AdminDoctypes = ({ user }) => {
         setFieldErrors({ name: 'Le nom du type de document existe déjà' });
         setGlobalErrors(['Le nom du type de document existe déjà']);
       } else {
-        setError('Erreur lors de la mise à jour du type de document');
+        const errMsg = 'Erreur lors de la mise à jour du type de document';
+        setToast({ visible: true, message: errMsg, type: 'error' });
+        setTimeout(() => setToast(t => ({ ...t, visible: false })), 5000);
         console.error('Error updating document type:', err);
       }
     }
   };
 
   const dismissNotification = () => {
-    setShowNotification(false);
+    setToast(t => ({ ...t, visible: false }));
   };
 
   // Sorting logic
@@ -349,6 +344,13 @@ const AdminDoctypes = ({ user }) => {
 
   return (
     <div className="admin-users">
+        <div className={`top-toast ${toast.type === 'error' ? 'top-toast-error' : 'top-toast-success'} ${toast.visible ? 'show' : ''}`} role="status" aria-live="polite">
+            <div className="top-toast-inner">
+            <div className="top-toast-icon">{toast.type === 'error' ? '✖️' : '✓'}</div>
+            <div className="top-toast-message">{toast.message}</div>
+            <button className="top-toast-close" onClick={() => setToast(t => ({ ...t, visible: false }))} aria-label="Fermer la notification">✕</button>
+            </div>
+        </div>
       <div className="admin-header">
         <div className="admin-tabs">
           <button
@@ -399,50 +401,12 @@ const AdminDoctypes = ({ user }) => {
           </div>
         </div>
       </div>
-      {error && <div className="alert alert-error">{error}</div>}
-      {success && <div className="alert alert-success">{success}</div>}
       {activeTab === 'list' && (
         <div className="users-list">
           {/* Header-level export controls used; duplicate list controls removed */}
           {loading && (
             <div className="loading-message">
               Chargement des types de documents...
-            </div>
-          )}
-          {showNotification && (
-            <div 
-              className="alert alert-error" 
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                backgroundColor: '#e3f2fd',
-                color: '#1565c0',
-                border: '1px solid #2196f3',
-                marginBottom: '20px'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '16px' }}>ℹ️</span>
-                <span>{notificationMessage}</span>
-              </div>
-              <button 
-                onClick={dismissNotification}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#1976d2',
-                  fontSize: '18px',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  padding: '4px 8px',
-                  borderRadius: '4px'
-                }}
-                onMouseOver={(e) => e.target.style.backgroundColor = 'rgba(33, 150, 243, 0.1)'}
-                onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
-              >
-                ×
-              </button>
             </div>
           )}
           <div className="users-table-container">
