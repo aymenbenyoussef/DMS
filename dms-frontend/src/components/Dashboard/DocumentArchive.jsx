@@ -39,7 +39,7 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
   const [isGlobalActionMode, setIsGlobalActionMode] = useState(false);
   const [globalActionType, setGlobalActionType] = useState(''); // 'delete' or 'send'
   const [checkedDocuments, setCheckedDocuments] = useState([]);
-  const [currency, setCurrency] = useState('dt');
+  const [currency, setCurrency] = useState('TND');
 
   // Helper function to get first day of current month
   const getFirstDayOfMonth = () => {
@@ -644,7 +644,9 @@ const getOneMonthAgo = () => {
         const baseMatch =
           doc.filename?.toLowerCase().includes(lowerSearch) ||
           doc.invoice_number?.toLowerCase().includes(lowerSearch) ||
-          doc.ocr_text?.toLowerCase().includes(lowerSearch);
+          doc.ocr_text?.toLowerCase().includes(lowerSearch) ||
+          doc.currency?.toLowerCase().includes(lowerSearch);
+
         // Search in extracted_data (metadata)
         let metaMatch = false;
         if (doc.extracted_data) {
@@ -732,6 +734,13 @@ const getOneMonthAgo = () => {
           });
         } else if (key === 'partner_name' && Array.isArray(filterValue) && filterValue.length > 0) {
           filtered = filtered.filter(doc => filterValue.includes(doc.partner_name));
+        }else if (key === 'devise') {
+            // Handle currency filter
+            const lowerFilterValue = filterValue.toString().toLowerCase();
+            filtered = filtered.filter(doc => {
+              const docCurrency = doc.currency || '';
+              return docCurrency.toLowerCase().includes(lowerFilterValue);
+            });
         } else {
           filtered = filtered.filter(doc => {
             const docValue = doc[key];
@@ -2095,7 +2104,7 @@ const getOneMonthAgo = () => {
                               {document.total_ttc ? parseFloat(document.total_ttc).toFixed(2) : '-'}
                             </td>
                             <td className="text-center">
-                              {currency || '-'}
+                              {document.currency || '-'}
                             </td>
                             <td className="text-center">
                               <small className="text-muted">

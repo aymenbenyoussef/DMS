@@ -2229,6 +2229,7 @@ def update_document(document_id):
             invoice_fields['total_ttc'] = confirmed_data.get('total_ttc')
             invoice_fields['partner'] = confirmed_data.get('partner')
             invoice_fields['partner_id'] = confirmed_data.get('partner_id')
+            invoice_fields['currency'] = confirmed_data.get('currency')
         else:
             invoice_fields = None
         # Update all fields in the DB
@@ -2242,7 +2243,8 @@ def update_document(document_id):
             invoice_date=invoice_fields.get('date') if invoice_fields else None,
             total_ht=invoice_fields.get('total_ht') if invoice_fields else None,
             tva=invoice_fields.get('tva') if invoice_fields else None,
-            total_ttc=invoice_fields.get('total_ttc') if invoice_fields else None
+            total_ttc=invoice_fields.get('total_ttc') if invoice_fields else None,   
+            currency=invoice_fields.get('currency') if invoice_fields else None
         )
         if success:
             log_activity(
