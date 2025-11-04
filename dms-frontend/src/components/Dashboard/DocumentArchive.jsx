@@ -682,8 +682,8 @@ const getOneMonthAgo = () => {
     // Apply invoice date range filter (allow filtering with only start or end date)
     if (invoiceStartDate || invoiceEndDate) {
       filtered = filtered.filter(doc => {
-        if (!doc.invoice_date) return false;
-        const invoiceDate = new Date(doc.invoice_date).toISOString().split('T')[0];
+        if (!doc.document_date) return false;
+        const invoiceDate = new Date(doc.document_date).toISOString().split('T')[0];
         if (invoiceStartDate && invoiceEndDate) {
           return invoiceDate >= invoiceStartDate && invoiceDate <= invoiceEndDate;
         } else if (invoiceStartDate) {

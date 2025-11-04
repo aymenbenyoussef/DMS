@@ -195,7 +195,7 @@ class DatabaseManager:
                     rapport varchar(500),
                     is_invoice BOOLEAN DEFAULT FALSE,   
                     invoice_number VARCHAR(100),
-                    invoice_date DATE,
+                    document_date DATE,
                     total_ht DECIMAL(10,2),
                     tva DECIMAL(10,2),
                     total_ttc DECIMAL(10,2),
@@ -1157,14 +1157,14 @@ class DatabaseManager:
         try:
             # Prepare extracted data
             invoice_number = None
-            invoice_date = None
+            document_date = None
             total_ht = None
             tva = None
             total_ttc = None
             
             if extracted_data:
                 invoice_number = extracted_data.get("invoice_number")
-                invoice_date = extracted_data.get("date")
+                document_date = extracted_data.get("date")
                 total_ht = extracted_data.get("total_ht")
                 tva = extracted_data.get("tva")
                 total_ttc = extracted_data.get("total_ttc")
@@ -1172,7 +1172,7 @@ class DatabaseManager:
             query = """
                 INSERT INTO documents (
                     filename, owner_id, company_id, doctype_id, file_path, file_size,
-                    extracted_data, extracted_text, rapport ,is_invoice, invoice_number, invoice_date,
+                    extracted_data, extracted_text, rapport ,is_invoice, invoice_number, document_date,
                     partner_id, total_ht, tva, total_ttc, ocr_text
                 )
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) 
@@ -1189,7 +1189,7 @@ class DatabaseManager:
                 rapport,
                 is_invoice, 
                 invoice_number, 
-                invoice_date,
+                document_date,
                 partner_id,  # This will properly insert into partner_id column
                 total_ht, 
                 tva, 
@@ -1205,7 +1205,7 @@ class DatabaseManager:
         """Get document by ID"""
         query = """
             SELECT d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size, d.file_path, 
-                   d.is_invoice, d.ocr_text, d.extracted_text, d.rapport, d.invoice_date, d.total_ht, d.tva, d.total_ttc, 
+                   d.is_invoice, d.ocr_text, d.extracted_text, d.rapport, d.document_date, d.total_ht, d.tva, d.total_ttc, 
                    d.owner_id, u.username as owner_name, g.name as group_name
             FROM documents d
             LEFT JOIN users u ON d.owner_id = u.id
@@ -1234,7 +1234,7 @@ class DatabaseManager:
         query = """
             SELECT * FROM documents 
             WHERE company_id = %s AND is_invoice = TRUE AND flag = TRUE
-            ORDER BY invoice_date DESC, created_at DESC
+            ORDER BY document_date DESC, created_at DESC
         """
         return self.execute_query(query, (company_id,), fetch=True)
     def search_documents(self, search_term, company_id=None, doctype_id=None):
@@ -1408,7 +1408,7 @@ class DatabaseManager:
     def get_documents_by_company_all_types(self, company_id, start_date=None, end_date=None):
         """Get all documents for a company regardless of document type, with optional date filtering"""
         query = """
-            SELECT d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size, d.file_path, d.extracted_text, d.is_invoice, d.ocr_text, d.rapport, d.invoice_date, d.total_ht, d.tva, d.total_ttc, d.owner_id, p.company_name as partner_name,
+            SELECT d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size, d.file_path, d.extracted_text, d.is_invoice, d.ocr_text, d.rapport, d.document_date, d.total_ht, d.tva, d.total_ttc, d.owner_id, p.company_name as partner_name,
                    u.username as owner_name,
                    GROUP_CONCAT(g.name SEPARATOR ', ') as group_name
             FROM documents d
@@ -1417,7 +1417,7 @@ class DatabaseManager:
             LEFT JOIN documents_group dg ON d.id = dg.document_id
             LEFT JOIN `groups` g ON dg.group_id = g.id
             WHERE d.company_id = %s AND d.flag = TRUE
-            GROUP BY d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size, d.file_path, d.extracted_text, d.is_invoice, d.ocr_text, d.rapport, d.invoice_date, d.total_ht, d.tva, d.total_ttc, d.owner_id, p.company_name, u.username
+            GROUP BY d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size, d.file_path, d.extracted_text, d.is_invoice, d.ocr_text, d.rapport, d.document_date, d.total_ht, d.tva, d.total_ttc, d.owner_id, p.company_name, u.username
             ORDER BY d.created_at DESC
         """
         params = [company_id]
@@ -1446,7 +1446,7 @@ class DatabaseManager:
     def get_documents_by_company_and_type(self, company_id, doctype_id):
         """Get only the columns needed for the document archive table, including company_id and doctype_id for file URL construction"""
         query = """
-            SELECT d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size, d.file_path, d.is_invoice, d.ocr_text, d.extracted_text, d.rapport, d.invoice_date, d.total_ht, d.tva, d.total_ttc, d.owner_id, p.company_name as partner_name,
+            SELECT d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size, d.file_path, d.is_invoice, d.ocr_text, d.extracted_text, d.rapport, d.document_date, d.total_ht, d.tva, d.total_ttc, d.owner_id, p.company_name as partner_name,
                    u.username as owner_name,
                    GROUP_CONCAT(g.name SEPARATOR ', ') as group_name
             FROM documents d
@@ -1455,7 +1455,7 @@ class DatabaseManager:
             LEFT JOIN documents_group dg ON d.id = dg.document_id
             LEFT JOIN `groups` g ON dg.group_id = g.id
             WHERE d.company_id = %s AND d.doctype_id = %s AND d.flag = TRUE
-            GROUP BY d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size, d.file_path, d.is_invoice, d.ocr_text, d.extracted_text, d.rapport, d.invoice_date, d.total_ht, d.tva, d.total_ttc, d.owner_id, p.company_name, u.username
+            GROUP BY d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size, d.file_path, d.is_invoice, d.ocr_text, d.extracted_text, d.rapport, d.document_date, d.total_ht, d.tva, d.total_ttc, d.owner_id, p.company_name, u.username
             ORDER BY d.created_at DESC
         """
         return self.execute_query(query, (company_id, doctype_id), fetch=True)
@@ -1553,7 +1553,7 @@ class DatabaseManager:
         """Get all documents in a specific group"""
         try:
             query = """
-                SELECT d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size, d.file_path, d.is_invoice, d.ocr_text, d.extracted_text, d.rapport, d.invoice_date, d.total_ht, d.tva, d.total_ttc, dg.created_at as added_to_group_at
+                SELECT d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size, d.file_path, d.is_invoice, d.ocr_text, d.extracted_text, d.rapport, d.document_date, d.total_ht, d.tva, d.total_ttc, dg.created_at as added_to_group_at
                 FROM documents d
                 JOIN documents_group dg ON d.id = dg.document_id
                 WHERE dg.group_id = %s AND d.flag = TRUE

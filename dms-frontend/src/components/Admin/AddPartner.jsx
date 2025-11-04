@@ -153,12 +153,7 @@ const AddPartner = ({ user }) => {
     }
 
     // Billing and payments tab validation
-    if (tab === 'Billing and payments') {
-      if (!formData.bankAccountNumber.trim()) {
-        errors.bankAccountNumber = 'Le numéro de compte bancaire est requis';
-        errorMessages.push('Le numéro de compte bancaire est requis');
-      }
-    }
+    
 
     return { errors, errorMessages };
   };

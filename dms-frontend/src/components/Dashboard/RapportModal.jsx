@@ -297,7 +297,7 @@ function RapportModal(props) {
     },
     {
       id: 'ocr',
-      label: 'Extrait ocr',
+      label: 'Extrait OCR',
       icon: '🔍',
       hasContent: !!localOcrText,
       isLoading: loadingOcr
@@ -307,7 +307,7 @@ function RapportModal(props) {
   {
    
       id: 'rapport',
-      label: 'Rapport',
+      label: 'Rapport DMS',
       icon: '📊',
       hasContent: !!localRapportUrl,
       isLoading: loadingRapport
@@ -494,59 +494,109 @@ function RapportModal(props) {
               {currentDocument ? (
                 <>
                   <div className="sidebar-section">
-                    <h3 className="sidebar-title">Informations du document</h3>
+                    <h3 className="sidebar-title">Informations sur le document</h3>
                     <div className="info-grid">
                       <div className="info-item">
-                        <span className="info-label">Utilisateur</span>
-                        <span className="info-value">
+                        <span className="info-label" style={{ textTransform: 'none' }}>Utilisateur : <span className="info-value" style={{ textTransform: 'none' }}>
                           {getUploaderName(currentDocument)}
-                        </span>
+                        </span></span>
+                        
                       </div>
                       <div className="info-item">
-                        <span className="info-label">Type</span>
-                        <span className="info-value">{doctypeName || '-'}</span>
+                        <span className="info-label" style={{ textTransform: 'none' }}>Type : <span className="info-value" style={{ textTransform: 'none' }}>{doctypeName || '-'}</span></span>
+                        
+                      </div>
+                      <div className="info-item">
+                        <span className="info-label" style={{ textTransform: 'none' }}>Partenaire : <span className="info-value" style={{ textTransform: 'none' }}>{currentDocument.partner_name || '-'}</span></span>
+                        
+                      </div>
+                      <div className="info-item">
+                        <span className="info-label" style={{ textTransform: 'none' }}>Type de partenaire : <span className="info-value" style={{ textTransform: 'none' }}>{currentDocument.partner_types || '-'}</span></span>
+                        
                       </div>
                       
+                      
                       <div className="info-item">
-                        <span className="info-label">Taille</span>
-                        <span className="info-value">{formatFileSize ? formatFileSize(currentDocument.file_size || currentDocument.size || 0) : '-'}</span>
-                      </div>
-                      <div className="info-item">
-                        <span className="info-label">Date de téléchargement</span>
-                        <span className="info-value">
+                        <span className="info-label" style={{ textTransform: 'none' }}>Date d'import : <span className="info-value">
                           {currentDocument.created_at ? new Date(currentDocument.created_at).toLocaleDateString('fr-FR') : '-'}
+                        </span></span>
+                        
+                      </div>
+                      <div className="info-item">
+                        <span className="info-label" style={{ textTransform: 'none' }}>Date de document : <span className="info-value">{currentDocument.document_date  ? new Date(currentDocument.document_date || currentDocument.date).toLocaleDateString('fr-FR') : '-'}</span>
                         </span>
                       </div>
                       <div className="info-item">
-                        <span className="info-label">Date de document</span>
-                        <span className="info-value">{currentDocument.invoice_date  ? new Date(currentDocument.invoice_date || currentDocument.date).toLocaleDateString('fr-FR') : '-'}</span>
+                        <span className="info-label" style={{ textTransform: 'none' }}>Date d'echeance' : <span className="info-value">{currentDocument.due_date  ? new Date(currentDocument.due_date || currentDocument.due_date).toLocaleDateString('fr-FR') : '-'}</span>
+                        </span>
                       </div>
-                      
+                      <div className="info-item">
+                        <span className="info-label" style={{ textTransform: 'none' }}>Taille : <span className="info-value" style={{ textTransform: 'none' }}>{formatFileSize ? formatFileSize(currentDocument.file_size || currentDocument.size || 0) : '-'}</span>
+                        </span>
+                      </div>
                     </div>
                   </div>
 
                   <div className="sidebar-actions">
-                    <button 
-                      className="action-btn action-btn--primary"
-                      onClick={handleContextDownload}
-                    >
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                        <polyline points="7,10 12,15 17,10"/>
-                        <line x1="12" y1="15" x2="12" y2="3"/>
-                      </svg>
-                      Télécharger
-                    </button>
-                    <button 
-                      className="action-btn action-btn--secondary"
-                      onClick={() => { onClose && onClose(); handleSendEmail && handleSendEmail(currentDocument); }}
-                    >
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                        <polyline points="22,6 12,13 2,6"/>
-                      </svg>
-                      Envoyer
-                    </button>
+                  <button 
+  className="action-btn action-btn--gray" 
+  onClick={handleContextDownload}
+  style={{
+    backgroundColor: '#6c757d',
+    border: '1px solid #6c757d',
+    color: 'white',
+    padding: '8px 16px',
+    borderRadius: '4px',
+    fontSize: '14px',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    transition: 'all 0.2s ease',
+    fontFamily: 'inherit'
+  }}
+  
+>
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+    <polyline points="7,10 12,15 17,10"/>
+    <line x1="12" y1="15" x2="12" y2="3"/>
+  </svg>
+  Télécharger
+</button>
+
+<button 
+  className="action-btn action-btn--gray" 
+  onClick={() => {
+    onClose && onClose();
+    handleSendEmail && handleSendEmail(currentDocument);
+  }}
+  style={{
+    backgroundColor: '#6c757d',
+    border: '1px solid #6c757d',
+    color: 'white',
+    padding: '8px 16px',
+    borderRadius: '4px',
+    fontSize: '14px',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    transition: 'all 0.2s ease',
+    fontFamily: 'inherit'
+  }}
+  
+  
+>
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+    <polyline points="22,6 12,13 2,6"/>
+  </svg>
+  Envoyer
+</button>
+
+
+
                   </div>
                 </>
               ) : (

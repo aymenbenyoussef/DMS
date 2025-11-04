@@ -345,64 +345,151 @@ def process_uploaded_files(files, base_upload_path, company_name, doctype_name):
     
     return results
 
-def generate_report_pdf(confirmed_data, output_path, original_filename):
-    """Generate a PDF report with confirmed invoice data"""
+def generate_report_pdf(confirmed_data, output_path, filename, file_path, doctype_name, partner_name, owner_name, created_at, is_invoice):
+    """Generate a PDF report with confirmed invoice data matching the exact format shown in the image"""
+          
     try:
         doc = SimpleDocTemplate(output_path, pagesize=A4)
         styles = getSampleStyleSheet()
         story = []
         
-        # Title
-        title_style = ParagraphStyle(
-            'CustomTitle',
-            parent=styles['Heading1'],
-            fontSize=18,
-            spaceAfter=30,
-            alignment=1  # Center alignment
-        )
-        story.append(Paragraph("RAPPORT", title_style))
-        story.append(Spacer(1, 20))
+        # Extract original filename from file_path (just the basename)
+        original_filename = os.path.basename(file_path) if file_path else filename
         
-        # Document info
-        story.append(Paragraph(f"<b>Document original:</b> {original_filename}", styles['Normal']))
-        story.append(Paragraph(f"<b>Date de traitement:</b> {datetime.now().strftime('%d/%m/%Y %H:%M')}", styles['Normal']))
-        story.append(Spacer(1, 20))
+        # Format dates
+        created_at_str = created_at.strftime('%Y-%m-%d') if isinstance(created_at, datetime) else (created_at if created_at else datetime.now().strftime('%Y-%m-%d'))
+        document_date = confirmed_data.get('date', '')
+        if document_date:
+            try:
+                if isinstance(document_date, str):
+                    doc_date = datetime.strptime(document_date, '%Y-%m-%d')
+                    document_date = doc_date.strftime('%Y-%m-%d')
+            except:
+                document_date = confirmed_data.get('date', '')
         
-        # Invoice details table
-        data = [
-            ['Champ', 'Valeur'],
-            ['Numéro de facture', confirmed_data.get('invoice_number', 'N/A')],
-            ['Date', confirmed_data.get('date', 'N/A')],
-            ["Fournisseur", confirmed_data.get("partner", "N/A")],
-            ["Client", confirmed_data.get("partner_id", "N/A")],
-            ['Total HT', f"{confirmed_data.get('total_ht', 'N/A')} {CURRENCY}" if confirmed_data.get('total_ht') else 'N/A'],
-            ['TVA', f"{confirmed_data.get('tva', 'N/A')} {CURRENCY}" if confirmed_data.get('tva') else 'N/A'],
-            ['Total TTC', f"{confirmed_data.get('total_ttc', 'N/A')} {CURRENCY}" if confirmed_data.get('total_ttc') else 'N/A'],
-            ['Facturable', 'Oui' if confirmed_data.get('is_invoice') else 'Non']
-        ]
+        due_date = confirmed_data.get('due_date', '')
+        if due_date:
+            try:
+                if isinstance(due_date, str):
+                    due_dt = datetime.strptime(due_date, '%Y-%m-%d')
+                    due_date = due_dt.strftime('%Y-%m-%d')
+            except:
+                due_date = confirmed_data.get('due_date', '')
         
-        table = Table(data, colWidths=[2*inch, 3*inch])
-        table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, 0), 12),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-            ('GRID', (0, 0), (-1, -1), 1, colors.black)
-        ]))
+        # Format currency
+        currency = confirmed_data.get('currency', '') or '-'
         
-        story.append(table)
+        # Format amounts with thousand separators
+        def format_amount(amount):
+            if amount is None or amount == '':
+                return '-'
+            try:
+                amount_float = float(amount)
+                return f"{amount_float:,.3f}".replace(',', ' ').replace('.', ',')
+            except:
+                return '-'
+        
+        # Format values for non-invoice documents
+        if not is_invoice:
+            due_date = '-'
+            total_ht = '-'
+            tva = '-'
+            total_ttc = '-'
+            currency = '-'
+        else:
+            total_ht = format_amount(confirmed_data.get('total_ht'))
+            tva = format_amount(confirmed_data.get('tva'))
+            total_ttc = format_amount(confirmed_data.get('total_ttc'))
+            if not due_date:
+                due_date = '-'
+        
+        # Create layout with headers above values - 4 columns per row, no grid lines
+        # Row 1: Partenaire, ID document, Nom du document, Document original
+        row1_headers = ['Partenaire', 'ID document', 'Nom du document', 'Document original']
+        row1_values = [partner_name or '-', confirmed_data.get('invoice_number', '-'), filename, original_filename]
+        
+        # Row 2: Type de document, Date d'import, Date du document, Date d'échéance
+        row2_headers = ['Type de document', 'Date d\'import', 'Date du document', 'Date d\'échéance']
+        row2_values = [doctype_name or '-', created_at_str, document_date or '-', due_date]
+        
+        # Row 3: Montant HT, Taxes, Montant TTC, Devise
+        row3_headers = ['Montant HT', 'Taxes', 'Montant TTC', 'Devise']
+        row3_values = [total_ht, tva, total_ttc, currency]
+        
+        # Row 4: Utilisateur (single item)
+        row4_headers = ['Utilisateur', '', '', '']
+        row4_values = [owner_name or '-', '', '', '']
+        
+        # Create table with headers on top row and values on bottom row - no grid lines
+        def create_info_table(headers, values, col_widths):
+            # Create style for headers - lighter gray color
+            header_style = ParagraphStyle(
+                'HeaderStyle',
+                parent=styles['Normal'],
+                fontSize=10,
+                fontName='Helvetica-Bold',
+                alignment=0,  # Left
+                spaceAfter=4,
+                textColor=colors.HexColor('#808080')  # Lighter gray for headers
+            )
+            
+            # Create style for values with text wrapping - darker/black color
+            value_style = ParagraphStyle(
+                'ValueStyle',
+                parent=styles['Normal'],
+                fontSize=10,
+                fontName='Helvetica',
+                alignment=0,  # Left
+                leading=12,  # Line spacing for wrapping
+                textColor=colors.HexColor('#000000')  # Darker/black for data
+            )
+            
+            # Create table data with Paragraph objects for text wrapping
+            table_data = [
+                [Paragraph(str(h), header_style) for h in headers],
+                [Paragraph(str(v), value_style) for v in values]
+            ]
+            
+            table = Table(table_data, colWidths=col_widths)
+            table.setStyle(TableStyle([
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+                ('TOPPADDING', (0, 0), (-1, -1), 8),
+                ('LEFTPADDING', (0, 0), (-1, -1), 5),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 5),
+                # No GRID - removed table lines
+            ]))
+            return table
+        
+        # Add all rows with 4 columns - third column (Nom du document) is wider
+        col_widths = [1.6*inch, 1.6*inch, 2*inch, 1.6*inch]
+        story.append(create_info_table(row1_headers, row1_values, col_widths))
+        story.append(Spacer(1, 10))
+        story.append(create_info_table(row2_headers, row2_values, col_widths))
+        story.append(Spacer(1, 10))
+        story.append(create_info_table(row3_headers, row3_values, col_widths))
+        story.append(Spacer(1, 10))
+        story.append(create_info_table(row4_headers, row4_values, col_widths))
         story.append(Spacer(1, 30))
         
         # Footer
-        footer_text = "Ce rapport a été généré automatiquement par le système RAN ESMERALD DMS."
-        story.append(Paragraph(footer_text, styles['Normal']))
+        footer_date = datetime.now().strftime('%Y-%m-%d')
+        footer_text = f"Document généré le {footer_date}, par DMS RAN ESMERALD"
+        footer_style = ParagraphStyle(
+            'FooterStyle',
+            parent=styles['Normal'],
+            fontSize=9,
+            alignment=1,  # Center
+            textColor=colors.grey
+        )
+        story.append(Paragraph(footer_text, footer_style))
         
         doc.build(story)
         return True
         
     except Exception as e:
         print(f"Error generating PDF report: {e}")
+        import traceback
+        traceback.print_exc()
         return False

@@ -8,7 +8,7 @@ const EditDocumentForm = ({ document, onSave, onCancel, isLoading }) => {
     partner_name: '',
     is_invoice: false,
     invoice_number: '',
-    invoice_date: '',
+    document_date: '',
     total_ht: null,
     tva: null,
     total_ttc: null,
@@ -93,7 +93,7 @@ const EditDocumentForm = ({ document, onSave, onCancel, isLoading }) => {
   partner_name: getValue('partner', 'partner_name', 'partner'),
   is_invoice: getValue('is_invoice', 'is_invoice', 'is_invoice', false),
   invoice_number: getValue('invoice_number', 'invoice_number', 'invoice_number') ?? '',
-  invoice_date: getDateValue('invoice_date', 'invoice_date', 'date'),
+  document_date: getDateValue('document_date', 'document_date', 'date'),
   total_ht: getValue('total_ht', 'total_ht', 'total_ht'),
   tva: getValue('tva', 'tva', 'tva'),
   total_ttc: getValue('total_ttc', 'total_ttc', 'total_ttc'),
@@ -168,8 +168,8 @@ const EditDocumentForm = ({ document, onSave, onCancel, isLoading }) => {
       if (!formData.invoice_number.trim()) {
         newErrors.invoice_number = 'Le numéro de facture est requis';
       }
-      if (!formData.invoice_date) {
-        newErrors.invoice_date = 'La date de facture est requise';
+      if (!formData.document_date) {
+        newErrors.document_date = 'La date de facture est requise';
       }
       if (!formData.total_ht || isNaN(formData.total_ht) || parseFloat(formData.total_ht) <= 0) {
         newErrors.total_ht = 'Le montant HT doit être un nombre positif';
@@ -208,7 +208,7 @@ const EditDocumentForm = ({ document, onSave, onCancel, isLoading }) => {
         partner: formData.partner_name,
         is_invoice: formData.is_invoice,
         invoice_number: formData.is_invoice ? (formData.invoice_number ? parseFloat(formData.invoice_number) : null) : '',
-        date: formData.is_invoice ? formData.invoice_date : '',
+        date: formData.is_invoice ? formData.document_date : '',
         total_ht: formData.is_invoice ? (formData.total_ht ? parseFloat(formData.total_ht) : null) : '',
         tva: formData.is_invoice ? (formData.tva ? parseFloat(formData.tva) : null) : '',
         total_ttc: formData.is_invoice ? (formData.total_ttc ? parseFloat(formData.total_ttc) : null) : '',
@@ -324,16 +324,16 @@ const EditDocumentForm = ({ document, onSave, onCancel, isLoading }) => {
                   {errors.invoice_number && <div className="error-message">{errors.invoice_number}</div>}
                 </div>
                 <div className="form-group">
-                  <label className="form-label" htmlFor="invoice_date">Date de facture *</label>
+                  <label className="form-label" htmlFor="document_date">Date de facture *</label>
                   <input
                     type="date"
-                    id="invoice_date"
-                    name="invoice_date"
-                    className={`form-input${errors.invoice_date ? ' error' : ''}`}
-                    value={formData.invoice_date}
+                    id="document_date"
+                    name="document_date"
+                    className={`form-input${errors.document_date ? ' error' : ''}`}
+                    value={formData.document_date}
                     onChange={handleInputChange}
                   />
-                  {errors.invoice_date && <div className="error-message">{errors.invoice_date}</div>}
+                  {errors.document_date && <div className="error-message">{errors.document_date}</div>}
                 </div>
               </div>
               <div className="form-row">

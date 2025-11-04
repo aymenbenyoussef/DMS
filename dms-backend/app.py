@@ -269,6 +269,7 @@ def login():
         "id": user["id"],
         "role": user["role"],
         "username": user["username"],
+        "surname": user.get("surname", ""),
         "email": user["email"]
     })
     # Log the login event
@@ -1601,6 +1602,7 @@ def confirm_document():
     if not session_id or not confirmed_documents:
         return jsonify({"msg": "Session ID and documents data are required"}), 400
     
+     
     try:
         # Load temporary data
         temp_file_path = os.path.join(app.config['TEMP_UPLOAD_FOLDER'], f"temp_{session_id}.json")
@@ -1613,7 +1615,10 @@ def confirm_document():
         saved_documents = []
         
         for doc_data in confirmed_documents:
-            filename = doc_data['filename']
+            # Get edited filename from form, or fallback to original
+            filename = doc_data.get('filename', '')
+            original_filename = doc_data.get('original_filename', filename)  # Original filename for matching
+            
             company_id = doc_data.get('company_id') or temp_data.get('company_id')
             doctype_id = doc_data.get('doctype_id') or temp_data.get('doctype_id')
             is_invoice = doc_data.get("is_invoice", False)
@@ -1632,13 +1637,14 @@ def confirm_document():
                 # Create folder structure
                 company_folder, doctype_folder, summary_folder = create_company_doctype_folders(company_id, doctype_id)
                 
-                # Get the original processed file data
+                # Get the original processed file data - use original_filename for matching
                 original_processed_file = None
                 if 'processed_file' in temp_data:
                     original_processed_file = temp_data['processed_file']
                 elif 'processed_files' in temp_data:
                     for pf in temp_data['processed_files']:
-                        if pf['filename'] == filename:
+                        # Match by original filename to find the processed file
+                        if pf['filename'] == original_filename:
                             original_processed_file = pf
                             break
 
@@ -1658,7 +1664,8 @@ def confirm_document():
                     continue
 
                 # Move file to final location
-                final_filename = original_processed_file.get('original_filename', filename)
+                # Use the edited filename from the form if provided, otherwise use original
+                final_filename = doc_data.get('filename') or original_processed_file.get('original_filename', filename)
                 timestamp = int(datetime.now().timestamp())
                 unique_final_filename = f"{timestamp}_{final_filename}"
                 final_file_path = os.path.join(doctype_folder, unique_final_filename)
@@ -1689,11 +1696,42 @@ def confirm_document():
                         extracted_text = ''
                 rapport = None
                 
+                # Get additional data needed for report generation
+                doctype = db.get_doctype_by_id(doctype_id)
+                doctype_name = doctype.get('name') if doctype else ''
                 
-                # Generate report PDF for invoices
+                partner_name = None
+                if partner_id:
+                    partner = db.get_partner_by_id(partner_id)
+                    if partner:
+                        partner_name = partner.get('company_name', '')
+                
+                owner_name = current_user_claims.get('username', '')
+                user = db.get_user_by_id(current_user_claims.get('id'))
+                if user:
+                    surname = user.get("surname")
+                    username = user.get("username")
+                    owner_full_name = f"{username} {surname}".strip()
+                else:
+                    owner_full_name = "Unknown"
+                
+                
+                created_at = datetime.now()
+                
+                # Generate report PDF
                 report_filename = f"{os.path.splitext(unique_final_filename)[0]}_report.pdf"
                 report_path = os.path.join(summary_folder, report_filename)
-                generate_report_pdf(confirmed_info, report_path, unique_final_filename)
+                generate_report_pdf(
+                    confirmed_info, 
+                    report_path, 
+                    unique_final_filename,  # filename
+                    final_file_path,  # file_path
+                    doctype_name,  # doctype_name
+                    partner_name,  # partner_name
+                    owner_full_name,  # owner_name
+                    created_at,  # created_at
+                    is_invoice  # is_invoice
+                )
                 rapport = report_path
                 # For non-invoice documents, ocr_text and rapport remain None
                 document_id = db.create_document_with_ocr_data(
@@ -2240,7 +2278,7 @@ def update_document(document_id):
             
             is_invoice=invoice_fields.get('is_invoice') if invoice_fields else None,
             invoice_number=invoice_fields.get('invoice_number') if invoice_fields else None,
-            invoice_date=invoice_fields.get('date') if invoice_fields else None,
+            document_date=invoice_fields.get('date') if invoice_fields else None,
             total_ht=invoice_fields.get('total_ht') if invoice_fields else None,
             tva=invoice_fields.get('tva') if invoice_fields else None,
             total_ttc=invoice_fields.get('total_ttc') if invoice_fields else None,   

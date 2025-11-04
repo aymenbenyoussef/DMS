@@ -259,6 +259,7 @@ def login():
         "id": user["id"],
         "role": user["role"],
         "username": user["username"],
+        "surname": user["surname"],
         "email": user["email"]
     })
     # Log the login event
@@ -2181,7 +2182,7 @@ def update_document(document_id):
             
             is_invoice=invoice_fields.get('is_invoice') if invoice_fields else None,
             invoice_number=invoice_fields.get('invoice_number') if invoice_fields else None,
-            invoice_date=invoice_fields.get('date') if invoice_fields else None,
+            document_date=invoice_fields.get('date') if invoice_fields else None,
             total_ht=invoice_fields.get('total_ht') if invoice_fields else None,
             tva=invoice_fields.get('tva') if invoice_fields else None,
             total_ttc=invoice_fields.get('total_ttc') if invoice_fields else None

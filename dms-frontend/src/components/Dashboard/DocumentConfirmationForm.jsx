@@ -40,7 +40,7 @@ const DocumentConfirmationForm = ({
       objectUrlRef.current = null;
     }
 
-    if (!file || !file.filename) {
+    if (!file) {
       setPreviewType('');
       setPreviewUrl('');
       setPreviewText('');
@@ -48,7 +48,16 @@ const DocumentConfirmationForm = ({
       return;
     }
 
-    const filename = file.filename;
+    // Handle different file structures: file.filename or file.file.name (for drag-drop)
+    const filename = file.filename || (file.file && file.file.name) || '';
+    if (!filename) {
+      setPreviewType('');
+      setPreviewUrl('');
+      setPreviewText('');
+      setPreviewTitle('');
+      return;
+    }
+
     const lower = filename.toLowerCase();
     let type = '';
     if (lower.endsWith('.pdf')) type = 'pdf';
@@ -80,7 +89,27 @@ const DocumentConfirmationForm = ({
         return;
       } catch (err) {
         console.error('Error downloading temp document for preview:', err);
-        // fall through to static fallback
+        // fall through to static fallback or File object handling
+      }
+    }
+    
+    // Handle File object from drag-drop upload (create object URL from File)
+    if (file.file && file.file instanceof File) {
+      try {
+        const url = window.URL.createObjectURL(file.file);
+        objectUrlRef.current = url;
+        setPreviewUrl(url);
+        if (type === 'text') {
+          try {
+            const txt = await file.file.text();
+            setPreviewText(txt);
+          } catch (e) {
+            setPreviewText('Aucun texte disponible');
+          }
+        }
+        return;
+      } catch (err) {
+        console.error('Error creating object URL from File:', err);
       }
     }
     
@@ -96,10 +125,12 @@ const DocumentConfirmationForm = ({
   };
   
   const [confirmedDocuments, setConfirmedDocuments] = useState(() => files.map(f => ({
-    filename: f.filename,
+    filename: f.filename || (f.file && f.file.name) || '',
+    original_filename: f.filename || (f.file && f.file.name) || '', // Store original filename for backend matching
     company_id: (initialCompany || selectedCompany)?.id,
     doctype_id: (initialDoctype || selectedDoctype)?.id,
     is_invoice: f.extractedData?.is_invoice || false,
+    date: f.extractedData?.date || '',
     confirmed_data: {
       invoice_number: f.extractedData?.invoice_number || '',
       date: f.extractedData?.date || '',
@@ -110,7 +141,8 @@ const DocumentConfirmationForm = ({
       tva: f.extractedData?.tva || '',
       total_ttc: f.extractedData?.total_ttc || '',
       currency: f.extractedData?.currency || '',
-      is_invoice: f.extractedData?.is_invoice || false
+      is_invoice: f.extractedData?.is_invoice || false,
+      due_date: f.extractedData?.due_date || '',
     }
   })));
   
@@ -216,7 +248,9 @@ const DocumentConfirmationForm = ({
 
   // Update preview when active file changes: use handleViewDocument
   useEffect(() => {
-    handleViewDocument(files[activeFileIndex]);
+    if (files && files.length > 0 && files[activeFileIndex]) {
+      handleViewDocument(files[activeFileIndex]);
+    }
     return () => {
       if (objectUrlRef.current) {
         try { window.URL.revokeObjectURL(objectUrlRef.current); } catch(e){}
@@ -224,6 +258,13 @@ const DocumentConfirmationForm = ({
       }
     };
   }, [activeFileIndex, files]);
+  
+  // Initial preview load when component mounts with files
+  useEffect(() => {
+    if (files && files.length > 0 && !previewUrl && !previewType) {
+      handleViewDocument(files[0]);
+    }
+  }, [files]);
 
   // If hideConfirmButton, call onConfirm on every change
   useEffect(() => {
@@ -330,14 +371,17 @@ const DocumentConfirmationForm = ({
       if (!doc.confirmed_data.partner_id) {
         errs.partner_id = 'Veuillez sélectionner un partenaire';
       }
-      
+      if (!doc.confirmed_data.date) {
+        errs.date = 'La date est requise';
+      }
       if (doc.is_invoice) {
         const invData = doc.confirmed_data;
         if (!invData.invoice_number) {
           errs.invoice_number = 'Le numéro de facture est requis';
         }
-        if (!invData.date) {
-          errs.date = 'La date est requise';
+       
+        if (!invData.due_date) {
+          errs.due_date = 'La date d\'échéance est requise';
         }
         if (invData.total_ht === '' || isNaN(invData.total_ht) || invData.total_ht <= 0) {
           errs.total_ht = 'Total HT doit être un nombre supérieur à 0';
@@ -430,7 +474,7 @@ const DocumentConfirmationForm = ({
                 </div>
                 
                 {/* Première ligne : Entité, Type de document et Partenaire externe */}
-                <div className="form-row three-cols">
+                <div className="form-row two-cols">
                   <div className="form-group">
                     <label className="form-label">Entité *</label>
                     <select 
@@ -467,6 +511,16 @@ const DocumentConfirmationForm = ({
                     {err.doctype_id && <div className="error-message">{err.doctype_id}</div>}
                   </div>
                   <div className="form-group">
+                        <label className="form-label">Date de document*</label>
+                        <input
+                          type="date"
+                          value={doc.confirmed_data.date}
+                          onChange={e => updateConfirmedDocument(0, 'date', e.target.value)}
+                          className={`form-input ${err.date ? 'error' : ''}`}
+                        />
+                        {err.date && <div className="error-message">{err.date}</div>}
+                    </div>
+                  <div className="form-group">
                     <label className="form-label">Partenaire externe *</label>
                     <select
                       value={doc.confirmed_data.partner_id || ''}
@@ -492,6 +546,7 @@ const DocumentConfirmationForm = ({
                     </select>
                     {err.partner_id && <div className="error-message">{err.partner_id}</div>}
                   </div>
+                  
                 </div>
 
                 {/* Case à cocher pour facture */}
@@ -521,18 +576,19 @@ const DocumentConfirmationForm = ({
                         />
                         {err.invoice_number && <div className="error-message">{err.invoice_number}</div>}
                       </div>
-                      <div className="form-group">
-                        <label className="form-label">Date *</label>
+                      
+                    
+                    <div className="form-group">
+                        <label className="form-label">Date d'échéance *</label>
                         <input
                           type="date"
-                          value={doc.confirmed_data.date}
-                          onChange={e => updateConfirmedDocument(0, 'date', e.target.value)}
-                          className={`form-input ${err.date ? 'error' : ''}`}
+                          value={doc.confirmed_data.due_date}
+                          onChange={e => updateConfirmedDocument(0, 'due_date', e.target.value)}
+                          className={`form-input ${err.due_date ? 'error' : ''}`}
                         />
-                        {err.date && <div className="error-message">{err.date}</div>}
-                      </div>
+                        {err.due_date && <div className="error-message">{err.due_date}</div>}
                     </div>
-
+                    </div>
                     <div className="form-row">
                       <div className="form-group">
                         <label className="form-label">Total HT *</label>
