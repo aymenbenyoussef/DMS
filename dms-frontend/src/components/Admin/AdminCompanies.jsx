@@ -500,7 +500,7 @@ const AdminCompanies = ({ user }) => {
 
       {activeTab === 'form' && editingCompany && (
         <div className="user-form">
-          <h2>Modifier l'entité</h2>
+          
           <form onSubmit={handleUpdate}>
             <div className="form-group">
               <label>Nom de l'entité *</label>
@@ -562,14 +562,16 @@ const AdminCompanies = ({ user }) => {
               />
             </div>
 
-            <div className="form-group checkbox-group">
-              <label>Actif</label>
-              <input
-                type="checkbox"
-                name="is_active"
-                checked={formData.is_active}
-                onChange={handleInputChange}
-              />
+            <div className="form-group checkbox-group" style={{ display: 'flex', alignItems: 'flex-start' }}>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, margin: 0 }}>
+                <input
+                  type="checkbox"
+                  name="is_active"
+                  checked={formData.is_active}
+                  onChange={handleInputChange}
+                />
+                Actif
+              </label>
             </div>
 
             <div className="form-actions">

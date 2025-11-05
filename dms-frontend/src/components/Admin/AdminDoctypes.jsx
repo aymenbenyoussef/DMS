@@ -494,7 +494,7 @@ const AdminDoctypes = ({ user }) => {
 
       {activeTab === 'form' && (
         <div className="user-form">
-          <h2>Modifier le type de document</h2>
+          
           <form onSubmit={handleUpdate}>
             <div className="form-group">
               <label>Nom</label>
@@ -508,14 +508,14 @@ const AdminDoctypes = ({ user }) => {
               />
               {fieldErrors.name && <div className="field-error">{fieldErrors.name}</div>}
             </div>
-            <div className="form-group checkbox-group">
-              <label>
+            <div className="form-group checkbox-group" style={{ display: 'flex', alignItems: 'flex-start' }}>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, margin: 0 }}>
                 <input
                   type="checkbox"
                   name="status"
                   checked={formData.status}
                   onChange={handleInputChange}
-                />{' '}
+                />
                 Actif
               </label>
             </div>

@@ -687,240 +687,175 @@ const AdminPartners = ({ user }) => {
       )}
 
       {activeTab === 'form' && editingPartner && (
-        <div className="user-form">
-            <h2>Modifier le partenaire</h2>
+        <div className="user-form" style={{ padding: '1px 1px 0 1px' }}>
+           
           <form onSubmit={handleUpdate}>
-            <div className="tab-panel">
-              {/* Identity Tab */}
-              <div className="form-section">
-                <h3>Identité</h3>
-                <div className="form-group">
-                  <label>Nom de l'entité *</label>
-                  <input
-                    type="text"
-                    name="company_name"
-                    placeholder="Entrez le nom de l'entité"
-                    value={formData.company_name}
-                    onChange={handleInputChange}
-                    className={fieldErrors.company_name ? 'input-error' : ''}
-                  />
-                  {fieldErrors.company_name && <div className="field-error">{fieldErrors.company_name}</div>}
-                </div>
-                <div className="form-group">
-                  <label>Nom commercial (si différent)</label>
-                  <input
-                    type="text"
-                    name="trade_name"
-                    placeholder="Entrez le nom commercial"
-                    value={formData.trade_name}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Identifiant unique *</label>
-                  <input
-                    type="text"
-                    name="unique_identifier"
-                    placeholder="Entrez un identifiant unique"
-                    value={formData.unique_identifier}
-                    onChange={handleInputChange}
-                    className={fieldErrors.unique_identifier ? 'input-error' : ''}
-                  />
-                  {fieldErrors.unique_identifier && <div className="field-error">{fieldErrors.unique_identifier}</div>}
-                </div>
+          <div
+  className="tab-panel"
+  style={{
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr 1fr',
+    gap: '4px', // smaller gap
+    alignItems: 'start',
+    fontSize: '12px', // smaller text
+    lineHeight: '1.2',
+  }}
+>
+  {/* Identité */}
+  <div className="form-section" style={{ margin: 0, padding: '2px 4px' }}>
+    <h3 style={{ margin: '0 0 4px 0', fontSize: '18px' }}>Identité</h3>
 
-                <div className="form-group">
-                  <label>Entités *</label>
-                  {fieldErrors.companies && <div className="field-error">{fieldErrors.companies}</div>}
-                  <div className="checkbox-list">
-                    {companies.map((c) => (
-                      <label key={c.id} className="checkbox-item">
-                        <input
-                          type="checkbox"
-                          name="companies"
-                          value={c.id}
-                          checked={formData.companies.includes(c.id)}
-                          onChange={handleInputChange}
-                        />
-                        <span className="company-name">{c.name}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-                <div className="form-group">
-                  <label>Types de partenaire *</label>
-                  {fieldErrors.partnertypes && <div className="field-error">{fieldErrors.partnertypes}</div>}
-                  <div className="checkbox-list">
-                    {partnertypes.map((pt) => (
-                      <label key={pt.id} className="checkbox-item">
-                        <input
-                          type="checkbox"
-                          name="partnertypes"
-                          value={pt.id}
-                          checked={formData.partnertypes.includes(pt.id)}
-                          onChange={handleInputChange}
-                        />
-                        <span className="partnertype-name">{pt.name}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>  
-                <div className="form-group checkbox-group">
-                  <label>
-                    <input
-                      type="checkbox"
-                      name="is_active"
-                      checked={formData.is_active}
-                      onChange={handleInputChange}
-                    />{' '}
-                    Active
-                  </label>
-                </div>
-              </div>
+    {[
+      { label: "Nom de l'entité *", name: 'company_name', placeholder: "Entrez le nom de l'entité", required: true },
+      { label: 'Nom commercial (si différent)', name: 'trade_name', placeholder: 'Entrez le nom commercial' },
+      { label: 'Identifiant unique *', name: 'unique_identifier', placeholder: 'Entrez un identifiant unique', required: true },
+    ].map((field) => (
+      <div key={field.name} className="form-group" style={{ marginBottom: 2 }}>
+        <label style={{ marginBottom: 1, display: 'block' }}>{field.label}</label>
+        <input
+          type="text"
+          name={field.name}
+          placeholder={field.placeholder}
+          value={formData[field.name]}
+          onChange={handleInputChange}
+          className={fieldErrors[field.name] ? 'input-error' : ''}
+          style={{ fontSize: '12px', padding: '2px 4px', height: 20 }}
+        />
+        {fieldErrors[field.name] && <div className="field-error">{fieldErrors[field.name]}</div>}
+      </div>
+    ))}
 
-              {/* Contact Tab */}
-              <div className="form-section">
-                <h3>Contact</h3>
-                <div className="form-group">
-                  <label>Adresse postale *</label>
-                  <input
-                    type="text"
-                    name="mailing_address"
-                    placeholder="Entrez l'adresse postale"
-                    value={formData.mailing_address}
-                    onChange={handleInputChange}
-                    className={fieldErrors.mailing_address ? 'input-error' : ''}
-                  />
-                  {fieldErrors.mailing_address && <div className="field-error">{fieldErrors.mailing_address}</div>}
-                </div>
-                <div className="form-group">
-                  <label>Adresse de facturation</label>
-                  <input
-                    type="text"
-                    name="billing_address"
-                    placeholder="Entrez l'adresse de facturation"
-                    value={formData.billing_address}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Téléphone 1 (principal) *</label>
-                  <input
-                    type="text"
-                    name="phone1"
-                    placeholder="Entrez le téléphone principal"
-                    value={formData.phone1}
-                    onChange={handleInputChange}
-                    className={fieldErrors.phone1 ? 'input-error' : ''}
-                  />
-                  {fieldErrors.phone1 && <div className="field-error">{fieldErrors.phone1}</div>}
-                </div>
-                <div className="form-group">
-                  <label>Téléphone 2</label>
-                  <input
-                    type="text"
-                    name="phone2"
-                    placeholder="Entrez le téléphone secondaire"
-                    value={formData.phone2}
-                    onChange={handleInputChange}
-                    className={fieldErrors.phone2 ? 'input-error' : ''}
-                  />
-                  {fieldErrors.phone2 && <div className="field-error">{fieldErrors.phone2}</div>}
-                </div>
-                <div className="form-group">
-                  <label>Téléphone 3</label>
-                  <input
-                    type="text"
-                    name="phone3"
-                    placeholder="Entrez le téléphone additionnel"
-                    value={formData.phone3}
-                    onChange={handleInputChange}
-                    className={fieldErrors.phone3 ? 'input-error' : ''}
-                  />
-                  {fieldErrors.phone3 && <div className="field-error">{fieldErrors.phone3}</div>}
-                </div>
-                <div className="form-group">
-                  <label>Email</label>
-                  <input
-                    type="email"
-                    name="email"
-                    placeholder="Entrez l'email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className={fieldErrors.email ? 'input-error' : ''}
-                  />
-                  {fieldErrors.email && <div className="field-error">{fieldErrors.email}</div>}
-                </div>
-              </div>
+    <div className="form-group" style={{ marginBottom: 2 }}>
+      <label style={{ marginBottom: 1, display: 'block' }}>Entités *</label>
+      {fieldErrors.companies && <div className="field-error">{fieldErrors.companies}</div>}
+      <div
+        className="checkbox-list"
+        style={{
+          maxHeight: 100,
+          overflow: 'auto',
+          paddingRight: 2,
+          fontSize: '11px',
+          lineHeight: '1.1',
+        }}
+      >
+        {companies.map((c) => (
+          <label key={c.id} className="checkbox-item" style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+            <input
+              type="checkbox"
+              name="companies"
+              value={c.id}
+              checked={formData.companies.includes(c.id)}
+              onChange={handleInputChange}
+              style={{ width: 10, height: 10 }}
+            />
+            <span>{c.name}</span>
+          </label>
+        ))}
+      </div>
+    </div>
 
-              {/* Billing and payments Tab */}
-              <div className="form-section">
-                  <h3>Facturation et paiement</h3>
-                <div className="form-group">
-                  <label>Conditions de paiement</label>
-                  <input
-                    type="text"
-                    name="payment_terms"
-                    placeholder="Entrez les conditions de paiement"
-                    value={formData.payment_terms}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Conditions de facturation</label>
-                  <input
-                    type="text"
-                    name="billing_terms"
-                    placeholder="Entrez les conditions de facturation"
-                    value={formData.billing_terms}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Numéro de compte bancaire</label>
-                  <input
-                    type="text"
-                    name="bank_account_number"
-                    placeholder="Entrez le numéro de compte bancaire"
-                    value={formData.bank_account_number}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Nom de la banque</label>
-                  <input
-                    type="text"
-                    name="bank_name"
-                    placeholder="Entrez le nom de la banque"
-                    value={formData.bank_name}
-                    onChange={handleInputChange}
-                  />
-                </div>
-              </div>
+    <div className="form-group" style={{ marginBottom: 2 }}>
+      <label style={{ marginBottom: 1, display: 'block' }}>Types de partenaire *</label>
+      {fieldErrors.partnertypes && <div className="field-error">{fieldErrors.partnertypes}</div>}
+      <div
+        className="checkbox-list"
+        style={{
+          maxHeight: 100,
+          overflow: 'auto',
+          paddingRight: 2,
+          fontSize: '11px',
+          lineHeight: '1.1',
+        }}
+      >
+        {partnertypes.map((pt) => (
+          <label key={pt.id} className="checkbox-item" style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+            <input
+              type="checkbox"
+              name="partnertypes"
+              value={pt.id}
+              checked={formData.partnertypes.includes(pt.id)}
+              onChange={handleInputChange}
+              style={{ width: 10, height: 10 }}
+            />
+            <span>{pt.name}</span>
+          </label>
+        ))}
+      </div>
+    </div>
 
-              {/* Notes Tab */}
-              <div className="form-section">
-                <h3>Notes</h3>
-                <div className="form-group">
-                  <label>Notes</label>
-                  <textarea
-                    name="notes"
-                    placeholder="Entrez les notes supplémentaires"
-                    value={formData.notes}
-                    onChange={handleInputChange}
-                    rows="4"
-                  />
-                </div>
-              </div>
-            </div>
-            {globalErrors.length > 0 && (
-              <div className="alert alert-error">
-                {globalErrors.map((err, index) => (
-                  <div key={index}>{err}</div>
-                ))}
-              </div>
-            )}
-            <div className="form-actions">
+    <label style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: '11px' }}>
+      <input
+        type="checkbox"
+        name="is_active"
+        checked={formData.is_active}
+        onChange={handleInputChange}
+        style={{ width: 10, height: 10 }}
+      />{' '}
+      Active
+    </label>
+  </div>
+
+  {/* Contact */}
+  <div className="form-section" style={{ margin: 0, padding: '2px 4px' }}>
+    <h3 style={{ margin: '0 0 4px 0', fontSize: '18px' }}>Contact</h3>
+    {[
+      { label: 'Adresse postale *', name: 'mailing_address' },
+      { label: 'Adresse de facturation', name: 'billing_address' },
+      { label: 'Téléphone 1 (principal) *', name: 'phone1' },
+      { label: 'Téléphone 2', name: 'phone2' },
+      { label: 'Téléphone 3', name: 'phone3' },
+      { label: 'Email', name: 'email', type: 'email' },
+    ].map((f) => (
+      <div key={f.name} className="form-group" style={{ marginBottom: 2 }}>
+        <label style={{ marginBottom: 1, display: 'block' }}>{f.label}</label>
+        <input
+          type={f.type || 'text'}
+          name={f.name}
+          placeholder={`Entrez ${f.label.toLowerCase()}`}
+          value={formData[f.name]}
+          onChange={handleInputChange}
+          className={fieldErrors[f.name] ? 'input-error' : ''}
+          style={{ fontSize: '12px', padding: '2px 4px', height: 20 }}
+        />
+        {fieldErrors[f.name] && <div className="field-error">{fieldErrors[f.name]}</div>}
+      </div>
+    ))}
+  </div>
+
+  {/* Facturation et paiement */}
+  <div className="form-section" style={{ margin: 0, padding: '2px 4px' }}>
+    <h3 style={{ margin: '0 0 4px 0', fontSize: '18px' }}>Facturation et paiement</h3>
+    {[
+      { label: 'Conditions de paiement', name: 'payment_terms' },
+      { label: 'Conditions de facturation', name: 'billing_terms' },
+      { label: 'Numéro de compte bancaire', name: 'bank_account_number' },
+      { label: 'Nom de la banque', name: 'bank_name' },
+    ].map((f) => (
+      <div key={f.name} className="form-group" style={{ marginBottom: 2 }}>
+        <label style={{ marginBottom: 1, display: 'block' }}>{f.label}</label>
+        <input
+          type="text"
+          name={f.name}
+          placeholder={`Entrez ${f.label.toLowerCase()}`}
+          value={formData[f.name]}
+          onChange={handleInputChange}
+          style={{ fontSize: '12px', padding: '2px 4px', height: 20 }}
+        />
+      </div>
+    ))}
+
+    <div className="form-group" style={{ marginBottom: 2 }}>
+      <label style={{ marginBottom: 1, display: 'block',fontSize: '18px' }}>Notes</label>
+      <textarea
+        name="notes"
+        placeholder="Entrez les notes supplémentaires"
+        value={formData.notes}
+        onChange={handleInputChange}
+        rows="3"
+        style={{ fontSize: '12px', padding: '3px 4px', resize: 'vertical' }}
+      />
+    </div><br></br><br></br><br></br><br></br><br></br><br></br>
+    <div className="form-actions">
               <button
                 type="button"
                 className="btn-cancel"
@@ -936,6 +871,17 @@ const AdminPartners = ({ user }) => {
                 Mettre à jour le partenaire
               </button>
             </div>
+  </div>
+</div>
+
+            {globalErrors.length > 0 && (
+              <div className="alert alert-error">
+                {globalErrors.map((err, index) => (
+                  <div key={index}>{err}</div>
+                ))}
+              </div>
+            )}
+            
           </form>
         </div>
       )}

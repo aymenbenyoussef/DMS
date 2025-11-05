@@ -791,7 +791,7 @@ const AdminUsers = ({user ,loadingUser}) => {
 
       {activeTab === 'form' && (
         <div className="user-form">
-          <h2> Modifier l'utilisateur</h2>
+          
           <form onSubmit={handleSubmit}>
             <div className="form-group">
               <label htmlFor="username">Nom d'utilisateur</label>
@@ -871,8 +871,8 @@ const AdminUsers = ({user ,loadingUser}) => {
               </select>
             </div>
 
-            <div className="form-group checkbox-group">
-              <label>
+            <div className="form-group checkbox-group" style={{ display: 'flex', alignItems: 'flex-start' }}>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, margin: 0 }}>
                 <input
                   type="checkbox"
                   name="is_active"
@@ -883,11 +883,16 @@ const AdminUsers = ({user ,loadingUser}) => {
               </label>
             </div>
 
-            <div className="form-group checklist-group">
-              <label>Entités associées</label>
-              <div className="checkbox-list">
+            <div className="form-group checklist-group" style={{ textAlign: 'left' ,marginLeft:0}}>
+              <label style={{ display: 'block', marginBottom: 4 }}>Entités associées</label>
+              <div className="checkbox-list" style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'flex-start', // 👈 ensures full left alignment
+      gap: 4,
+    }}>
                 {companies.map(company => (
-                  <div key={company.id} className="checkbox-item">
+                  <div key={company.id} className="checkbox-item" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <input
                       type="checkbox"
                       id={`company-${company.id}`}
