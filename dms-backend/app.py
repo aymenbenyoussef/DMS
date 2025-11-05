@@ -1721,10 +1721,13 @@ def confirm_document():
                 # Generate report PDF
                 report_filename = f"{os.path.splitext(unique_final_filename)[0]}_report.pdf"
                 report_path = os.path.join(summary_folder, report_filename)
+                # original filename from the uploaded file
+                original_uploaded_name = original_processed_file.get('filename', original_filename)
                 generate_report_pdf(
                     confirmed_info, 
                     report_path, 
                     unique_final_filename,  # filename
+                    original_uploaded_name,
                     final_file_path,  # file_path
                     doctype_name,  # doctype_name
                     partner_name,  # partner_name
@@ -1734,11 +1737,16 @@ def confirm_document():
                 )
                 rapport = report_path
                 # For non-invoice documents, ocr_text and rapport remain None
+                # filename stored in DB should be the user-provided display name (without timestamp)
+                display_filename = final_filename
+                
+
                 document_id = db.create_document_with_ocr_data(
                     owner_id=current_user_id,
                     company_id=company_id,
                     doctype_id=doctype_id,
-                    filename=unique_final_filename,
+                    filename=display_filename,
+                    original_filename=original_uploaded_name,
                     file_path=final_file_path,
                     file_size=file_size,
                     is_invoice=is_invoice,
@@ -1766,8 +1774,9 @@ def confirm_document():
                 
                 with open(json_path, 'w', encoding='utf-8') as json_file:
                     json.dump({
-                        'filename': unique_final_filename,
-                        'original_filename': final_filename,
+                        'filename': display_filename,
+                        'stored_filename': unique_final_filename,
+                        'original_filename': original_uploaded_name,
                         'processing_date': datetime.now().isoformat(),
                         'company': {
                             'id': company_id,
@@ -1804,8 +1813,9 @@ def confirm_document():
                 
                 saved_documents.append({
                     'document_id': document_id,
-                    'filename': unique_final_filename,
-                    'original_filename': final_filename,
+                    'filename': display_filename,
+                    'stored_filename': unique_final_filename,
+                    'original_filename': original_uploaded_name,
                     'is_invoice': is_invoice,
                     'partner_id': partner_id,
                     'group_id': group_id,

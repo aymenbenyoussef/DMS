@@ -192,6 +192,7 @@ class DatabaseManager:
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS documents (
                     id INT AUTO_INCREMENT PRIMARY KEY,
+                    original_filename VARCHAR(255),
                     filename VARCHAR(255) NOT NULL,
                     owner_id INT NOT NULL,
                     company_id INT,
@@ -219,6 +220,18 @@ class DatabaseManager:
                     FOREIGN KEY (doctype_id) REFERENCES doctype(id) ON DELETE CASCADE,
                     FOREIGN KEY (partner_id) REFERENCES partners(id) ON DELETE CASCADE
                 )""")
+
+            # Ensure original_filename column exists (for existing installations)
+            try:
+                cursor.execute("""
+                    ALTER TABLE documents ADD COLUMN IF NOT EXISTS original_filename VARCHAR(255)
+                """)
+            except Exception:
+                # Some MySQL/MariaDB versions don't support IF NOT EXISTS; fall back to checking
+                cursor.execute("SHOW COLUMNS FROM documents LIKE 'original_filename'")
+                exists = cursor.fetchone()
+                if not exists:
+                    cursor.execute("ALTER TABLE documents ADD COLUMN original_filename VARCHAR(255)")
 
             # Create groups table
             cursor.execute("""
@@ -1184,7 +1197,7 @@ class DatabaseManager:
             return False
 
 
-    def create_document_with_ocr_data(self, owner_id, company_id, doctype_id, filename, file_path, file_size,
+    def create_document_with_ocr_data(self, owner_id, company_id, doctype_id, filename, original_filename, file_path, file_size,
                                 is_invoice=False, extracted_data=None, extracted_text=None, partner_id=None, rapport=None, ocr_text=None):
         """Create a document with OCR extracted data"""
         try:
@@ -1206,14 +1219,15 @@ class DatabaseManager:
                 due_date = extracted_data.get("due_date")
             query = """
                 INSERT INTO documents (
-                    filename, owner_id, company_id, doctype_id, file_path, file_size,
-                    extracted_data, extracted_text, rapport ,is_invoice, invoice_number, document_date,due_date,
-                    partner_id, total_ht, tva, total_ttc,currency, ocr_text
+                    filename, original_filename, owner_id, company_id, doctype_id, file_path, file_size,
+                    extracted_data, extracted_text, rapport ,is_invoice, invoice_number, document_date, due_date,
+                    partner_id, total_ht, tva, total_ttc, currency, ocr_text
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) 
             """
             params = (
-                filename, 
+                filename,
+                original_filename,
                 owner_id, 
                 company_id, 
                 doctype_id, 

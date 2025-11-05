@@ -345,7 +345,7 @@ def process_uploaded_files(files, base_upload_path, company_name, doctype_name):
     
     return results
 
-def generate_report_pdf(confirmed_data, output_path, filename, file_path, doctype_name, partner_name, owner_name, created_at, is_invoice):
+def generate_report_pdf(confirmed_data, output_path, filename, original_uploaded_name, file_path, doctype_name, partner_name, owner_name, created_at, is_invoice):
     """Generate a PDF report with confirmed invoice data matching the exact format shown in the image"""
           
     try:
@@ -406,7 +406,7 @@ def generate_report_pdf(confirmed_data, output_path, filename, file_path, doctyp
         # Create layout with headers above values - 4 columns per row, no grid lines
         # Row 1: Partenaire, ID document, Nom du document, Document original
         row1_headers = ['Partenaire', 'ID document', 'Nom du document', 'Document original']
-        row1_values = [partner_name or '-', confirmed_data.get('invoice_number', '-'), filename, original_filename]
+        row1_values = [partner_name or '-', confirmed_data.get('invoice_number', '-'), filename, original_uploaded_name]
         
         # Row 2: Type de document, Date d'import, Date du document, Date d'échéance
         row2_headers = ['Type de document', 'Date d\'import', 'Date du document', 'Date d\'échéance']

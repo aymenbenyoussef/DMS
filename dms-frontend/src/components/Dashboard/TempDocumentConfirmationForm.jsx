@@ -27,6 +27,7 @@ const DocumentConfirmationForm = ({
   // Array of confirmedDocuments and errors, one per file
   const [confirmedDocuments, setConfirmedDocuments] = useState(() => files.map(f => ({
     filename: f.filename,
+    original_filename: f.filename,
     company_id: null,
     doctype_id: null,
     is_invoice: f.extractedData?.is_invoice || false,
