@@ -607,6 +607,7 @@ const getOneMonthAgo = () => {
       'TVA': doc.tva || '',
       'Total HT': doc.total_ht || '',
       'Total TTC': doc.total_ttc || '',
+      'Devise': doc.currency || '',
       'Date': doc.created_at ? new Date(doc.created_at).toLocaleDateString() : ''
     }));
 
@@ -757,16 +758,32 @@ const getOneMonthAgo = () => {
 
     // Apply sorting
     if (sortConfig.key) {
+      const getComparableValue = (doc, key) => {
+        // Map UI key 'devise' to underlying 'currency'
+        if (key === 'devise') {
+          return (doc.currency || '').toString().toLowerCase();
+        }
+        // Numeric fields
+        if (key === 'id' || key === 'tva' || key === 'total_ht' || key === 'total_ttc') {
+          const num = parseFloat(doc[key]);
+          return isNaN(num) ? -Infinity : num;
+        }
+        // Dates
+        if (key === 'created_at') {
+          const time = doc.created_at ? new Date(doc.created_at).getTime() : 0;
+          return isNaN(time) ? 0 : time;
+        }
+        // Default string compare (case-insensitive)
+        const val = doc[key];
+        return (val === null || val === undefined) ? '' : val.toString().toLowerCase();
+      };
+
       filtered.sort((a, b) => {
-        const aValue = a[sortConfig.key] || '';
-        const bValue = b[sortConfig.key] || '';
-        
-        if (aValue < bValue) {
-          return sortConfig.direction === 'asc' ? -1 : 1;
-        }
-        if (aValue > bValue) {
-          return sortConfig.direction === 'asc' ? 1 : -1;
-        }
+        const aValue = getComparableValue(a, sortConfig.key);
+        const bValue = getComparableValue(b, sortConfig.key);
+
+        if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
         return 0;
       });
     }
@@ -1539,15 +1556,15 @@ const getOneMonthAgo = () => {
                       </div>
                     </div>
                     <div className="col-md-4">
-                      <label className="form-label small fw-bold">Facturable</label>
+                      <label className="form-label small fw-bold">Déductible</label>
                       <select
                         className="form-select form-select-sm"
                         value={billableFilter}
                         onChange={(e) => setBillableFilter(e.target.value)}
                       >
                         <option value="all">Tous</option>
-                        <option value="billable">Facturable</option>
-                        <option value="non-billable">Non facturable</option>
+                        <option value="billable">Déductible</option>
+                        <option value="non-billable">Non déductible</option>
                       </select>
                     </div>
                     <div className="col-md-4">
@@ -1775,7 +1792,7 @@ const getOneMonthAgo = () => {
                       >
                         <div className="d-flex align-items-center justify-content-start gap-1">
                           {getSortIcon('billable')}
-                          <span>Facturable</span>
+                          <span>Déductible</span>
                           <span style={{ fontSize: '1em', color: sortConfig.key === 'billable' ? '#1976d2' : '#888' }}>
                           {sortConfig.key === 'billable' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}
                         </span>
@@ -1830,9 +1847,13 @@ const getOneMonthAgo = () => {
                         style={{ width: '70px', cursor: 'pointer' }}
                         className="text-start"
                         title="Devise"
+                        onClick={() => handleSort('currency')} 
                       >
                         <div className="d-flex align-items-center justify-content-start gap-1">
+                        {getSortIcon('currency')}
                           <span>Devise</span>
+                          <span style={{ fontSize: '1em', color: sortConfig.key === 'currency' ? '#1976d2' : '#888' }}>
+                          {sortConfig.key === 'currency' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
                         </div>
                       </th>
 

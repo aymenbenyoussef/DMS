@@ -25,25 +25,59 @@ const DocumentConfirmationForm = ({
   const [hasChanges, setHasChanges] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   // Array of confirmedDocuments and errors, one per file
-  const [confirmedDocuments, setConfirmedDocuments] = useState(() => files.map(f => ({
-    filename: f.filename,
-    original_filename: f.filename,
-    company_id: null,
-    doctype_id: null,
-    is_invoice: f.extractedData?.is_invoice || false,
-    confirmed_data: {
-      invoice_number: f.extractedData?.invoice_number || '',
-      date: f.extractedData?.date || '',
-      partner: f.extractedData?.partner || '',
-      partner_id: f.extractedData?.partner_id || '',
-      group_id: f.extractedData?.group_id || '',
-      total_ht: f.extractedData?.total_ht || '',
-      tva: f.extractedData?.tva || '',
-      total_ttc: f.extractedData?.total_ttc || '',
-      is_invoice: f.extractedData?.is_invoice || false
-    }
-  })));
+  const [confirmedDocuments, setConfirmedDocuments] = useState(() => files.map(f => {
+    const initialHt = parseFloat(f.extractedData?.total_ht);
+    const initialTtc = parseFloat(f.extractedData?.total_ttc);
+    const computedTva = !isNaN(initialHt) && !isNaN(initialTtc) ? +(initialTtc - initialHt).toFixed(2) : '';
+    const initialTva = f.extractedData?.tva;
+    const tvaValue = (initialTva === undefined || initialTva === '' || isNaN(parseFloat(initialTva))) ? computedTva : initialTva;
+    return ({
+      filename: f.filename,
+      original_filename: f.filename,
+      company_id: null,
+      doctype_id: null,
+      is_invoice: f.extractedData?.is_invoice || false,
+      confirmed_data: {
+        invoice_number: f.extractedData?.invoice_number || '',
+        date: f.extractedData?.date || '',
+        partner: f.extractedData?.partner || '',
+        partner_id: f.extractedData?.partner_id || '',
+        group_id: f.extractedData?.group_id || '',
+        total_ht: f.extractedData?.total_ht || '',
+        tva: tvaValue,
+        total_ttc: f.extractedData?.total_ttc || '',
+        is_invoice: f.extractedData?.is_invoice || false
+      }
+    });
+  }));
   const [errors, setErrors] = useState(files.map(() => ({})));
+
+  // Auto-calculate TVA from TTC and HT whenever values are present/changed
+  useEffect(() => {
+    setConfirmedDocuments(prev => {
+      let changed = false;
+      const updated = prev.map(doc => {
+        if (!doc || !doc.confirmed_data) return doc;
+        const ht = parseFloat(doc.confirmed_data.total_ht);
+        const ttc = parseFloat(doc.confirmed_data.total_ttc);
+        if (!isNaN(ht) && !isNaN(ttc)) {
+          const newTva = +(ttc - ht).toFixed(2);
+          if (doc.confirmed_data.tva !== newTva) {
+            changed = true;
+            return {
+              ...doc,
+              confirmed_data: { ...doc.confirmed_data, tva: newTva >= 0 ? newTva : 0 }
+            };
+          }
+        } else if (doc.confirmed_data.tva !== '') {
+          changed = true;
+          return { ...doc, confirmed_data: { ...doc.confirmed_data, tva: '' } };
+        }
+        return doc;
+      });
+      return changed ? updated : prev;
+    });
+  }, [files]);
 
   // Load companies on component mount
   useEffect(() => {
@@ -143,6 +177,16 @@ const DocumentConfirmationForm = ({
         updated[idx].confirmed_data.group_id = value;
       } else {
         updated[idx].confirmed_data[field] = value;
+        if (field === 'total_ht' || field === 'total_ttc') {
+          const ht = parseFloat(updated[idx].confirmed_data.total_ht);
+          const ttc = parseFloat(updated[idx].confirmed_data.total_ttc);
+          if (!isNaN(ht) && !isNaN(ttc)) {
+            const tva = +(ttc - ht).toFixed(2);
+            updated[idx].confirmed_data.tva = tva >= 0 ? tva : 0;
+          } else {
+            updated[idx].confirmed_data.tva = '';
+          }
+        }
       }
       return updated;
     });
@@ -188,9 +232,7 @@ const DocumentConfirmationForm = ({
       if (invData.tva === '' || isNaN(invData.tva) || invData.tva < 0) {
           errs.tva = 'TVA doit être un nombre positif ou nul';
       }
-      if (invData.total_ttc === '' || isNaN(invData.total_ttc) || invData.total_ttc <= 0) {
-          errs.total_ttc = 'Total TTC doit être un nombre supérieur à 0';
-        }
+      // TVA is auto-calculated; validate TVA instead of TTC
       }
       
       console.log(`File ${idx} errors:`, errs);
@@ -377,7 +419,7 @@ const DocumentConfirmationForm = ({
                   }, 50);
                 }}
             />
-            Ce fichier est une facture
+            Ce fichier est déductible
           </label>
         </div>
           {doc.is_invoice && (
@@ -424,7 +466,7 @@ const DocumentConfirmationForm = ({
                   step="0.01"
                   min="0"
                     value={doc.confirmed_data.tva || ''}
-                    onChange={e => updateConfirmedDocument(0, 'tva', parseFloat(e.target.value) || '')}
+                    disabled
                     className={err.tva ? 'error' : ''}
                   />
                   {err.tva && <div className="error-message">{err.tva}</div>}
@@ -626,7 +668,7 @@ const DocumentConfirmationForm = ({
                       step="0.01"
                       min="0"
                       value={confirmedDocuments[idx].confirmed_data.tva || ''}
-                      onChange={e => updateConfirmedDocument(idx, 'tva', parseFloat(e.target.value) || '')}
+                      disabled
                       className={errors[idx].tva ? 'error' : ''}
                     />
                     {errors[idx].tva && <div className="error-message">{errors[idx].tva}</div>}

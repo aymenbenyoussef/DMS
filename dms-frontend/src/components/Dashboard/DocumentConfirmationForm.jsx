@@ -124,7 +124,13 @@ const DocumentConfirmationForm = ({
     }
   };
   
-  const [confirmedDocuments, setConfirmedDocuments] = useState(() => files.map(f => ({
+  const [confirmedDocuments, setConfirmedDocuments] = useState(() => files.map(f => {
+    const initialHt = parseFloat(f.extractedData?.total_ht);
+    const initialTtc = parseFloat(f.extractedData?.total_ttc);
+    const computedTva = !isNaN(initialHt) && !isNaN(initialTtc) ? +(initialTtc - initialHt).toFixed(2) : '';
+    const initialTva = f.extractedData?.tva;
+    const tvaValue = (initialTva === undefined || initialTva === '' || isNaN(parseFloat(initialTva))) ? computedTva : initialTva;
+    return ({
     filename: f.filename || (f.file && f.file.name) || '',
     original_filename: f.filename || (f.file && f.file.name) || '', // Store original filename for backend matching
     company_id: (initialCompany || selectedCompany)?.id,
@@ -138,15 +144,43 @@ const DocumentConfirmationForm = ({
       partner_id: f.extractedData?.partner_id || '',
       group_id: f.extractedData?.group_id || '',
       total_ht: f.extractedData?.total_ht || '',
-      tva: f.extractedData?.tva || '',
+        tva: tvaValue,
       total_ttc: f.extractedData?.total_ttc || '',
       currency: f.extractedData?.currency || '',
       is_invoice: f.extractedData?.is_invoice || false,
       due_date: f.extractedData?.due_date || '',
     }
-  })));
+    });
+  }));
   
   const [errors, setErrors] = useState(() => files.map(() => ({})));
+
+  // Auto-calculate TVA from TTC and HT whenever values are present/changed
+  useEffect(() => {
+    setConfirmedDocuments(prev => {
+      let changed = false;
+      const updated = prev.map(doc => {
+        if (!doc || !doc.confirmed_data) return doc;
+        const ht = parseFloat(doc.confirmed_data.total_ht);
+        const ttc = parseFloat(doc.confirmed_data.total_ttc);
+        if (!isNaN(ht) && !isNaN(ttc)) {
+          const newTva = +(ttc - ht).toFixed(2);
+          if (doc.confirmed_data.tva !== newTva) {
+            changed = true;
+            return {
+              ...doc,
+              confirmed_data: { ...doc.confirmed_data, tva: newTva >= 0 ? newTva : 0 }
+            };
+          }
+        } else if (doc.confirmed_data.tva !== '') {
+          changed = true;
+          return { ...doc, confirmed_data: { ...doc.confirmed_data, tva: '' } };
+        }
+        return doc;
+      });
+      return changed ? updated : prev;
+    });
+  }, [files]);
 
   // Icônes SVG
   const CompanyIcon = () => (
@@ -350,6 +384,16 @@ const DocumentConfirmationForm = ({
           updated[idx].confirmed_data.currency = value;
       } else {
         updated[idx].confirmed_data[field] = value;
+        if (field === 'total_ht' || field === 'total_ttc') {
+          const ht = parseFloat(updated[idx].confirmed_data.total_ht);
+          const ttc = parseFloat(updated[idx].confirmed_data.total_ttc);
+          if (!isNaN(ht) && !isNaN(ttc)) {
+            const tva = +(ttc - ht).toFixed(2);
+            updated[idx].confirmed_data.tva = tva >= 0 ? tva : 0;
+          } else {
+            updated[idx].confirmed_data.tva = '';
+          }
+        }
       }
       return updated;
     });
@@ -396,19 +440,7 @@ const DocumentConfirmationForm = ({
         if (invData.tva === '' || isNaN(invData.tva) || invData.tva < 0) {
           errs.tva = 'TVA doit être un nombre positif ou nul';
         }
-        if (invData.total_ttc === '' || isNaN(invData.total_ttc) || invData.total_ttc <= 0) {
-          errs.total_ttc = 'Total TTC doit être un nombre supérieur à 0';
-        }
-        
-        // New validation: Check if TTC equals HT + TVA
-        const ht = parseFloat(invData.total_ht);
-        const tva = parseFloat(invData.tva);
-        const ttc = parseFloat(invData.total_ttc);
-        const expectedTtc = ht + tva;
-        
-        if (!isNaN(ht) && !isNaN(tva) && !isNaN(ttc) && Math.abs(ttc - expectedTtc) > 0.01) {
-          errs.total_ttc = `Le Total TTC devrait être ${expectedTtc.toFixed(2)} (HT + TVA = ${ht.toFixed(2)} + ${tva.toFixed(2)})`;
-        }
+        // TVA is auto-calculated; validate TVA instead of TTC
       }
       
       return errs;
@@ -564,7 +596,7 @@ const DocumentConfirmationForm = ({
                       checked={doc.is_invoice}
                       onChange={e => updateConfirmedDocument(0, 'is_invoice', e.target.checked)}
                     />
-                    Ce document est une facture
+                    Ce document est déductible
                   </label>
                 </div>
 
@@ -615,7 +647,7 @@ const DocumentConfirmationForm = ({
                           type="number"
                           step="0.01"
                           value={doc.confirmed_data.tva}
-                          onChange={e => updateConfirmedDocument(0, 'tva', e.target.value)}
+                          disabled
                           className={`form-input ${err.tva ? 'error' : ''}`}
                           placeholder="0.00"
                         />
@@ -1029,7 +1061,7 @@ const DocumentConfirmationForm = ({
                                 type="number"
                                 step="0.01"
                                 value={doc.confirmed_data.tva}
-                                onChange={e => updateConfirmedDocument(idx, 'tva', e.target.value)}
+                                disabled
                                 className={`form-input ${err.tva ? 'error' : ''}`}
                                 placeholder="0.00"
                               />

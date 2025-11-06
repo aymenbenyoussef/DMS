@@ -936,7 +936,7 @@ const TempDocumentArchive = ({ user }) => {
             <div className="modal-header">
               <div className="modal-header__content">
                 <div className="modal-header__icon">📋</div>
-                <h2 className="modal-title">{t('documentConfirmation')}</h2>
+                <h2 className="modal-title">Import vers DMS: Étape 2/2 - Chargement</h2>
               </div>
               <button className="modal-close-btn" onClick={handleCancelConfirmation} aria-label={t('close')}>
                 ×

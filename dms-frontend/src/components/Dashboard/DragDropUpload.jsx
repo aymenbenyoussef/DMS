@@ -15,7 +15,9 @@ const DragDropUpload = ({ onUpload, onClose }) => {
   const [showConfirmations, setShowConfirmations] = useState([]);
   const [confirmationData, setConfirmationData] = useState([]);
   const [maxFileSize, setMaxFileSize] = useState(2014);
-
+  const [currentStep, setCurrentStep] = useState(1);
+  const [tempDocIdsToCleanup, setTempDocIdsToCleanup] = useState(new Set());
+  
   const overlayRef = useRef(null);
   const dialogRef = useRef(null);
 
@@ -26,7 +28,7 @@ const DragDropUpload = ({ onUpload, onClose }) => {
 
     const handleKey = (e) => {
       if (e.key === 'Escape') {
-        onClose?.();
+        closeAndCleanup();
       }
     };
 
@@ -139,7 +141,7 @@ const DragDropUpload = ({ onUpload, onClose }) => {
     if (!files.length) return;
     
     const hasCompany = selectedCompany;
-    
+    setCurrentStep(2);
     // Always save uploads as temporary documents first so they are available
     // in the Temp Documents archive if the user doesn't complete confirmation.
     setIsUploading(true);
@@ -182,6 +184,8 @@ const DragDropUpload = ({ onUpload, onClose }) => {
         }
         setUploadProgress(Math.round(((i + 1) / files.length) * 100));
       }
+      // Track temp doc ids for cleanup on close
+      setTempDocIdsToCleanup(new Set(tempFiles.map(tf => tf.id).filter(Boolean)));
     } catch (err) {
       // If temp upload as batch failed, fall back to per-file temp upload
       console.error('Batch temp upload failed, trying per-file upload', err);
@@ -216,6 +220,12 @@ const DragDropUpload = ({ onUpload, onClose }) => {
     }
 
     setShowConfirmations(confirmations);
+    // Also capture any collected temp ids from confirmations (fallback)
+    setTempDocIdsToCleanup(prev => {
+      const next = new Set(prev);
+      confirmations.forEach(c => { if (c.tempDocId) next.add(c.tempDocId); });
+      return next;
+    });
     setConfirmationData(confirmations.map(conf => ({ confirmedDocument: null, errors: {} })));
     setUploadStatus('processed');
     setIsUploading(false);
@@ -253,7 +263,7 @@ const DragDropUpload = ({ onUpload, onClose }) => {
       for (let i = 0; i < showConfirmations.length; i++) {
         const conf = showConfirmations[i];
         const doc = confirmationData[i].confirmedDocument;
-        if (conf.sessionId && doc) {
+            if (conf.sessionId && doc) {
           const documentToConfirm = {
             ...doc,
             partner_id: doc.confirmed_data.partner_id || null,
@@ -274,6 +284,7 @@ const DragDropUpload = ({ onUpload, onClose }) => {
             if (conf.tempDocId) {
               try {
                 await API.tempDocuments.delete(conf.tempDocId);
+                setTempDocIdsToCleanup(prev => { const next = new Set(prev); next.delete(conf.tempDocId); return next; });
                 // notify other components that temp documents changed
                 window.dispatchEvent(new Event('TempDocumentsUploaded'));
               } catch (delErr) {
@@ -303,9 +314,25 @@ const DragDropUpload = ({ onUpload, onClose }) => {
 
   const onBackdropClick = (e) => {
     if (e.target === overlayRef.current) {
-      onClose?.();
+      closeAndCleanup();
     }
   };
+
+  const closeAndCleanup = useCallback(async () => {
+    try {
+      const ids = Array.from(tempDocIdsToCleanup || []);
+      if (ids.length > 0) {
+        try {
+          await Promise.allSettled(ids.map(id => API.tempDocuments.delete(id)));
+        } catch (_) {}
+      }
+      // Notify listeners (e.g., sidebar) that temp documents changed
+      window.dispatchEvent(new Event('TempDocumentsUploaded'));
+      setTempDocIdsToCleanup(new Set());
+    } finally {
+      onClose?.();
+    }
+  }, [onClose, tempDocIdsToCleanup]);
 
   const getStatusMessage = () => {
     switch (uploadStatus) {
@@ -359,7 +386,9 @@ const DragDropUpload = ({ onUpload, onClose }) => {
       <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
     </svg>
   );
-
+  const getHeaderText = () => {
+    return `Import vers DMS: Étape ${currentStep}/2 - Chargement`;
+  };
   if (showConfirmations.length > 0) {
     const validFiles = showConfirmations.filter(conf => !conf.error).map(conf => ({
       sessionId: conf.sessionId,
@@ -381,9 +410,9 @@ const DragDropUpload = ({ onUpload, onClose }) => {
           <div className="modal-header">
             <div className="modal-header__content">
               
-              <h2 className="modal-title">Import vers DMS: Étape 1/2 - Chargement</h2>
+            <h2 className="modal-title">{getHeaderText()}</h2>
             </div>
-            <button className="modal-close-btn" onClick={onClose} aria-label="Fermer">
+            <button className="modal-close-btn" onClick={closeAndCleanup} aria-label="Fermer">
               <CloseIcon />
             </button>
           </div>
@@ -413,7 +442,7 @@ const DragDropUpload = ({ onUpload, onClose }) => {
                   setIsUploading(true);
                   setUploadStatus('confirming');
                   try {
-                    for (let i = 0; i < validFiles.length; i++) {
+          for (let i = 0; i < validFiles.length; i++) {
                       const conf = showConfirmations.find(c => c.sessionId === validFiles[i].sessionId);
                       const doc = confirmedDocuments[i];
                       if (conf.sessionId && doc) {
@@ -439,6 +468,7 @@ const DragDropUpload = ({ onUpload, onClose }) => {
                             if (conf.tempDocId) {
                               try {
                                 await API.tempDocuments.delete(conf.tempDocId);
+                                setTempDocIdsToCleanup(prev => { const next = new Set(prev); next.delete(conf.tempDocId); return next; });
                                 window.dispatchEvent(new Event('TempDocumentsUploaded'));
                               } catch (delErr) {
                                 console.error('Failed to delete temp document', conf.tempDocId, delErr);
@@ -450,7 +480,7 @@ const DragDropUpload = ({ onUpload, onClose }) => {
                     window.dispatchEvent(new Event('FilesUploaded'));
                     setUploadStatus('completed');
                     setTimeout(() => {
-                      onClose();
+                      closeAndCleanup();
                     }, 2000);
                   } catch (error) {
                     setUploadStatus('error');
@@ -459,7 +489,7 @@ const DragDropUpload = ({ onUpload, onClose }) => {
                     setIsUploading(false);
                   }
                 }}
-                onCancel={onClose}
+                onCancel={closeAndCleanup}
                 initialCompany={selectedCompany}
                 initialDoctype={selectedDoctype}
                 hideConfirmButton={false}
