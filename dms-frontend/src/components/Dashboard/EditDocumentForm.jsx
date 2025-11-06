@@ -9,6 +9,7 @@ const EditDocumentForm = ({ document, onSave, onCancel, isLoading }) => {
     is_invoice: false,
     invoice_number: '',
     document_date: '',
+    due_date: '',
     total_ht: null,
     tva: null,
     total_ttc: null,
@@ -94,6 +95,7 @@ const EditDocumentForm = ({ document, onSave, onCancel, isLoading }) => {
   is_invoice: getValue('is_invoice', 'is_invoice', 'is_invoice', false),
   invoice_number: getValue('invoice_number', 'invoice_number', 'invoice_number') ?? '',
   document_date: getDateValue('document_date', 'document_date', 'date'),
+  due_date: getDateValue('due_date', 'due_date', 'due_date'),
   total_ht: getValue('total_ht', 'total_ht', 'total_ht'),
   tva: getValue('tva', 'tva', 'tva'),
   total_ttc: getValue('total_ttc', 'total_ttc', 'total_ttc'),
@@ -208,13 +210,15 @@ const EditDocumentForm = ({ document, onSave, onCancel, isLoading }) => {
         partner: formData.partner_name,
         is_invoice: formData.is_invoice,
         invoice_number: formData.is_invoice ? (formData.invoice_number ? parseFloat(formData.invoice_number) : null) : '',
-        date: formData.is_invoice ? formData.document_date : '',
+        
+        due_date: formData.is_invoice ? formData.due_date : '',
         total_ht: formData.is_invoice ? (formData.total_ht ? parseFloat(formData.total_ht) : null) : '',
         tva: formData.is_invoice ? (formData.tva ? parseFloat(formData.tva) : null) : '',
         total_ttc: formData.is_invoice ? (formData.total_ttc ? parseFloat(formData.total_ttc) : null) : '',
         currency: formData.currency,
       },
       filename: formData.filename !== undefined ? formData.filename : document.filename,
+      document_date: formData.document_date,
     };
     onSave(updateData);
   };
@@ -269,32 +273,44 @@ const EditDocumentForm = ({ document, onSave, onCancel, isLoading }) => {
               </div>
             </div>
           </div>
-          <div className="form-row">
-            <div className="form-group full-width-field">
-              <label className="form-label" htmlFor="partner_id">Partenaire externe *</label>
-              <select
-                name="partner_id"
-                id="partner_id"
-                className={`form-input${errors.partner_id ? ' error' : ''}`}
-                value={formData.partner_id}
-                onChange={handlePartnerChange}
-                disabled={isLoadingPartners}
-              >
-                <option value="">Sélectionner un partenaire</option>
-                {partners.map(partner => (
-                  <option key={partner.id} value={partner.id}>
-                    {partner.company_name}
-                    {partner.partnertypes && partner.partnertypes.length > 0 &&
-                      ` (${partner.partnertypes.map(pt => pt.name).join(', ')})`
-                    }
-                  </option>
-                ))}
-              </select>
-              {errors.partner_id && (
-                <div className="error-message">{errors.partner_id}</div>
-              )}
-            </div>
+          <div className="form-row two-cols">
+          <div className="form-group">
+            <label className="form-label" htmlFor="partner_id">Partenaire externe *</label>
+            <select
+              name="partner_id"
+              id="partner_id"
+              className={`form-input${errors.partner_id ? ' error' : ''}`}
+              value={formData.partner_id}
+              onChange={handlePartnerChange}
+              disabled={isLoadingPartners}
+            >
+              <option value="">Sélectionner un partenaire</option>
+              {partners.map(partner => (
+                <option key={partner.id} value={partner.id}>
+                  {partner.company_name}
+                  {partner.partnertypes && partner.partnertypes.length > 0 &&
+                    ` (${partner.partnertypes.map(pt => pt.name).join(', ')})`
+                  }
+                </option>
+              ))}
+            </select>
+            {errors.partner_id && (
+              <div className="error-message">{errors.partner_id}</div>
+            )}
           </div>
+          <div className="form-group">
+            <label className="form-label" htmlFor="document_date">Date de document</label>
+            <input
+              type="date"
+              id="document_date"
+              name="document_date"
+              className={`form-input${errors.document_date ? ' error' : ''}`}
+              value={formData.document_date}
+              onChange={handleInputChange}
+            />
+            {errors.document_date && <div className="error-message">{errors.document_date}</div>}
+          </div>
+        </div>
           <div className="checkbox-group">
             <label>
               <input
@@ -324,17 +340,17 @@ const EditDocumentForm = ({ document, onSave, onCancel, isLoading }) => {
                   {errors.invoice_number && <div className="error-message">{errors.invoice_number}</div>}
                 </div>
                 <div className="form-group">
-                  <label className="form-label" htmlFor="document_date">Date de facture *</label>
-                  <input
-                    type="date"
-                    id="document_date"
-                    name="document_date"
-                    className={`form-input${errors.document_date ? ' error' : ''}`}
-                    value={formData.document_date}
-                    onChange={handleInputChange}
-                  />
-                  {errors.document_date && <div className="error-message">{errors.document_date}</div>}
-                </div>
+            <label className="form-label" htmlFor="document_date">Date d'échéance</label>
+            <input
+              type="date"
+              id="due_date"
+              name="due_date"
+              className={`form-input${errors.due_date ? ' error' : ''}`}
+              value={formData.due_date}
+              onChange={handleInputChange}
+            />
+            {errors.due_date && <div className="error-message">{errors.due_date}</div>}
+          </div>
               </div>
               <div className="form-row">
                 <div className="form-group">

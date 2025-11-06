@@ -2252,6 +2252,7 @@ def download_document_ocr_text(document_id):
 @jwt_required()
 def update_document(document_id):
     """Update document fields: name, partner, invoice fields, etc."""
+    print("in")
     current_user_claims = get_jwt()
     data = request.get_json()
     if not data:
@@ -2265,13 +2266,16 @@ def update_document(document_id):
         partner_id = data.get('partner_id') or (
         data.get('confirmed_data', {}).get('partner_id') if data.get('confirmed_data') else None
         )
+        document_date = data.get('document_date')
         confirmed_data = data.get('confirmed_data')
+        due_date = confirmed_data.get('due_date')
+        print("due_date :", due_date)
         # If confirmed_data is present, extract invoice fields
         invoice_fields = {}
         if confirmed_data:
             invoice_fields['is_invoice'] = confirmed_data.get('is_invoice')
             invoice_fields['invoice_number'] = confirmed_data.get('invoice_number')
-            invoice_fields['date'] = confirmed_data.get('date')
+            
             invoice_fields['total_ht'] = confirmed_data.get('total_ht')
             invoice_fields['tva'] = confirmed_data.get('tva')
             invoice_fields['total_ttc'] = confirmed_data.get('total_ttc')
@@ -2285,10 +2289,11 @@ def update_document(document_id):
             document_id,
             name=name,
             partner_id=partner_id,
-            
+            document_date=document_date,
             is_invoice=invoice_fields.get('is_invoice') if invoice_fields else None,
             invoice_number=invoice_fields.get('invoice_number') if invoice_fields else None,
-            document_date=invoice_fields.get('date') if invoice_fields else None,
+            
+            due_date=due_date,
             total_ht=invoice_fields.get('total_ht') if invoice_fields else None,
             tva=invoice_fields.get('tva') if invoice_fields else None,
             total_ttc=invoice_fields.get('total_ttc') if invoice_fields else None,   

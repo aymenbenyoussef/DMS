@@ -122,6 +122,7 @@ const TempDocumentArchive = ({ user }) => {
         ];
         if (user?.role === 'admin' || user?.role === 'superuser') {
           searchFields.push(String(doc.owner_name || doc.owner || '').toLowerCase());
+          searchFields.push(String(doc.owner_surname || '').toLowerCase()); 
         }
         return searchFields.some(field => field.includes(searchLower));
       });
@@ -130,6 +131,16 @@ const TempDocumentArchive = ({ user }) => {
       const filterValue = columnFilters[column];
       if (filterValue && filterValue.trim() !== '') {
         filtered = filtered.filter(doc => {
+          if (column === 'owner') {
+            const ownerName = String(doc.owner_name || doc.owner || '').toLowerCase();
+            const ownerSurname = String(doc.owner_surname || '').toLowerCase();
+            const fullName = `${ownerName} ${ownerSurname}`.trim().toLowerCase();
+            const lowerFilterValue = filterValue.toLowerCase();
+            
+            return ownerName.includes(lowerFilterValue) || 
+                   ownerSurname.includes(lowerFilterValue) || 
+                   fullName.includes(lowerFilterValue);
+          }
           const docValue = doc[column];
           if (docValue === null || docValue === undefined) return false;
           const lowerFilterValue = filterValue.toLowerCase();
@@ -354,6 +365,13 @@ const TempDocumentArchive = ({ user }) => {
           aValue = aDate.getTime();
           bValue = bDate.getTime();
         }
+      }
+      else if (key === 'owner') {
+        // Special handling for owner - use full name for sorting
+        const aFullName = `${a.owner_name || a.owner || ''} ${a.owner_surname || ''}`.trim().toLowerCase();
+        const bFullName = `${b.owner_name || b.owner || ''} ${b.owner_surname || ''}`.trim().toLowerCase();
+        aValue = aFullName;
+        bValue = bFullName;
       } else {
         aValue = String(aValue || '').toLowerCase();
         bValue = String(bValue || '').toLowerCase();
@@ -536,20 +554,23 @@ const TempDocumentArchive = ({ user }) => {
                   <thead className="table-light sticky-top">
                     <tr>
                       {/* ID column removed */}
-                      <th style={{ width: '120px', cursor: 'pointer' }} onClick={() => handleSort('filename')} title={t('sortByFilename')}>{t('filename')}
+                      <th style={{ width: '24px', minWidth: '24px', maxWidth: '24px', padding: 0}} onClick={() => handleSort('id')} title={t('sortById')}>ID<span style={{ fontSize: '1em', color: sortConfig.key === 'id' ? '#1976d2' : '#888' }}>
+                          {sortConfig.key === 'id' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}
+                        </span></th>
+                      <th style={{ width: '240px', cursor: 'pointer' }} onClick={() => handleSort('filename')} title={t('sortByFilename')}>{t('filename')}
                         <span style={{ fontSize: '1em', color: sortConfig.key === 'filename' ? '#1976d2' : '#888' }}>
                           {sortConfig.key === 'filename' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}
                         </span>
                       </th>
                       {(user?.role === 'admin' || user?.role === 'superuser') && (
-                        <th style={{ width: '120px', cursor: 'pointer' }} onClick={() => handleSort('owner')} title={t('sortByOwner')}>
+                        <th style={{ width: '50px', cursor: 'pointer' }} onClick={() => handleSort('owner')} title={t('sortByOwner')}>
                           {t('owner')}
                           <span style={{ fontSize: '1em', color: sortConfig.key === 'owner' ? '#1976d2' : '#888' }}>
                           {sortConfig.key === 'owner' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}
                         </span></th>
                       )}
-                      <th style={{ width: '90px', cursor: 'pointer' }} className="text-center" onClick={() => handleSort('created_at')} title={t('sortByDate')}>
-                        {t('date')}
+                      <th style={{ width: '90px', cursor: 'pointer',paddingLeft: '50px' }} className="text-center" onClick={() => handleSort('created_at')} title={t('sortByDate')}>
+                        Date d'import
                         <span style={{ fontSize: '1em', color: sortConfig.key === 'created_at' ? '#1976d2' : '#888' }}>
                           {sortConfig.key === 'created_at' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}
                         </span></th>
@@ -557,9 +578,10 @@ const TempDocumentArchive = ({ user }) => {
                     </tr>
                     <tr className="bg-light">
                       {/* ID filter removed */}
+                      <th></th>
                       <th><input type="text" className="form-control form-control-sm" placeholder={t('filenamePlaceholder')} value={columnFilters.filename} onChange={(e) => handleColumnFilterChange('filename', e.target.value)} /></th>
                       {(user?.role === 'admin' || user?.role === 'superuser') && (
-                        <th><input type="text" className="form-control form-control-sm" placeholder={t('ownerPlaceholder')} value={columnFilters.owner} onChange={(e) => handleColumnFilterChange('owner', e.target.value)} /></th>
+                        <th><input type="text" className="form-control form-control-sm" placeholder={t('ownerPlaceholder')} value={columnFilters.owner} onChange={(e) => handleColumnFilterChange('owner', e.target.value)} style={{width: '160px'}}/></th>
                       )}
                       <th></th>
                       <th></th>
@@ -569,8 +591,9 @@ const TempDocumentArchive = ({ user }) => {
                 <div style={{flex: 1, overflowY: 'auto', minHeight: 0}}>
                   <table className="table table-sm table-hover mb-0" style={{tableLayout: 'fixed', width: '100%'}}>
                     <colgroup>
-                      <col style={{width: '120px'}} />
-                      {(user?.role === 'admin' || user?.role === 'superuser') && <col style={{width: '120px'}} />}
+                      <col style={{width: '24px', minWidth: '24px', maxWidth: '24px', padding: 0}} />
+                      <col style={{width: '280px'}} />
+                      {(user?.role === 'admin' || user?.role === 'superuser') && <col style={{width: '90px'}} />}
                       <col style={{width: '90px'}} />
                       <col style={{width: '120px'}} />
                     </colgroup>
@@ -586,6 +609,7 @@ const TempDocumentArchive = ({ user }) => {
                             className="table-row-hover"
                           >
                             {/* ID cell removed */}
+                            <td style={{width: '24px', minWidth: '24px', maxWidth: '24px', padding: 0}}>{doc.id}</td>
                             <td style={{width: '120px'}}>{doc.filename}</td>
                             {(user?.role === 'admin' || user?.role === 'superuser') && <td style={{width: '120px'}}>{`${doc.owner_name || doc.owner || ''} ${doc.owner_surname || ''}`.trim()}</td>}
                             <td className="text-center" style={{width: '90px'}}>{new Date(doc.created_at).toLocaleDateString()}</td>

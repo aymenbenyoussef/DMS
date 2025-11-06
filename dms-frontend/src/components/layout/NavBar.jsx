@@ -428,22 +428,9 @@ const NavBar = ({ user, onLogout, toggleSidebar }) => {
                   <div className="dropdown-columns">
                     {/* Document Management (same as admin) */}
                     <div className="dropdown-column">
-                      <div className="category-header">
-                        <span className="category-icon"><BiData size={16} /></span>
-                        <span className="category-title">{t('documentManagement')}</span>
-                      </div>
-                      <div className="category-items">
-                        <button className="dropdown-item" onClick={() => { setShowDmsTempModal(true); setShowAdminTools(false); }}>
-                          <span className="dropdown-icon"><BiFile size={16} /></span>
-                          <span>{t('uploadFile')}</span>
-                        </button>
-                        <Link to="/dms/rapports" className="dropdown-item" onClick={() => setShowAdminTools(false)}>
-                          <span className="dropdown-icon"><BiBarChart size={16} /></span>
-                          <span>{t('dms')}</span>
-                        </Link>
-                      </div>
+
                       {/* Password Reset Section */}
-                      <div className="category-header" style={{marginTop: '2rem'}}>
+                      <div className="category-header" style={{marginTop: '0rem'}}>
                         <span className="category-icon"><BiLock size={16} /></span>
                         <span className="category-title">{t('security')}</span>
                       </div>
