@@ -80,6 +80,15 @@ const AdminPartners = ({ user }) => {
   const exportMenuRef = useRef(null);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
+  // Central auto-hide for toasts: hide after 5 seconds unless user closes earlier
+  useEffect(() => {
+    if (!toast.visible) return;
+    const id = setTimeout(() => {
+      setToast(t => ({ ...t, visible: false }));
+    }, 5000);
+    return () => clearTimeout(id);
+  }, [toast.visible]);
+
   const [formData, setFormData] = useState({
     company_name: '',
     trade_name: '',
@@ -421,7 +430,9 @@ const AdminPartners = ({ user }) => {
   const handleAddPartner = (e) => {
     setGlobalLimitError('');
     if (maxExternalEntities !== null && partners.length >= maxExternalEntities) {
-      setGlobalLimitError('Vous avez atteint le nombre maximal d entités externes. Veuillez contacter le support technique.');
+      const msg = 'Vous avez atteint le nombre maximal d entités externes. Veuillez contacter le support technique.';
+      setGlobalLimitError(msg);
+      setToast({ visible: true, message: msg, type: 'error' });
       return;
     }
     navigate('/AddPartner');

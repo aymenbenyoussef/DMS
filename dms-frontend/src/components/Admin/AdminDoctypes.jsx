@@ -81,6 +81,15 @@ const AdminDoctypes = ({ user }) => {
   const exportMenuRef = useRef(null);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
+  // Central auto-hide for toasts: hide after 5 seconds unless user closes earlier
+  useEffect(() => {
+    if (!toast.visible) return;
+    const id = setTimeout(() => {
+      setToast(t => ({ ...t, visible: false }));
+    }, 5000);
+    return () => clearTimeout(id);
+  }, [toast.visible]);
+
   useEffect(() => {
     fetchDoctypes();
     fetchAllCompanies();

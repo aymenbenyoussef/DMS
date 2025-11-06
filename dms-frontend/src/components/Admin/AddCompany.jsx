@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import API from '../../api';
 import './AdminUsers.css'; // or AdminCompanies.css
 import { useNavigate } from 'react-router-dom';
@@ -17,6 +17,13 @@ const AdminCompanies = ({ user }) => {
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
   const [success, setSuccess] = useState('');
+  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+  // auto-hide toast after 5s
+  useEffect(() => {
+    if (!toast.visible) return;
+    const id = setTimeout(() => setToast(t => ({ ...t, visible: false })), 5000);
+    return () => clearTimeout(id);
+  }, [toast.visible]);
   const navigate = useNavigate();
   
   const handleInputChange = (e) => {
@@ -64,7 +71,9 @@ const AdminCompanies = ({ user }) => {
     };
     await API.companies.create(dataToSend);
 
-    setSuccess('Entité créée avec succès !');
+  const successMsg = 'Entité créée avec succès !';
+  setSuccess(successMsg);
+  setToast({ visible: true, message: successMsg, type: 'success' });
     setFormData({
       name: '',
       address: '',
@@ -85,9 +94,9 @@ const AdminCompanies = ({ user }) => {
       err.response?.data?.msg ||
       "Error occurred while creating the entity.";
 
-    // If duplicate error, set field-level messages
+    // If duplicate error, set field-level messages; otherwise set global error
     if (errorMsg.toLowerCase().includes("name") || errorMsg.toLowerCase().includes("email")) {
-        const duplicateErrors = {};
+      const duplicateErrors = {};
       if (errorMsg.toLowerCase().includes("name")) {
         duplicateErrors.name = "Ce nom d'entité existe déjà.";
       }
@@ -95,22 +104,29 @@ const AdminCompanies = ({ user }) => {
         duplicateErrors.email = "Cet email est déjà utilisé.";
       }
       setFieldErrors(duplicateErrors);
+      // also show a concise toast
+      setToast({ visible: true, message: 'Erreur: données en doublon', type: 'error' });
     } else {
       setFieldErrors({ global: errorMsg });
+      setToast({ visible: true, message: errorMsg, type: 'error' });
     }
-
-    
-  } finally {
+    } finally {
     setLoading(false);
   }
 };
 
   return (
     <div className="admin-users">
+      <div className={`top-toast ${toast.type === 'error' ? 'top-toast-error' : 'top-toast-success'} ${toast.visible ? 'show' : ''}`} role="status" aria-live="polite">
+        <div className="top-toast-inner">
+          <div className="top-toast-icon">{toast.type === 'error' ? '✖️' : '✓'}</div>
+          <div className="top-toast-message">{toast.message}</div>
+          <button className="top-toast-close" onClick={() => setToast(t => ({ ...t, visible: false }))} aria-label="Fermer la notification">✕</button>
+        </div>
+      </div>
       {/* Return arrow */}
       <div className="return-arrow-container">
         <Link to="/companies" className="return-arrow" title="Retour aux entités">
-          <span className="return-arrow-icon">←</span>
           <span className="return-arrow-text">Retour aux entités</span>
         </Link>
       </div>

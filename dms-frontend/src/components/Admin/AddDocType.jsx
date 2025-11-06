@@ -112,7 +112,6 @@ const AddDocType = () => {
       {/* Return arrow */}
       <div className="return-arrow-container">
         <Link to="/doctypes" className="return-arrow" title="Retour aux types de documents">
-          <span className="return-arrow-icon">←</span>
           <span className="return-arrow-text">Retour aux types de documents</span>
         </Link>
       </div>

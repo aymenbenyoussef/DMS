@@ -42,11 +42,30 @@ const AdminCompanies = ({ user }) => {
   const exportMenuRef = useRef(null);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
+  // Central auto-hide for toasts: hide after 5 seconds unless user closes earlier
+  useEffect(() => {
+    if (!toast.visible) return;
+    const id = setTimeout(() => {
+      setToast(t => ({ ...t, visible: false }));
+    }, 5000);
+    return () => clearTimeout(id);
+  }, [toast.visible]);
+
   useEffect(() => {
     fetchCompanies();
     API.settings.getSettings().then(res => {
       setMaxEntities(res.data.maxEntities);
     });
+  }, []);
+
+  // Listen for company creation events (from AddCompany) and show a toast + refresh list
+  useEffect(() => {
+    const handleCompanyAdded = () => {
+      setToast({ visible: true, message: 'Entité créée avec succès', type: 'success' });
+      fetchCompanies();
+    };
+    window.addEventListener('companyAdded', handleCompanyAdded);
+    return () => window.removeEventListener('companyAdded', handleCompanyAdded);
   }, []);
 
   useEffect(() => {
@@ -257,7 +276,9 @@ const AdminCompanies = ({ user }) => {
   const handleAddEntity = (e) => {
     setGlobalLimitError('');
     if (maxEntities !== null && companies.length >= maxEntities) {
-      setGlobalLimitError('Vous avez atteint le nombre maximal d entités. Veuillez contacter le support technique.');
+      const msg = 'Vous avez atteint le nombre maximal d entités. Veuillez contacter le support technique.';
+      setGlobalLimitError(msg);
+      setToast({ visible: true, message: msg, type: 'error' });
       return;
     }
     else {

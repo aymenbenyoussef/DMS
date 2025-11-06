@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import API from '../../api';
 import './AdminUsers.css'; // Changed from AdminDashboard.css
 import { Link, useNavigate } from 'react-router-dom';
@@ -102,6 +103,22 @@ const AdminUsers = ({user ,loadingUser}) => {
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
   const navigate = useNavigate();
+
+  // Small portal-based toast renderer to avoid being clipped by parent containers
+  const TopToastPortal = ({ toastState, onClose }) => {
+    if (!toastState) return null;
+    const { visible, message, type } = toastState;
+    const toastEl = (
+      <div className={`top-toast ${type === 'error' ? 'top-toast-error' : 'top-toast-success'} ${visible ? 'show' : ''}`} role="status" aria-live="polite">
+        <div className="top-toast-inner">
+          <div className="top-toast-icon">{type === 'error' ? '✖️' : '✓'}</div>
+          <div className="top-toast-message">{message}</div>
+          <button className="top-toast-close" onClick={onClose} aria-label="Fermer la notification">✕</button>
+        </div>
+      </div>
+    );
+    return typeof document !== 'undefined' ? ReactDOM.createPortal(toastEl, document.body) : null;
+  };
 
   // Move loadData to top level so it can be called after updates
   const loadData = async () => {
@@ -333,7 +350,9 @@ const AdminUsers = ({user ,loadingUser}) => {
     setFieldErrors({});
     setGlobalLimitError('');
     if (!editingUser && maxUsers !== null && users.length >= maxUsers) {
-      setGlobalLimitError('Vous avez atteint le nombre maximal d utilisateurs. Veuillez contacter le support technique.');
+      const msg = 'Vous avez atteint le nombre maximal d utilisateurs. Veuillez contacter le support technique.';
+      setGlobalLimitError(msg);
+      setToast({ visible: true, message: msg, type: 'error' });
       return;
     }
     if (!validate()) return;
@@ -420,6 +439,16 @@ const AdminUsers = ({user ,loadingUser}) => {
   const dismissNotification = () => {
     setToast(t => ({ ...t, visible: false }));
   };
+
+  // Central auto-hide for toasts: hide after 5 seconds unless user closes earlier
+  useEffect(() => {
+    if (!toast.visible) return;
+    console.log('AdminUsers: toast visible ->', toast);
+    const id = setTimeout(() => {
+      setToast(t => ({ ...t, visible: false }));
+    }, 5000);
+    return () => clearTimeout(id);
+  }, [toast.visible]);
 
   // Retry handler: retry both
   const handleRetry = () => {
@@ -530,7 +559,9 @@ const AdminUsers = ({user ,loadingUser}) => {
   const handleAddUser = (e) => {
     setGlobalLimitError('');
     if (maxUsers !== null && users.length >= maxUsers) {
-      setGlobalLimitError('Vous avez atteint le nombre maximal d utilisateurs. Veuillez contacter le support technique');
+      const msg = 'Vous avez atteint le nombre maximal d utilisateurs. Veuillez contacter le support technique';
+      setGlobalLimitError(msg);
+      setToast({ visible: true, message: msg, type: 'error' });
       return;
     }
     navigate('/AddUsers');
@@ -555,13 +586,8 @@ const AdminUsers = ({user ,loadingUser}) => {
 
   return (
     <div className="admin-users">
-        <div className={`top-toast ${toast.type === 'error' ? 'top-toast-error' : 'top-toast-success'} ${toast.visible ? 'show' : ''}`} role="status" aria-live="polite">
-          <div className="top-toast-inner">
-            <div className="top-toast-icon">{toast.type === 'error' ? '✖️' : '✓'}</div>
-            <div className="top-toast-message">{toast.message}</div>
-            <button className="top-toast-close" onClick={() => setToast(t => ({ ...t, visible: false }))} aria-label="Fermer la notification">✕</button>
-          </div>
-        </div>
+      {/* Render toast via portal to avoid clipping by parent containers */}
+      <TopToastPortal toastState={toast} onClose={() => setToast(t => ({ ...t, visible: false }))} />
       <div className="admin-header">
         <div className="admin-tabs">
           <button 

@@ -1177,12 +1177,13 @@
   border-top: none;
 }
 
-/* Top toast (fixed above everything, including navbar) */
+/* Top toast (fixed above everything, positioned just under the navbar/search bar) */
 .top-toast {
   position: fixed;
-  top: -100px;
+  /* hidden above the viewport by default */
+  top: -120px;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(-50%) translateY(0);
   background: var(--success);
   color: white;
   padding: 0.75rem 1.25rem;
@@ -1194,14 +1195,18 @@
   gap: 0.5rem;
   font-size: 0.8125rem;
   font-weight: 500;
-  transition: top var(--transition-slow) cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  /* animate both position and opacity for a smooth slide-down */
+  transition: top 280ms cubic-bezier(0.2, 0.9, 0.2, 1), opacity 280ms ease;
+  opacity: 0;
   min-width: 250px;
   text-align: center;
   justify-content: center;
 }
 
 .top-toast.show {
-  top: 1.5rem;
+  /* place the toast just under the navbar/searchbar; relies on a CSS variable set by layout */
+  top: calc(var(--navbar-height, 56px) + 0.5rem);
+  opacity: 1;
 }
 
 .top-toast-inner {

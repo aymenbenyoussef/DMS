@@ -189,7 +189,6 @@ const AddUser = () => {
       {/* Return arrow */}
       <div className="return-arrow-container">
         <Link to="/admin/users" className="return-arrow" title="Retour aux utilisateurs">
-          <span className="return-arrow-icon">←</span>
           <span className="return-arrow-text">Retour aux utilisateurs</span>
         </Link>
       </div>
