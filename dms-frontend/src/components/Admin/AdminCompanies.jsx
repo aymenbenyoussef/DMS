@@ -607,8 +607,8 @@ const AdminCompanies = ({ user }) => {
               >
                 Annuler
               </button>
-              <button type="submit" className="btn">
-                Mettre à jour l'entité
+              <button type="submit" className="btn-primary">
+                Mettre à jour 
               </button>
             </div>
           </form>

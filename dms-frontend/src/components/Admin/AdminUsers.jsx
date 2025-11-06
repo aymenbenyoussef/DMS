@@ -944,9 +944,7 @@ const AdminUsers = ({user ,loadingUser}) => {
             </div>
 
             <div className="form-actions">
-              <button type="submit" className="btn-primary" disabled={loading}>
-                {loading ? 'Mise à jour...' : 'Mettre à jour'}
-              </button>
+              
               <button
                 type="button"
                 className="btn-secondary"
@@ -957,6 +955,9 @@ const AdminUsers = ({user ,loadingUser}) => {
                 }}
               >
                 Annuler
+              </button>
+              <button type="submit" className="btn-primary" disabled={loading}>
+                {loading ? 'Mise à jour...' : 'Mettre à jour'}
               </button>
             </div>
           </form>

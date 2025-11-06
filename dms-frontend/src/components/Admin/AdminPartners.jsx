@@ -714,7 +714,7 @@ const AdminPartners = ({ user }) => {
 >
   {/* Identité */}
   <div className="form-section" style={{ margin: 0, padding: '2px 4px' }}>
-    <h3 style={{ margin: '0 0 4px 0', fontSize: '18px' }}>Identité</h3>
+    <h3 style={{ margin: '0 0 4px 0', fontSize: '15px' }}>Identité</h3>
 
     {[
       { label: "Nom de l'entité *", name: 'company_name', placeholder: "Entrez le nom de l'entité", required: true },
@@ -730,7 +730,7 @@ const AdminPartners = ({ user }) => {
           value={formData[field.name]}
           onChange={handleInputChange}
           className={fieldErrors[field.name] ? 'input-error' : ''}
-          style={{ fontSize: '12px', padding: '2px 4px', height: 20 }}
+          style={{ fontSize: '14px', padding: '2px 4px', height: 30 }}
         />
         {fieldErrors[field.name] && <div className="field-error">{fieldErrors[field.name]}</div>}
       </div>
@@ -794,7 +794,7 @@ const AdminPartners = ({ user }) => {
       </div>
     </div>
 
-    <label style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: '11px' }}>
+    <label style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: '14px' }}>
       <input
         type="checkbox"
         name="is_active"
@@ -808,7 +808,7 @@ const AdminPartners = ({ user }) => {
 
   {/* Contact */}
   <div className="form-section" style={{ margin: 0, padding: '2px 4px' }}>
-    <h3 style={{ margin: '0 0 4px 0', fontSize: '18px' }}>Contact</h3>
+    <h3 style={{ margin: '0 0 4px 0', fontSize: '15px' }}>Contact</h3>
     {[
       { label: 'Adresse postale *', name: 'mailing_address' },
       { label: 'Adresse de facturation', name: 'billing_address' },
@@ -826,7 +826,7 @@ const AdminPartners = ({ user }) => {
           value={formData[f.name]}
           onChange={handleInputChange}
           className={fieldErrors[f.name] ? 'input-error' : ''}
-          style={{ fontSize: '12px', padding: '2px 4px', height: 20 }}
+          style={{ fontSize: '14px', padding: '2px 4px', height: 30 }}
         />
         {fieldErrors[f.name] && <div className="field-error">{fieldErrors[f.name]}</div>}
       </div>
@@ -835,7 +835,7 @@ const AdminPartners = ({ user }) => {
 
   {/* Facturation et paiement */}
   <div className="form-section" style={{ margin: 0, padding: '2px 4px' }}>
-    <h3 style={{ margin: '0 0 4px 0', fontSize: '18px' }}>Facturation et paiement</h3>
+    <h3 style={{ margin: '0 0 4px 0', fontSize: '15px' }}>Facturation et paiement</h3>
     {[
       { label: 'Conditions de paiement', name: 'payment_terms' },
       { label: 'Conditions de facturation', name: 'billing_terms' },
@@ -850,22 +850,22 @@ const AdminPartners = ({ user }) => {
           placeholder={`Entrez ${f.label.toLowerCase()}`}
           value={formData[f.name]}
           onChange={handleInputChange}
-          style={{ fontSize: '12px', padding: '2px 4px', height: 20 }}
+          style={{ fontSize: '14px', padding: '2px 4px', height: 30 }}
         />
       </div>
     ))}
 
     <div className="form-group" style={{ marginBottom: 2 }}>
-      <label style={{ marginBottom: 1, display: 'block',fontSize: '18px' }}>Notes</label>
+      <label style={{ marginBottom: 1, display: 'block',fontSize: '15px' }}>Notes</label>
       <textarea
         name="notes"
         placeholder="Entrez les notes supplémentaires"
         value={formData.notes}
         onChange={handleInputChange}
         rows="3"
-        style={{ fontSize: '12px', padding: '3px 4px', resize: 'vertical' }}
+        style={{ fontSize: '14px', padding: '3px 4px', resize: 'vertical' }}
       />
-    </div><br></br><br></br><br></br><br></br><br></br><br></br>
+    </div><br></br><br></br><br></br>
     <div className="form-actions">
               <button
                 type="button"
@@ -878,12 +878,12 @@ const AdminPartners = ({ user }) => {
               >
                 Annuler
               </button>
-              <button type="submit" className="btn">
-                Mettre à jour le partenaire
+              <button type="submit" className="btn-primary">
+                Mettre à jour 
               </button>
             </div>
-  </div>
-</div>
+            </div>
+          </div>
 
             {globalErrors.length > 0 && (
               <div className="alert alert-error">

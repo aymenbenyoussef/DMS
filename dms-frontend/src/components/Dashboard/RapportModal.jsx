@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import api from '../../api';
 import './ModalStyles.css'; // Fichier CSS partagé pour les styles
+import EditDocumentForm from './EditDocumentForm';
 
 function RapportModal(props) {
   const {
@@ -17,7 +18,7 @@ function RapportModal(props) {
     ocrText,
     currentDocument,
     relatedDocuments,
-    
+    handleEditDocument,
     handleSendEmail,
     formatFileSize,
     getDoctypeName
@@ -33,6 +34,8 @@ function RapportModal(props) {
   const [localOcrText, setLocalOcrText] = useState(ocrText || '');
   const [loadingRapport, setLoadingRapport] = useState(false);
   const [loadingOcr, setLoadingOcr] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   const overlayRef = useRef(null);
   const dialogRef = useRef(null);
@@ -493,6 +496,7 @@ function RapportModal(props) {
             <div className="sidebar-content">
               {currentDocument ? (
                 <>
+                  
                   <div className="sidebar-section">
                     <h3 className="sidebar-title">Informations sur le document</h3>
                     <div className="info-grid">
@@ -538,62 +542,92 @@ function RapportModal(props) {
                   </div>
 
                   <div className="sidebar-actions">
+                  
+                    <button
+                      className="action-btn"
+                      onClick={() => {
+                        onClose && onClose();
+                        handleEditDocument && handleEditDocument(currentDocument);
+                      }}
+                      style={{
+                        backgroundColor: '#ff9800',
+                        border: '1px solid #ff9800',
+                        color: 'white',
+                        padding: '8px 16px',
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        transition: 'all 0.2s ease',
+                        fontFamily: 'inherit',
+                        width: '100%'
+                      }}
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M12 20h9"/>
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
+                      </svg>
+                      Modifier
+                    </button>
+                  
                   <button 
-  className="action-btn action-btn--gray" 
-  onClick={handleContextDownload}
-  style={{
-    backgroundColor: '#6c757d',
-    border: '1px solid #6c757d',
-    color: 'white',
-    padding: '8px 16px',
-    borderRadius: '4px',
-    fontSize: '14px',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    transition: 'all 0.2s ease',
-    fontFamily: 'inherit'
-  }}
-  
->
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-    <polyline points="7,10 12,15 17,10"/>
-    <line x1="12" y1="15" x2="12" y2="3"/>
-  </svg>
-  Télécharger
-</button>
+                    className="action-btn action-btn--gray" 
+                    onClick={handleContextDownload}
+                    style={{
+                      backgroundColor: '#6c757d',
+                      border: '1px solid #6c757d',
+                      color: 'white',
+                      padding: '8px 16px',
+                      borderRadius: '4px',
+                      fontSize: '14px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      transition: 'all 0.2s ease',
+                      fontFamily: 'inherit'
+                    }}
+                    
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                      <polyline points="7,10 12,15 17,10"/>
+                      <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Télécharger
+                  </button>
 
-<button 
-  className="action-btn action-btn--gray" 
-  onClick={() => {
-    onClose && onClose();
-    handleSendEmail && handleSendEmail(currentDocument);
-  }}
-  style={{
-    backgroundColor: '#6c757d',
-    border: '1px solid #6c757d',
-    color: 'white',
-    padding: '8px 16px',
-    borderRadius: '4px',
-    fontSize: '14px',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    transition: 'all 0.2s ease',
-    fontFamily: 'inherit'
-  }}
-  
-  
->
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-    <polyline points="22,6 12,13 2,6"/>
-  </svg>
-  Envoyer
-</button>
+                  <button 
+                    className="action-btn action-btn--gray" 
+                    onClick={() => {
+                      onClose && onClose();
+                      handleSendEmail && handleSendEmail(currentDocument);
+                    }}
+                    style={{
+                      backgroundColor: '#6c757d',
+                      border: '1px solid #6c757d',
+                      color: 'white',
+                      padding: '8px 16px',
+                      borderRadius: '4px',
+                      fontSize: '14px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      transition: 'all 0.2s ease',
+                      fontFamily: 'inherit'
+                    }}
+                    
+                    
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                      <polyline points="22,6 12,13 2,6"/>
+                    </svg>
+                    Envoyer
+                  </button>
 
 
 

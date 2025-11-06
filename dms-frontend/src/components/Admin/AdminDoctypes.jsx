@@ -557,7 +557,7 @@ const AdminDoctypes = ({ user }) => {
               >
                 Annuler
               </button>
-              <button type="submit" className="btn">
+              <button type="submit" className="btn-primary">
                 Mettre à jour
               </button>
             </div>

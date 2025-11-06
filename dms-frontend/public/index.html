@@ -5,39 +5,81 @@
     <link rel="icon" href="%PUBLIC_URL%/database.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
-    <meta
-      name="description"
-      content="Web site created using create-react-app"
-    />
+    <meta name="description" content="Document Management System" />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
-    <!--
-      manifest.json provides metadata used when your web app is installed on a
-      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
-    -->
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    <!--
-      Notice the use of %PUBLIC_URL% in the tags above.
-      It will be replaced with the URL of the `public` folder during the build.
-      Only files inside the `public` folder can be referenced from the HTML.
 
-      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
-      work correctly both with client-side routing and a non-root public URL.
-      Learn how to configure a non-root public URL by running `npm run build`.
-    -->
-    <title>DocuManager</title>
+    <!-- Default title -->
+    <title>Chargement...</title>
+
+    <script>
+      async function fetchSystemSettings(retryCount = 0) {
+        const maxRetries = 3;
+        const retryDelay = 1000; // 1 second
+        
+        // Try multiple API URLs since this runs before React proxy is active
+        const apiUrls = [
+          window.location.origin + '/api/settings',  // Proxy path
+          window.location.protocol + '//' + window.location.hostname + ':5000/api/settings',  // Direct API
+          '/api/settings'  // Relative path (might work with proxy)
+        ];
+        
+        for (const apiUrl of apiUrls) {
+          try {
+            const response = await fetch(apiUrl, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              credentials: 'include'
+            });
+            
+            if (!response.ok) {
+              console.warn('Settings API returned status:', response.status, 'from', apiUrl);
+              continue; // Try next URL
+            }
+            
+            const data = await response.json();
+            console.log('Settings API response from', apiUrl, ':', data);
+            
+            // The backend returns { systemName: "...", ... } directly
+            const systemName = data.systemName;
+            
+            if (systemName && typeof systemName === 'string' && systemName.trim() !== '') {
+              document.title = systemName.trim();
+              console.log('Title successfully updated to:', systemName);
+              return; // Success, exit function
+            } else {
+              console.warn('systemName is empty, null, or not a string:', systemName);
+            }
+          } catch (error) {
+            console.warn('Failed to fetch from', apiUrl, ':', error.message);
+            continue; // Try next URL
+          }
+        }
+        
+        // If all attempts failed and we haven't exceeded retries, try again after delay
+        if (retryCount < maxRetries) {
+          console.log('Retrying settings fetch in', retryDelay, 'ms (attempt', retryCount + 1, 'of', maxRetries + 1, ')');
+          setTimeout(() => fetchSystemSettings(retryCount + 1), retryDelay);
+        } else {
+          // If all attempts failed, use default
+          console.warn('All API attempts failed after', maxRetries + 1, 'tries, using default title');
+          document.title = 'Filora';
+        }
+      }
+    
+      // Try to fetch settings immediately and also on DOMContentLoaded
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => fetchSystemSettings());
+      } else {
+        fetchSystemSettings();
+      }
+    </script>
+    
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
-    <!--
-      This HTML file is a template.
-      If you open it directly in the browser, you will see an empty page.
-
-      You can add webfonts, meta tags, or analytics to this file.
-      The build step will place the bundled scripts into the <body> tag.
-
-      To begin the development, run `npm start` or `yarn start`.
-      To create a production bundle, use `npm run build` or `yarn build`.
-    -->
   </body>
 </html>

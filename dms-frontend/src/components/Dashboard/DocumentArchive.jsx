@@ -2418,6 +2418,7 @@ const getOneMonthAgo = () => {
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           handleSendEmail={handleSendEmail}
+          handleEditDocument={handleEditDocument}
           formatFileSize={formatFileSize}
           getDoctypeName={getDoctypeName}
           getDocumentGroup={getDocumentGroup}
