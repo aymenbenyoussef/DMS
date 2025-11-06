@@ -3272,11 +3272,36 @@ def delete_temp_document(doc_id):
     except Exception as e:
         return jsonify({'msg': str(e)}), 500
 
-@app.route('/temp_documents/<int:doc_id>/file', methods=['GET'])
+@app.route('/temp_documents/<path:doc_id>/file', methods=['OPTIONS'])
+@cross_origin()
+def temp_document_file_options(doc_id):
+    # Respond to CORS preflight without authentication
+    return make_response('', 200)
+
+
+@app.route('/temp_documents/<path:doc_id>/file', methods=['GET'])
 @jwt_required()
 def download_temp_document(doc_id):
     try:
-        temp_doc = db.execute_query("SELECT * FROM temp_documents WHERE id = %s", (doc_id,), fetch=True)
+        # Accept doc_id formats like "123" or "123_timestamp" and extract numeric prefix
+        numeric_id = None
+        if isinstance(doc_id, str):
+            if '_' in doc_id:
+                prefix = doc_id.split('_', 1)[0]
+                if prefix.isdigit():
+                    numeric_id = int(prefix)
+            elif doc_id.isdigit():
+                numeric_id = int(doc_id)
+        else:
+            try:
+                numeric_id = int(doc_id)
+            except Exception:
+                numeric_id = None
+
+        if numeric_id is None:
+            return jsonify({'msg': 'Invalid document id'}), 404
+
+        temp_doc = db.execute_query("SELECT * FROM temp_documents WHERE id = %s", (numeric_id,), fetch=True)
         if not temp_doc:
             return jsonify({'msg': 'Document not found'}), 404
         file_path = temp_doc[0]['file_path']

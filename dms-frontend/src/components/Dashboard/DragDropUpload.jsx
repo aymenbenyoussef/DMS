@@ -140,60 +140,81 @@ const DragDropUpload = ({ onUpload, onClose }) => {
     
     const hasCompany = selectedCompany;
     
-    if (!hasCompany) {
-      setIsUploading(true);
-      setUploadStatus('pending');
-      setUploadProgress(0);
-      let confirmations = [];
-      
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        try {
-          const response = await API.documents.uploadTempFile(file);
-          confirmations.push({
-            sessionId: null,
-            extractedData: null,
-            file,
-            isTempUpload: true,
-            tempDocId: response.data?.files?.[0]?.id
-          });
-        } catch (error) {
-          console.error('Temp upload failed:', error);
-          confirmations.push({ error, file, isTempUpload: true });
-        }
-        setUploadProgress(Math.round(((i + 1) / files.length) * 100));
-      }
-      
-      setShowConfirmations(confirmations);
-      setConfirmationData(confirmations.map(conf => ({ confirmedDocument: null, errors: {} })));
-      setUploadStatus('processed');
-      setIsUploading(false);
-      return;
-    }
-    
+    // Always save uploads as temporary documents first so they are available
+    // in the Temp Documents archive if the user doesn't complete confirmation.
     setIsUploading(true);
     setUploadStatus('pending');
     setUploadProgress(0);
+
     let confirmations = [];
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      try {
-        const response = await API.documents.uploadSingleFile(
-          file, 
-          selectedCompany.id, 
-          selectedDoctype?.id || null
-        );
-        confirmations.push({
-          sessionId: response.data?.session_id,
-          extractedData: response.data?.extracted_data,
-          file
-        });
-      } catch (error) {
-        console.error('Upload failed:', error);
-        confirmations.push({ error, file });
+
+    try {
+      // Upload all files to temp storage (backend will create temp documents)
+      const tempResp = await API.tempDocuments.upload(files);
+      // Notify other components (like the sidebar) that temp docs exist
+      window.dispatchEvent(new Event('TempDocumentsUploaded'));
+
+      const tempFiles = tempResp.data?.files || [];
+
+      // For each original File, trigger OCR processing which returns a session id
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        // try to find matching temp file entry by filename
+        const matchedTemp = tempFiles.find(tf => tf.filename === file.name) || tempFiles[i];
+        const tempDocId = matchedTemp?.id || null;
+        try {
+          const response = await API.documents.uploadSingleFile(
+            file,
+            selectedCompany?.id || null,
+            selectedDoctype?.id || null
+          );
+          confirmations.push({
+            sessionId: response.data?.session_id,
+            extractedData: response.data?.extracted_data,
+            file,
+            tempDocId,
+            isTempUpload: true
+          });
+        } catch (error) {
+          console.error('Processing (OCR) failed for file:', file.name, error);
+          // still keep the tempDocId so the file remains in temp storage
+          confirmations.push({ error, file, tempDocId, isTempUpload: true });
+        }
+        setUploadProgress(Math.round(((i + 1) / files.length) * 100));
       }
-      setUploadProgress(Math.round(((i + 1) / files.length) * 100));
+    } catch (err) {
+      // If temp upload as batch failed, fall back to per-file temp upload
+      console.error('Batch temp upload failed, trying per-file upload', err);
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        try {
+          const tempResp = await API.tempDocuments.upload([file]);
+          const tempDocId = tempResp.data?.files?.[0]?.id || null;
+          try {
+            const response = await API.documents.uploadSingleFile(
+              file,
+              selectedCompany?.id || null,
+              selectedDoctype?.id || null
+            );
+            confirmations.push({
+              sessionId: response.data?.session_id,
+              extractedData: response.data?.extracted_data,
+              file,
+              tempDocId,
+              isTempUpload: true
+            });
+          } catch (error) {
+            console.error('Processing (OCR) failed for file:', file.name, error);
+            confirmations.push({ error, file, tempDocId, isTempUpload: true });
+          }
+        } catch (error) {
+          console.error('Temp upload failed for file:', file.name, error);
+          confirmations.push({ error, file });
+        }
+        setUploadProgress(Math.round(((i + 1) / files.length) * 100));
+      }
     }
+
     setShowConfirmations(confirmations);
     setConfirmationData(confirmations.map(conf => ({ confirmedDocument: null, errors: {} })));
     setUploadStatus('processed');
@@ -210,14 +231,9 @@ const DragDropUpload = ({ onUpload, onClose }) => {
 
   const handleConfirmAll = async () => {
     const hasTempUploads = showConfirmations.some(conf => conf.isTempUpload);
-    
-    if (hasTempUploads) {
-      setUploadStatus('completed');
-      setTimeout(() => {
-        onClose();
-      }, 2000);
-      return;
-    }
+
+    // if temp uploads exist, we'll still perform validation and confirmation
+    // and after successful confirmation we'll delete the corresponding temp documents
     
     let hasError = false;
     for (let i = 0; i < confirmationData.length; i++) {
@@ -254,6 +270,16 @@ const DragDropUpload = ({ onUpload, onClose }) => {
               status: 'confirmed',
               partner_id: savedDoc.partner_id
             });
+            // If this file was stored as a temp document, delete the temp entry
+            if (conf.tempDocId) {
+              try {
+                await API.tempDocuments.delete(conf.tempDocId);
+                // notify other components that temp documents changed
+                window.dispatchEvent(new Event('TempDocumentsUploaded'));
+              } catch (delErr) {
+                console.error('Failed to delete temp document', conf.tempDocId, delErr);
+              }
+            }
           }
         }
       }
@@ -338,7 +364,8 @@ const DragDropUpload = ({ onUpload, onClose }) => {
     const validFiles = showConfirmations.filter(conf => !conf.error).map(conf => ({
       sessionId: conf.sessionId,
       extractedData: conf.extractedData,
-      filename: conf.file?.name
+      filename: conf.file?.name,
+      temp_id: conf.tempDocId || conf.temp_id || null
     }));
     const erroredFiles = showConfirmations.filter(conf => conf.error);
 
@@ -408,6 +435,15 @@ const DragDropUpload = ({ onUpload, onClose }) => {
                             status: 'confirmed',
                             partner_id: savedDoc.partner_id
                           });
+                            // delete temp document if present
+                            if (conf.tempDocId) {
+                              try {
+                                await API.tempDocuments.delete(conf.tempDocId);
+                                window.dispatchEvent(new Event('TempDocumentsUploaded'));
+                              } catch (delErr) {
+                                console.error('Failed to delete temp document', conf.tempDocId, delErr);
+                              }
+                            }
                         }
                       }
                     }

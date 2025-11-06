@@ -248,9 +248,16 @@ const DocumentConfirmationForm = ({
 
   // Update preview when active file changes: use handleViewDocument
   useEffect(() => {
+    // Reset preview immediately so UI doesn't show previous file while loading
+    setPreviewType('');
+    setPreviewUrl('');
+    setPreviewText('');
+    setPreviewTitle('');
+
     if (files && files.length > 0 && files[activeFileIndex]) {
       handleViewDocument(files[activeFileIndex]);
     }
+
     return () => {
       if (objectUrlRef.current) {
         try { window.URL.revokeObjectURL(objectUrlRef.current); } catch(e){}
