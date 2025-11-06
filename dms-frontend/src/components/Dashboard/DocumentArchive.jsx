@@ -14,6 +14,7 @@ import RapportModal from './RapportModal';
 import ShareModal from './ShareModal';
 
 const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
+  const isDoctypeScoped = Boolean(selectedDoctype);
   // Bulk delete handler
   const handleBulkDelete = async (documentIds) => {
     try {
@@ -1465,15 +1466,21 @@ const getOneMonthAgo = () => {
                         <button
                           className="form-select form-select-sm text-start"
                           type="button"
-                          onClick={() =>
-                            setOpenDropdownId(openDropdownId === 'doctype-filter' ? null : 'doctype-filter')
-                          }
+                          disabled={isDoctypeScoped}
+                          style={isDoctypeScoped ? { backgroundColor: '#e9ecef', color: '#6c757d', cursor: 'not-allowed' } : undefined}
+                          title={isDoctypeScoped ? 'Le type de document est fixé dans ce contexte' : undefined}
+                          onClick={() => {
+                            if (isDoctypeScoped) return;
+                            setOpenDropdownId(openDropdownId === 'doctype-filter' ? null : 'doctype-filter');
+                          }}
                         >
-                          {selectedDoctypeFilters.length === 0
-                            ? 'Sélectionner...'
-                            : `${selectedDoctypeFilters.length} sélectionné(s)`}
+                          {isDoctypeScoped
+                            ? (selectedDoctype?.name || 'Type fixé')
+                            : (selectedDoctypeFilters.length === 0
+                                ? 'Sélectionner...'
+                                : `${selectedDoctypeFilters.length} sélectionné(s)`)}
                         </button>
-                        {openDropdownId === 'doctype-filter' && (
+                        {!isDoctypeScoped && openDropdownId === 'doctype-filter' && (
                           <div
                             className="dropdown-menu show"
                             style={{
@@ -1490,6 +1497,7 @@ const getOneMonthAgo = () => {
                               className="form-control form-control-sm mb-2"
                               value={doctypeSearchTerm}
                               onChange={(e) => setDoctypeSearchTerm(e.target.value)}
+                              disabled={isDoctypeScoped}
                             />
                             {filteredDoctypes.length === 0 ? (
                               <div className="text-muted small">Aucun type</div>
@@ -1506,6 +1514,7 @@ const getOneMonthAgo = () => {
                                     id={`doctype-filter-${idx}`}
                                     checked={selectedDoctypeFilters.includes(doctype.id)}
                                     onChange={() => handleDoctypeFilterChange(doctype.id)}
+                                    disabled={isDoctypeScoped}
                                   />
                                   <label
                                     className="form-check-label"
