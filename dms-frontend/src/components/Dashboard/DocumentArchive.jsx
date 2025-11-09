@@ -1220,74 +1220,7 @@ const getOneMonthAgo = () => {
                 )}
               </h4>
               <div className="d-flex gap-2 action-buttons align-items-center">
-                {isGlobalActionMode && (
-                  <>
-                    <button
-                      className="btn btn-outline-secondary btn-sm"
-                      onClick={() => {
-                        setIsGlobalActionMode(false);
-                        setGlobalActionType('');
-                        setCheckedDocuments([]);
-                      }}
-                    >
-                      <i className="fas fa-times me-1"></i>
-                      Annuler
-                    </button>
-                    <button
-                      className="btn btn-outline-success btn-sm"
-                      disabled={checkedDocuments.length === 0}
-                      style={checkedDocuments.length === 0 ? { color: 'black' } : {}}
-                      onClick={() => {
-                        if (checkedDocuments.length === 0) return;
-                        if (globalActionType === 'delete') {
-                          setIsBulkDeleteModalOpen(true);
-                        } else if (globalActionType === 'send') {
-                          // Multi-file send: collect checked documents and open ShareModal
-                          const docsToSend = documents.filter(doc => checkedDocuments.includes(doc.id));
-                          setSelectedDocuments(docsToSend);
-                          setCurrentDocument(null); // Not a single doc
-                          setDisplayedEmailFilename('');
-                          setEmailSubject('');
-                          setEmailMessage('');
-                          setSelectedRecipients([]);
-                          setSelectedEmailTypes([]);
-                          setEmailError('');
-                          setEmailSuccess('');
-                          // Fetch available email types and users for multi-file
-                          // For multi-file, intersect available types and union users
-                          if (docsToSend.length > 0) {
-                            Promise.all([
-                              Promise.all(docsToSend.map(doc => API.email.getDocumentInfo(doc.id))),
-                              API.email.getUsersForSelection(selectedCompany?.id)
-                            ]).then(([typesResponses, usersResponse]) => {
-                              // Intersect available types across all selected docs
-                              const allTypes = typesResponses.map(r => r.data.available_types || []);
-                              let intersectedTypes = allTypes[0] || [];
-                              for (let i = 1; i < allTypes.length; i++) {
-                                intersectedTypes = intersectedTypes.filter(typeObj =>
-                                  allTypes[i].some(t => t.type === typeObj.type)
-                                );
-                              }
-                              setAvailableEmailTypes(intersectedTypes);
-                              setEmailUsers(usersResponse.data.users || []);
-                              setIsEmailModalOpen(true);
-                            }).catch(error => {
-                              setEmailError("Erreur lors de la préparation de l'email : " + (error.response?.data?.msg || error.message));
-                              setIsEmailModalOpen(true);
-                            });
-                          } else {
-                            setAvailableEmailTypes([]);
-                            setEmailUsers([]);
-                            setIsEmailModalOpen(true);
-                          }
-                        }
-                      }}
-                    >
-                      <i className="fas fa-check me-1"></i>
-                      Confirmer
-                    </button>
-                  </>
-                )}
+                {/* Global action controls will appear inside the table header cell for mass actions. */}
       {/* Bulk Delete Confirmation Modal - matches single delete modal design */}
       {isBulkDeleteModalOpen && (
         <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
@@ -1342,26 +1275,7 @@ const getOneMonthAgo = () => {
           </div>
         </div>
       )}
-                <div className="dropdown">
-                  <button
-                    className="btn btn-outline-secondary btn-sm dropdown-toggle no-hover"
-                    onClick={() => setGlobalActionMenuOpen(!globalActionMenuOpen)}
-                    ref={globalActionMenuRef}
-                  >
-                    <i className="fas fa-cogs me-1"></i>
-                    Edition en masse
-                  </button>
-                  {globalActionMenuOpen && (
-                    <div className="dropdown-menu show">
-                      <button className="dropdown-item" onClick={() => { setIsGlobalActionMode(true); setGlobalActionType('delete'); setGlobalActionMenuOpen(false); }}>
-                        <i className="fas fa-trash-alt me-2"></i>Supprimer
-                      </button>
-                      <button className="dropdown-item" onClick={() => { setIsGlobalActionMode(true); setGlobalActionType('send'); setGlobalActionMenuOpen(false); }}>
-                        <i className="fas fa-paper-plane me-2"></i>Envoyer
-                      </button>
-                    </div>
-                  )}
-                </div>
+                
                 <button
                   className="btn btn-outline-secondary btn-sm btn-filter-toggle no-hover"
                   onClick={() => setFilterDropdownOpen(!filterDropdownOpen)}
@@ -1374,7 +1288,7 @@ const getOneMonthAgo = () => {
                   className="btn btn-outline-secondary btn-sm btn-import"
                   onClick={openUploadModal}
                 >
-                  <UploadIcon className="me-1" width="16" height="16" />
+                  <UploadIcon className="me-1" width="25" height="25" />
                   Importer des documents
                 </button>
                 <div className="dropdown">
@@ -1746,11 +1660,9 @@ const getOneMonthAgo = () => {
                         title="Trier par ID"
                       >
                         <div className="d-flex align-items-center justify-content-start gap-1">
-                          {getSortIcon('id')}
+                          
                           <span>ID</span>
-                          <span style={{ fontSize: '1em', color: sortConfig.key === 'id' ? '#1976d2' : '#888' }}>
-                          {sortConfig.key === 'id' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}
-                        </span>
+                          {getSortIcon('id')}
                         </div>
                       </th>
 
@@ -1761,11 +1673,9 @@ const getOneMonthAgo = () => {
                         title="Trier par nom de document"
                       >
                         <div className="d-flex align-items-center justify-content-start gap-1">
-                          {getSortIcon('filename')}
+                          
                           <span>Document</span>
-                          <span style={{ fontSize: '1em', color: sortConfig.key === 'filename' ? '#1976d2' : '#888' }}>
-                          {sortConfig.key === 'filename' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}
-                        </span>
+                          {getSortIcon('filename')}
                         </div>
                       </th>
 
@@ -1776,11 +1686,9 @@ const getOneMonthAgo = () => {
                         title="Trier par partenaire"
                       >
                         <div className="d-flex align-items-center justify-content-start gap-1">
-                          {getSortIcon('partner_name')}
+                          
                           <span>Partenaire</span>
-                          <span style={{ fontSize: '1em', color: sortConfig.key === 'partner_name' ? '#1976d2' : '#888' }}>
-                          {sortConfig.key === 'partner_name' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}
-                        </span>
+                          {getSortIcon('partner_name')}
                         </div>
                       </th>
 
@@ -1791,11 +1699,9 @@ const getOneMonthAgo = () => {
                         title="Trier par facturable"
                       >
                         <div className="d-flex align-items-center justify-content-start gap-1">
-                          {getSortIcon('billable')}
+                          
                           <span>Déductible</span>
-                          <span style={{ fontSize: '1em', color: sortConfig.key === 'billable' ? '#1976d2' : '#888' }}>
-                          {sortConfig.key === 'billable' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}
-                        </span>
+                          {getSortIcon('billable')}
                         </div>
                       </th>
 
@@ -1806,11 +1712,9 @@ const getOneMonthAgo = () => {
                         title="Trier par TVA"
                       >
                         <div className="d-flex align-items-center justify-content-start gap-1">
-                          {getSortIcon('tva')}
+                          
                           <span>TVA</span>
-                          <span style={{ fontSize: '1em', color: sortConfig.key === 'tva' ? '#1976d2' : '#888' }}>
-                          {sortConfig.key === 'tva' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}
-                        </span>
+                          {getSortIcon('tva')}
                         </div>
                       </th>
 
@@ -1821,11 +1725,9 @@ const getOneMonthAgo = () => {
                         title="Trier par Total HT"
                       >
                         <div className="d-flex align-items-center justify-content-start gap-1">
-                          {getSortIcon('total_ht')}
+                          
                           <span>Total HT</span>
-                          <span style={{ fontSize: '1em', color: sortConfig.key === 'total_ht' ? '#1976d2' : '#888' }}>
-                          {sortConfig.key === 'total_ht' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}
-                        </span>
+                          {getSortIcon('total_ht')}
                         </div>
                       </th>
 
@@ -1836,11 +1738,9 @@ const getOneMonthAgo = () => {
                         title="Trier par Total TTC"
                       >
                         <div className="d-flex align-items-center justify-content-start gap-1">
-                          {getSortIcon('total_ttc')}
+                          
                           <span>Total TTC</span>
-                          <span style={{ fontSize: '1em', color: sortConfig.key === 'total_ttc' ? '#1976d2' : '#888' }}>
-                          {sortConfig.key === 'total_ttc' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}
-                        </span>
+                          {getSortIcon('total_ttc')}
                         </div>
                       </th>
                       <th
@@ -1850,10 +1750,9 @@ const getOneMonthAgo = () => {
                         onClick={() => handleSort('currency')} 
                       >
                         <div className="d-flex align-items-center justify-content-start gap-1">
-                        {getSortIcon('currency')}
+                        
                           <span>Devise</span>
-                          <span style={{ fontSize: '1em', color: sortConfig.key === 'currency' ? '#1976d2' : '#888' }}>
-                          {sortConfig.key === 'currency' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                          {getSortIcon('currency')}
                         </div>
                       </th>
 
@@ -1864,11 +1763,9 @@ const getOneMonthAgo = () => {
                         title="Trier par date"
                       >
                         <div className="d-flex align-items-center justify-content-start gap-1">
-                          {getSortIcon('created_at')}
+                          
                           <span>Date</span>
-                          <span style={{ fontSize: '1em', color: sortConfig.key === 'created_at' ? '#1976d2' : '#888' }}>
-                          {sortConfig.key === 'created_at' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}
-                        </span>
+                          {getSortIcon('created_at')}
                         </div>
                       </th>
 
@@ -2037,7 +1934,129 @@ const getOneMonthAgo = () => {
                         />
                       </th>
                       <th></th>
-                      <th></th>
+                      <th className="text-center" style={{ verticalAlign: 'middle' }}>
+                        {/* Remplaced dropdown by two compact action buttons for better UX: Delete (red) and Send (blue)
+                            Buttons trigger the same global action mode as the previous dropdown options */}
+                        <div className="d-flex align-items-center justify-content-center" style={{ gap: '8px' }}>
+                          {isGlobalActionMode ? (
+                            <>
+                              <button
+                                className="btn btn-outline-secondary btn-sm"
+                                title="Annuler"
+                                onClick={() => {
+                                  setIsGlobalActionMode(false);
+                                  setGlobalActionType('');
+                                  setCheckedDocuments([]);
+                                }}
+                                aria-label="Annuler édition en masse"
+                              >
+                                Annuler
+                              </button>
+                              <button
+                                className="btn btn-outline-success btn-sm"
+                                title="Confirmer"
+                                disabled={checkedDocuments.length === 0}
+                                onClick={async () => {
+                                  if (checkedDocuments.length === 0) return;
+                                  if (globalActionType === 'delete') {
+                                    setIsBulkDeleteModalOpen(true);
+                                    // reset mass-action UI so buttons return
+                                    setIsGlobalActionMode(false);
+                                    setGlobalActionType('');
+                                    setCheckedDocuments([]);
+                                  } else if (globalActionType === 'send') {
+                                    const docsToSend = documents.filter(doc => checkedDocuments.includes(doc.id));
+                                    setSelectedDocuments(docsToSend);
+                                    setCurrentDocument(null);
+                                    setDisplayedEmailFilename('');
+                                    setEmailSubject('');
+                                    setEmailMessage('');
+                                    setSelectedRecipients([]);
+                                    setSelectedEmailTypes([]);
+                                    setEmailError('');
+                                    setEmailSuccess('');
+                                    if (docsToSend.length > 0) {
+                                      try {
+                                        const [typesResponses, usersResponse] = await Promise.all([
+                                          Promise.all(docsToSend.map(doc => API.email.getDocumentInfo(doc.id))),
+                                          API.email.getUsersForSelection(selectedCompany?.id)
+                                        ]);
+                                        const allTypes = typesResponses.map(r => r.data.available_types || []);
+                                        let intersectedTypes = allTypes[0] || [];
+                                        for (let i = 1; i < allTypes.length; i++) {
+                                          intersectedTypes = intersectedTypes.filter(typeObj =>
+                                            allTypes[i].some(t => t.type === typeObj.type)
+                                          );
+                                        }
+                                        setAvailableEmailTypes(intersectedTypes);
+                                        setEmailUsers(usersResponse.data.users || []);
+                                        setIsEmailModalOpen(true);
+                                        // reset mass-action UI
+                                        setIsGlobalActionMode(false);
+                                        setGlobalActionType('');
+                                        setCheckedDocuments([]);
+                                      } catch (error) {
+                                        setEmailError("Erreur lors de la préparation de l'email : " + (error.response?.data?.msg || error.message));
+                                        setIsEmailModalOpen(true);
+                                        // reset mass-action UI
+                                        setIsGlobalActionMode(false);
+                                        setGlobalActionType('');
+                                        setCheckedDocuments([]);
+                                      }
+                                    } else {
+                                      setAvailableEmailTypes([]);
+                                      setEmailUsers([]);
+                                      setIsEmailModalOpen(true);
+                                      // reset mass-action UI
+                                      setIsGlobalActionMode(false);
+                                      setGlobalActionType('');
+                                      setCheckedDocuments([]);
+                                    }
+                                  }
+                                }}
+                                aria-label="Confirmer édition en masse"
+                              >
+                                Confirmer
+                              </button>
+                            </>
+                          ) : (
+                            <>
+
+                              <button
+                                className="mass-action-btn mass-send"
+                                title="Edition en masse — Envoyer"
+                                aria-label="Edition en masse envoyer"
+                                onClick={() => {
+                                  setIsGlobalActionMode(true);
+                                  setGlobalActionType('send');
+                                  setCheckedDocuments([]);
+                                }}
+                              >
+                                {/* Paper plane SVG - simple */}
+                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                  <path d="M22 2L11 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                  <path d="M22 2L15 22l-4-9-9-4 20-7z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                              </button>
+                              <button
+                                className="mass-action-btn mass-delete"
+                                title="Edition en masse — Supprimer"
+                                aria-label="Edition en masse supprimer"
+                                onClick={() => {
+                                  setIsGlobalActionMode(true);
+                                  setGlobalActionType('delete');
+                                  setCheckedDocuments([]);
+                                }}
+                              >
+                                {/* Use the same inline trash SVG as the table quick-delete button for visual consistency */}
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                                  <path d="M5.5 5.5A.5.5 0 0 1 6 5h4a.5.5 0 0 1 .5.5V6h3v1h-1v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7H2V6h3v-.5zM14 3H10l-.5-1A1 1 0 0 0 8.6 1H7.4a1 1 0 0 0-.9.5L6 3H2v1h12V3z" />
+                                </svg>
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -2148,7 +2167,7 @@ const getOneMonthAgo = () => {
                                     className="btn btn-outline-secondary btn-sm"
                                     onClick={(e) => handleDropdownToggle(document.id, e)}
                                   >
-                                    <i className="fas fa-ellipsis-v">...</i>
+                                    <i className="fas fa-ellipsis-v"></i>
                                   </button>
                                   {openDropdownId === document.id && (
                                     <div
@@ -2184,7 +2203,7 @@ const getOneMonthAgo = () => {
 
                                 {/* Quick delete button to the right of the options button */}
                                 <button
-                                  className="btn btn-outline-danger btn-sm ms-2"
+                                  className="btn-outline-danger btn-sm ms-2"
                                   title="Supprimer"
                                   onClick={(e) => { e.stopPropagation(); handleDeleteDocument(document); }}
                                   aria-label={`Supprimer ${document.filename || 'document'}`}

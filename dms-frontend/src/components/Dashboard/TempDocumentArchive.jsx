@@ -6,6 +6,7 @@ import DocumentConfirmationForm from './DocumentConfirmationForm';
 import DmsTempUploadModal from './DmsTempUploadModal';
 import { exportToCSV, exportToJSON, exportToTXT, exportToExcel } from '../Admin/exportUtils';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { ReactComponent as UploadIcon } from './upload.svg';
 import './TempDocumentArchive.css';
 
 const TempDocumentArchive = ({ user }) => {
@@ -456,10 +457,10 @@ const TempDocumentArchive = ({ user }) => {
                 <i className="fas fa-history me-2 text-primary"></i>
                 {t('tempDocuments')}
               </h4>
-              <div className="d-flex gap-2 align-items-center">
-                
+              <div className="d-flex gap-2 action-buttons align-items-center">
+
                 <button
-                  className="btn btn-outline-secondary btn-sm btn-filter-toggle"
+                  className="btn btn-outline-secondary btn-sm btn-filter-toggle no-hover"
                   onClick={() => setFilterOverlayOpen(!filterOverlayOpen)}
                   title={filterOverlayOpen ? t('hideFilters') : t('showFilters')}
                 >
@@ -467,9 +468,18 @@ const TempDocumentArchive = ({ user }) => {
                   <span className="ms-1">{t('filters')}</span>
                 </button>
 
+                <button
+                  className="btn btn-outline-secondary btn-sm btn-import"
+                  onClick={() => setIsUploadModalOpen(true)}
+                  title={t('upload')}
+                >
+                  <UploadIcon className="me-1" width="25" height="25" />
+                  Importer des documents
+                </button>
+
                 <div className="dropdown">
                   <button
-                    className="btn btn-outline-secondary btn-sm dropdown-toggle"
+                    className="btn btn-outline-secondary btn-sm dropdown-toggle no-hover"
                     onClick={() => setExportMenuOpen(!exportMenuOpen)}
                     ref={exportMenuRef}
                   >
@@ -493,14 +503,6 @@ const TempDocumentArchive = ({ user }) => {
                     </div>
                   )}
                 </div>
-                <button
-                  className="btn btn-outline-secondary btn-sm align-items-center d-flex"
-                  style={{ height: '32px' }}
-                  onClick={() => setIsUploadModalOpen(true)}
-                >
-                  <i className="fas fa-upload me-1"></i>
-                  {t('upload')}
-                </button>
               </div>
             </div>
 

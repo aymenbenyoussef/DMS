@@ -248,8 +248,6 @@ function App() {
               <Route 
                 path="/User/tools" element={<UserTools user={user} loadingUser={loading} />} />  
               <Route 
-                path="/profile" element={<Profile user={user}/>} /> 
-              <Route 
                 path="/settings" element={<Settings user={user}/>} /> 
               <Route 
                 path="/settings-users" element={<SettingsUsers />} />

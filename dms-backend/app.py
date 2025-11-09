@@ -3423,8 +3423,5 @@ if __name__ == '__main__':
     # Ensure log directory exists when app starts
     ensure_log_dir()
     
-    # Print all registered routes for debugging
-    
-    
     
     app.run(host='0.0.0.0', debug=True)

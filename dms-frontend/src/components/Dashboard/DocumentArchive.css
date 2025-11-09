@@ -1,3 +1,6 @@
+/* Load a modern UI font (Inter) and fall back to system fonts. `display=swap` keeps layout stable.
+  If you prefer not to load external fonts, remove the @import below and the font stack will fall back to system fonts. */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 /* Force dropdown to open upwards visually */
 .dropdown-menu.dropdown-menu-up {
   transform: translateY(-100%) !important;
@@ -7,6 +10,7 @@
 :root {
   --bg: #ffffff;
   --surface: #ffffff;
+  --da-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --muted: #6b7280;
   --text: #111827; /* primary dark text */
   --header-bg: #f8fafc; /* light neutral header */
@@ -109,7 +113,8 @@
 /* ===== MAIN LAYOUT ===== */
 .document-archive {
   padding: 0.75rem;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  /* use variable for easier overrides */
+  font-family: var(--da-font);
   background-color: var(--bg);
   min-height: 100vh;
   font-size: 0.9rem;
@@ -187,6 +192,18 @@
   position: relative;
 }
 
+/* Make the disabled 'Confirmer' in the table header look light and friendly (scoped) */
+th.text-center .btn.btn-outline-success.btn-sm:disabled,
+th.text-center .btn.btn-outline-success.btn-sm[disabled] {
+  background-color: #eaf7ee; /* very light green */
+  border-color: #d6efda;
+  color: #2f6f3f; /* slightly muted green for text */
+  opacity: 1; /* keep full opacity so background shows clearly */
+}
+
+/* keep pointer disabled */
+th.text-center .btn.btn-outline-success.btn-sm:disabled { cursor: not-allowed; }
+
 .documents-table-container .table-responsive {
   /* The inner scrollable area also adapts. Keep a small visual padding (16px) but respect bottom offset. */
   max-height: calc(100vh - var(--da-header-offset) - var(--da-bottom-offset) - 16px + var(--da-height-bump));
@@ -214,9 +231,37 @@
 
 .documents-table-container .table {
   margin-bottom: 0;
-  font-size: 0.85rem;
+  /* slightly larger, more readable type for table content */
+  font-size: 0.92rem;
   color: var(--text) !important;
   border-collapse: separate; /* allow rounded corners on header */
+  font-family: var(--da-font);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Use tabular numbers for better numeric alignment and consistent columns. Apply to numeric-aligned cells
+   and any right-aligned content (Bootstrap `.text-end` / `.text-right`). */
+.documents-table-container .table tbody td,
+.documents-table-container .table thead th {
+  -webkit-font-smoothing: antialiased;
+  font-variant-numeric: tabular-nums;
+  font-kerning: normal;
+}
+
+/* Apply tabular numerics to right-aligned cells (common for totals and currency) */
+.documents-table-container .table tbody td.text-end,
+.documents-table-container .table tbody td.text-right {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* Slightly increase header emphasis for clarity */
+.documents-table-container .table thead th {
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--text) !important;
 }
 
 .documents-table-container .table td,
@@ -298,6 +343,28 @@
 .document-archive .btn-primary:hover { background-color: var(--primary-600); border-color: var(--primary-600); }
 
 .document-archive .btn-sm { font-size:0.78rem; padding:0.28rem 0.5rem; border-radius:6px; }
+
+/* Mass action compact buttons (delete/send) used in header — square, centered icons */
+.mass-action-btn {
+  width: 42px;
+  height: 40px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(2,6,23,0.06);
+  border: 1px solid rgba(0,0,0,0.06);
+}
+.mass-action-btn svg { width:18px; height:18px; display:block; }
+.mass-action-btn.mass-delete { background: #f32929; border-color: #ff6b6b; color: #ffffff; }
+.mass-action-btn.mass-delete:hover { background: #ff5252; }
+.mass-action-btn.mass-send { background: #1976d2; border-color: #2b8fe6; color: #ffffff; }
+.mass-action-btn.mass-send:hover { background: #2b8fe6; }
+.mass-action-btn:focus { outline: 3px solid rgba(37,99,235,0.12); outline-offset: 2px; }
+
+/* Ensure these buttons align visually with other header controls */
+.document-archive .action-buttons .mass-action-btn { height: 40px; }
 
 .document-archive .btn-outline-secondary { color: var(--muted); border-color: var(--border); background-color: transparent; }
 .document-archive .btn-outline-secondary:hover { background-color:#f8fafc; color:var(--text); border-color:#cbd5e1; }

@@ -113,6 +113,28 @@
 
 .btn-filter-toggle { display: inline-flex; align-items: center; gap: 8px; }
 
+/* Ensure header action buttons match DocumentArchive dimensions even if its CSS
+   isn't loaded yet. These rules mirror .document-archive .action-buttons rules
+   from DocumentArchive.css so Filter / Export buttons have uniform height. */
+.document-archive .action-buttons .btn {
+  height: 40px;
+  padding-top: 0;
+  padding-bottom: 0;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+}
+.document-archive .action-buttons .btn-sm {
+  height: 40px;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+.document-archive .btn-import {
+  height: 42px;
+  padding-left: 14px;
+  padding-right: 18px;
+}
+
 /* Ensure fixed overlay appears above other UI */
 .filter-dropdown-overlay { z-index: 3000; }
   
@@ -241,6 +263,23 @@
     font-size: 0.875rem;
     border-radius: 6px;
   }
+
+/* Reuse/align the import button style used by DocumentArchive */
+.document-archive .btn-import {
+  background: #5471b8;
+  border: 1px solid #5471b8;
+  color: #fff !important;
+  padding: 0.45rem 0.9rem;
+  font-weight: 700;
+  border-radius: 10px;
+  box-shadow: 0 8px 18px rgba(84,113,184,0.14);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+}
+.document-archive .btn-import:focus { outline: none; box-shadow: 0 10px 22px rgba(37,99,235,0.14); }
+.document-archive .btn-import svg { fill: currentColor; }
   
   /* Outline blue button style */
   .btn-outline-blue {
