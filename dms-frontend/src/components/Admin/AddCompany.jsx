@@ -202,16 +202,16 @@ const AdminCompanies = ({ user }) => {
             )}
           </div>
 
-          <div className="form-group checkbox-group">
-            <label htmlFor="is_active">Active</label>
-            <input
+          <div className="form-group checkbox-group" style={{ display: 'flex', alignItems: 'flex-start' }}>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, margin: 0 }}><input
               type="checkbox"
               id="is_active"
               name="is_active"
               checked={formData.is_active}
               onChange={handleInputChange}
               className="checkbox-input"
-            />
+            />Actif</label>
+            
           </div>
 
           <div className="form-group">
@@ -236,7 +236,7 @@ const AdminCompanies = ({ user }) => {
             <button
               type="submit"
               disabled={loading}
-              className="btn"
+              className="btn-primary"
             >
               {loading ? 'Chargement...' : 'Créer l\'entité'}
             </button>

@@ -1146,7 +1146,7 @@ class DatabaseManager:
             """
             return self.execute_query(query, (company_id,), fetch=True)
         
-    def update_document(self, document_id, name=None, partner_id=None,  is_invoice=None, invoice_number=None, document_date=None, due_date=None, total_ht=None, tva=None, total_ttc=None, currency=None):
+    def update_document(self, document_id, name=None, partner_id=None,  is_invoice=None, invoice_number=None, document_date=None, due_date=None, total_ht=None, tva=None, total_ttc=None, currency=None, company_id=None, doctype_id=None):
         updates = []
         params = []
         if name is not None:
@@ -1155,6 +1155,13 @@ class DatabaseManager:
         if partner_id is not None:
             updates.append("partner_id = %s")
             params.append(partner_id)
+        # Allow moving document between companies and doctypes
+        if company_id is not None:
+            updates.append("company_id = %s")
+            params.append(company_id)
+        if doctype_id is not None:
+            updates.append("doctype_id = %s")
+            params.append(doctype_id)
         if is_invoice is not None:
             updates.append("is_invoice = %s")
             params.append(is_invoice)

@@ -595,7 +595,7 @@ const AdminCompanies = ({ user }) => {
               </label>
             </div>
 
-            <div className="form-actions">
+            <div className="form-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
               <button
                 type="button"
                 className="btn-cancel"

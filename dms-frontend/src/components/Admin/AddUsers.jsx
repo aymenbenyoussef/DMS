@@ -362,7 +362,7 @@ const AddUser = () => {
             <Link to="/admin/users" className="btn-cancel">
               Annuler
             </Link>
-            <button type="submit" disabled={loading} className="btn-green">
+            <button type="submit" disabled={loading} className="btn-primary">
               {loading ? 'Création...' : 'Créer un utilisateur'}
             </button>
           </div>

@@ -2284,6 +2284,9 @@ def update_document(document_id):
             invoice_fields['currency'] = confirmed_data.get('currency')
         else:
             invoice_fields = None
+        # Extract company and doctype if provided (top-level or inside confirmed_data)
+        company_id = data.get('company_id') or (confirmed_data.get('company_id') if confirmed_data else None)
+        doctype_id = data.get('doctype_id') or (confirmed_data.get('doctype_id') if confirmed_data else None)
         # Update all fields in the DB
         success = db.update_document(
             document_id,
@@ -2297,7 +2300,9 @@ def update_document(document_id):
             total_ht=invoice_fields.get('total_ht') if invoice_fields else None,
             tva=invoice_fields.get('tva') if invoice_fields else None,
             total_ttc=invoice_fields.get('total_ttc') if invoice_fields else None,   
-            currency=invoice_fields.get('currency') if invoice_fields else None
+            currency=invoice_fields.get('currency') if invoice_fields else None,
+            company_id=company_id,
+            doctype_id=doctype_id
         )
         if success:
             log_activity(

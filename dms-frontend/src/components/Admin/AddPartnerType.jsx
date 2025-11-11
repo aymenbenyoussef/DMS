@@ -105,8 +105,9 @@ const AddPartnerType = () => {
           </div>
 
           {/* status */}
-          <div className="form-group checkbox-group">
-            <label>
+         <div className="form-group checkbox-group" style={{ display: 'flex', alignItems: 'flex-start' }}>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, margin: 0 }}>
+           
               <input
                 type="checkbox"
                 name="status"
@@ -124,7 +125,7 @@ const AddPartnerType = () => {
             </Link>
             <button 
               type="submit" 
-              className="btn btn" 
+              className="btn btn-primary" 
               disabled={loading}>
               {loading ? 'Création...' : 'Créer un type de partenaire'}
             </button>

@@ -905,7 +905,7 @@ const AdminUsers = ({user ,loadingUser}) => {
                   checked={formData.is_active}
                   onChange={handleInputChange}
                 />
-                Utilisateur actif
+                 actif
               </label>
             </div>
 
@@ -943,7 +943,7 @@ const AdminUsers = ({user ,loadingUser}) => {
               </div>
             </div>
 
-            <div className="form-actions">
+            <div className="form-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
               
               <button
                 type="button"

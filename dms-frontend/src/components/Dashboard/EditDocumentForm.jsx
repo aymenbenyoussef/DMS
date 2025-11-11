@@ -18,8 +18,13 @@ const EditDocumentForm = ({ document, onSave, onCancel, isLoading }) => {
   });
   
   const [partners, setPartners] = useState([]);
+  const [companies, setCompanies] = useState([]);
+  const [doctypes, setDoctypes] = useState([]);
+  const [selectedCompany, setSelectedCompany] = useState('');
+  const [selectedDoctype, setSelectedDoctype] = useState('');
   const [errors, setErrors] = useState({});
   const [isLoadingPartners, setIsLoadingPartners] = useState(false);
+  const [isLoadingCompanies, setIsLoadingCompanies] = useState(false);
 
   // Initialize form data when document changes
   useEffect(() => {
@@ -92,6 +97,9 @@ const EditDocumentForm = ({ document, onSave, onCancel, isLoading }) => {
       setFormData({
   partner_id: String(getValue('partner_id', 'partner_id', 'partner_id') ?? ''),
   partner_name: getValue('partner', 'partner_name', 'partner'),
+  // Initialize company/doctype from document if present
+  company_id: getValue('company_id', 'company_id', 'company_id', '') || document.company_id || '',
+  doctype_id: getValue('doctype_id', 'doctype_id', 'doctype_id', '') || document.doctype_id || '',
   is_invoice: getValue('is_invoice', 'is_invoice', 'is_invoice', false),
   invoice_number: getValue('invoice_number', 'invoice_number', 'invoice_number') ?? '',
   document_date: getDateValue('document_date', 'document_date', 'date'),
@@ -103,6 +111,42 @@ const EditDocumentForm = ({ document, onSave, onCancel, isLoading }) => {
   filename: document.filename || '',
 });
     }
+  }, [document]);
+
+  // Load companies on mount (or when document changes)
+  useEffect(() => {
+    const loadCompanies = async () => {
+      setIsLoadingCompanies(true);
+      try {
+        const res = await API.companies.getAll();
+        setCompanies(res.data || []);
+      } catch (err) {
+        console.error('Error loading companies', err);
+        setCompanies([]);
+      } finally {
+        setIsLoadingCompanies(false);
+      }
+    };
+
+    loadCompanies();
+  }, []);
+
+  // When document/company changes, load doctypes for the selected company
+  useEffect(() => {
+    const companyId = document?.company_id || (formData && formData.company_id);
+    if (!companyId) return;
+    const loadDoctypes = async () => {
+      try {
+        const res = await API.doctype.getByCompany(companyId);
+        setDoctypes(res.data || []);
+      } catch (err) {
+        console.error('Error loading doctypes', err);
+        setDoctypes([]);
+      }
+    };
+    loadDoctypes();
+    setSelectedCompany(String(companyId));
+    setSelectedDoctype(String(document?.doctype_id || ''));
   }, [document]);
 
   // Load partners when component mounts
@@ -139,6 +183,31 @@ const EditDocumentForm = ({ document, onSave, onCancel, isLoading }) => {
         [name]: ''
       }));
     }
+  };
+
+  const handleCompanyChange = async (e) => {
+    const companyId = e.target.value;
+    setSelectedCompany(companyId);
+    setFormData(prev => ({ ...prev, company_id: companyId }));
+
+    // Reset doctype selection
+    setDoctypes([]);
+    setSelectedDoctype('');
+
+    if (!companyId) return;
+    try {
+      const res = await API.doctype.getByCompany(companyId);
+      setDoctypes(res.data || []);
+    } catch (err) {
+      console.error('Error loading doctypes for company', err);
+      setDoctypes([]);
+    }
+  };
+
+  const handleDoctypeChange = (e) => {
+    const doctypeId = e.target.value;
+    setSelectedDoctype(doctypeId);
+    setFormData(prev => ({ ...prev, doctype_id: doctypeId }));
   };
 
   const handlePartnerChange = (e) => {
@@ -210,6 +279,8 @@ const EditDocumentForm = ({ document, onSave, onCancel, isLoading }) => {
         partner: formData.partner_name,
         is_invoice: formData.is_invoice,
         invoice_number: formData.is_invoice ? (formData.invoice_number ? parseFloat(formData.invoice_number) : null) : '',
+        // include selected company and doctype so backend can update them
+        
         
         due_date: formData.is_invoice ? formData.due_date : '',
         total_ht: formData.is_invoice ? (formData.total_ht ? parseFloat(formData.total_ht) : null) : '',
@@ -219,6 +290,8 @@ const EditDocumentForm = ({ document, onSave, onCancel, isLoading }) => {
       },
       filename: formData.filename !== undefined ? formData.filename : document.filename,
       document_date: formData.document_date,
+      company_id: formData.company_id || selectedCompany || document.company_id || '',
+      doctype_id: formData.doctype_id || selectedDoctype || document.doctype_id || '',
     };
     onSave(updateData);
   };
@@ -231,47 +304,88 @@ const EditDocumentForm = ({ document, onSave, onCancel, isLoading }) => {
   const isInvoice = !!formData.is_invoice;
 
   return (
-  <div className={`edit-document-form document-confirmation-form${isInvoice ? ' invoice' : ''}`}> 
-      <div className="form-header" style={{ position: 'sticky', top: 0, zIndex: 2 }}>
-        <h3>Modifier le document</h3>
-        <p>Modifiez les informations du document et validez les champs obligatoires.</p>
+    <div className={`edit-document-form document-confirmation-form${isInvoice ? ' invoice' : ''}`}> 
+      {/* Header styled like ShareModal */}
+      <div className="modal-header" style={{ position: 'sticky', top: 0, zIndex: 2 }}>
+        <div className="modal-header__content">
+          <div className="modal-header__icon">🔧</div>
+          <h3 className="modal-title">Modifier le document</h3>
+        </div>
+        <button className="modal-close-btn" type="button" onClick={onCancel} aria-label="Fermer">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
       </div>
+
       <form onSubmit={handleSubmit} className="document-form" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-        <div className="scrollable-body" style={{ flex: 1, overflowY: 'auto', minHeight: 0, paddingBottom: 0 }}>
+        <div className="modal-body modal-body--scrollable" style={{ flex: 1, minHeight: 0, paddingBottom: 0 }}>
           <div className="form-row">
-            <div className="form-group full-width-field">
-              <label className="form-label" htmlFor="filename">Nom du fichier</label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <input
-                  type="text"
-                  className="form-input"
-                  name="filename"
-                  id="filename"
-                  value={(() => {
-                    const filename = formData.filename !== undefined ? formData.filename : document.filename;
-                    const dotIdx = filename.lastIndexOf('.');
-                    return dotIdx > 0 ? filename.substring(0, dotIdx) : filename;
-                  })()}
-                  onChange={e => {
-                    const ext = (() => {
+              <div className="form-group full-width-field">
+                <label className="form-label" htmlFor="filename">Nom du fichier</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <input
+                    type="text"
+                    className="form-input"
+                    name="filename"
+                    id="filename"
+                    value={(() => {
+                      const filename = formData.filename !== undefined ? formData.filename : document.filename;
+                      const dotIdx = filename.lastIndexOf('.');
+                      return dotIdx > 0 ? filename.substring(0, dotIdx) : filename;
+                    })()}
+                    onChange={e => {
+                      const ext = (() => {
+                        const filename = formData.filename !== undefined ? formData.filename : document.filename;
+                        const dotIdx = filename.lastIndexOf('.');
+                        return dotIdx > 0 ? filename.substring(dotIdx) : '';
+                      })();
+                      setFormData(prev => ({ ...prev, filename: e.target.value + ext }));
+                    }}
+                    autoComplete="off"
+                    style={{ flex: 1 }}
+                  />
+                  <span style={{ minWidth: 0, whiteSpace: 'nowrap', color: '#888', fontWeight: 500, fontSize: '1rem' }}>
+                    {(() => {
                       const filename = formData.filename !== undefined ? formData.filename : document.filename;
                       const dotIdx = filename.lastIndexOf('.');
                       return dotIdx > 0 ? filename.substring(dotIdx) : '';
-                    })();
-                    setFormData(prev => ({ ...prev, filename: e.target.value + ext }));
-                  }}
-                  autoComplete="off"
-                  style={{ flex: 1 }}
-                />
-                <span style={{ minWidth: 0, whiteSpace: 'nowrap', color: '#888', fontWeight: 500, fontSize: '1rem' }}>
-                  {(() => {
-                    const filename = formData.filename !== undefined ? formData.filename : document.filename;
-                    const dotIdx = filename.lastIndexOf('.');
-                    return dotIdx > 0 ? filename.substring(dotIdx) : '';
-                  })()}
-                </span>
+                    })()}
+                  </span>
+
+                  {/* Company select */}
+                  <select
+                    name="company_id"
+                    id="company_id"
+                    className="form-input"
+                    value={selectedCompany || formData.company_id || ''}
+                    onChange={handleCompanyChange}
+                    style={{ width: 220 }}
+                    disabled={isLoadingCompanies}
+                  >
+                    <option value="">Sélectionner une société</option>
+                    {companies.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+
+                  {/* Doctype select (depends on selected company) */}
+                  <select
+                    name="doctype_id"
+                    id="doctype_id"
+                    className="form-input"
+                    value={selectedDoctype || formData.doctype_id || ''}
+                    onChange={handleDoctypeChange}
+                    style={{ width: 220 }}
+                  >
+                    <option value="">Sélectionner un type de document</option>
+                    {doctypes.map(dt => (
+                      <option key={dt.id} value={dt.id}>{dt.name}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
-            </div>
           </div>
           <div className="form-row two-cols">
           <div className="form-group">
@@ -544,10 +658,10 @@ const EditDocumentForm = ({ document, onSave, onCancel, isLoading }) => {
           )}
 
         </div>
-        <div className="confirmation-actions" style={{ position: 'sticky', bottom: 0, zIndex: 2, background: '#fff' }}>
+        <div className="modal-footer" style={{ position: 'sticky', bottom: 0, zIndex: 2, background: '#fff' }}>
           <button
             type="button"
-            className="btn-secondary"
+            className="action-btn action-btn--secondary"
             onClick={onCancel}
             disabled={isLoading}
           >
@@ -555,10 +669,17 @@ const EditDocumentForm = ({ document, onSave, onCancel, isLoading }) => {
           </button>
           <button
             type="submit"
-            className="btn-primary"
+            className="action-btn action-btn--primary"
             disabled={isLoading}
           >
-            {isLoading ? <span className="spinner spinner--small" /> : 'Enregistrer les modifications'}
+            {isLoading ? (
+              <>
+                <div className="spinner spinner--small"></div>
+                Enregistrement...
+              </>
+            ) : (
+              'Enregistrer les modifications'
+            )}
           </button>
         </div>
       </form>

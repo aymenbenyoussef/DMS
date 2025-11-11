@@ -473,7 +473,7 @@ const handleSubmit = async (e) => {
           <div className="form-actions">
             <button
               type="button"
-              className="btn"
+              className="btn-green"
               onClick={() => handleTabChange('Contact')}
             >
               Suivant
@@ -550,7 +550,7 @@ const handleSubmit = async (e) => {
             {fieldErrors.phone3 && <div className="field-error">{fieldErrors.phone3}</div>}
           </div>
           <div className="form-group">
-            <label>Email</label>
+            <label>Email *</label>
             <input
               type="email"
               name="email"
@@ -569,14 +569,14 @@ const handleSubmit = async (e) => {
           <div className="form-actions">
             <button
               type="button"
-              className="btn"
+              className="btn-green"
               onClick={() => handleTabChange('Identity')}
             >
               Précédent
             </button>
             <button
               type="button"
-              className="btn"
+              className="btn-green"
               onClick={() => handleTabChange('Billing and payments')}
             >
               Suivant
@@ -636,14 +636,14 @@ const handleSubmit = async (e) => {
           <div className="form-actions">
             <button
               type="button"
-              className="btn"
+              className="btn-green"
               onClick={() => handleTabChange('Contact')}
             >
               Précédent
             </button>
             <button
               type="button"
-              className="btn"
+              className="btn-green"
               onClick={() => handleTabChange('Notes')}
             >
               Suivant
@@ -678,7 +678,7 @@ const handleSubmit = async (e) => {
           <div className="form-actions">
             <button
               type="button"
-              className="btn"
+              className="btn-green"
               onClick={() => handleTabChange('Billing and payments')}
             >
               Précédent
@@ -686,7 +686,7 @@ const handleSubmit = async (e) => {
             <Link to="/partners" className="btn-cancel">
               Annuler
             </Link>
-            <button type="submit" disabled={loading} className="btn">
+            <button type="submit" disabled={loading} className="btn-primary">
               {loading ? 'En cours...' : 'Créer le partenaire'}
             </button>
           </div>

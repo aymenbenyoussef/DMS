@@ -815,7 +815,7 @@ const AdminPartners = ({ user }) => {
       { label: 'Téléphone 1 (principal) *', name: 'phone1' },
       { label: 'Téléphone 2', name: 'phone2' },
       { label: 'Téléphone 3', name: 'phone3' },
-      { label: 'Email', name: 'email', type: 'email' },
+      { label: 'Email*', name: 'email', type: 'email' },
     ].map((f) => (
       <div key={f.name} className="form-group" style={{ marginBottom: 2 }}>
         <label style={{ marginBottom: 1, display: 'block' }}>{f.label}</label>
@@ -866,7 +866,7 @@ const AdminPartners = ({ user }) => {
         style={{ fontSize: '14px', padding: '3px 4px', resize: 'vertical' }}
       />
     </div><br></br><br></br><br></br>
-    <div className="form-actions">
+  <div className="form-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
               <button
                 type="button"
                 className="btn-cancel"

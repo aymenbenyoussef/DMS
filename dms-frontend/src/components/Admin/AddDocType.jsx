@@ -157,8 +157,8 @@ const AddDocType = () => {
           </div>
 
           {/* status */}
-          <div className="form-group checkbox-group">
-            <label>
+          <div className="form-group checkbox-group" style={{ display: 'flex', alignItems: 'flex-start' }}>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, margin: 0 }}>
               <input
                 type="checkbox"
                 name="status"
@@ -174,7 +174,7 @@ const AddDocType = () => {
             <Link to="/doctypes" className="btn-cancel">
                 Annuler
             </Link>
-            <button type="submit" className="btn" disabled={loading}>
+            <button type="submit" className="btn-primary" disabled={loading}>
               {loading ? 'En cours...' : 'Créer le type de document'}
             </button>
           </div>
