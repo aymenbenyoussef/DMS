@@ -2225,7 +2225,7 @@ const getOneMonthAgo = () => {
                     <>
                       <tfoot className="table-light border-top">
                         <tr className="fw-bold">
-                          <td colSpan={isGroupMode ? "6" : "5"} className="text-end">
+                          <td colSpan={isGroupMode ? "5" : "4"} className="text-end">
                             Total ({totals.count} documents):
                           </td>
                           <td className="text-end">

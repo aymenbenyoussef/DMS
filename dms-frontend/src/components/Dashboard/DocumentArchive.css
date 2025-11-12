@@ -367,7 +367,7 @@ th.text-center .btn.btn-outline-success.btn-sm:disabled { cursor: not-allowed; }
 .document-archive .action-buttons .mass-action-btn { height: 40px; }
 
 .document-archive .btn-outline-secondary { color: var(--muted); border-color: var(--border); background-color: transparent; }
-.document-archive .btn-outline-secondary:hover { background-color:#f8fafc; color:var(--text); border-color:#cbd5e1; }
+.document-archive .btn-outline-secondary:hover { background-color:#5471b8; color:var(--text); border-color:#cbd5e1; }
 
 .document-archive .btn-success {
   background-color: var(--primary) !important;

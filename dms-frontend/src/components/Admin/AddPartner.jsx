@@ -459,8 +459,8 @@ const handleSubmit = async (e) => {
               ))}
             </div>
           </div>  
-          <div className="form-group checkbox-group">
-            <label>
+          <div className="form-group checkbox-group" style={{ display: 'flex', alignItems: 'flex-start' }}>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, margin: 0 }}>
               <input
                 type="checkbox"
                 name="isActive"
