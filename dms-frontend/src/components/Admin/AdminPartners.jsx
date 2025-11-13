@@ -438,6 +438,25 @@ const AdminPartners = ({ user }) => {
     navigate('/AddPartner');
   };
 
+  const getSortIcon = (columnKey) => {
+    // Affiche toujours deux flèches (haut/bas). La flèche active est en 'text-primary', l'autre en 'text-muted'.
+    const isActive = sortConfig.key === columnKey;
+    return (
+      <span className="d-flex flex-column align-items-center" style={{ lineHeight: 0 }}>
+        <i
+          className={`fas fa-sort-up ${isActive && sortConfig.direction === 'asc' ? 'text-primary' : 'text-muted'}`}
+          style={{ fontSize: '0.65rem' }}
+          aria-hidden="true"
+        />
+        <i
+          className={`fas fa-sort-down ${isActive && sortConfig.direction === 'desc' ? 'text-primary' : 'text-muted'}`}
+          style={{ fontSize: '0.65rem' }}
+          aria-hidden="true"
+        />
+      </span>
+    );
+  };
+
   // Sorting logic
   const handleSort = (key) => {
     let direction = 'asc';
@@ -575,23 +594,41 @@ const AdminPartners = ({ user }) => {
                 <tr>
                   <th style={{width: '24px', minWidth: '24px', maxWidth: '24px', padding: 0}}></th>
                   
-                  <th style={{cursor:'pointer', background: sortConfig.key === 'unique_identifier' ? '#f0f4fa' : undefined, color: sortConfig.key === 'unique_identifier' ? '#1976d2' : undefined}} onClick={() => handleSort('unique_identifier')}>
-                    Identifiant unique <span style={{fontSize:'1em'}}>{sortConfig.key === 'unique_identifier' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  <th style={{cursor:'pointer'}} onClick={() => handleSort('unique_identifier')}>
+                    <div className="d-flex align-items-center justify-content-start gap-1">
+                      <span>Identifiant unique</span>
+                      {getSortIcon('unique_identifier')}
+                    </div>
                   </th>
-                  <th style={{cursor:'pointer', background: sortConfig.key === 'company_name' ? '#f0f4fa' : undefined, color: sortConfig.key === 'company_name' ? '#1976d2' : undefined}} onClick={() => handleSort('company_name')}>
-                    Nom d'entreprise <span style={{fontSize:'1em'}}>{sortConfig.key === 'company_name' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  <th style={{cursor:'pointer'}} onClick={() => handleSort('company_name')}>
+                    <div className="d-flex align-items-center justify-content-start gap-1">
+                      <span>Nom d'entreprise</span>
+                      {getSortIcon('company_name')}
+                    </div>
                   </th>
-                  <th style={{cursor:'pointer', background: sortConfig.key === 'companies' ? '#f0f4fa' : undefined, color: sortConfig.key === 'companies' ? '#1976d2' : undefined}} onClick={() => handleSort('companies')}>
-                    Entités <span style={{fontSize:'1em'}}>{sortConfig.key === 'companies' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  <th style={{cursor:'pointer'}} onClick={() => handleSort('companies')}>
+                    <div className="d-flex align-items-center justify-content-start gap-1">
+                      <span>Entités</span>
+                      {getSortIcon('companies')}
+                    </div>
                   </th>
-                  <th style={{cursor:'pointer', background: sortConfig.key === 'partnertypes' ? '#f0f4fa' : undefined, color: sortConfig.key === 'partnertypes' ? '#1976d2' : undefined}} onClick={() => handleSort('partnertypes')}>
-                    Type de partenaire <span style={{fontSize:'1em'}}>{sortConfig.key === 'partnertypes' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  <th style={{cursor:'pointer'}} onClick={() => handleSort('partnertypes')}>
+                    <div className="d-flex align-items-center justify-content-start gap-1">
+                      <span>Type de partenaire</span>
+                      {getSortIcon('partnertypes')}
+                    </div>
                   </th>
-                  <th style={{cursor:'pointer', background: sortConfig.key === 'phone1' ? '#f0f4fa' : undefined, color: sortConfig.key === 'phone1' ? '#1976d2' : undefined}} onClick={() => handleSort('phone1')}>
-                    Téléphone <span style={{fontSize:'1em'}}>{sortConfig.key === 'phone1' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  <th style={{cursor:'pointer'}} onClick={() => handleSort('phone1')}>
+                    <div className="d-flex align-items-center justify-content-start gap-1">
+                      <span>Téléphone</span>
+                      {getSortIcon('phone1')}
+                    </div>
                   </th>
-                  <th style={{cursor:'pointer', background: sortConfig.key === 'email' ? '#f0f4fa' : undefined, color: sortConfig.key === 'email' ? '#1976d2' : undefined}} onClick={() => handleSort('email')}>
-                    Email <span style={{fontSize:'1em'}}>{sortConfig.key === 'email' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  <th style={{cursor:'pointer'}} onClick={() => handleSort('email')}>
+                    <div className="d-flex align-items-center justify-content-start gap-1">
+                      <span>Email</span>
+                      {getSortIcon('email')}
+                    </div>
                   </th>
                   <th>Actions</th>
                 </tr>
@@ -603,7 +640,7 @@ const AdminPartners = ({ user }) => {
                       type="text"
                       value={filters.unique_identifier}
                       onChange={(e) => handleFilterChange(e, 'unique_identifier')}
-                      placeholder="Filtrer l'identifiant"
+                      placeholder="Identifiant..."
                       className="filter-input"
                     />
                   </td>
@@ -612,7 +649,7 @@ const AdminPartners = ({ user }) => {
                       type="text"
                       value={filters.company_name}
                       onChange={(e) => handleFilterChange(e, 'company_name')}
-                      placeholder="Filtrer le nom"
+                      placeholder="Nom..."
                       className="filter-input"
                     />
                   </td>
@@ -621,7 +658,7 @@ const AdminPartners = ({ user }) => {
                       type="text"
                       value={filters.company}
                       onChange={(e) => handleFilterChange(e, 'company')}
-                      placeholder="Filtrer les entités"
+                      placeholder="Entités..."
                       className="filter-input"
                     />
                   </td>
@@ -630,7 +667,7 @@ const AdminPartners = ({ user }) => {
                       type="text"
                       value={filters.partnertype}
                       onChange={(e) => handleFilterChange(e, 'partnertype')}
-                      placeholder="Filtrer les types"
+                      placeholder="Types..."
                       className="filter-input"
                     />
                   </td>
@@ -639,7 +676,7 @@ const AdminPartners = ({ user }) => {
                       type="text"
                       value={filters.phone}
                       onChange={(e) => handleFilterChange(e, 'phone')}
-                      placeholder="Filtrer le téléphone"
+                      placeholder="Téléphone..."
                       className="filter-input"
                     />
                   </td>
@@ -648,7 +685,7 @@ const AdminPartners = ({ user }) => {
                       type="text"
                       value={filters.email}
                       onChange={(e) => handleFilterChange(e, 'email')}
-                      placeholder="Filtrer l'email"
+                      placeholder="Email..."
                       className="filter-input"
                     />
                   </td>

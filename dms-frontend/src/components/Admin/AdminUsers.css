@@ -1,3 +1,19 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --da-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --muted: #6b7280;
+  --text: #111827; /* primary dark text */
+  --header-bg: #f8fafc; /* light neutral header */
+  --border: #e6e9ee;
+  --primary: #2563eb; /* main action color (blue) */
+  --primary-600: #1d4ed8;
+  --success: #059669;
+  --shadow: rgba(16,24,40,0.06);
+}
+
 .admin-users {
   padding-top: 8px;
   padding-left: 20px;
@@ -369,6 +385,16 @@
 
 .users-table-container .table tfoot { position: sticky; bottom: 0; z-index: 98; background: var(--header-bg, #f8fafc); border-top:2px solid var(--border, #e6e9ee); font-weight:600; }
 .users-table-container .table tfoot td { background: var(--header-bg, #f8fafc); border-top:1px solid var(--border, #e6e9ee); padding:0.5rem 0.5rem; color:var(--text, #111827) !important; }
+
+.users-table-container .table thead th .fa-sort-up.text-primary,
+.users-table-container .table thead th .fa-sort-down.text-primary {
+  color: #1976d2 !important;
+}
+
+.users-table-container .table thead th .fa-sort-up.text-muted,
+.users-table-container .table thead th .fa-sort-down.text-muted {
+  color: #adb5bd !important;
+}
 
 /* Subtle row striping */
 .users-table-container .table tbody tr:nth-child(odd) { background: transparent; }

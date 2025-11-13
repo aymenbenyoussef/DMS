@@ -287,6 +287,25 @@ const AdminDoctypes = ({ user }) => {
     setToast(t => ({ ...t, visible: false }));
   };
 
+  const getSortIcon = (columnKey) => {
+    // Affiche toujours deux flèches (haut/bas). La flèche active est en 'text-primary', l'autre en 'text-muted'.
+    const isActive = sortConfig.key === columnKey;
+    return (
+      <span className="d-flex flex-column align-items-center" style={{ lineHeight: 0 }}>
+        <i
+          className={`fas fa-sort-up ${isActive && sortConfig.direction === 'asc' ? 'text-primary' : 'text-muted'}`}
+          style={{ fontSize: '0.65rem' }}
+          aria-hidden="true"
+        />
+        <i
+          className={`fas fa-sort-down ${isActive && sortConfig.direction === 'desc' ? 'text-primary' : 'text-muted'}`}
+          style={{ fontSize: '0.65rem' }}
+          aria-hidden="true"
+        />
+      </span>
+    );
+  };
+
   // Sorting logic
   const handleSort = (key) => {
     let direction = 'asc';
@@ -423,14 +442,23 @@ const AdminDoctypes = ({ user }) => {
               <thead>
                 <tr>
                   <th style={{width: '24px', minWidth: '24px', maxWidth: '24px', padding: 0}}></th>
-                  <th style={{cursor:'pointer', background: sortConfig.key === 'id' ? '#f0f4fa' : undefined, color: sortConfig.key === 'id' ? '#1976d2' : undefined}} onClick={() => handleSort('id')}>
-                    ID <span style={{fontSize:'1em'}}>{sortConfig.key === 'id' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  <th style={{cursor:'pointer'}} onClick={() => handleSort('id')}>
+                    <div className="d-flex align-items-center justify-content-start gap-1">
+                      <span>ID</span>
+                      {getSortIcon('id')}
+                    </div>
                   </th>
-                  <th style={{cursor:'pointer', background: sortConfig.key === 'name' ? '#f0f4fa' : undefined, color: sortConfig.key === 'name' ? '#1976d2' : undefined}} onClick={() => handleSort('name')}>
-                    Nom <span style={{fontSize:'1em'}}>{sortConfig.key === 'name' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  <th style={{cursor:'pointer'}} onClick={() => handleSort('name')}>
+                    <div className="d-flex align-items-center justify-content-start gap-1">
+                      <span>Nom</span>
+                      {getSortIcon('name')}
+                    </div>
                   </th>
-                  <th style={{cursor:'pointer', background: sortConfig.key === 'companies' ? '#f0f4fa' : undefined, color: sortConfig.key === 'companies' ? '#1976d2' : undefined}} onClick={() => handleSort('companies')}>
-                    Entités <span style={{fontSize:'1em'}}>{sortConfig.key === 'companies' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  <th style={{cursor:'pointer'}} onClick={() => handleSort('companies')}>
+                    <div className="d-flex align-items-center justify-content-start gap-1">
+                      <span>Entités</span>
+                      {getSortIcon('companies')}
+                    </div>
                   </th>
                   <th>Actions</th>
                 </tr>
@@ -441,7 +469,7 @@ const AdminDoctypes = ({ user }) => {
                       type="text"
                       value={filters.id}
                       onChange={(e) => handleFilterChange(e, 'id')}
-                      placeholder="Filtrer l'ID"
+                      placeholder="ID..."
                       className="filter-input"
                     />
                   </td>
@@ -450,7 +478,7 @@ const AdminDoctypes = ({ user }) => {
                       type="text"
                       value={filters.name}
                       onChange={(e) => handleFilterChange(e, 'name')}
-                      placeholder="Filtrer le nom"
+                      placeholder="Nom..."
                       className="filter-input"
                     />
                   </td>
@@ -459,7 +487,7 @@ const AdminDoctypes = ({ user }) => {
                       type="text"
                       value={filters.company}
                       onChange={(e) => handleFilterChange(e, 'company')}
-                      placeholder="Filtrer les entités"
+                      placeholder="Entités..."
                       className="filter-input"
                     />
                   </td>

@@ -66,6 +66,25 @@ const TempDocumentArchive = ({ user }) => {
   const filterOverlayRef = useRef(null);
   const [filterHeight, setFilterHeight] = useState(0);
 
+  const getSortIcon = (columnKey) => {
+    // Affiche toujours deux flèches (haut/bas). La flèche active est en 'text-primary', l'autre en 'text-muted'.
+    const isActive = sortConfig.key === columnKey;
+    return (
+      <span className="d-flex flex-column align-items-center" style={{ lineHeight: 0 }}>
+        <i
+          className={`fas fa-sort-up ${isActive && sortConfig.direction === 'asc' ? 'text-primary' : 'text-muted'}`}
+          style={{ fontSize: '0.65rem' }}
+          aria-hidden="true"
+        />
+        <i
+          className={`fas fa-sort-down ${isActive && sortConfig.direction === 'desc' ? 'text-primary' : 'text-muted'}`}
+          style={{ fontSize: '0.65rem' }}
+          aria-hidden="true"
+        />
+      </span>
+    );
+  };
+
   useEffect(() => {
     if (filterOverlayOpen) {
       const element = filterOverlayRef.current;
@@ -389,20 +408,56 @@ const TempDocumentArchive = ({ user }) => {
   };
 
   const handleExport = (type) => {
+    if (filteredDocuments.length === 0) {
+      alert("Il n'y a pas de données à exporter.");
+      setExportMenuOpen(false);
+      return;
+    }
+
     const columns = [
       { key: 'id', label: t('id') },
       { key: 'filename', label: t('filename') },
-      { key: 'created_at', label: t('uploadDate') }
     ];
-    const data = filteredDocuments.map(doc => ({
-      id: doc.id,
-      filename: doc.filename,
-      created_at: doc.created_at ? new Date(doc.created_at).toLocaleDateString('fr-FR') : '-'
-    }));
-    if (type === 'csv') exportToCSV(data, columns, 'temp_documents.csv');
-    if (type === 'json') exportToJSON(data, columns, 'temp_documents.json');
-    if (type === 'txt') exportToTXT(data, columns, 'temp_documents.txt');
-    if (type === 'excel') exportToExcel(data, columns, 'temp_documents.xls');
+    if (user?.role === 'admin' || user?.role === 'superuser') {
+      columns.push({ key: 'owner', label: t('owner') });
+    }
+    columns.push({ key: 'created_at', label: t('uploadDate') });
+
+    const dataToExport = filteredDocuments.map(doc => {
+      const ownerName = `${doc.owner_name || doc.owner || ''} ${doc.owner_surname || ''}`.trim();
+      const rowData = {
+        id: doc.id,
+        filename: doc.filename,
+      };
+
+      if (user?.role === 'admin' || user?.role === 'superuser') {
+        rowData.owner = ownerName;
+      }
+
+      rowData.created_at = doc.created_at ? new Date(doc.created_at).toLocaleDateString('fr-FR') : '-';
+      
+      return rowData;
+    });
+
+    const filename = `temp_documents_${new Date().toISOString().split('T')[0]}`;
+
+    switch (type) {
+      case 'csv':
+        exportToCSV(dataToExport, columns, filename);
+        break;
+      case 'json':
+        exportToJSON(dataToExport, filename);
+        break;
+      case 'txt':
+        exportToTXT(dataToExport, columns, filename);
+        break;
+      case 'excel':
+        exportToExcel(dataToExport, columns, filename);
+        break;
+      default:
+        console.error(`Unsupported export format: ${type}`);
+    }
+    setExportMenuOpen(false);
   };
 
   const handleResetFilters = () => {
@@ -477,11 +532,10 @@ const TempDocumentArchive = ({ user }) => {
                   Importer des documents
                 </button>
 
-                <div className="dropdown">
+                <div className="dropdown" ref={exportMenuRef}>
                   <button
                     className="btn btn-outline-secondary btn-sm dropdown-toggle no-hover"
                     onClick={() => setExportMenuOpen(!exportMenuOpen)}
-                    ref={exportMenuRef}
                   >
                     <i className="fas fa-download me-1"></i>
                     {t('export')}
@@ -539,11 +593,14 @@ const TempDocumentArchive = ({ user }) => {
                         />
                       </div>
                     </div>
+                    {/*
                     <div className="col-md-2 d-flex align-items-end">
                       <button className="btn btn-sm btn-outline-secondary w-100" onClick={handleResetFilters} title={t('clearAllFilters')}>
                         <i className="fas fa-times me-1"></i> {t('reset', 'Reset')}
                       </button>
+                      
                     </div>
+                    */}
                   </div>
                 </div>
               </div>
@@ -551,101 +608,124 @@ const TempDocumentArchive = ({ user }) => {
 
             {/* Documents Table */}
             <div className="documents-table-container flex-grow-1" style={{ maxHeight: `calc(100vh - 180px - ${filterHeight}px)` }}>
-              <div className="table-responsive h-100" style={{display: 'flex', flexDirection: 'column', height: '100%'}}>
-                <table className="table table-sm table-hover mb-0" style={{tableLayout: 'fixed', width: '100%'}}>
+              <div className="table-responsive h-100">
+                <table className="table table-sm table-hover mb-0">
                   <thead className="table-light sticky-top">
                     <tr>
-                      {/* ID column removed */}
-                      <th style={{ width: '24px', minWidth: '24px', maxWidth: '24px', padding: 0}} onClick={() => handleSort('id')} title={t('sortById')}>ID<span style={{ fontSize: '1em', color: sortConfig.key === 'id' ? '#1976d2' : '#888' }}>
-                          {sortConfig.key === 'id' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}
-                        </span></th>
-                      <th style={{ width: '240px', cursor: 'pointer' }} onClick={() => handleSort('filename')} title={t('sortByFilename')}>{t('filename')}
-                        <span style={{ fontSize: '1em', color: sortConfig.key === 'filename' ? '#1976d2' : '#888' }}>
-                          {sortConfig.key === 'filename' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}
-                        </span>
+                      <th
+                        style={{ width: '60px', cursor: 'pointer' }}
+                        className="text-start"
+                        onClick={() => handleSort('id')}
+                        title="Trier par ID"
+                      >
+                        <div className="d-flex align-items-center justify-content-start gap-1">
+                          <span>ID</span>
+                          {getSortIcon('id')}
+                        </div>
                       </th>
+
+                      <th
+                        style={{ width: '240px', cursor: 'pointer' }}
+                        className="text-start"
+                        onClick={() => handleSort('filename')}
+                        title={t('sortByFilename')}
+                      >
+                        <div className="d-flex align-items-center justify-content-start gap-1">
+                          <span>{t('filename')}</span>
+                          {getSortIcon('filename')}
+                        </div>
+                      </th>
+
                       {(user?.role === 'admin' || user?.role === 'superuser') && (
-                        <th style={{ width: '50px', cursor: 'pointer' }} onClick={() => handleSort('owner')} title={t('sortByOwner')}>
-                          {t('owner')}
-                          <span style={{ fontSize: '1em', color: sortConfig.key === 'owner' ? '#1976d2' : '#888' }}>
-                          {sortConfig.key === 'owner' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}
-                        </span></th>
+                        <th
+                          style={{ width: '150px', cursor: 'pointer' }}
+                          className="text-start"
+                          onClick={() => handleSort('owner')}
+                          title={t('sortByOwner')}
+                        >
+                          <div className="d-flex align-items-center justify-content-start gap-1">
+                            <span>{t('owner')}</span>
+                            {getSortIcon('owner')}
+                          </div>
+                        </th>
                       )}
-                      <th style={{ width: '90px', cursor: 'pointer',paddingLeft: '50px' }} className="text-center" onClick={() => handleSort('created_at')} title={t('sortByDate')}>
-                        Date d'import
-                        <span style={{ fontSize: '1em', color: sortConfig.key === 'created_at' ? '#1976d2' : '#888' }}>
-                          {sortConfig.key === 'created_at' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}
-                        </span></th>
+
+                      <th
+                        style={{ width: '120px', cursor: 'pointer' }}
+                        className="text-start"
+                        onClick={() => handleSort('created_at')}
+                        title={t('sortByDate')}
+                      >
+                        <div className="d-flex align-items-center justify-content-start gap-1">
+                          <span>Date d'import</span>
+                          {getSortIcon('created_at')}
+                        </div>
+                      </th>
                       <th style={{ width: '120px' }} className="text-center"></th>
                     </tr>
                     <tr className="bg-light">
-                      {/* ID filter removed */}
-                      <th></th>
+                      <th>
+                        <input
+                          type="text"
+                          className="form-control form-control-sm"
+                          placeholder="ID..."
+                          value={columnFilters.id}
+                          onChange={(e) => handleColumnFilterChange('id', e.target.value)}
+                        />
+                      </th>
                       <th><input type="text" className="form-control form-control-sm" placeholder={t('filenamePlaceholder')} value={columnFilters.filename} onChange={(e) => handleColumnFilterChange('filename', e.target.value)} /></th>
                       {(user?.role === 'admin' || user?.role === 'superuser') && (
-                        <th><input type="text" className="form-control form-control-sm" placeholder={t('ownerPlaceholder')} value={columnFilters.owner} onChange={(e) => handleColumnFilterChange('owner', e.target.value)} style={{width: '160px'}}/></th>
+                        <th><input type="text" className="form-control form-control-sm" placeholder={t('ownerPlaceholder')} value={columnFilters.owner} onChange={(e) => handleColumnFilterChange('owner', e.target.value)} /></th>
                       )}
                       <th></th>
                       <th></th>
                     </tr>
                   </thead>
+                  <tbody>
+                    {isLoading ? (
+                      <tr><td colSpan={user?.role === 'admin' || user?.role === 'superuser' ? "5" : "4"} className="text-center py-4">{t('loading')}</td></tr>
+                    ) : filteredDocuments.length > 0 ? (
+                      filteredDocuments.map(doc => (
+                        <tr
+                          key={doc.id}
+                          onClick={() => handleViewDocument(doc)}
+                          style={{ cursor: 'pointer' }}
+                          className="table-row-hover"
+                        >
+                          <td>{doc.id}</td>
+                          <td>{doc.filename}</td>
+                          {(user?.role === 'admin' || user?.role === 'superuser') && <td>{`${doc.owner_name || doc.owner || ''} ${doc.owner_surname || ''}`.trim()}</td>}
+                          <td>{new Date(doc.created_at).toLocaleDateString()}</td>
+                          <td className="text-center">
+                            <button
+                              className="btn btn-sm btn-outline-success me-1"
+                              style={{ backgroundColor: 'blue', color: 'white' }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSend(doc);
+                              }}
+                              disabled={processingDocId === doc.id}
+                            >
+                              {processingDocId === doc.id ? t('moving') : t('move')}
+                            </button>
+                            <button
+                              className="btn btn-sm btn-outline-danger me-1"
+                              style={{ backgroundColor: 'orangered', color: 'white' }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteDocument(doc);
+                              }}
+                            >
+                              {t('delete')}
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr><td colSpan={user?.role === 'admin' || user?.role === 'superuser' ? "5" : "4"} className="text-center py-4">{getNoDataMessage()}</td></tr>
+                    )}
+                  </tbody>
                 </table>
-                <div style={{flex: 1, overflowY: 'auto', minHeight: 0}}>
-                  <table className="table table-sm table-hover mb-0" style={{tableLayout: 'fixed', width: '100%'}}>
-                    <colgroup>
-                      <col style={{width: '24px', minWidth: '24px', maxWidth: '24px', padding: 0}} />
-                      <col style={{width: '280px'}} />
-                      {(user?.role === 'admin' || user?.role === 'superuser') && <col style={{width: '90px'}} />}
-                      <col style={{width: '90px'}} />
-                      <col style={{width: '120px'}} />
-                    </colgroup>
-                    <tbody>
-                      {isLoading ? (
-                        <tr><td colSpan={user?.role === 'admin' || user?.role === 'superuser' ? "5" : "4"} className="text-center py-4">{t('loading')}</td></tr>
-                      ) : filteredDocuments.length > 0 ? (
-                        filteredDocuments.map(doc => (
-                          <tr 
-                            key={doc.id} 
-                            onClick={() => handleViewDocument(doc)}
-                            style={{ cursor: 'pointer' }}
-                            className="table-row-hover"
-                          >
-                            {/* ID cell removed */}
-                            <td style={{width: '24px', minWidth: '24px', maxWidth: '24px', padding: 0}}>{doc.id}</td>
-                            <td style={{width: '120px'}}>{doc.filename}</td>
-                            {(user?.role === 'admin' || user?.role === 'superuser') && <td style={{width: '120px'}}>{`${doc.owner_name || doc.owner || ''} ${doc.owner_surname || ''}`.trim()}</td>}
-                            <td className="text-center" style={{width: '90px'}}>{new Date(doc.created_at).toLocaleDateString()}</td>
-                            <td className="text-center" style={{width: '120px'}}>
-                              <button 
-                                className="btn btn-sm btn-outline-success me-1" 
-                                style={{backgroundColor:'blue', color: 'white'}} 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleSend(doc);
-                                }} 
-                                disabled={processingDocId === doc.id}
-                              >
-                                {processingDocId === doc.id ? t('moving') : t('move')}
-                              </button>
-                              <button 
-                                className="btn btn-sm btn-outline-danger me-1" 
-                                style={{backgroundColor:'orangered', color: 'white'}}  
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteDocument(doc);
-                                }}
-                              >
-                                {t('delete')}
-                              </button>
-                            </td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr><td colSpan={user?.role === 'admin' || user?.role === 'superuser' ? "5" : "4"} className="text-center py-4">{getNoDataMessage()}</td></tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
               </div>
             </div>
           </div>

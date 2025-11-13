@@ -516,6 +516,25 @@ const AdminUsers = ({user ,loadingUser}) => {
     setFilteredUsers(sorted);
   };
 
+  const getSortIcon = (columnKey) => {
+    // Affiche toujours deux flèches (haut/bas). La flèche active est en 'text-primary', l'autre en 'text-muted'.
+    const isActive = sortConfig.key === columnKey;
+    return (
+      <span className="d-flex flex-column align-items-center" style={{ lineHeight: 0 }}>
+        <i
+          className={`fas fa-sort-up ${isActive && sortConfig.direction === 'asc' ? 'text-primary' : 'text-muted'}`}
+          style={{ fontSize: '0.65rem' }}
+          aria-hidden="true"
+        />
+        <i
+          className={`fas fa-sort-down ${isActive && sortConfig.direction === 'desc' ? 'text-primary' : 'text-muted'}`}
+          style={{ fontSize: '0.65rem' }}
+          aria-hidden="true"
+        />
+      </span>
+    );
+  };
+
   // Export logic
   const columns = [
     { key: 'id', label: 'Id' },
@@ -677,25 +696,43 @@ const AdminUsers = ({user ,loadingUser}) => {
                   <thead>
                     <tr>
                       <th style={{width: '24px', minWidth: '24px', maxWidth: '24px', padding: 0}}></th>
-                      <th className="col-id" style={{cursor:'pointer', background: sortConfig.key === 'id' ? '#f0f4fa' : undefined, color: sortConfig.key === 'id' ? '#1976d2' : undefined}} onClick={() => handleSort('id')}>
-                        Id <span style={{fontSize:'1em'}}>{sortConfig.key === 'id' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                      <th className="col-id" style={{cursor:'pointer'}} onClick={() => handleSort('id')}>
+                        <div className="d-flex align-items-center justify-content-start gap-1">
+                          <span>Id</span>
+                          {getSortIcon('id')}
+                        </div>
                       </th>
-                      <th style={{cursor:'pointer', background: sortConfig.key === 'username' ? '#f0f4fa' : undefined, color: sortConfig.key === 'username' ? '#1976d2' : undefined, width: '250px', minWidth: '250px'}} onClick={() => handleSort('username')}>
-                        Nom complet <span style={{fontSize:'1em'}}>{sortConfig.key === 'username' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                      <th style={{cursor:'pointer', width: '250px', minWidth: '250px'}} onClick={() => handleSort('username')}>
+                        <div className="d-flex align-items-center justify-content-start gap-1">
+                          <span>Nom complet</span>
+                          {getSortIcon('username')}
+                        </div>
                       </th>
                       
-                      <th className="email-col" style={{cursor:'pointer', background: sortConfig.key === 'email' ? '#f0f4fa' : undefined, color: sortConfig.key === 'email' ? '#1976d2' : undefined, wordBreak: 'break-all', width: '300px', minWidth: '300px'}} onClick={() => handleSort('email')}>
-                                Email <span style={{fontSize:'1em'}}>{sortConfig.key === 'email' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                      <th className="email-col" style={{cursor:'pointer', wordBreak: 'break-all', width: '300px', minWidth: '300px'}} onClick={() => handleSort('email')}>
+                        <div className="d-flex align-items-center justify-content-start gap-1">
+                          <span>Email</span>
+                          {getSortIcon('email')}
+                        </div>
                       </th>
 
-                      <th style={{cursor:'pointer', background: sortConfig.key === 'role' ? '#f0f4fa' : undefined, color: sortConfig.key === 'role' ? '#1976d2' : undefined, width: '100px', minWidth: '100px'}} onClick={() => handleSort('role')}>
-                        Rôle <span style={{fontSize:'1em'}}>{sortConfig.key === 'role' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                      <th style={{cursor:'pointer', width: '100px', minWidth: '100px'}} onClick={() => handleSort('role')}>
+                        <div className="d-flex align-items-center justify-content-start gap-1">
+                          <span>Rôle</span>
+                          {getSortIcon('role')}
+                        </div>
                       </th>
-                      <th style={{cursor:'pointer', background: sortConfig.key === 'companies' ? '#f0f4fa' : undefined, color: sortConfig.key === 'companies' ? '#1976d2' : undefined}} onClick={() => handleSort('companies')}>
-                        Entités <span style={{fontSize:'1em'}}>{sortConfig.key === 'companies' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                      <th style={{cursor:'pointer'}} onClick={() => handleSort('companies')}>
+                        <div className="d-flex align-items-center justify-content-start gap-1">
+                          <span>Entités</span>
+                          {getSortIcon('companies')}
+                        </div>
                       </th>
-                      <th style={{cursor:'pointer', background: sortConfig.key === 'created_at' ? '#f0f4fa' : undefined, color: sortConfig.key === 'created_at' ? '#1976d2' : undefined, width: '180px', minWidth: '180px'}} onClick={() => handleSort('created_at')}>
-                        Date de création <span style={{fontSize:'1em'}}>{sortConfig.key === 'created_at' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                      <th style={{cursor:'pointer', width: '180px', minWidth: '180px'}} onClick={() => handleSort('created_at')}>
+                        <div className="d-flex align-items-center justify-content-start gap-1">
+                          <span>Date de création</span>
+                          {getSortIcon('created_at')}
+                        </div>
                       </th>
                       <th style={{width: '60px', minWidth: '60px'}}>Actions</th>
                     </tr>
@@ -706,7 +743,7 @@ const AdminUsers = ({user ,loadingUser}) => {
                           type="text"
                           value={filters.id}
                           onChange={(e) => handleFilterChange(e, 'id')}
-                          placeholder="Filter ID"
+                          placeholder="ID..."
                           className="filter-input"
                         />
                       </td>
@@ -715,7 +752,7 @@ const AdminUsers = ({user ,loadingUser}) => {
                           type="text"
                           value={filters.username }
                           onChange={(e) => handleFilterChange(e, 'username')}
-                          placeholder="Filter Name"
+                          placeholder="Name..."
                           className="filter-input"
                         />
                       </td>
@@ -725,7 +762,7 @@ const AdminUsers = ({user ,loadingUser}) => {
                           type="text"
                           value={filters.email}
                           onChange={(e) => handleFilterChange(e, 'email')}
-                          placeholder="Filter Email"
+                          placeholder="Email..."
                           className="filter-input"
                         />
                       </td>
@@ -734,7 +771,7 @@ const AdminUsers = ({user ,loadingUser}) => {
                           type="text"
                           value={filters.role}
                           onChange={(e) => handleFilterChange(e, 'role')}
-                          placeholder="Filter Role"
+                          placeholder="Role..."
                           className="filter-input"
                         />
                       </td>
@@ -743,7 +780,7 @@ const AdminUsers = ({user ,loadingUser}) => {
                           type="text"
                           value={filters.companies}
                           onChange={(e) => handleFilterChange(e, 'companies')}
-                          placeholder="Filter Companies"
+                          placeholder="Entités..."
                           className="filter-input"
                         />
                       </td>
@@ -752,7 +789,7 @@ const AdminUsers = ({user ,loadingUser}) => {
                           type="text"
                           value={filters.created_at}
                           onChange={(e) => handleFilterChange(e, 'created_at')}
-                          placeholder="Filter Date"
+                          placeholder="Date..."
                           className="filter-input"
                         />
                       </td>
@@ -914,7 +951,7 @@ const AdminUsers = ({user ,loadingUser}) => {
               <div className="checkbox-list" style={{
       display: 'flex',
       flexDirection: 'column',
-      alignItems: 'flex-start', // 👈 ensures full left alignment
+      alignItems: 'flex-start', //  ensures full left alignment
       gap: 4,
     }}>
                 {companies.map(company => (

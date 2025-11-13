@@ -198,6 +198,22 @@ const getOneMonthAgo = () => {
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const exportMenuRef = useRef(null);
 
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
+        setExportMenuOpen(false);
+      }
+    }
+    if (exportMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    } else {
+      document.removeEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [exportMenuOpen]);
+
   // Add a state to hold the displayed filename for the email modal
   const [displayedEmailFilename, setDisplayedEmailFilename] = useState('');
 
@@ -1291,11 +1307,10 @@ const getOneMonthAgo = () => {
                   <UploadIcon className="me-1" width="25" height="25" />
                   Importer des documents
                 </button>
-                <div className="dropdown">
+                <div className="dropdown" ref={exportMenuRef}>
                   <button
                     className="btn btn-outline-secondary btn-sm dropdown-toggle no-hover"
                     onClick={() => setExportMenuOpen(!exportMenuOpen)}
-                    ref={exportMenuRef}
                   >
                     <i className="fas fa-download me-1"></i>
                     Exporter
@@ -1303,16 +1318,16 @@ const getOneMonthAgo = () => {
                   {exportMenuOpen && (
                     <div className="dropdown-menu show">
                       <button className="dropdown-item" onClick={() => handleExport('csv')}>
-                        <i className="fas fa-file-csv me-2"></i>CSV
+                        <i className="fas fa-file-csv me-2"></i>Exporter en CSV
                       </button>
                       <button className="dropdown-item" onClick={() => handleExport('excel')}>
-                        <i className="fas fa-file-excel me-2"></i>Excel
+                        <i className="fas fa-file-excel me-2"></i>Exporter en Excel
                       </button>
                       <button className="dropdown-item" onClick={() => handleExport('json')}>
-                        <i className="fas fa-file-code me-2"></i>JSON
+                        <i className="fas fa-file-code me-2"></i>Exporter en JSON
                       </button>
                       <button className="dropdown-item" onClick={() => handleExport('txt')}>
-                        <i className="fas fa-file-alt me-2"></i>TXT
+                        <i className="fas fa-file-alt me-2"></i>Exporter en TXT
                       </button>
                     </div>
                   )}
