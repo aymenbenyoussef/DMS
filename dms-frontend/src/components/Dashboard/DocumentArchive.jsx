@@ -2366,21 +2366,17 @@ const getOneMonthAgo = () => {
 
       {/* Edit Modal */}
       {isEditModalOpen && editingDocument && (
-        <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog modal-lg modal-dialog-centered" style={{ height: '80vh', display: 'flex', alignItems: 'center' }}>
-            <div className="modal-content edit-modal-content-fixed-height">
-              <EditDocumentForm
-                document={editingDocument}
-                onSave={handleSaveEdit}
-                onCancel={handleCloseEditModal}
-                isLoading={isEditSaving}
-                error={editError}
-                success={editSuccess}
-              />
-            </div>
-          </div>
-        </div>
-      )}
+  
+        <EditDocumentForm
+          document={editingDocument}
+          onSave={handleSaveEdit}
+          onCancel={handleCloseEditModal}
+          isLoading={isEditSaving}
+          error={editError}
+          success={editSuccess}
+        />
+      
+)}
 
       {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && deletingDocument && (

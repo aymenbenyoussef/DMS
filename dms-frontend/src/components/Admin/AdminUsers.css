@@ -589,7 +589,24 @@
   transform: scale(1.05);
   accent-color: #1976d2;
 }
+.radio-group {
+  display: flex;
+  align-items: center;
+}
 
+.radio-group label {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0;
+  cursor: pointer;
+}
+
+.radio-group input[type="radiobox"] {
+  width: auto;
+  margin-right: 8px;
+  transform: scale(1.05);
+  accent-color: #1976d2;
+}
 .form-actions {
   display: flex;
   gap: 8px;
@@ -716,6 +733,58 @@
 }
 
 .checkbox-list::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Radio list container (same as checkbox-list) */
+.radio-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 160px;
+  overflow-y: auto;
+  padding: 8px;
+  margin-top: 6px;
+}
+
+/* Each radio item (same styling as checkbox-item) */
+.radio-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.radio-item:hover {
+  background-color: #e9ecef;
+}
+
+/* Radio input (same as checkbox) */
+.radio-item input[type="radio"] {
+  width: 14px;
+  height: 14px;
+  accent-color: #1976d2;
+  cursor: pointer;
+}
+
+/* Scrollbar styling for radio list (same as checkbox-list) */
+.radio-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.radio-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.radio-list::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.radio-list::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
 }
 

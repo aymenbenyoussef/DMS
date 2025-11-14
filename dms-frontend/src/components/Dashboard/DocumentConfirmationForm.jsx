@@ -829,7 +829,7 @@ const DocumentConfirmationForm = ({
             </div>
           </div>
         </div>
-
+        <footer className="form-footer">          
         {!hideConfirmButton && (
           <div className="confirmation-actions">
             <button 
@@ -862,7 +862,7 @@ const DocumentConfirmationForm = ({
               )}
             </button>
           </div>
-        )}
+        )}</footer>
       </div>
     );
   };
@@ -1242,7 +1242,7 @@ const DocumentConfirmationForm = ({
             </div>
           </div>
         </div>
-
+        <footer className="multi-file-footer">  
         {!hideConfirmButton && (
           <div className="confirmation-actions">
             <button 
@@ -1275,7 +1275,7 @@ const DocumentConfirmationForm = ({
               )}
             </button>
           </div>
-        )}
+        )}</footer>  
       </div>
     );
   };

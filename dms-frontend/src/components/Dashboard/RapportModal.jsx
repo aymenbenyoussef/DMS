@@ -36,6 +36,7 @@ function RapportModal(props) {
   const [loadingOcr, setLoadingOcr] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [partnerTypes, setPartnerTypes] = useState([]);
 
   const overlayRef = useRef(null);
   const dialogRef = useRef(null);
@@ -48,6 +49,21 @@ function RapportModal(props) {
   };
   const getDocumentGroup = (doc) => {
     return doc.group_name || 'Aucun groupe';
+  };
+
+  // Function to get partner types from partner ID
+  const getPartnerTypesFromPartnerId = async (partnerId) => {
+    if (!partnerId) return [];
+    try {
+      const response = await api.get(`/partners/${partnerId}/partnertypes`);
+      if (response.data && Array.isArray(response.data)) {
+        return response.data;
+      }
+      return [];
+    } catch (error) {
+      console.error('Error fetching partner types:', error);
+      return [];
+    }
   };
   const handleRapportDownload = async (doc) => {
     try {
@@ -155,6 +171,17 @@ function RapportModal(props) {
   useEffect(() => {
     setLocalOcrText(ocrText || '');
   }, [ocrText]);
+
+  // Fetch partner types when currentDocument or its partner_id changes
+  useEffect(() => {
+    if (currentDocument && currentDocument.partner_id) {
+      getPartnerTypesFromPartnerId(currentDocument.partner_id).then((types) => {
+        setPartnerTypes(types);
+      });
+    } else {
+      setPartnerTypes([]);
+    }
+  }, [currentDocument?.partner_id]);
 
   // Déterminer si le document est une facture
   const doctypeName = getDoctypeName ? (getDoctypeName(currentDocument?.doctype_id) || '') : (currentDocument?.doctype_name || '');
@@ -515,8 +542,11 @@ function RapportModal(props) {
                         
                       </div>
                       <div className="info-item">
-                        <span className="info-label" style={{ textTransform: 'none' }}>Type de partenaire : <span className="info-value" style={{ textTransform: 'none' }}>{currentDocument.partner_types || '-'}</span></span>
-                        
+                        <span className="info-label" style={{ textTransform: 'none' }}>Type de partenaire : <span className="info-value" style={{ textTransform: 'none' }}>
+                          {partnerTypes && partnerTypes.length > 0
+                            ? partnerTypes.map(pt => pt.name).join(', ')
+                            : (currentDocument.partner_types || '-')}
+                        </span></span>
                       </div>
                       
                       

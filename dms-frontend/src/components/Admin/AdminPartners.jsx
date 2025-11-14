@@ -806,7 +806,7 @@ const AdminPartners = ({ user }) => {
       <label style={{ marginBottom: 1, display: 'block' }}>Types de partenaire *</label>
       {fieldErrors.partnertypes && <div className="field-error">{fieldErrors.partnertypes}</div>}
       <div
-        className="checkbox-list"
+        className="radio-list"
         style={{
           maxHeight: 100,
           overflow: 'auto',
@@ -816,13 +816,24 @@ const AdminPartners = ({ user }) => {
         }}
       >
         {partnertypes.map((pt) => (
-          <label key={pt.id} className="checkbox-item" style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+          <label key={pt.id} className="radio-item" style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
             <input
-              type="checkbox"
+              type="radio"
               name="partnertypes"
               value={pt.id}
-              checked={formData.partnertypes.includes(pt.id)}
-              onChange={handleInputChange}
+              checked={formData.partnertypes.length === 1 && formData.partnertypes[0] === pt.id}
+              onChange={(e) => {
+                setFormData((prev) => ({
+                  ...prev,
+                  partnertypes: [parseInt(e.target.value, 10)]
+                }));
+                if (fieldErrors.partnertypes) {
+                  setFieldErrors((prev) => ({
+                    ...prev,
+                    partnertypes: ''
+                  }));
+                }
+              }}
               style={{ width: 10, height: 10 }}
             />
             <span>{pt.name}</span>

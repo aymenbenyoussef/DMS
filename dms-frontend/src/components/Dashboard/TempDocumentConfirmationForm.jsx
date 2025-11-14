@@ -314,9 +314,7 @@ const DocumentConfirmationForm = ({
     const err = errors[0];
   return (
     <div className="document-confirmation-form">
-      
-      
-        <div className="confirmation-form-scroll-area document-form">
+      <div className="confirmation-form-scroll-area document-form">
           <h4 className="document-title">{files[0].filename}</h4>
         {/* First row: Entity and Document Type */}
         <div className="form-row">
@@ -486,36 +484,35 @@ const DocumentConfirmationForm = ({
               </div>
             </div>
           )}
-        </div>
-        {successMessage && (
-          <div className="alert alert-success mb-3" style={{
-            backgroundColor: '#d4edda',
-            border: '1px solid #c3e6cb',
-            color: '#155724',
-            padding: '12px 16px',
-            borderRadius: '6px',
-            marginBottom: '16px'
-          }}>
-            <i className="bi bi-check-circle me-2"></i>
-            {successMessage}
-          </div>
-        )}
-        <div className="confirmation-actions">
-          <button className="btn-secondary" onClick={onCancel} disabled={isLoading}>Annuler</button>
-          {!hideConfirmButton && (
-            <button className="btn-primary" onClick={handleConfirm} disabled={isLoading}>
-              {isLoading ? 'Confirmation...' : 'Confirm'}
-            </button>
-          )}
-        </div>
       </div>
+      {successMessage && (
+        <div className="alert alert-success" style={{
+          backgroundColor: '#d4edda',
+          border: '1px solid #c3e6cb',
+          color: '#155724',
+          padding: '12px 16px',
+          borderRadius: '6px',
+          margin: '0'
+        }}>
+          <i className="bi bi-check-circle me-2"></i>
+          {successMessage}
+        </div>
+      )}
+      <div className="confirmation-actions">
+        <button className="btn-secondary" onClick={onCancel} disabled={isLoading}>Annuler</button>
+        {!hideConfirmButton && (
+          <button className="btn-primary" onClick={handleConfirm} disabled={isLoading}>
+            {isLoading ? 'Confirmation...' : 'Confirm'}
+          </button>
+        )}
+      </div>
+    </div>
     );
   }
 
   // Multi-file form
   return (
     <div className="document-confirmation-form">
-      
       <div className="confirmation-form-scroll-area document-form">
         {files.map((file, idx) => (
           <div key={file.sessionId || file.filename} className="multi-file-section">
@@ -691,14 +688,16 @@ const DocumentConfirmationForm = ({
           </div>
         ))}
       </div>
+      <footer className="form-footer">
       <div className="confirmation-actions">
         <button className="btn-secondary" onClick={onCancel} disabled={isLoading}>Annuler</button>
         {!hideConfirmButton && (
-                      <button className="btn-primary" onClick={handleConfirm} disabled={isLoading}>
-              {isLoading ? 'Confirmation...' : 'Confirm'}
-            </button>
+          <button className="btn-primary" onClick={handleConfirm} disabled={isLoading}>
+            {isLoading ? 'Confirmation...' : 'Confirm'}
+          </button>
         )}
       </div>
+      </footer>
     </div>
   );
 };

@@ -496,7 +496,7 @@ const DragDropUpload = ({ onUpload, onClose }) => {
               />
             )}
             
-            {uploadStatus && (
+            {uploadStatus && validFiles.length === 0 && (
               <div className={`alert alert--${uploadStatus.includes('error') ? 'error' : uploadStatus === 'completed' ? 'success' : 'info'}`}>
                 {uploadStatus === 'completed' ? (
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

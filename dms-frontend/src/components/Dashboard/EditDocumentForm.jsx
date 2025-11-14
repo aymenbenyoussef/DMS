@@ -304,86 +304,100 @@ const EditDocumentForm = ({ document, onSave, onCancel, isLoading }) => {
   const isInvoice = !!formData.is_invoice;
 
   return (
-    <div className={`edit-document-form document-confirmation-form${isInvoice ? ' invoice' : ''}`}> 
-      {/* Header styled like ShareModal */}
-      <div className="modal-header" style={{ position: 'sticky', top: 0, zIndex: 2 }}>
-        <div className="modal-header__content">
-          <div className="modal-header__icon">🔧</div>
-          <h3 className="modal-title">Modifier le document</h3>
+    <div className='modal-overlay'
+>
+    <div style={{ background: '#fff', borderRadius: 8, overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 10px 30px rgba(0,0,0,0.2)', maxHeight: '100%' }}>
+      <div className={`edit-document-form document-confirmation-form${isInvoice ? ' invoice' : ''}`}> 
+        {/* Header styled like ShareModal */}
+        <div className="modal-header" style={{ position: 'sticky', top: 0, zIndex: 2 }}>
+          <div className="modal-header__content">
+            <div className="modal-header__icon">🔧</div>
+            <h3 className="modal-title">Modifier le document</h3>
+          </div>
+          <button className="modal-close-btn" type="button" onClick={onCancel} aria-label="Fermer">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
         </div>
-        <button className="modal-close-btn" type="button" onClick={onCancel} aria-label="Fermer">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
-      </div>
 
       <form onSubmit={handleSubmit} className="document-form" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
         <div className="modal-body modal-body--scrollable" style={{ flex: 1, minHeight: 0, paddingBottom: 0 }}>
           <div className="form-row">
               <div className="form-group full-width-field">
-                <label className="form-label" htmlFor="filename">Nom du fichier</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <input
-                    type="text"
-                    className="form-input"
-                    name="filename"
-                    id="filename"
-                    value={(() => {
-                      const filename = formData.filename !== undefined ? formData.filename : document.filename;
-                      const dotIdx = filename.lastIndexOf('.');
-                      return dotIdx > 0 ? filename.substring(0, dotIdx) : filename;
-                    })()}
-                    onChange={e => {
-                      const ext = (() => {
-                        const filename = formData.filename !== undefined ? formData.filename : document.filename;
-                        const dotIdx = filename.lastIndexOf('.');
-                        return dotIdx > 0 ? filename.substring(dotIdx) : '';
-                      })();
-                      setFormData(prev => ({ ...prev, filename: e.target.value + ext }));
-                    }}
-                    autoComplete="off"
-                    style={{ flex: 1 }}
-                  />
-                  <span style={{ minWidth: 0, whiteSpace: 'nowrap', color: '#888', fontWeight: 500, fontSize: '1rem' }}>
-                    {(() => {
-                      const filename = formData.filename !== undefined ? formData.filename : document.filename;
-                      const dotIdx = filename.lastIndexOf('.');
-                      return dotIdx > 0 ? filename.substring(dotIdx) : '';
-                    })()}
-                  </span>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+                  {/* Filename field */}
+                  <div style={{ flex: 1.5 }}>
+                    <label className="form-label" htmlFor="filename">Nom du fichier</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <input
+                        type="text"
+                        className="form-input"
+                        name="filename"
+                        id="filename"
+                        value={(() => {
+                          const filename = formData.filename !== undefined ? formData.filename : document.filename;
+                          const dotIdx = filename.lastIndexOf('.');
+                          return dotIdx > 0 ? filename.substring(0, dotIdx) : filename;
+                        })()}
+                        onChange={e => {
+                          const ext = (() => {
+                            const filename = formData.filename !== undefined ? formData.filename : document.filename;
+                            const dotIdx = filename.lastIndexOf('.');
+                            return dotIdx > 0 ? filename.substring(dotIdx) : '';
+                          })();
+                          setFormData(prev => ({ ...prev, filename: e.target.value + ext }));
+                        }}
+                        autoComplete="off"
+                        style={{ flex: 1 }}
+                      />
+                      <span style={{ minWidth: 0, whiteSpace: 'nowrap', color: '#888', fontWeight: 500, fontSize: '1rem' }}>
+                        {(() => {
+                          const filename = formData.filename !== undefined ? formData.filename : document.filename;
+                          const dotIdx = filename.lastIndexOf('.');
+                          return dotIdx > 0 ? filename.substring(dotIdx) : '';
+                        })()}
+                      </span>
+                    </div>
+                  </div>
 
-                  {/* Company select */}
-                  <select
-                    name="company_id"
-                    id="company_id"
-                    className="form-input"
-                    value={selectedCompany || formData.company_id || ''}
-                    onChange={handleCompanyChange}
-                    style={{ width: 220 }}
-                    disabled={isLoadingCompanies}
-                  >
-                    <option value="">Sélectionner une société</option>
-                    {companies.map(c => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
+                  {/* Company select with label */}
+                  <div style={{ flex: 1 }}>
+                    <label className="form-label" htmlFor="company_id" style={{ display: 'block', marginBottom: '0.25rem' }}>Entité</label>
+                    <select
+                      name="company_id"
+                      id="company_id"
+                      className="form-input"
+                      value={selectedCompany || formData.company_id || ''}
+                      onChange={handleCompanyChange}
+                      style={{ width: '100%' }}
+                      disabled={isLoadingCompanies}
+                    >
+                      <option value="">Sélectionner une société</option>
+                      {companies.map(c => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
 
-                  {/* Doctype select (depends on selected company) */}
-                  <select
-                    name="doctype_id"
-                    id="doctype_id"
-                    className="form-input"
-                    value={selectedDoctype || formData.doctype_id || ''}
-                    onChange={handleDoctypeChange}
-                    style={{ width: 220 }}
-                  >
-                    <option value="">Sélectionner un type de document</option>
-                    {doctypes.map(dt => (
-                      <option key={dt.id} value={dt.id}>{dt.name}</option>
-                    ))}
-                  </select>
+                  {/* Doctype select with label (depends on selected company) */}
+                  <div style={{ flex: 1 }}>
+                    <label className="form-label" htmlFor="doctype_id" style={{ display: 'block', marginBottom: '0.25rem' }}>Types de document</label>
+                    <select
+                      name="doctype_id"
+                      id="doctype_id"
+                      className="form-input"
+                      value={selectedDoctype || formData.doctype_id || ''}
+                      onChange={handleDoctypeChange}
+                      style={{ width: '100%' }}
+                    >
+                      <option value="">Sélectionner un type de document</option>
+                      {doctypes.map(dt => (
+                        <option key={dt.id} value={dt.id}>{dt.name}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
           </div>
@@ -683,7 +697,8 @@ const EditDocumentForm = ({ document, onSave, onCancel, isLoading }) => {
           </button>
         </div>
       </form>
-    </div>
+      </div>
+    </div></div>
   );
 };
 

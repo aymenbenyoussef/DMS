@@ -117,8 +117,8 @@ const AddPartner = ({ user }) => {
         errorMessages.push('Au moins une entite doit être sélectionnée');
       }
       if (formData.partnertypes.length === 0) {
-        errors.partnertypes = 'Au moins un type de partenaire doit être sélectionné';
-        errorMessages.push('Au moins un type de partenaire doit être sélectionné');
+        errors.partnertypes = 'Un type de partenaire doit être sélectionné';
+        errorMessages.push('Un type de partenaire doit être sélectionné');
       }
     }
 
@@ -444,15 +444,27 @@ const handleSubmit = async (e) => {
           <div className="form-group">
             <label>Types de partenaire *</label>
             {fieldErrors.partnertypes && <div className="field-error">{fieldErrors.partnertypes}</div>}
-            <div className="checkbox-list">
+            <div className="radio-list">
               {partnertypes.map((c) => (
-                <label key={c.id} className="checkbox-item">
+                <label key={c.id} className="radio-item">
                   <input
-                    type="checkbox"
+                    type="radio"
                     name="partnertypes"
                     value={c.id}
-                    checked={formData.partnertypes.includes(c.id)}
-                    onChange={handleInputChange}
+                    checked={formData.partnertypes.length === 1 && formData.partnertypes[0] === c.id}
+                    onChange={(e) => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        partnertypes: [parseInt(e.target.value, 10)]
+                      }));
+                      setFieldErrors((prev) => {
+                        if (prev.partnertypes) {
+                          return { ...prev, partnertypes: '' };
+                        }
+                        return prev;
+                      });
+                      setHasSubmitted(false);
+                    }}
                   />
                   <span className="partnertype-name">{c.name}</span>
                 </label>
