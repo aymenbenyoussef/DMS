@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import api from '../../api';
 import './ModalStyles.css'; // Fichier CSS partagé pour les styles
@@ -38,8 +38,15 @@ function RapportModal(props) {
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [partnerTypes, setPartnerTypes] = useState([]);
 
+  // Zoom and pan state for image preview
+  const [scale, setScale] = useState(1);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
   const overlayRef = useRef(null);
   const dialogRef = useRef(null);
+  const imageContainerRef = useRef(null);
 
   const getUploaderName = (doc) => {
     const name = doc.owner_name || '';
@@ -150,6 +157,16 @@ function RapportModal(props) {
         break;
     }
   };
+
+  // Reset zoom and position when image changes or modal opens
+  useEffect(() => {
+    if (activeTab === 'report' && isImage({ url: localPreviewUrl, mime: localPreviewMime })) {
+      setScale(1);
+      setPosition({ x: 0, y: 0 });
+      setIsDragging(false);
+    }
+  }, [activeTab, localPreviewUrl, localPreviewMime]);
+
   useEffect(() => {
     setLocalPreviewUrl(previewUrl || documentFileUrl || null);
     // Dérivation du type MIME
@@ -199,6 +216,103 @@ function RapportModal(props) {
     if (!url) return false;
     return !!url.toLowerCase().match(/\.(jpg|jpeg|png|gif)$/);
   }
+
+  // Image zoom and pan handlers
+  const handleWheel = useCallback((e) => {
+    if (!isImage({ url: localPreviewUrl, mime: localPreviewMime })) return;
+    
+    e.preventDefault();
+    e.stopPropagation();
+
+    const rect = imageContainerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    const zoomIntensity = 0.2;
+    const wheel = e.deltaY < 0 ? 1 : -1;
+    const newScale = Math.max(0.1, Math.min(5, scale + wheel * zoomIntensity));
+
+    // Calculate new position to zoom towards mouse
+    const zoomFactor = newScale / scale;
+    const newX = position.x - (mouseX - position.x) * (zoomFactor - 1);
+    const newY = position.y - (mouseY - position.y) * (zoomFactor - 1);
+
+    setScale(newScale);
+    setPosition({ x: newX, y: newY });
+  }, [scale, position, localPreviewUrl, localPreviewMime]);
+
+  const handleMouseDown = useCallback((e) => {
+    if (!isImage({ url: localPreviewUrl, mime: localPreviewMime }) || scale <= 1) return;
+    
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+    setDragStart({
+      x: e.clientX - position.x,
+      y: e.clientY - position.y
+    });
+  }, [localPreviewUrl, localPreviewMime, scale, position]);
+
+  const handleMouseMove = useCallback((e) => {
+    if (!isDragging || !isImage({ url: localPreviewUrl, mime: localPreviewMime }) || scale <= 1) return;
+    
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const newX = e.clientX - dragStart.x;
+    const newY = e.clientY - dragStart.y;
+    
+    setPosition({
+      x: newX,
+      y: newY
+    });
+  }, [isDragging, localPreviewUrl, localPreviewMime, scale, dragStart]);
+
+  const handleMouseUp = useCallback((e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    setIsDragging(false);
+  }, []);
+
+  const zoomIn = useCallback(() => {
+    const newScale = Math.min(5, scale + 0.25);
+    setScale(newScale);
+  }, [scale]);
+
+  const zoomOut = useCallback(() => {
+    const newScale = Math.max(0.1, scale - 0.25);
+    setScale(newScale);
+  }, [scale]);
+
+  const resetZoom = useCallback(() => {
+    setScale(1);
+    setPosition({ x: 0, y: 0 });
+  }, []);
+
+  // Add cursor style based on state
+  const getCursorStyle = () => {
+    if (!isImage({ url: localPreviewUrl, mime: localPreviewMime })) return 'default';
+    if (isDragging) return 'grabbing';
+    if (scale > 1) return 'grab';
+    return 'zoom-in';
+  };
+
+  // Add global mouse up listener for dragging
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('mousemove', handleMouseMove);
+      
+      return () => {
+        document.removeEventListener('mouseup', handleMouseUp);
+        document.removeEventListener('mousemove', handleMouseMove);
+      };
+    }
+  }, [isDragging, handleMouseUp, handleMouseMove]);
 
   // Récupération du rapport à la demande
   useEffect(() => {
@@ -317,6 +431,134 @@ function RapportModal(props) {
     if (e.target === overlayRef.current) close();
   };
 
+  const renderImagePreview = () => {
+    if (!isImage({ url: localPreviewUrl, mime: localPreviewMime }) || !localPreviewUrl) return null;
+
+    return (
+      <div 
+        ref={imageContainerRef}
+        style={{
+          position: 'relative',
+          width: '100%',
+          height: '100%',
+          overflow: 'hidden',
+          cursor: getCursorStyle(),
+          backgroundColor: '#f8f9fa'
+        }}
+        onWheel={handleWheel}
+        onMouseDown={handleMouseDown}
+      >
+        <div
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: `translate(${position.x}px, ${position.y}px) scale(${scale}) translate(-50%, -50%)`,
+            transformOrigin: 'center center',
+            transition: isDragging ? 'none' : 'transform 0.1s ease'
+          }}
+        >
+          <img
+            src={localPreviewUrl}
+            alt={previewTitle}
+            style={{
+              maxWidth: 'none',
+              maxHeight: 'none',
+              width: 'auto',
+              height: 'auto',
+              display: 'block',
+              userSelect: 'none',
+              WebkitUserDrag: 'none',
+              pointerEvents: 'none'
+            }}
+            onDragStart={(e) => e.preventDefault()}
+          />
+        </div>
+
+        {/* Zoom Controls */}
+        <div style={{
+          position: 'absolute',
+          bottom: '16px',
+          right: '16px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+          padding: '8px 12px',
+          borderRadius: '8px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+          border: '1px solid #e0e0e0'
+        }}>
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-secondary"
+            onClick={zoomOut}
+            disabled={scale <= 0.1}
+            title="Zoom out"
+            style={{ minWidth: '32px' }}
+          >
+            <i className="fas fa-search-minus"></i>
+          </button>
+          
+          <span style={{ 
+            minWidth: '60px', 
+            textAlign: 'center', 
+            fontSize: '14px',
+            fontWeight: '500',
+            color: '#495057'
+          }}>
+            {Math.round(scale * 100)}%
+          </span>
+          
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-secondary"
+            onClick={zoomIn}
+            disabled={scale >= 5}
+            title="Zoom in"
+            style={{ minWidth: '32px' }}
+          >
+            <i className="fas fa-search-plus"></i>
+          </button>
+          
+          <div style={{ width: '1px', height: '20px', backgroundColor: '#e0e0e0' }}></div>
+          
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-secondary"
+            onClick={resetZoom}
+            disabled={scale === 1}
+            title="Reset zoom"
+            style={{ minWidth: '32px' }}
+          >
+            <i className="fas fa-sync-alt"></i>
+          </button>
+        </div>
+
+        {/* Drag instruction hint */}
+        {scale > 1 && !isDragging && (
+          <div style={{
+            position: 'absolute',
+            top: '16px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            backgroundColor: 'rgba(0, 0, 0, 0.75)',
+            color: 'white',
+            padding: '8px 16px',
+            borderRadius: '6px',
+            fontSize: '12px',
+            fontWeight: '500',
+            pointerEvents: 'none',
+            zIndex: 10,
+            animation: 'fadeOut 3s forwards 2s'
+          }}>
+            🖱️ Click and drag to pan • Scroll to zoom
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // Gestion des onglets avec indicateurs de statut
   const tabs = [
     {
@@ -333,17 +575,15 @@ function RapportModal(props) {
       isLoading: loadingOcr
     },
   
-
-  {
-   
+    {
       id: 'rapport',
       label: 'Rapport DMS',
       icon: '📊',
       hasContent: !!localRapportUrl,
       isLoading: loadingRapport
-    
-  }
-];
+    }
+  ];
+
   const content = (
     <div
       className="modal-overlay"
@@ -400,7 +640,7 @@ function RapportModal(props) {
             {/* Contenu des onglets avec hauteur dynamique */}
             <div className="tab-content">
               {activeTab === 'report' && (
-                <div className="tab-panel tab-panel--document">
+                <div className="tab-panel tab-panel--document" style={{ position: 'relative', height: '100%' }}>
                   {isPdf({ url: localPreviewUrl || previewUrl || localDocumentFileUrl, mime: localPreviewMime || localDocumentMime }) && (localPreviewUrl || previewUrl || localDocumentFileUrl) && (
                     <div className="pdf-viewer-container">
                       <iframe
@@ -423,13 +663,7 @@ function RapportModal(props) {
                     </div>
                   )}
                   {isImage({ url: localPreviewUrl || previewUrl || localDocumentFileUrl, mime: localPreviewMime || localDocumentMime }) && (localPreviewUrl || previewUrl || localDocumentFileUrl) && (
-                    <div className="image-viewer-container">
-                      <img 
-                        src={localPreviewUrl || previewUrl || localDocumentFileUrl} 
-                        alt={previewTitle} 
-                        className="image-viewer"
-                      />
-                    </div>
+                    renderImagePreview()
                   )}
                   {(!isPdf({ url: localPreviewUrl, mime: localPreviewMime }) && !isImage({ url: localPreviewUrl, mime: localPreviewMime })) && (
                     <div className="text-content">
@@ -675,7 +909,6 @@ function RapportModal(props) {
     </div>
   );
 
-  // Rendu via portal vers le body pour éviter les problèmes de z-index/overflow
   return typeof document !== 'undefined' ? createPortal(content, document.body) : content;
 }
 

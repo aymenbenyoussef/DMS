@@ -1,22 +1,38 @@
 import React, { useState, useCallback, useContext, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import API from '../../api';
-import { AppContext } from '../context';
+import { AppContext, useNotification } from '../context';
 import DocumentConfirmationForm from './DocumentConfirmationForm';
 import './DragDropUpload.css';
 
 const DragDropUpload = ({ onUpload, onClose }) => {
+  const { showNotification } = useNotification();
   const { selectedCompany, selectedDoctype } = useContext(AppContext);
   const [files, setFiles] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadStatus, setUploadStatus] = useState(null);
   const [showConfirmations, setShowConfirmations] = useState([]);
   const [confirmationData, setConfirmationData] = useState([]);
   const [maxFileSize, setMaxFileSize] = useState(2014);
   const [currentStep, setCurrentStep] = useState(1);
   const [tempDocIdsToCleanup, setTempDocIdsToCleanup] = useState(new Set());
+  const [uploadStatus, setUploadStatus] = useState('');
+
+  const getStatusMessage = () => {
+    switch (uploadStatus) {
+      case 'uploading':
+        return 'Téléchargement en cours...';
+      case 'confirming':
+        return 'Confirmation en cours...';
+      case 'completed':
+        return 'Téléchargement terminé avec succès !';
+      case 'error':
+        return 'Une erreur est survenue.';
+      default:
+        return '';
+    }
+  };
   
   const overlayRef = useRef(null);
   const dialogRef = useRef(null);
@@ -56,16 +72,6 @@ const DragDropUpload = ({ onUpload, onClose }) => {
     fetchMaxFileSize();
   }, []);
 
-  // Clear size error after 5 seconds
-  useEffect(() => {
-    if (uploadStatus === 'size_error') {
-      const timer = setTimeout(() => {
-        setUploadStatus(null);
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [uploadStatus]);
-
   const handleDragEnter = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -89,35 +95,33 @@ const DragDropUpload = ({ onUpload, onClose }) => {
     setIsDragging(false);
     const droppedFiles = Array.from(e.dataTransfer.files).filter(isValidFileType);
     if (droppedFiles.length === 0) {
-      setUploadStatus('invalid');
+      showNotification('Type de fichier non valide.', 'error');
       return;
     }
     
     const oversizedFiles = droppedFiles.filter(file => file.size > maxFileSize * 1024);
     if (oversizedFiles.length > 0) {
-      setUploadStatus('size_error');
+      showNotification(`Taille maximale dépassée (${maxFileSize} Ko).`, 'error');
       return;
     }
     
     setFiles(prev => [...prev, ...droppedFiles]);
-    setUploadStatus(null);
   };
 
   const handleFileChange = (e) => {
     const selectedFiles = Array.from(e.target.files).filter(isValidFileType);
     if (selectedFiles.length === 0) {
-      setUploadStatus('invalid');
+      showNotification('Type de fichier non valide.', 'error');
       return;
     }
     
     const oversizedFiles = selectedFiles.filter(file => file.size > maxFileSize * 1024);
     if (oversizedFiles.length > 0) {
-      setUploadStatus('size_error');
+      showNotification(`Taille maximale dépassée (${maxFileSize} Ko).`, 'error');
       return;
     }
     
     setFiles(prev => [...prev, ...selectedFiles]);
-    setUploadStatus(null);
   };
 
   const isValidFileType = (file) => {
@@ -145,7 +149,7 @@ const DragDropUpload = ({ onUpload, onClose }) => {
     // Always save uploads as temporary documents first so they are available
     // in the Temp Documents archive if the user doesn't complete confirmation.
     setIsUploading(true);
-    setUploadStatus('pending');
+    showNotification('Traitement en cours...', 'info');
     setUploadProgress(0);
 
     let confirmations = [];
@@ -227,7 +231,7 @@ const DragDropUpload = ({ onUpload, onClose }) => {
       return next;
     });
     setConfirmationData(confirmations.map(conf => ({ confirmedDocument: null, errors: {} })));
-    setUploadStatus('processed');
+    showNotification('Fichiers téléchargés avec succès.', 'success');
     setIsUploading(false);
   }, [files, selectedCompany, selectedDoctype]);
 
@@ -253,12 +257,11 @@ const DragDropUpload = ({ onUpload, onClose }) => {
       }
     }
     if (hasError) {
-      setUploadStatus('error');
-      alert('Veuillez corriger les erreurs dans tous les formulaires avant de confirmer.');
+      showNotification('Veuillez corriger les erreurs dans tous les formulaires avant de confirmer.', 'error');
       return;
     }
     setIsUploading(true);
-    setUploadStatus('confirming');
+    showNotification('Confirmation en cours...', 'info');
     try {
       for (let i = 0; i < showConfirmations.length; i++) {
         const conf = showConfirmations[i];
@@ -295,13 +298,12 @@ const DragDropUpload = ({ onUpload, onClose }) => {
         }
       }
       window.dispatchEvent(new Event('FilesUploaded'));
-      setUploadStatus('completed');
+      showNotification('Téléchargement terminé avec succès !', 'success');
       setTimeout(() => {
         onClose();
       }, 2000);
     } catch (error) {
-      setUploadStatus('error');
-      alert('Erreur lors de la confirmation: ' + (error.response?.data?.msg || error.message));
+      showNotification('Erreur lors de la confirmation: ' + (error.response?.data?.msg || error.message), 'error');
     } finally {
       setIsUploading(false);
     }
@@ -309,7 +311,6 @@ const DragDropUpload = ({ onUpload, onClose }) => {
 
   const removeFile = (index) => {
     setFiles(prev => prev.filter((_, i) => i !== index));
-    setUploadStatus(null);
   };
 
   const onBackdropClick = (e) => {
@@ -333,37 +334,6 @@ const DragDropUpload = ({ onUpload, onClose }) => {
       onClose?.();
     }
   }, [onClose, tempDocIdsToCleanup]);
-
-  const getStatusMessage = () => {
-    switch (uploadStatus) {
-      case 'pending':
-        return 'Traitement en cours...';
-      case 'processed':
-        const hasTempUploads = showConfirmations.some(conf => conf.isTempUpload);
-        if (hasTempUploads) {
-          return 'Fichiers téléchargés avec succès.';
-        }
-        return 'Fichier traité avec succès. Vérifiez les informations.';
-      case 'confirming':
-        return 'Confirmation en cours...';
-      case 'completed':
-        const hasTempUploadsCompleted = showConfirmations.some(conf => conf.isTempUpload);
-        if (hasTempUploadsCompleted) {
-          return 'Téléchargement terminé avec succès !';
-        }
-        return 'Document confirmé et sauvegardé !';
-      case 'error':
-        return 'Erreur lors du traitement.';
-      case 'invalid':
-        return 'Type de fichier non valide.';
-      case 'size_error':
-        return `Taille maximale dépassée (${maxFileSize} Ko).`;
-      case 'multiple_files_error':
-        return 'Sélectionnez un seul fichier à la fois.';
-      default:
-        return '';
-    }
-  };
 
   // Icônes SVG
   const CloseIcon = () => (
@@ -625,13 +595,6 @@ const DragDropUpload = ({ onUpload, onClose }) => {
                 ></div>
               </div>
               <span className="progress-text">{uploadProgress}%</span>
-            </div>
-          )}
-
-          {/* Messages de statut */}
-          {uploadStatus && (
-            <div className={`status-message ${uploadStatus}`}>
-              {getStatusMessage()}
             </div>
           )}
         </div>

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext, useRef } from 'react';
 import Logger from '../../utils/logger';
 import DragDropUpload from './DragDropUpload';
 import API from '../../api';
-import { AppContext } from '../context';
+import { AppContext, useNotification } from '../context';
 import WelcomePanel from './WelcomePanel';
 import { useNavigate, useLocation } from 'react-router-dom';
 import EditDocumentForm from './EditDocumentForm';
@@ -14,6 +14,7 @@ import RapportModal from './RapportModal';
 import ShareModal from './ShareModal';
 
 const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
+  const { showNotification } = useNotification();
   const isDoctypeScoped = Boolean(selectedDoctype);
   // Bulk delete handler
   const handleBulkDelete = async (documentIds) => {
@@ -23,11 +24,9 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
       setDocuments(prev => prev.filter(doc => !documentIds.includes(doc.id)));
       setFilteredDocuments(prev => prev.filter(doc => !documentIds.includes(doc.id)));
       setCheckedDocuments([]);
-      setSuccessMessage('Documents supprimés avec succès');
-      setTimeout(() => setSuccessMessage(''), 3000);
+      showNotification('Documents supprimés avec succès', 'success');
     } catch (error) {
-      setError('Erreur lors de la suppression multiple');
-      setTimeout(() => setError(''), 3000);
+      showNotification('Erreur lors de la suppression multiple', 'error');
     }
   };
 
@@ -41,6 +40,16 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
   const [globalActionType, setGlobalActionType] = useState(''); // 'delete' or 'send'
   const [checkedDocuments, setCheckedDocuments] = useState([]);
   const [currency, setCurrency] = useState('TND');
+
+  // Error and success states
+  const [groupError, setGroupError] = useState('');
+  const [groupSuccess, setGroupSuccess] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [emailSuccess, setEmailSuccess] = useState('');
+  const [editError, setEditError] = useState('');
+  const [editSuccess, setEditSuccess] = useState('');
+  const [deleteError, setDeleteError] = useState('');
+  const [uploadError, setUploadError] = useState('');
 
   // Helper function to get first day of current month
   const getFirstDayOfMonth = () => {
@@ -104,10 +113,7 @@ const getOneMonthAgo = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [folderName, setFolderName] = useState('');
-  const [error, setError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
   const [folders, setFolders] = useState([]);
-  const [uploadError, setUploadError] = useState('');
   const { setSelectedDoctype } = useContext(AppContext);
   const navigate = useNavigate();
   const location = useLocation();
@@ -115,8 +121,6 @@ const getOneMonthAgo = () => {
   // Document type states
   const [documentTypes, setDocumentTypes] = useState([]);
   const [showNewDocTypeForm, setShowNewDocTypeForm] = useState(false);
-  const [newDocTypeError, setNewDocTypeError] = useState('');
-  const [newDocTypeSuccess, setNewDocTypeSuccess] = useState('');
   const [selectedDocTypes, setSelectedDocTypes] = useState([]);
   const [newDocTypeName, setNewDocTypeName] = useState('');
   const [newDocTypeStatus, setNewDocTypeStatus] = useState(true);
@@ -164,8 +168,6 @@ const getOneMonthAgo = () => {
   const [groupAction, setGroupAction] = useState(''); // 'add' or 'create'
   const [selectedGroup, setSelectedGroup] = useState('');
   const [newGroupName, setNewGroupName] = useState('');
-  const [groupError, setGroupError] = useState('');
-  const [groupSuccess, setGroupSuccess] = useState('');
 
   // Enhanced preview modal state with document information
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
@@ -189,8 +191,6 @@ const getOneMonthAgo = () => {
   const [emailMessage, setEmailMessage] = useState('');
   const [selectedEmailTypes, setSelectedEmailTypes] = useState(['document']); // Array of selected email types
   const [availableEmailTypes, setAvailableEmailTypes] = useState([]);
-  const [emailError, setEmailError] = useState('');
-  const [emailSuccess, setEmailSuccess] = useState('');
   const [isEmailSending, setIsEmailSending] = useState(false);
 
   // Sorting and export states
@@ -220,14 +220,11 @@ const getOneMonthAgo = () => {
   // Document modification states
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingDocument, setEditingDocument] = useState(null);
-  const [editError, setEditError] = useState('');
-  const [editSuccess, setEditSuccess] = useState('');
   const [isEditSaving, setIsEditSaving] = useState(false);
 
   // Delete confirmation modal state
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deletingDocument, setDeletingDocument] = useState(null);
-  const [deleteError, setDeleteError] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Fullscreen modal state
@@ -300,8 +297,6 @@ const getOneMonthAgo = () => {
     setFolderName('');
     setShowNewDocTypeForm(false);
     setSelectedDocTypes([]);
-    setNewDocTypeError('');
-    setNewDocTypeSuccess('');
     setNewDocTypeName('');
     setNewDocTypeStatus(true);
   };
@@ -309,7 +304,6 @@ const getOneMonthAgo = () => {
   const openUploadModal = () => setIsUploadModalOpen(true);
   const closeUploadModal = () => {
     setIsUploadModalOpen(false);
-    setUploadError('');
   };
 
   // Function to fetch documents from the backend with filters
@@ -442,12 +436,12 @@ const getOneMonthAgo = () => {
 
     try {
       await API.groups.addDocuments(selectedGroup, selectedDocuments);
-      setGroupSuccess('Documents ajoutés au groupe avec succès');
+      showNotification('Documents ajoutés au groupe avec succès', 'success');
       setTimeout(() => {
         handleCancelGroupAction();
       }, 2000);
     } catch (error) {
-      setGroupError(error.response?.data?.msg || 'Erreur lors de l\'ajout des documents au groupe');
+      showNotification(error.response?.data?.msg || 'Erreur lors de l\'ajout des documents au groupe', 'error');
     }
   };
 
@@ -514,7 +508,7 @@ const getOneMonthAgo = () => {
         await API.groups.addDocuments(newGroupId, selectedDocuments);
       }
 
-      setGroupSuccess('Groupe créé avec succès');
+      showNotification('Groupe créé avec succès', 'success');
       
       // Refresh groups list
       fetchGroups();
@@ -523,7 +517,7 @@ const getOneMonthAgo = () => {
         handleCancelGroupAction();
       }, 2000);
     } catch (error) {
-      setGroupError(error.response?.data?.msg || 'Erreur lors de la création du groupe');
+      showNotification(error.response?.data?.msg || 'Erreur lors de la création du groupe', 'error');
     }
   };
 
@@ -559,7 +553,7 @@ const getOneMonthAgo = () => {
       setAvailableEmailTypes(docInfoResponse.data.available_types || []);
       setEmailUsers(usersResponse.data.users || []);
     }).catch((error) => {
-      setEmailError("Erreur lors de la préparation de l'email : " + (error.response?.data?.msg || error.message));
+      showNotification("Erreur lors de la préparation de l'email : " + (error.response?.data?.msg || error.message), 'error');
     });
   };
 
@@ -1003,7 +997,7 @@ const getOneMonthAgo = () => {
 
     try {
       await API.documents.update(editingDocument.id, updatedDocument);
-      setEditSuccess('Document mis à jour avec succès');
+      showNotification('Document mis à jour avec succès', 'success');
 
       // Refresh documents list
       fetchDocuments();
@@ -1012,7 +1006,7 @@ const getOneMonthAgo = () => {
         handleCloseEditModal();
       }, 1200);
     } catch (error) {
-      setEditError(error.response?.data?.msg || 'Erreur lors de la mise à jour du document');
+      showNotification(error.response?.data?.msg || 'Erreur lors de la mise à jour du document', 'error');
     } finally {
       setIsEditSaving(false);
     }
@@ -1044,7 +1038,7 @@ const getOneMonthAgo = () => {
 
       handleCloseDeleteModal();
     } catch (error) {
-      setDeleteError(error.response?.data?.msg || 'Erreur lors de la suppression du document');
+      showNotification(error.response?.data?.msg || 'Erreur lors de la suppression du document', 'error');
     } finally {
       setIsDeleting(false);
     }
@@ -1099,7 +1093,7 @@ const getOneMonthAgo = () => {
           message: emailMessage,
           email_type: selectedEmailTypes
         });
-        setEmailSuccess('Email envoyé avec succès');
+        showNotification('Email envoyé avec succès', 'success');
       }
 
       setTimeout(() => {
@@ -1109,9 +1103,9 @@ const getOneMonthAgo = () => {
       // Prefer server-provided structured errors when available
       const serverMsg = error.response?.data?.msg || error.response?.data || null;
       if (serverMsg) {
-        setEmailError(typeof serverMsg === 'string' ? serverMsg : JSON.stringify(serverMsg));
+        showNotification(typeof serverMsg === 'string' ? serverMsg : JSON.stringify(serverMsg), 'error');
       } else {
-        setEmailError(error.message || 'Erreur lors de l\'envoi de l\'email');
+        showNotification(error.message || 'Erreur lors de l\'envoi de l\'email', 'error');
       }
     } finally {
       setIsEmailSending(false);

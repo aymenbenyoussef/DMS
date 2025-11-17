@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useRef } from 'react';
+import React, { useState, useEffect, useContext, useRef, useCallback } from 'react';
 import API from '../../api';
 import { AppContext } from '../context';
 import './DocumentConfirmationForm.css';
@@ -31,7 +31,120 @@ const DocumentConfirmationForm = ({
   // Toast state
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
 
+  // Zoom and pan state for image preview
+  const [scale, setScale] = useState(1);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
   const objectUrlRef = useRef(null);
+  const imageContainerRef = useRef(null);
+
+  // Image zoom and pan handlers
+  const handleWheel = useCallback((e) => {
+    if (previewType !== 'image') return;
+    
+    e.preventDefault();
+    e.stopPropagation();
+
+    const rect = imageContainerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    const zoomIntensity = 0.2;
+    const wheel = e.deltaY < 0 ? 1 : -1;
+    const newScale = Math.max(0.1, Math.min(5, scale + wheel * zoomIntensity));
+
+    // Calculate new position to zoom towards mouse
+    const zoomFactor = newScale / scale;
+    const newX = position.x - (mouseX - position.x) * (zoomFactor - 1);
+    const newY = position.y - (mouseY - position.y) * (zoomFactor - 1);
+
+    setScale(newScale);
+    setPosition({ x: newX, y: newY });
+  }, [scale, position, previewType]);
+
+  const handleMouseDown = useCallback((e) => {
+    if (previewType !== 'image' || scale <= 1) return;
+    
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+    setDragStart({
+      x: e.clientX - position.x,
+      y: e.clientY - position.y
+    });
+  }, [previewType, scale, position]);
+
+  const handleMouseMove = useCallback((e) => {
+    if (!isDragging || previewType !== 'image' || scale <= 1) return;
+    
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const newX = e.clientX - dragStart.x;
+    const newY = e.clientY - dragStart.y;
+    
+    setPosition({
+      x: newX,
+      y: newY
+    });
+  }, [isDragging, previewType, scale, dragStart]);
+
+  const handleMouseUp = useCallback((e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    setIsDragging(false);
+  }, []);
+
+  const zoomIn = useCallback(() => {
+    const newScale = Math.min(5, scale + 0.25);
+    setScale(newScale);
+  }, [scale]);
+
+  const zoomOut = useCallback(() => {
+    const newScale = Math.max(0.1, scale - 0.25);
+    setScale(newScale);
+  }, [scale]);
+
+  const resetZoom = useCallback(() => {
+    setScale(1);
+    setPosition({ x: 0, y: 0 });
+  }, []);
+
+  // Add cursor style based on state
+  const getCursorStyle = () => {
+    if (previewType !== 'image') return 'default';
+    if (isDragging) return 'grabbing';
+    if (scale > 1) return 'grab';
+    return 'zoom-in';
+  };
+
+  // Add global mouse up listener for dragging
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('mousemove', handleMouseMove);
+      
+      return () => {
+        document.removeEventListener('mouseup', handleMouseUp);
+        document.removeEventListener('mousemove', handleMouseMove);
+      };
+    }
+  }, [isDragging, handleMouseUp, handleMouseMove]);
+
+  // Reset zoom and position when image changes
+  useEffect(() => {
+    if (previewType === 'image' && previewUrl) {
+      setScale(1);
+      setPosition({ x: 0, y: 0 });
+      setIsDragging(false);
+    }
+  }, [previewType, previewUrl]);
 
   const handleViewDocument = async (file) => {
     // Revoke previous object URL
@@ -122,6 +235,134 @@ const DocumentConfirmationForm = ({
         .then(t => setPreviewText(t))
         .catch(() => setPreviewText('Aucun texte disponible'));
     }
+  };
+
+  const renderImagePreview = () => {
+    if (previewType !== 'image' || !previewUrl) return null;
+
+    return (
+      <div 
+        ref={imageContainerRef}
+        style={{
+          position: 'relative',
+          width: '100%',
+          height: '100%',
+          overflow: 'hidden',
+          cursor: getCursorStyle(),
+          backgroundColor: '#f8f9fa'
+        }}
+        onWheel={handleWheel}
+        onMouseDown={handleMouseDown}
+      >
+        <div
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: `translate(${position.x}px, ${position.y}px) scale(${scale}) translate(-50%, -50%)`,
+            transformOrigin: 'center center',
+            transition: isDragging ? 'none' : 'transform 0.1s ease'
+          }}
+        >
+          <img
+            src={previewUrl}
+            alt={previewTitle}
+            style={{
+              maxWidth: 'none',
+              maxHeight: 'none',
+              width: 'auto',
+              height: 'auto',
+              display: 'block',
+              userSelect: 'none',
+              WebkitUserDrag: 'none',
+              pointerEvents: 'none'
+            }}
+            onDragStart={(e) => e.preventDefault()}
+          />
+        </div>
+
+        {/* Zoom Controls */}
+        <div style={{
+          position: 'absolute',
+          bottom: '16px',
+          right: '16px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+          padding: '8px 12px',
+          borderRadius: '8px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+          border: '1px solid #e0e0e0'
+        }}>
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-secondary"
+            onClick={zoomOut}
+            disabled={scale <= 0.1}
+            title="Zoom out"
+            style={{ minWidth: '32px' }}
+          >
+            <i className="fas fa-search-minus"></i>
+          </button>
+          
+          <span style={{ 
+            minWidth: '60px', 
+            textAlign: 'center', 
+            fontSize: '14px',
+            fontWeight: '500',
+            color: '#495057'
+          }}>
+            {Math.round(scale * 100)}%
+          </span>
+          
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-secondary"
+            onClick={zoomIn}
+            disabled={scale >= 5}
+            title="Zoom in"
+            style={{ minWidth: '32px' }}
+          >
+            <i className="fas fa-search-plus"></i>
+          </button>
+          
+          <div style={{ width: '1px', height: '20px', backgroundColor: '#e0e0e0' }}></div>
+          
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-secondary"
+            onClick={resetZoom}
+            disabled={scale === 1}
+            title="Reset zoom"
+            style={{ minWidth: '32px' }}
+          >
+            <i className="fas fa-sync-alt"></i>
+          </button>
+        </div>
+
+        {/* Drag instruction hint */}
+        {scale > 1 && !isDragging && (
+          <div style={{
+            position: 'absolute',
+            top: '16px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            backgroundColor: 'rgba(0, 0, 0, 0.75)',
+            color: 'white',
+            padding: '8px 16px',
+            borderRadius: '6px',
+            fontSize: '12px',
+            fontWeight: '500',
+            pointerEvents: 'none',
+            zIndex: 10,
+            animation: 'fadeOut 3s forwards 2s'
+          }}>
+            🖱️ Click and drag to pan • Scroll to zoom
+          </div>
+        )}
+      </div>
+    );
   };
   
   const [confirmedDocuments, setConfirmedDocuments] = useState(() => files.map(f => {
@@ -811,16 +1052,16 @@ const DocumentConfirmationForm = ({
           {/* Right: preview pane */}
           <div style={{ width: 520, maxWidth: '45%', borderLeft: '1px solid var(--neutral-200)', paddingLeft: 12 }}>
             <div className="document-title" style={{ marginBottom: 8 }}>{previewTitle || doc.filename}</div>
-            <div className="preview-container">
-              <div className="preview-content">
+            <div className="preview-container" style={{ position: 'relative', height: '400px', overflow: 'hidden' }}>
+              <div className="preview-content" style={{ height: '100%' }}>
                 {previewType === 'pdf' && previewUrl && (
-                  <iframe src={previewUrl} title={previewTitle} />
+                  <iframe src={previewUrl} title={previewTitle} style={{ width: '100%', height: '100%', border: 'none' }} />
                 )}
-                {previewType === 'image' && previewUrl && (
-                  <img src={previewUrl} alt={previewTitle} />
-                )}
+                {previewType === 'image' && previewUrl && renderImagePreview()}
                 {previewType === 'text' && (
-                  <pre style={{ whiteSpace: 'pre-wrap', textAlign: 'left', width: '100%', overflow: 'auto' }}>{previewText || 'Aucun texte disponible'}</pre>
+                  <pre style={{ whiteSpace: 'pre-wrap', textAlign: 'left', width: '100%', height: '100%', overflow: 'auto', padding: '1rem', margin: 0 }}>
+                    {previewText || 'Aucun texte disponible'}
+                  </pre>
                 )}
                 {(!previewType || previewType === 'unknown') && (
                   <div style={{ color: '#666', alignSelf: 'center' }}>Aucun aperçu disponible</div>
@@ -1226,18 +1467,18 @@ const DocumentConfirmationForm = ({
           {/* Right: preview pane */}
           <div style={{ width: 520, maxWidth: '45%', borderLeft: '1px solid var(--neutral-200)', paddingLeft: 12 }}>
             <div className="document-title" style={{ marginBottom: 8 }}>{previewTitle || (files[activeFileIndex] && files[activeFileIndex].filename)}</div>
-            <div style={{ border: '1px solid var(--neutral-200)', borderRadius: 6, padding: 8, minHeight: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ border: '1px solid var(--neutral-200)', borderRadius: 6, padding: 8, minHeight: 400, display: 'flex', alignItems: 'stretch', justifyContent: 'center', overflow: 'hidden' }}>
               {previewType === 'pdf' && previewUrl && (
-                <iframe src={previewUrl} title={previewTitle} style={{ width: '100%', height: '70vh', border: 'none' }} />
+                <iframe src={previewUrl} title={previewTitle} style={{ width: '100%', height: '100%', border: 'none' }} />
               )}
-              {previewType === 'image' && previewUrl && (
-                <img src={previewUrl} alt={previewTitle} style={{ maxWidth: '100%', maxHeight: '70vh', objectFit: 'contain' }} />
-              )}
+              {previewType === 'image' && previewUrl && renderImagePreview()}
               {previewType === 'text' && (
-                <pre style={{ whiteSpace: 'pre-wrap', textAlign: 'left', width: '100%', maxHeight: '70vh', overflow: 'auto' }}>{previewText || 'Aucun texte disponible'}</pre>
+                <pre style={{ whiteSpace: 'pre-wrap', textAlign: 'left', width: '100%', height: '100%', overflow: 'auto', padding: '1rem', margin: 0 }}>
+                  {previewText || 'Aucun texte disponible'}
+                </pre>
               )}
               {(!previewType || previewType === 'unknown') && (
-                <div style={{ color: '#666' }}>Aucun aperçu disponible</div>
+                <div style={{ color: '#666', alignSelf: 'center' }}>Aucun aperçu disponible</div>
               )}
             </div>
           </div>

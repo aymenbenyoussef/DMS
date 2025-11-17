@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import api from '../api';
 
 export const AppContext = createContext();
@@ -11,10 +11,29 @@ export const useAppContext = () => {
   return context;
 };
 
+const NotificationContext = createContext(null);
+
+export const useNotification = () => {
+  const context = useContext(NotificationContext);
+  if (!context) {
+    throw new Error('useNotification must be used within a NotificationProvider');
+  }
+  return context;
+};
+
 export const AppProvider = ({ children }) => {
   const [selectedCompany, setSelectedCompany] = useState(null);
   const [selectedDoctype, setSelectedDoctype] = useState(null);
   const [systemName, setSystemName] = useState(''); // Always read from settings
+  const [notification, setNotification] = useState(null);
+
+  const showNotification = useCallback((message, type = 'success') => {
+    setNotification({ message, type, id: Date.now() });
+  }, []);
+
+  const hideNotification = useCallback(() => {
+    setNotification(null);
+  }, []);
 
   // Fetch system name on app load
   useEffect(() => {
@@ -38,7 +57,7 @@ export const AppProvider = ({ children }) => {
     setSelectedDoctype(null);
   };
 
-  const value = {
+  const appContextValue = {
     selectedCompany,
     setSelectedCompany,
     selectedDoctype,
@@ -49,8 +68,10 @@ export const AppProvider = ({ children }) => {
   };
 
   return (
-    <AppContext.Provider value={value}>
-      {children}
+    <AppContext.Provider value={appContextValue}>
+      <NotificationContext.Provider value={{ showNotification, hideNotification, notification }}>
+        {children}
+      </NotificationContext.Provider>
     </AppContext.Provider>
   );
 };

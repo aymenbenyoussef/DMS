@@ -307,6 +307,7 @@
   border-collapse: separate; /* allow rounded corners on header */
   width: 100%; /* make table use full available width */
   table-layout: auto !important; /* allow columns to size to content and header */
+  font-family: var(--da-font);
 }
 
 .users-table-container .table td,
