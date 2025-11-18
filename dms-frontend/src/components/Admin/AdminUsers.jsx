@@ -103,22 +103,13 @@ const AdminUsers = ({user ,loadingUser}) => {
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
   const navigate = useNavigate();
-
-  // Small portal-based toast renderer to avoid being clipped by parent containers
-  const TopToastPortal = ({ toastState, onClose }) => {
-    if (!toastState) return null;
-    const { visible, message, type } = toastState;
-    const toastEl = (
-      <div className={`top-toast ${type === 'error' ? 'top-toast-error' : 'top-toast-success'} ${visible ? 'show' : ''}`} role="status" aria-live="polite">
-        <div className="top-toast-inner">
-          <div className="top-toast-icon">{type === 'error' ? '✖️' : '✓'}</div>
-          <div className="top-toast-message">{message}</div>
-          <button className="top-toast-close" onClick={onClose} aria-label="Fermer la notification">✕</button>
-        </div>
-      </div>
-    );
-    return typeof document !== 'undefined' ? ReactDOM.createPortal(toastEl, document.body) : null;
-  };
+// auto-hide toast after 5s
+    useEffect(() => {
+      if (!toast.visible) return;
+      const id = setTimeout(() => setToast(t => ({ ...t, visible: false })), 5000);
+      return () => clearTimeout(id);
+    }, [toast.visible]);
+ 
 
   // Move loadData to top level so it can be called after updates
   const loadData = async () => {
@@ -361,9 +352,7 @@ const AdminUsers = ({user ,loadingUser}) => {
     try {
       if (editingUser) {
         await API.admin.updateUser(editingUser.id, formData);
-        setTimeout(() => {
-            setToast(t => ({ ...t, visible: false }));
-        }, 5000);
+        setToast({ visible: true, message: 'Utilisateur modifier avec succès', type: 'success' });
         setShowModifyTab(false);
         setFormData({
           id:'',
@@ -382,7 +371,7 @@ const AdminUsers = ({user ,loadingUser}) => {
       }
     } catch (err) {
       const errorMsg = err.response?.data?.msg || "Error occurred while creating the entity.";
-    
+      setToast({ visible: true, message: 'Erreur lors de la modification de l\'utilisateur', type: 'error' });
       if (errorMsg.includes("already exists")) {
         const duplicateErrors = {};
         if (errorMsg.includes("name")) {
@@ -579,7 +568,7 @@ const AdminUsers = ({user ,loadingUser}) => {
     setGlobalLimitError('');
     if (maxUsers !== null && users.length >= maxUsers) {
       const msg = 'Vous avez atteint le nombre maximal d utilisateurs. Veuillez contacter le support technique';
-      setGlobalLimitError(msg);
+      
       setToast({ visible: true, message: msg, type: 'error' });
       return;
     }
@@ -606,8 +595,13 @@ const AdminUsers = ({user ,loadingUser}) => {
   return (
     <div className="admin-users">
       {/* Render toast via portal to avoid clipping by parent containers */}
-      <TopToastPortal toastState={toast} onClose={() => setToast(t => ({ ...t, visible: false }))} />
-      <div className="admin-header">
+<div className={`top-toast ${toast.type === 'error' ? 'top-toast-error' : 'top-toast-success'} ${toast.visible ? 'show' : ''}`} role="status" aria-live="polite">
+        <div className="top-toast-inner">
+          <div className="top-toast-icon">{toast.type === 'error' ? '✖️' : '✓'}</div>
+          <div className="top-toast-message">{toast.message}</div>
+          <button className="top-toast-close" onClick={() => setToast(t => ({ ...t, visible: false }))} aria-label="Fermer la notification">✕</button>
+        </div>
+      </div>      <div className="admin-header">
         <div className="admin-tabs">
           <button 
             className={`tab-btn ${activeTab === 'list' ? 'active' : ''}`}

@@ -277,7 +277,7 @@ const AdminCompanies = ({ user }) => {
     setGlobalLimitError('');
     if (maxEntities !== null && companies.length >= maxEntities) {
       const msg = 'Vous avez atteint le nombre maximal d entités. Veuillez contacter le support technique.';
-      setGlobalLimitError(msg);
+      
       setToast({ visible: true, message: msg, type: 'error' });
       return;
     }

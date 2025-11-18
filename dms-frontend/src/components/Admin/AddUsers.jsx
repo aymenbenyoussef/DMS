@@ -24,6 +24,13 @@ const AddUser = () => {
   const [globalFormError, setGlobalFormError] = useState('');
   const [globalErrors, setGlobalErrors] = useState([]);
   const navigate = useNavigate();
+  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+   // auto-hide toast after 5s
+    useEffect(() => {
+      if (!toast.visible) return;
+      const id = setTimeout(() => setToast(t => ({ ...t, visible: false })), 5000);
+      return () => clearTimeout(id);
+    }, [toast.visible]);
   useEffect(() => {
     const fetchCompanies = async () => {
       try {
@@ -144,6 +151,7 @@ const AddUser = () => {
   try {
     await API.admin.createUser(formData);
     setSuccess('Utilisateur créé avec succès');
+    setToast({ visible: true, message: 'Utilisateur créé avec succès', type: 'success' });
     setFormData({
       username: '',
       surname: '',
@@ -164,7 +172,7 @@ const AddUser = () => {
   } catch (err) {
   let errorMsg = 'Erreur lors de la création de l\'utilisateur';
   const errors = {};
-
+  setToast({ visible: true, message: 'Erreur lors de la création de l\'utilisateur', type: 'error' });  
   // Check if it's an email duplicate error
   if (err.response?.data?.msg?.toLowerCase().includes('email')) {
     errorMsg = 'L\'email existe déjà';
@@ -186,6 +194,13 @@ const AddUser = () => {
 
   return (
     <div className="admin-users">
+      <div className={`top-toast ${toast.type === 'error' ? 'top-toast-error' : 'top-toast-success'} ${toast.visible ? 'show' : ''}`} role="status" aria-live="polite">
+        <div className="top-toast-inner">
+          <div className="top-toast-icon">{toast.type === 'error' ? '✖️' : '✓'}</div>
+          <div className="top-toast-message">{toast.message}</div>
+          <button className="top-toast-close" onClick={() => setToast(t => ({ ...t, visible: false }))} aria-label="Fermer la notification">✕</button>
+        </div>
+      </div>
       {/* Return arrow */}
       <div className="return-arrow-container">
         <Link to="/admin/users" className="return-arrow" title="Retour aux utilisateurs">
@@ -218,7 +233,7 @@ const AddUser = () => {
       </div>
 
       
-      {success && <div className="alert alert-success">{success}</div>}
+     
 
       <form onSubmit={handleSubmit} className="user-form">
         {/* Profile Tab */}

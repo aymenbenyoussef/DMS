@@ -18,6 +18,13 @@ const AddDocType = () => {
   const [companies, setCompanies] = useState([]);
   const [error, setError]       = useState('');
   const navigate = useNavigate();
+  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+     // auto-hide toast after 5s
+      useEffect(() => {
+        if (!toast.visible) return;
+        const id = setTimeout(() => setToast(t => ({ ...t, visible: false })), 5000);
+        return () => clearTimeout(id);
+      }, [toast.visible]);
   /* ---------- field change ---------- */
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -78,7 +85,9 @@ const AddDocType = () => {
 
       await API.doctype.create(dataToSend);     
 
-      setSuccess('Type de document créé avec succès!');
+     
+      setToast({ visible: true, message: 'Type de document créé avec succès!', type: 'success' });
+
       // reset
       setFormData({ name: '', status: true, companies: [] });
       setFieldErrors({});
@@ -95,6 +104,8 @@ const AddDocType = () => {
     } catch (err) {
       const msg = err.response?.data?.msg ||
                   'Error occurred while creating the document type.';
+      setToast({ visible: true, message: msg, type: 'error' });
+
       if (msg.toLowerCase().includes('name')) {
         setFieldErrors({ name: 'This name already exists.' });
       } else {
@@ -109,6 +120,13 @@ const AddDocType = () => {
   /* ---------- render ---------- */
   return (
     <div className="admin-users">
+      <div className={`top-toast ${toast.type === 'error' ? 'top-toast-error' : 'top-toast-success'} ${toast.visible ? 'show' : ''}`} role="status" aria-live="polite">
+        <div className="top-toast-inner">
+          <div className="top-toast-icon">{toast.type === 'error' ? '✖️' : '✓'}</div>
+          <div className="top-toast-message">{toast.message}</div>
+          <button className="top-toast-close" onClick={() => setToast(t => ({ ...t, visible: false }))} aria-label="Fermer la notification">✕</button>
+        </div>
+      </div>
       {/* Return arrow */}
       <div className="return-arrow-container">
         <Link to="/doctypes" className="return-arrow" title="Retour aux types de documents">

@@ -10,7 +10,13 @@ const DmsTempUploadModal = ({ onClose, onSuccess }) => {
   const [uploadStatus, setUploadStatus] = useState(null);
   const [maxFileSize, setMaxFileSize] = useState(2014); // Default max file size in KB
   const [progressTimer, setProgressTimer] = useState(null);
-
+ const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+     // auto-hide toast after 5s
+      useEffect(() => {
+        if (!toast.visible) return;
+        const id = setTimeout(() => setToast(t => ({ ...t, visible: false })), 5000);
+        return () => clearTimeout(id);
+      }, [toast.visible]);
   // Fetch max file size from settings
   useEffect(() => {
     const fetchMaxFileSize = async () => {
@@ -148,6 +154,8 @@ const DmsTempUploadModal = ({ onClose, onSuccess }) => {
         setUploadProgress(Math.round(((i + 1) / files.length) * 100));
       }
       setUploadStatus('completed');
+      setToast({ visible: true, message: 'Les fichier temporaire sont sauvegardés avec succées', type: 'success' });
+
       setUploadProgress(100);
       // Wait 700ms to show 100% before closing/next stage
       setTimeout(() => {
@@ -158,6 +166,8 @@ const DmsTempUploadModal = ({ onClose, onSuccess }) => {
       }, 700);
     } catch (error) {
       setUploadStatus('error');
+      setToast({ visible: true, message: 'Erreur lors de la sauvegarde des fichiers temporaires', type: 'success' });
+
     } finally {
       setIsUploading(false);
     }
@@ -187,6 +197,13 @@ const DmsTempUploadModal = ({ onClose, onSuccess }) => {
 
   return (
     <div className="upload-modal-overlay">
+      <div className={`top-toast ${toast.type === 'error' ? 'top-toast-error' : 'top-toast-success'} ${toast.visible ? 'show' : ''}`} role="status" aria-live="polite">
+        <div className="top-toast-inner">
+          <div className="top-toast-icon">{toast.type === 'error' ? '✖️' : '✓'}</div>
+          <div className="top-toast-message">{toast.message}</div>
+          <button className="top-toast-close" onClick={() => setToast(t => ({ ...t, visible: false }))} aria-label="Fermer la notification">✕</button>
+        </div>
+      </div>
       <div className={`upload-modal${files.length > 0 ? ' has-files' : ' no-files'}`}> 
         <div className="upload-header fixed-header">
           <h3>Téléchargement temporaire vers DMS</h3>

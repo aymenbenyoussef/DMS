@@ -431,7 +431,7 @@ const AdminPartners = ({ user }) => {
     setGlobalLimitError('');
     if (maxExternalEntities !== null && partners.length >= maxExternalEntities) {
       const msg = 'Vous avez atteint le nombre maximal d entités externes. Veuillez contacter le support technique.';
-      setGlobalLimitError(msg);
+      
       setToast({ visible: true, message: msg, type: 'error' });
       return;
     }

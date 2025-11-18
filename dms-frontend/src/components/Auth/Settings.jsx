@@ -72,7 +72,12 @@ useEffect(() => {
     };
     fetchSettings();
   }, [setSystemName]);
-
+ // auto-hide toast after 5s
+    useEffect(() => {
+      if (!toast.visible) return;
+      const id = setTimeout(() => setToast(t => ({ ...t, visible: false })), 5000);
+      return () => clearTimeout(id);
+    }, [toast.visible]);
   // Update browser title when system name changes
   useEffect(() => {
     if (localSystemName) {
@@ -113,32 +118,26 @@ useEffect(() => {
       setSuccessMessage(msg);
       // show toast from top
       setToast({ visible: true, message: msg, type: 'success' });
-      // auto-dismiss after 4s
-      setTimeout(() => {
-        setToast(t => ({ ...t, visible: false }));
-        setSuccessMessage('');
-      }, 4000);
+      
+      
     } catch (err) {
       const errMsg = 'Erreur lors de la sauvegarde des paramètres.';
       // show error toast
       setToast({ visible: true, message: errMsg, type: 'error' });
-      setTimeout(() => setToast(t => ({ ...t, visible: false })), 5000);
+      
       alert(errMsg);
     }
   };
 
   return (
     <div className="settings-container">
-      {/* Top toast */}
-      {toast.visible && (
-        <div className={`top-toast ${toast.type === 'error' ? 'top-toast-error' : 'top-toast-success'}`} role="status" aria-live="polite">
-          <div className="top-toast-inner">
-            <div className="top-toast-icon">{toast.type === 'error' ? '✖️' : '✓'}</div>
-            <div className="top-toast-message">{toast.message}</div>
-            <button className="top-toast-close" onClick={() => setToast(t => ({ ...t, visible: false }))} aria-label="Fermer la notification">✕</button>
-          </div>
+      <div className={`top-toast ${toast.type === 'error' ? 'top-toast-error' : 'top-toast-success'} ${toast.visible ? 'show' : ''}`} role="status" aria-live="polite">
+        <div className="top-toast-inner">
+          <div className="top-toast-icon">{toast.type === 'error' ? '✖️' : '✓'}</div>
+          <div className="top-toast-message">{toast.message}</div>
+          <button className="top-toast-close" onClick={() => setToast(t => ({ ...t, visible: false }))} aria-label="Fermer la notification">✕</button>
         </div>
-      )}
+      </div>
 
       {/* Header with Save button top-right */}
       <div className="settings-header">

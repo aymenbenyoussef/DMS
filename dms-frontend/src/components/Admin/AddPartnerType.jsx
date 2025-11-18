@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import API from '../../api';
 import './AdminUsers.css'; 
 import { Link, useNavigate } from 'react-router-dom';
@@ -14,7 +14,13 @@ const AddPartnerType = () => {
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
-
+const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+     // auto-hide toast after 5s
+      useEffect(() => {
+        if (!toast.visible) return;
+        const id = setTimeout(() => setToast(t => ({ ...t, visible: false })), 5000);
+        return () => clearTimeout(id);
+      }, [toast.visible]);
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     
@@ -46,7 +52,8 @@ const AddPartnerType = () => {
     try {
       await API.partnertype.create(dataToSend);
 
-      setSuccess('Type de partenaire créé avec succès!');
+      
+      setToast({ visible: true, message: 'Type de partenaire créé avec succès!', type: 'success' });
       setFormData({ name: '', status: true });
       setFieldErrors({});
       setError('');
@@ -61,7 +68,8 @@ const AddPartnerType = () => {
       console.error('API error:', err.response?.data || err.message);
       
       const msg = err.response?.data?.msg || 'Erreur lors de la création du type de partenaire.';
-      
+      setToast({ visible: true, message: 'Erreur lors de la création du type de partenaire.', type: 'error' });
+
       // Check for specific name conflict error
       if ((msg.toLowerCase().includes('name already exists') || msg.toLowerCase().includes('name')) && msg.toLowerCase().includes('exists')) {
         setFieldErrors({ name: 'Un type de partenaire avec ce nom existe déjà.' });
@@ -77,6 +85,13 @@ const AddPartnerType = () => {
 
   return (
     <div className="admin-users">
+      <div className={`top-toast ${toast.type === 'error' ? 'top-toast-error' : 'top-toast-success'} ${toast.visible ? 'show' : ''}`} role="status" aria-live="polite">
+        <div className="top-toast-inner">
+          <div className="top-toast-icon">{toast.type === 'error' ? '✖️' : '✓'}</div>
+          <div className="top-toast-message">{toast.message}</div>
+          <button className="top-toast-close" onClick={() => setToast(t => ({ ...t, visible: false }))} aria-label="Fermer la notification">✕</button>
+        </div>
+      </div>
       {/* Return arrow */}
       <div className="return-arrow-container">
         <Link to="/partnerTypes" className="return-arrow" title="Retour aux types de partenaires">
@@ -84,8 +99,7 @@ const AddPartnerType = () => {
         </Link>
       </div>
       
-      {error && <div className="alert alert-error">{error}</div>}
-      {success && <div className="alert alert-success">{success}</div>}
+      
 
       <div className="user-form">
         <form onSubmit={handleSubmit}>

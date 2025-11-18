@@ -31,6 +31,12 @@ const DocumentConfirmationForm = ({
   // Toast state
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
 
+     // auto-hide toast after 5s
+      useEffect(() => {
+        if (!toast.visible) return;
+        const id = setTimeout(() => setToast(t => ({ ...t, visible: false })), 5000);
+        return () => clearTimeout(id);
+      }, [toast.visible]);
   // Zoom and pan state for image preview
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -698,8 +704,10 @@ const DocumentConfirmationForm = ({
     setIsLoading(true);
     try {
       await onConfirm(confirmedDocuments, errors);
+      setToast({ visible: true, message: 'Les fichiers sont sauvegardés avec succès.', type: 'success' });
     } catch (error) {
       console.error('Error confirming documents:', error);
+      setToast({ visible: true, message: 'Erreur lors de la confirmation des documents', type: 'error' });
     } finally {
       setIsLoading(false);
     }
@@ -714,7 +722,15 @@ const DocumentConfirmationForm = ({
     
     return (
       <div className="document-confirmation-form">
+        
   <div className="form-content-row">
+    <div className={`top-toast ${toast.type === 'error' ? 'top-toast-error' : 'top-toast-success'} ${toast.visible ? 'show' : ''}`} role="status" aria-live="polite">
+        <div className="top-toast-inner">
+          <div className="top-toast-icon">{toast.type === 'error' ? '✖️' : '✓'}</div>
+          <div className="top-toast-message">{toast.message}</div>
+          <button className="top-toast-close" onClick={() => setToast(t => ({ ...t, visible: false }))} aria-label="Fermer la notification">✕</button>
+        </div>
+      </div>
           {/* Left: form */}
           <div style={{ flex: 1, minWidth: 0 }}>
             <div className="confirmation-form-scroll-area">

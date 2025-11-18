@@ -51,7 +51,14 @@ const DocumentConfirmationForm = ({
     });
   }));
   const [errors, setErrors] = useState(files.map(() => ({})));
+const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
 
+     // auto-hide toast after 5s
+      useEffect(() => {
+        if (!toast.visible) return;
+        const id = setTimeout(() => setToast(t => ({ ...t, visible: false })), 5000);
+        return () => clearTimeout(id);
+      }, [toast.visible]);
   // Auto-calculate TVA from TTC and HT whenever values are present/changed
   useEffect(() => {
     setConfirmedDocuments(prev => {
@@ -294,15 +301,14 @@ const DocumentConfirmationForm = ({
       }
       
       // Show success message
-      setSuccessMessage('Document envoyé avec succès!');
       
+      setToast({ visible: true, message: 'Document envoyé avec succès!', type: 'success' });
+
       // Auto-close after 3 seconds
-      setTimeout(() => {
-        setSuccessMessage('');
-        onCancel(); // Close the modal
-      }, 3000);
+      
     } catch (error) {
       console.error('Error confirming documents:', error);
+      setToast({ visible: true, message: 'Erreur lors de l\'envoi des documents', type: 'error' });
     } finally {
       setIsLoading(false);
     }
@@ -314,6 +320,13 @@ const DocumentConfirmationForm = ({
     const err = errors[0];
   return (
     <div className="document-confirmation-form">
+        <div className={`top-toast ${toast.type === 'error' ? 'top-toast-error' : 'top-toast-success'} ${toast.visible ? 'show' : ''}`} role="status" aria-live="polite">
+        <div className="top-toast-inner">
+          <div className="top-toast-icon">{toast.type === 'error' ? '✖️' : '✓'}</div>
+          <div className="top-toast-message">{toast.message}</div>
+          <button className="top-toast-close" onClick={() => setToast(t => ({ ...t, visible: false }))} aria-label="Fermer la notification">✕</button>
+        </div>
+      </div>
       <div className="confirmation-form-scroll-area document-form">
           <h4 className="document-title">{files[0].filename}</h4>
         {/* First row: Entity and Document Type */}
@@ -513,7 +526,15 @@ const DocumentConfirmationForm = ({
   // Multi-file form
   return (
     <div className="document-confirmation-form">
+      <div className={`top-toast ${toast.type === 'error' ? 'top-toast-error' : 'top-toast-success'} ${toast.visible ? 'show' : ''}`} role="status" aria-live="polite">
+        <div className="top-toast-inner">
+          <div className="top-toast-icon">{toast.type === 'error' ? '✖️' : '✓'}</div>
+          <div className="top-toast-message">{toast.message}</div>
+          <button className="top-toast-close" onClick={() => setToast(t => ({ ...t, visible: false }))} aria-label="Fermer la notification">✕</button>
+        </div>
+      </div>
       <div className="confirmation-form-scroll-area document-form">
+        
         {files.map((file, idx) => (
           <div key={file.sessionId || file.filename} className="multi-file-section">
             <h4 className="document-title">{file.filename}</h4>

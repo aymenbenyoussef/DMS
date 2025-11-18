@@ -65,7 +65,14 @@ const TempDocumentArchive = ({ user }) => {
   const [filterOverlayOpen, setFilterOverlayOpen] = useState(false);
   const filterOverlayRef = useRef(null);
   const [filterHeight, setFilterHeight] = useState(0);
-
+   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+  
+       // auto-hide toast after 5s
+        useEffect(() => {
+          if (!toast.visible) return;
+          const id = setTimeout(() => setToast(t => ({ ...t, visible: false })), 5000);
+          return () => clearTimeout(id);
+        }, [toast.visible]);
   const getSortIcon = (columnKey) => {
     // Affiche toujours deux flèches (haut/bas). La flèche active est en 'text-primary', l'autre en 'text-muted'.
     const isActive = sortConfig.key === columnKey;
@@ -240,8 +247,10 @@ const TempDocumentArchive = ({ user }) => {
       window.dispatchEvent(new Event('TempDocumentsUploaded'));
       setIsDeleteModalOpen(false);
       setDeletingDocument(null);
+      setToast({ visible: true, message: 'Document temporaire supprimé avec succès', type: 'success' });
     } catch (error) {
       setDeleteError(t('deleteError'));
+      setToast({ visible: true, message: 'Erreur lors de la confirmation des documents temporaires', type: 'error' });
     } finally {
       setIsDeleting(false);
     }
@@ -304,7 +313,8 @@ const TempDocumentArchive = ({ user }) => {
         
         const response = await API.documents.confirmDocuments(sessionId, [documentToConfirm]);
         const savedDoc = response.data.saved_documents[0];
-        
+        setToast({ visible: true, message: 'Document envoyé avec succès!', type: 'success' });
+
         if (savedDoc && !savedDoc.error) {
           setDocuments(prev => prev.filter(d => d.id !== currentDocument?.id));
           setFilteredDocuments(prev => prev.filter(d => d.id !== currentDocument?.id));
@@ -327,6 +337,7 @@ const TempDocumentArchive = ({ user }) => {
       }
     } catch (error) {
       console.error('Error confirming document:', error);
+      setToast({ visible: true, message: 'Erreur lors de l\'envoi des documents', type: 'error' });
       alert(t('confirmError') + (error.response?.data?.msg || error.message));
     }
   };
@@ -497,11 +508,14 @@ const TempDocumentArchive = ({ user }) => {
 
   return (
     <div className="document-archive">
-      {successMessage && (
-        <div className="alert alert-success" style={{ position: 'fixed', top: 20, right: 20, zIndex: 9999 }}>
-          {successMessage}
+      <div className={`top-toast ${toast.type === 'error' ? 'top-toast-error' : 'top-toast-success'} ${toast.visible ? 'show' : ''}`} role="status" aria-live="polite">
+        <div className="top-toast-inner">
+          <div className="top-toast-icon">{toast.type === 'error' ? '✖️' : '✓'}</div>
+          <div className="top-toast-message">{toast.message}</div>
+          <button className="top-toast-close" onClick={() => setToast(t => ({ ...t, visible: false }))} aria-label="Fermer la notification">✕</button>
         </div>
-      )}
+      </div>
+      
       <div className="container-fluid h-100">
         <div className="row h-100">
           {/* Main Content Area - Table */}

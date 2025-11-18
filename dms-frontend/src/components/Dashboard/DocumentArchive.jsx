@@ -50,7 +50,13 @@ const DocumentArchive = ({ user, selectedCompany, selectedDoctype }) => {
   const [editSuccess, setEditSuccess] = useState('');
   const [deleteError, setDeleteError] = useState('');
   const [uploadError, setUploadError] = useState('');
-
+const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+     // auto-hide toast after 5s
+      useEffect(() => {
+        if (!toast.visible) return;
+        const id = setTimeout(() => setToast(t => ({ ...t, visible: false })), 5000);
+        return () => clearTimeout(id);
+      }, [toast.visible]);
   // Helper function to get first day of current month
   const getFirstDayOfMonth = () => {
     const now = new Date();
@@ -1032,13 +1038,13 @@ const getOneMonthAgo = () => {
 
     try {
       await API.documents.delete(deletingDocument.id);
-
+      showNotification('Document supprimé avec succès', 'success');
       // Refresh documents list
       fetchDocuments();
 
       handleCloseDeleteModal();
     } catch (error) {
-      showNotification(error.response?.data?.msg || 'Erreur lors de la suppression du document', 'error');
+      showNotification('Erreur lors de la suppression du document', 'error');
     } finally {
       setIsDeleting(false);
     }

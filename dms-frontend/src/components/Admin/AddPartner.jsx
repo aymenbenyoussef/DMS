@@ -40,7 +40,13 @@ const AddPartner = ({ user }) => {
   const navigate = useNavigate();
   const [error, setError] = useState('');
   const [hasSubmitted, setHasSubmitted] = useState(false);
-
+ const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+     // auto-hide toast after 5s
+      useEffect(() => {
+        if (!toast.visible) return;
+        const id = setTimeout(() => setToast(t => ({ ...t, visible: false })), 5000);
+        return () => clearTimeout(id);
+      }, [toast.visible]);
   const validateFieldAsync = async (fieldName, fieldValue) => {
     if (!fieldValue || fieldValue.trim() === '') {
       setFieldValidation(prev => ({ ...prev, [fieldName]: null }));
@@ -291,13 +297,15 @@ const handleSubmit = async (e) => {
     };
 
     const response = await API.partner.create(partnerData);
-    setSuccess('Partenaire créé avec succès');
     
+    setToast({ visible: true, message: 'Partenaire créé avec succès', type: 'success' });
+
     setTimeout(() => {
       navigate('/partners');
     }, 1500);
   } catch (err) {
     let errorMsg = 'Erreur lors de la création du partenaire';
+    setToast({ visible: true, message: 'Erreur lors de la création du partenaire', type: 'error' });
     let errors = {};
     if (err.response) {
       const msg = err.response.data.message || err.response.data.msg || '';
@@ -333,6 +341,13 @@ const handleSubmit = async (e) => {
 
   return (
     <div className="admin-users">
+      <div className={`top-toast ${toast.type === 'error' ? 'top-toast-error' : 'top-toast-success'} ${toast.visible ? 'show' : ''}`} role="status" aria-live="polite">
+        <div className="top-toast-inner">
+          <div className="top-toast-icon">{toast.type === 'error' ? '✖️' : '✓'}</div>
+          <div className="top-toast-message">{toast.message}</div>
+          <button className="top-toast-close" onClick={() => setToast(t => ({ ...t, visible: false }))} aria-label="Fermer la notification">✕</button>
+        </div>
+      </div>
       {/* Return arrow */}
       <div className="return-arrow-container">
         <Link to="/partners" className="return-arrow" title="Retour aux partenaires">
