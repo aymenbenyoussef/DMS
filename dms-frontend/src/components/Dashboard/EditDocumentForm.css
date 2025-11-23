@@ -1,13 +1,16 @@
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.55); /* plus sombre */
-  backdrop-filter: blur(8px); /* flou sur toute la page */
+  background-color: rgba(0, 0, 0, 0.55);
+  /* plus sombre */
+  backdrop-filter: blur(8px);
+  /* flou sur toute la page */
   -webkit-backdrop-filter: blur(8px);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 9999;
+  z-index: 1050;
+  /* Higher z-index to be above navbar/sidebar */
   pointer-events: auto;
   overflow: hidden;
 }
@@ -19,7 +22,7 @@
   max-height: 60vh;
   background: #fff;
   border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
   overflow: hidden;
   transition: min-height 0.2s, max-height 0.2s;
 }
@@ -50,7 +53,7 @@
   margin-right: 0;
 }
 
-.edit-document-form .row > [class*="col-"] {
+.edit-document-form .row>[class*="col-"] {
   padding-left: 0;
   padding-right: 0;
 }
@@ -60,7 +63,7 @@
   margin-bottom: 0rem;
   background: #fafbfc;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
 }
 
 /* Header (first .form-section) fixed */
@@ -101,10 +104,11 @@
   color: #222;
   transition: border-color 0.15s;
 }
+
 .edit-document-form .form-control:focus,
 .edit-document-form .form-select:focus {
   border-color: #2563eb;
-  box-shadow: 0 0 0 2px rgba(37,99,235,0.08);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.08);
 }
 
 .edit-document-form .form-check-input {
@@ -132,12 +136,16 @@
 
 /* Custom checkbox styling */
 .edit-document-form .custom-checkbox.form-check-input {
-  accent-color: #6c757d; /* Use neutral color for checkbox, not blue */
+  accent-color: #6c757d;
+  /* Use neutral color for checkbox, not blue */
   box-shadow: none;
 }
+
 .edit-document-form .custom-checkbox.form-check-input:checked {
-  accent-color: #2563eb; /* Use primary only for the checkmark, not the background */
+  accent-color: #2563eb;
+  /* Use primary only for the checkmark, not the background */
 }
+
 .edit-document-form .custom-checkbox.form-check-input:focus {
   outline: 2px solid #2563eb33;
   outline-offset: 1px;
@@ -156,9 +164,10 @@
   padding: 0.08rem 0.3rem;
   border-top: 1px solid #e9ecef;
   border-radius: 0 0 12px 12px;
-  box-shadow: 0 -2px 8px rgba(0,0,0,0.03);
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.03);
   margin: 0 -0.3rem -0.3rem -0.3rem;
-  height: 26px; /* Further reduced height for footer */
+  height: 26px;
+  /* Further reduced height for footer */
   min-height: 26px;
   max-height: 26px;
   align-items: center;
@@ -178,7 +187,8 @@
   border-radius: 6px;
   font-size: 0.88rem;
   transition: all 0.15s;
-  height: 30px; /* Smaller buttons */
+  height: 30px;
+  /* Smaller buttons */
   min-height: 30px;
   display: flex;
   align-items: center;
@@ -221,18 +231,18 @@
     padding: 1rem;
     margin-bottom: 1rem;
   }
-  
+
   .edit-document-form .form-actions {
     flex-direction: column;
     gap: 0.5rem;
     padding: 1rem;
   }
-  
+
   .edit-document-form .btn {
     width: 100%;
   }
-  
-  .edit-document-form .row > [class*="col-"] {
+
+  .edit-document-form .row>[class*="col-"] {
     margin-bottom: 1rem;
   }
 }
@@ -241,18 +251,17 @@
   .edit-document-form {
     border-radius: 0;
   }
-  
+
   .edit-document-form .form-section {
     padding: 0.75rem;
   }
-  
+
   .edit-document-form .section-title {
     font-size: 1rem;
   }
-  
+
   .edit-document-form .form-control {
     padding: 0.5rem;
     font-size: 0.95rem;
   }
 }
-

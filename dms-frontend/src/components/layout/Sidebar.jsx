@@ -240,7 +240,7 @@ const Sidebar = ({ user, loadingUser, isOpen }) => {
     setSelectedCompany(null);
     setSelectedDoctype(null);
   }}
-  style={{ listStyle: 'none' }}
+  style={{ listStyle: 'none', backgroundColor: tempDocumentsCount > 0 ? '#FFC107' : '' }}
 >
   <span className="folder-name2">{t('toVerify')} ({tempDocumentsCount})</span>
 </li>

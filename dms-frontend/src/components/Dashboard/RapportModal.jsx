@@ -125,7 +125,7 @@ function RapportModal(props) {
       const response = await api.get(`/documents/${doc.id}/file`, {
         responseType: 'blob'
       });
-      
+
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -133,7 +133,7 @@ function RapportModal(props) {
       document.body.appendChild(link);
       link.click();
       link.remove();
-      
+
       // Clean up the URL object
       window.URL.revokeObjectURL(url);
     } catch (error) {
@@ -217,10 +217,10 @@ function RapportModal(props) {
     return !!url.toLowerCase().match(/\.(jpg|jpeg|png|gif)$/);
   }
 
-  // Image zoom and pan handlers
+  // Improved Image zoom and pan handlers
   const handleWheel = useCallback((e) => {
     if (!isImage({ url: localPreviewUrl, mime: localPreviewMime })) return;
-    
+
     e.preventDefault();
     e.stopPropagation();
 
@@ -230,9 +230,9 @@ function RapportModal(props) {
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
 
-    const zoomIntensity = 0.2;
+    const zoomIntensity = 0.1;
     const wheel = e.deltaY < 0 ? 1 : -1;
-    const newScale = Math.max(0.1, Math.min(5, scale + wheel * zoomIntensity));
+    const newScale = Math.max(0.1, Math.min(10, scale + wheel * zoomIntensity));
 
     // Calculate new position to zoom towards mouse
     const zoomFactor = newScale / scale;
@@ -244,8 +244,8 @@ function RapportModal(props) {
   }, [scale, position, localPreviewUrl, localPreviewMime]);
 
   const handleMouseDown = useCallback((e) => {
-    if (!isImage({ url: localPreviewUrl, mime: localPreviewMime }) || scale <= 1) return;
-    
+    if (!isImage({ url: localPreviewUrl, mime: localPreviewMime })) return;
+
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
@@ -253,22 +253,32 @@ function RapportModal(props) {
       x: e.clientX - position.x,
       y: e.clientY - position.y
     });
-  }, [localPreviewUrl, localPreviewMime, scale, position]);
+  }, [localPreviewUrl, localPreviewMime, position]);
 
   const handleMouseMove = useCallback((e) => {
-    if (!isDragging || !isImage({ url: localPreviewUrl, mime: localPreviewMime }) || scale <= 1) return;
-    
+    if (!isDragging || !isImage({ url: localPreviewUrl, mime: localPreviewMime })) return;
+
     e.preventDefault();
     e.stopPropagation();
-    
+
+    // Calculate new position with generous limits
+    const rect = imageContainerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const maxDrag = Math.max(rect.width, rect.height) * 2; // Very generous drag limits
+
     const newX = e.clientX - dragStart.x;
     const newY = e.clientY - dragStart.y;
-    
+
+    // Apply limits (much more generous than before)
+    const limitedX = Math.max(-maxDrag, Math.min(maxDrag, newX));
+    const limitedY = Math.max(-maxDrag, Math.min(maxDrag, newY));
+
     setPosition({
-      x: newX,
-      y: newY
+      x: limitedX,
+      y: limitedY
     });
-  }, [isDragging, localPreviewUrl, localPreviewMime, scale, dragStart]);
+  }, [isDragging, localPreviewUrl, localPreviewMime, dragStart]);
 
   const handleMouseUp = useCallback((e) => {
     if (e) {
@@ -279,7 +289,7 @@ function RapportModal(props) {
   }, []);
 
   const zoomIn = useCallback(() => {
-    const newScale = Math.min(5, scale + 0.25);
+    const newScale = Math.min(10, scale + 0.25);
     setScale(newScale);
   }, [scale]);
 
@@ -306,7 +316,7 @@ function RapportModal(props) {
     if (isDragging) {
       document.addEventListener('mouseup', handleMouseUp);
       document.addEventListener('mousemove', handleMouseMove);
-      
+
       return () => {
         document.removeEventListener('mouseup', handleMouseUp);
         document.removeEventListener('mousemove', handleMouseMove);
@@ -318,7 +328,7 @@ function RapportModal(props) {
   useEffect(() => {
     let cancelled = false;
     async function fetchRapport() {
-      if (!currentDocument ) return;
+      if (!currentDocument) return;
       try {
         setLoadingRapport(true);
         const res = await api.documents.getRapport(currentDocument.id);
@@ -337,7 +347,7 @@ function RapportModal(props) {
       }
     }
 
-    if (activeTab === 'rapport'  && !localRapportUrl) {
+    if (activeTab === 'rapport' && !localRapportUrl) {
       fetchRapport();
     }
 
@@ -435,16 +445,9 @@ function RapportModal(props) {
     if (!isImage({ url: localPreviewUrl, mime: localPreviewMime }) || !localPreviewUrl) return null;
 
     return (
-      <div 
+      <div
         ref={imageContainerRef}
-        style={{
-          position: 'relative',
-          width: '100%',
-          height: '100%',
-          overflow: 'hidden',
-          cursor: getCursorStyle(),
-          backgroundColor: '#f8f9fa'
-        }}
+        className="image-viewer-container"
         onWheel={handleWheel}
         onMouseDown={handleMouseDown}
       >
@@ -455,103 +458,84 @@ function RapportModal(props) {
             left: '50%',
             transform: `translate(${position.x}px, ${position.y}px) scale(${scale}) translate(-50%, -50%)`,
             transformOrigin: 'center center',
-            transition: isDragging ? 'none' : 'transform 0.1s ease'
+            transition: isDragging ? 'none' : 'transform 0.1s ease',
+            willChange: 'transform'
           }}
         >
           <img
             src={localPreviewUrl}
             alt={previewTitle}
-            style={{
-              maxWidth: 'none',
-              maxHeight: 'none',
-              width: 'auto',
-              height: 'auto',
-              display: 'block',
-              userSelect: 'none',
-              WebkitUserDrag: 'none',
-              pointerEvents: 'none'
-            }}
+            className="image-viewer"
             onDragStart={(e) => e.preventDefault()}
+            onLoad={(e) => {
+              // Reset to show full image when it loads
+              const img = e.target;
+              const container = imageContainerRef.current;
+              if (container && img) {
+                const containerRect = container.getBoundingClientRect();
+                const imgAspect = img.naturalWidth / img.naturalHeight;
+                const containerAspect = containerRect.width / containerRect.height;
+
+                // Set initial scale to fit the image properly
+                let initialScale = 1;
+                if (imgAspect > containerAspect) {
+                  initialScale = containerRect.width / img.naturalWidth;
+                } else {
+                  initialScale = containerRect.height / img.naturalHeight;
+                }
+
+                // Don't scale up small images, only scale down large ones
+                if (initialScale > 1) initialScale = 1;
+
+                setScale(initialScale);
+                setPosition({ x: 0, y: 0 });
+              }
+            }}
           />
         </div>
 
         {/* Zoom Controls */}
-        <div style={{
-          position: 'absolute',
-          bottom: '16px',
-          right: '16px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          backgroundColor: 'rgba(255, 255, 255, 0.95)',
-          padding: '8px 12px',
-          borderRadius: '8px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-          border: '1px solid #e0e0e0'
-        }}>
+        <div className="image-zoom-controls">
           <button
             type="button"
-            className="btn btn-sm btn-outline-secondary"
+            className="zoom-btn"
             onClick={zoomOut}
             disabled={scale <= 0.1}
             title="Zoom out"
-            style={{ minWidth: '32px' }}
           >
             <i className="fas fa-search-minus"></i>
           </button>
-          
-          <span style={{ 
-            minWidth: '60px', 
-            textAlign: 'center', 
-            fontSize: '14px',
-            fontWeight: '500',
-            color: '#495057'
-          }}>
+
+          <span className="zoom-display">
             {Math.round(scale * 100)}%
           </span>
-          
+
           <button
             type="button"
-            className="btn btn-sm btn-outline-secondary"
+            className="zoom-btn"
             onClick={zoomIn}
-            disabled={scale >= 5}
+            disabled={scale >= 10}
             title="Zoom in"
-            style={{ minWidth: '32px' }}
           >
             <i className="fas fa-search-plus"></i>
           </button>
-          
-          <div style={{ width: '1px', height: '20px', backgroundColor: '#e0e0e0' }}></div>
-          
+
+          <div className="zoom-divider"></div>
+
           <button
             type="button"
-            className="btn btn-sm btn-outline-secondary"
+            className="zoom-btn"
             onClick={resetZoom}
             disabled={scale === 1}
             title="Reset zoom"
-            style={{ minWidth: '32px' }}
           >
             <i className="fas fa-sync-alt"></i>
           </button>
         </div>
 
         {/* Drag instruction hint */}
-        {scale > 1 && !isDragging && (
-          <div style={{
-            position: 'absolute',
-            top: '16px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            backgroundColor: 'rgba(0, 0, 0, 0.75)',
-            color: 'white',
-            padding: '8px 16px',
-            borderRadius: '6px',
-            fontSize: '12px',
-            fontWeight: '500',
-            pointerEvents: 'none',
-            zIndex: 10,
-            animation: 'fadeOut 3s forwards 2s'
-          }}>
+        {scale !== 1 && !isDragging && (
+          <div className="drag-hint">
             🖱️ Click and drag to pan • Scroll to zoom
           </div>
         )}
@@ -574,7 +558,7 @@ function RapportModal(props) {
       hasContent: !!localOcrText,
       isLoading: loadingOcr
     },
-  
+
     {
       id: 'rapport',
       label: 'Rapport DMS',
@@ -650,13 +634,13 @@ function RapportModal(props) {
                         allow="fullscreen"
                       />
                       <div className="pdf-viewer-overlay">
-                        <button 
+                        <button
                           className="pdf-fullscreen-btn"
                           onClick={() => window.open(localPreviewUrl || previewUrl || localDocumentFileUrl, '_blank')}
                           title="Ouvrir en plein écran"
                         >
                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+                            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
                           </svg>
                         </button>
                       </div>
@@ -688,9 +672,9 @@ function RapportModal(props) {
                     </div>
                   ) : localOcrText ? (
                     <div className="ocr-content">
-                      <textarea 
-                        className="ocr-textarea" 
-                        readOnly 
+                      <textarea
+                        className="ocr-textarea"
+                        readOnly
                         value={localOcrText}
                         placeholder="Texte extrait par OCR..."
                       />
@@ -721,22 +705,22 @@ function RapportModal(props) {
                           allow="fullscreen"
                         />
                         <div className="pdf-viewer-overlay">
-                          <button 
+                          <button
                             className="pdf-fullscreen-btn"
                             onClick={() => window.open(localRapportUrl, '_blank')}
                             title="Ouvrir en plein écran"
                           >
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+                              <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
                             </svg>
                           </button>
                         </div>
                       </div>
                     ) : (
                       <div className="image-viewer-container">
-                        <img 
-                          src={localRapportUrl} 
-                          alt={currentDocument?.filename} 
+                        <img
+                          src={localRapportUrl}
+                          alt={currentDocument?.filename}
                           className="image-viewer"
                         />
                       </div>
@@ -757,7 +741,7 @@ function RapportModal(props) {
             <div className="sidebar-content">
               {currentDocument ? (
                 <>
-                  
+
                   <div className="sidebar-section">
                     <h3 className="sidebar-title">Informations sur le document</h3>
                     <div className="info-grid">
@@ -765,15 +749,15 @@ function RapportModal(props) {
                         <span className="info-label" style={{ textTransform: 'none' }}>Utilisateur : <span className="info-value" style={{ textTransform: 'none' }}>
                           {getUploaderName(currentDocument)}
                         </span></span>
-                        
+
                       </div>
                       <div className="info-item">
                         <span className="info-label" style={{ textTransform: 'none' }}>Type : <span className="info-value" style={{ textTransform: 'none' }}>{doctypeName || '-'}</span></span>
-                        
+
                       </div>
                       <div className="info-item">
                         <span className="info-label" style={{ textTransform: 'none' }}>Partenaire : <span className="info-value" style={{ textTransform: 'none' }}>{currentDocument.partner_name || '-'}</span></span>
-                        
+
                       </div>
                       <div className="info-item">
                         <span className="info-label" style={{ textTransform: 'none' }}>Type de partenaire : <span className="info-value" style={{ textTransform: 'none' }}>
@@ -782,20 +766,20 @@ function RapportModal(props) {
                             : (currentDocument.partner_types || '-')}
                         </span></span>
                       </div>
-                      
-                      
+
+
                       <div className="info-item">
                         <span className="info-label" style={{ textTransform: 'none' }}>Date d'import : <span className="info-value">
                           {currentDocument.created_at ? new Date(currentDocument.created_at).toLocaleDateString('fr-FR') : '-'}
                         </span></span>
-                        
+
                       </div>
                       <div className="info-item">
-                        <span className="info-label" style={{ textTransform: 'none' }}>Date de document : <span className="info-value">{currentDocument.document_date  ? new Date(currentDocument.document_date || currentDocument.date).toLocaleDateString('fr-FR') : '-'}</span>
+                        <span className="info-label" style={{ textTransform: 'none' }}>Date de document : <span className="info-value">{currentDocument.document_date ? new Date(currentDocument.document_date || currentDocument.date).toLocaleDateString('fr-FR') : '-'}</span>
                         </span>
                       </div>
                       <div className="info-item">
-                        <span className="info-label" style={{ textTransform: 'none' }}>Date d'echeance' : <span className="info-value">{currentDocument.due_date  ? new Date(currentDocument.due_date || currentDocument.due_date).toLocaleDateString('fr-FR') : '-'}</span>
+                        <span className="info-label" style={{ textTransform: 'none' }}>Date d'echeance' : <span className="info-value">{currentDocument.due_date ? new Date(currentDocument.due_date || currentDocument.due_date).toLocaleDateString('fr-FR') : '-'}</span>
                         </span>
                       </div>
                       <div className="info-item">
@@ -806,7 +790,7 @@ function RapportModal(props) {
                   </div>
 
                   <div className="sidebar-actions">
-                  
+
                     <button
                       className="action-btn"
                       onClick={() => {
@@ -830,68 +814,68 @@ function RapportModal(props) {
                       }}
                     >
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M12 20h9"/>
-                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
+                        <path d="M12 20h9" />
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
                       </svg>
                       Modifier
                     </button>
-                  
-                  <button 
-                    className="action-btn action-btn--gray" 
-                    onClick={handleContextDownload}
-                    style={{
-                      backgroundColor: '#6c757d',
-                      border: '1px solid #6c757d',
-                      color: 'white',
-                      padding: '8px 16px',
-                      borderRadius: '4px',
-                      fontSize: '14px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      transition: 'all 0.2s ease',
-                      fontFamily: 'inherit'
-                    }}
-                    
-                  >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                      <polyline points="7,10 12,15 17,10"/>
-                      <line x1="12" y1="15" x2="12" y2="3"/>
-                    </svg>
-                    Télécharger
-                  </button>
 
-                  <button 
-                    className="action-btn action-btn--gray" 
-                    onClick={() => {
-                      onClose && onClose();
-                      handleSendEmail && handleSendEmail(currentDocument);
-                    }}
-                    style={{
-                      backgroundColor: '#6c757d',
-                      border: '1px solid #6c757d',
-                      color: 'white',
-                      padding: '8px 16px',
-                      borderRadius: '4px',
-                      fontSize: '14px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      transition: 'all 0.2s ease',
-                      fontFamily: 'inherit'
-                    }}
-                    
-                    
-                  >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                      <polyline points="22,6 12,13 2,6"/>
-                    </svg>
-                    Envoyer
-                  </button>
+                    <button
+                      className="action-btn action-btn--gray"
+                      onClick={handleContextDownload}
+                      style={{
+                        backgroundColor: '#6c757d',
+                        border: '1px solid #6c757d',
+                        color: 'white',
+                        padding: '8px 16px',
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        transition: 'all 0.2s ease',
+                        fontFamily: 'inherit'
+                      }}
+
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="7,10 12,15 17,10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                      </svg>
+                      Télécharger
+                    </button>
+
+                    <button
+                      className="action-btn action-btn--gray"
+                      onClick={() => {
+                        onClose && onClose();
+                        handleSendEmail && handleSendEmail(currentDocument);
+                      }}
+                      style={{
+                        backgroundColor: '#6c757d',
+                        border: '1px solid #6c757d',
+                        color: 'white',
+                        padding: '8px 16px',
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        transition: 'all 0.2s ease',
+                        fontFamily: 'inherit'
+                      }}
+
+
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                        <polyline points="22,6 12,13 2,6" />
+                      </svg>
+                      Envoyer
+                    </button>
 
 
 

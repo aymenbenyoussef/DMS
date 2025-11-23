@@ -8,6 +8,7 @@ import { exportToCSV, exportToJSON, exportToTXT, exportToExcel } from '../Admin/
 import { useLanguage } from '../../contexts/LanguageContext';
 import { ReactComponent as UploadIcon } from './upload.svg';
 import './TempDocumentArchive.css';
+import './ModalStyles.css';
 
 const TempDocumentArchive = ({ user }) => {
   const { t } = useLanguage();
@@ -65,14 +66,14 @@ const TempDocumentArchive = ({ user }) => {
   const [filterOverlayOpen, setFilterOverlayOpen] = useState(false);
   const filterOverlayRef = useRef(null);
   const [filterHeight, setFilterHeight] = useState(0);
-   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
-  
-       // auto-hide toast after 5s
-        useEffect(() => {
-          if (!toast.visible) return;
-          const id = setTimeout(() => setToast(t => ({ ...t, visible: false })), 5000);
-          return () => clearTimeout(id);
-        }, [toast.visible]);
+  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+
+  // auto-hide toast after 5s
+  useEffect(() => {
+    if (!toast.visible) return;
+    const id = setTimeout(() => setToast(t => ({ ...t, visible: false })), 5000);
+    return () => clearTimeout(id);
+  }, [toast.visible]);
   const getSortIcon = (columnKey) => {
     // Affiche toujours deux flèches (haut/bas). La flèche active est en 'text-primary', l'autre en 'text-muted'.
     const isActive = sortConfig.key === columnKey;
@@ -149,7 +150,7 @@ const TempDocumentArchive = ({ user }) => {
         ];
         if (user?.role === 'admin' || user?.role === 'superuser') {
           searchFields.push(String(doc.owner_name || doc.owner || '').toLowerCase());
-          searchFields.push(String(doc.owner_surname || '').toLowerCase()); 
+          searchFields.push(String(doc.owner_surname || '').toLowerCase());
         }
         return searchFields.some(field => field.includes(searchLower));
       });
@@ -163,10 +164,10 @@ const TempDocumentArchive = ({ user }) => {
             const ownerSurname = String(doc.owner_surname || '').toLowerCase();
             const fullName = `${ownerName} ${ownerSurname}`.trim().toLowerCase();
             const lowerFilterValue = filterValue.toLowerCase();
-            
-            return ownerName.includes(lowerFilterValue) || 
-                   ownerSurname.includes(lowerFilterValue) || 
-                   fullName.includes(lowerFilterValue);
+
+            return ownerName.includes(lowerFilterValue) ||
+              ownerSurname.includes(lowerFilterValue) ||
+              fullName.includes(lowerFilterValue);
           }
           const docValue = doc[column];
           if (docValue === null || docValue === undefined) return false;
@@ -264,21 +265,21 @@ const TempDocumentArchive = ({ user }) => {
   const handleSend = async (doc) => {
     setProcessingDocId(doc.id);
     setCurrentDocument(doc);
-    
+
     setOriginalCompany(selectedCompany);
     setOriginalDoctype(selectedDoctype);
-    
+
     try {
       const response = await API.tempDocuments.download(doc.id);
       const blob = response.data;
       const file = new File([blob], doc.filename, { type: blob.type });
-      
+
       const ocrResponse = await API.documents.uploadSingleFile(
         file,
         selectedCompany?.id || null,
         selectedDoctype?.id || null
       );
-      
+
       const confirmationData = {
         sessionId: ocrResponse.data?.session_id,
         extractedData: ocrResponse.data?.extracted_data,
@@ -286,7 +287,7 @@ const TempDocumentArchive = ({ user }) => {
         // include the original temp document id so the confirmation modal can fetch the file
         temp_id: doc.id
       };
-      
+
       setConfirmationData([confirmationData]);
       setShowConfirmationModal(true);
     } catch (error) {
@@ -299,18 +300,18 @@ const TempDocumentArchive = ({ user }) => {
 
   const handleConfirmDocuments = async (confirmedDocuments, errors) => {
     if (!confirmationData || !confirmationData[0]) return;
-    
+
     try {
       const sessionId = confirmationData[0].sessionId;
       const doc = confirmedDocuments[0];
-      
+
       if (doc && sessionId) {
         const documentToConfirm = {
           ...doc,
           partner_id: doc.confirmed_data.partner_id || null,
           confirmed_data: { ...doc.confirmed_data }
         };
-        
+
         const response = await API.documents.confirmDocuments(sessionId, [documentToConfirm]);
         const savedDoc = response.data.saved_documents[0];
         setToast({ visible: true, message: 'Document envoyé avec succès!', type: 'success' });
@@ -318,7 +319,7 @@ const TempDocumentArchive = ({ user }) => {
         if (savedDoc && !savedDoc.error) {
           setDocuments(prev => prev.filter(d => d.id !== currentDocument?.id));
           setFilteredDocuments(prev => prev.filter(d => d.id !== currentDocument?.id));
-          
+
           window.dispatchEvent(new Event('TempDocumentsUploaded'));
         }
       }
@@ -446,7 +447,7 @@ const TempDocumentArchive = ({ user }) => {
       }
 
       rowData.created_at = doc.created_at ? new Date(doc.created_at).toLocaleDateString('fr-FR') : '-';
-      
+
       return rowData;
     });
 
@@ -515,7 +516,7 @@ const TempDocumentArchive = ({ user }) => {
           <button className="top-toast-close" onClick={() => setToast(t => ({ ...t, visible: false }))} aria-label="Fermer la notification">✕</button>
         </div>
       </div>
-      
+
       <div className="container-fluid h-100">
         <div className="row h-100">
           {/* Main Content Area - Table */}
@@ -913,7 +914,7 @@ const TempDocumentArchive = ({ user }) => {
                 }}>
                   {t('documentInfo')}
                 </h4>
-                
+
                 <div style={{ marginBottom: '16px' }}>
                   <label style={{
                     fontSize: '0.875rem',
@@ -980,57 +981,60 @@ const TempDocumentArchive = ({ user }) => {
 
       {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && deletingDocument && createPortal(
-        <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog" style={{ marginTop: '120px' }}>
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title d-flex align-items-center">
-                  <i className="bi bi-trash me-2 text-danger" style={{ fontSize: '1.5rem' }}></i>
-                  {t('confirmDelete')}
-                </h5>
-                <button 
-                  type="button" 
-                  className="btn-close" 
-                  onClick={handleCancelDelete}
-                  aria-label={t('close')}
-                ></button>
+        <div className="modal-overlay">
+          <div className="modal-container modal-container--medium">
+            <div className="modal-header">
+              <div className="modal-header__content">
+                <div className="modal-header__icon">🗑️</div>
+                <h2 className="modal-title">{t('confirmDelete')}</h2>
               </div>
-              <div className="modal-body" style={{ padding: '2rem 2.5rem', textAlign: 'center' }}>
-                <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>
-                  {t('deleteConfirmation')}
-                </p>
-                <p className="text-muted" style={{ fontSize: '0.98rem', marginBottom: 0 }}>
-                  {t('deleteWarning')}
-                </p>
-                {deleteError && <div className="alert alert-danger mt-3">{deleteError}</div>}
-              </div>
-              <div className="modal-footer" style={{ justifyContent: 'center', gap: '1rem' }}>
-                <button 
-                  type="button" 
-                  className="btn btn-secondary"
-                  onClick={handleCancelDelete}
-                  disabled={isDeleting}
-                  style={{backgroundColor: '#6c757d', color: 'white'}}
-                >
-                  {t('cancel')}
-                </button>
-                <button 
-                  type="button" 
-                  className="btn btn-secondary"
-                  onClick={handleConfirmDelete}
-                  disabled={isDeleting}
-                  style={{backgroundColor: 'orangered'}}
-                >
-                  {isDeleting ? (
-                    t('deleting')
-                  ) : (
-                    <>
-                      <i className="bi bi-trash me-2"></i>
-                      Oui, supprimer
-                    </>
-                  )}
-                </button>
-              </div>
+              <button
+                className="modal-close-btn"
+                onClick={handleCancelDelete}
+                aria-label={t('close')}
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div className="modal-body modal-body--scrollable" style={{ textAlign: 'center' }}>
+              <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>
+                {t('deleteConfirmation')}
+              </p>
+              <p className="text-muted" style={{ fontSize: '0.98rem', marginBottom: 0 }}>
+                {t('deleteWarning')}
+              </p>
+              {deleteError && <div className="alert alert--error mt-3">{deleteError}</div>}
+            </div>
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="action-btn action-btn--secondary"
+                onClick={handleCancelDelete}
+                disabled={isDeleting}
+              >
+                {t('cancel')}
+              </button>
+              <button
+                type="button"
+                className="action-btn action-btn--primary"
+                onClick={handleConfirmDelete}
+                disabled={isDeleting}
+                style={{ backgroundColor: 'orangered' }}
+              >
+                {isDeleting ? (
+                  t('deleting')
+                ) : (
+                  <>
+                    <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
+                      <path d="M5.5 5.5A.5.5 0 0 1 6 5h4a.5.5 0 0 1 .5.5V6h3v1h-1v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7H2V6h3v-.5zM14 3H10l-.5-1A1 1 0 0 0 8.6 1H7.4a1 1 0 0 0-.9.5L6 3H2v1h12V3z" />
+                    </svg>
+                    Oui, supprimer
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>,

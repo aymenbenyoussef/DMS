@@ -161,8 +161,7 @@ const documents = {
     
     return API.post('/upload_single', formData, {
       headers: { 
-        'Content-Type': 'multipart/form-data',
-        // Remove Content-Type to let browser set boundary
+        'Content-Type': 'multipart/form-data', // Let browser set boundary
       },
       timeout: 60000, // 60 seconds timeout for large files
     });

@@ -3282,11 +3282,6 @@ def delete_temp_document(doc_id):
     except Exception as e:
         return jsonify({'msg': str(e)}), 500
 
-@app.route('/temp_documents/<path:doc_id>/file', methods=['OPTIONS'])
-@cross_origin()
-def temp_document_file_options(doc_id):
-    # Respond to CORS preflight without authentication
-    return make_response('', 200)
 
 
 @app.route('/temp_documents/<path:doc_id>/file', methods=['GET'])

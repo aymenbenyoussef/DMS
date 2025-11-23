@@ -607,20 +607,7 @@ const [toast, setToast] = useState({ visible: false, message: '', type: 'success
                 </select>
                 {errors[idx].partner_id && <div className="error-message">{errors[idx].partner_id}</div>}
               </div>
-              <div className="form-group">
-                <label>Groupe:</label>
-                <select
-                  value={confirmedDocuments[idx].confirmed_data.group_id || ''}
-                  onChange={e => updateConfirmedDocument(idx, 'group_id', e.target.value)}
-                  className={errors[idx].group_id ? 'error' : ''}
-                >
-                  <option value="">Sélectionner un groupe (optionnel)</option>
-                  {groups.map(group => (
-                    <option key={group.id} value={group.id}>{group.name}</option>
-                  ))}
-                </select>
-                {errors[idx].group_id && <div className="error-message">{errors[idx].group_id}</div>}
-              </div>
+              
             </div>
             <div className="form-group checkbox-group">
               <label>
