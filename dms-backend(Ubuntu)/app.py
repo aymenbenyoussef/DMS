@@ -1,3 +1,4 @@
+
 from flask import Flask, request, jsonify, send_from_directory, send_file, make_response, abort
 from flask_cors import CORS, cross_origin
 from flask_jwt_extended import (
@@ -26,6 +27,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email import encoders
+import traceback
 
 import os
 from dotenv import load_dotenv, dotenv_values
@@ -113,6 +115,14 @@ def log_activity(actor, action, resource_type, resource_data):
             f"{timestamp} - {actor} - {action} DocumentTemp : "
             f"{resource_data['id']}, {resource_data['filename']}, "
             
+        )
+    elif resource_type == "documents":
+        log_entry = (
+            f"{timestamp} - {actor} - {action} Documents: "
+            f"ids={resource_data.get('ids')}, "
+            f"email_type={resource_data.get('email_type')}, "
+            f"recipients_count={resource_data.get('recipients_count')}, "
+            f"failed_count={resource_data.get('failed_count')}"
         )
     else:
         return  # Unsupported resource type
@@ -259,7 +269,7 @@ def login():
         "id": user["id"],
         "role": user["role"],
         "username": user["username"],
-        "surname": user["surname"],
+        "surname": user.get("surname", ""),
         "email": user["email"]
     })
     # Log the login event
@@ -1363,7 +1373,55 @@ def create_document():
         }), 201
     except Exception as e:
         return jsonify({"msg": str(e)}), 400
-
+@app.route('/documents/delete-multiple', methods=['POST'])
+@jwt_required()
+def delete_multiple_documents():
+    """Delete multiple documents by IDs"""
+    current_user_claims = get_jwt()
+    data = request.get_json()
+    document_ids = data.get('document_ids', [])
+    if not isinstance(document_ids, list) or not document_ids:
+        return jsonify({"msg": "No document IDs provided"}), 400
+    deleted = []
+    failed = []
+    for doc_id in document_ids:
+        try:
+            doc = db.get_document_by_id(doc_id)
+            if not doc:
+                failed.append(doc_id)
+                continue
+            files_to_delete = []
+            if doc.get('file_path') and os.path.exists(doc['file_path']):
+                files_to_delete.append(doc['file_path'])
+            if doc.get('rapport') and os.path.exists(doc['rapport']):
+                files_to_delete.append(doc['rapport'])
+            if doc.get('ocr_text') and os.path.exists(doc['ocr_text']):
+                files_to_delete.append(doc['ocr_text'])
+            success = db.delete_document(doc_id)
+            if success:
+                for file_path in files_to_delete:
+                    try:
+                        os.remove(file_path)
+                        app.logger.info(f"Deleted file: {file_path}")
+                    except Exception as e:
+                        app.logger.warning(f"Could not delete file {file_path}: {str(e)}")
+                log_activity(
+                    actor=current_user_claims['username'],
+                    action="Supprission",
+                    resource_type="document",
+                    resource_data={
+                        'id': doc_id,
+                        'filename': doc['filename'],
+                        'company_id': doc['company_id']
+                    }
+                )
+                deleted.append(doc_id)
+            else:
+                failed.append(doc_id)
+        except Exception as e:
+            app.logger.error(f"Error deleting document {doc_id}: {str(e)}")
+            failed.append(doc_id)
+    return jsonify({"deleted": deleted, "failed": failed}), 200
 @app.route('/documents/company/<int:company_id>/type/<int:doctype_id>', methods=['GET'])
 @jwt_required()
 def get_documents_by_company_and_type(company_id, doctype_id):
@@ -1544,6 +1602,7 @@ def confirm_document():
     if not session_id or not confirmed_documents:
         return jsonify({"msg": "Session ID and documents data are required"}), 400
     
+     
     try:
         # Load temporary data
         temp_file_path = os.path.join(app.config['TEMP_UPLOAD_FOLDER'], f"temp_{session_id}.json")
@@ -1556,7 +1615,10 @@ def confirm_document():
         saved_documents = []
         
         for doc_data in confirmed_documents:
-            filename = doc_data['filename']
+            # Get edited filename from form, or fallback to original
+            filename = doc_data.get('filename', '')
+            original_filename = doc_data.get('original_filename', filename)  # Original filename for matching
+            
             company_id = doc_data.get('company_id') or temp_data.get('company_id')
             doctype_id = doc_data.get('doctype_id') or temp_data.get('doctype_id')
             is_invoice = doc_data.get("is_invoice", False)
@@ -1575,13 +1637,14 @@ def confirm_document():
                 # Create folder structure
                 company_folder, doctype_folder, summary_folder = create_company_doctype_folders(company_id, doctype_id)
                 
-                # Get the original processed file data
+                # Get the original processed file data - use original_filename for matching
                 original_processed_file = None
                 if 'processed_file' in temp_data:
                     original_processed_file = temp_data['processed_file']
                 elif 'processed_files' in temp_data:
                     for pf in temp_data['processed_files']:
-                        if pf['filename'] == filename:
+                        # Match by original filename to find the processed file
+                        if pf['filename'] == original_filename:
                             original_processed_file = pf
                             break
 
@@ -1601,7 +1664,8 @@ def confirm_document():
                     continue
 
                 # Move file to final location
-                final_filename = original_processed_file.get('original_filename', filename)
+                # Use the edited filename from the form if provided, otherwise use original
+                final_filename = doc_data.get('filename') or original_processed_file.get('original_filename', filename)
                 timestamp = int(datetime.now().timestamp())
                 unique_final_filename = f"{timestamp}_{final_filename}"
                 final_file_path = os.path.join(doctype_folder, unique_final_filename)
@@ -1631,17 +1695,58 @@ def confirm_document():
                     except Exception as e:
                         extracted_text = ''
                 rapport = None
-                # Always generate rapport PDF for all documents
-                if confirmed_info:
-                    report_filename = f"{os.path.splitext(unique_final_filename)[0]}_report.pdf"
-                    report_path = os.path.join(summary_folder, report_filename)
-                    generate_report_pdf(confirmed_info, report_path, unique_final_filename)
-                    rapport = report_path
+                
+                # Get additional data needed for report generation
+                doctype = db.get_doctype_by_id(doctype_id)
+                doctype_name = doctype.get('name') if doctype else ''
+                
+                partner_name = None
+                if partner_id:
+                    partner = db.get_partner_by_id(partner_id)
+                    if partner:
+                        partner_name = partner.get('company_name', '')
+                
+                owner_name = current_user_claims.get('username', '')
+                user = db.get_user_by_id(current_user_claims.get('id'))
+                if user:
+                    surname = user.get("surname")
+                    username = user.get("username")
+                    owner_full_name = f"{username} {surname}".strip()
+                else:
+                    owner_full_name = "Unknown"
+                
+                
+                created_at = datetime.now()
+                
+                # Generate report PDF
+                report_filename = f"{os.path.splitext(unique_final_filename)[0]}_report.pdf"
+                report_path = os.path.join(summary_folder, report_filename)
+                # original filename from the uploaded file
+                original_uploaded_name = original_processed_file.get('filename', original_filename)
+                generate_report_pdf(
+                    confirmed_info, 
+                    report_path, 
+                    unique_final_filename,  # filename
+                    original_uploaded_name,
+                    final_file_path,  # file_path
+                    doctype_name,  # doctype_name
+                    partner_name,  # partner_name
+                    owner_full_name,  # owner_name
+                    created_at,  # created_at
+                    is_invoice  # is_invoice
+                )
+                rapport = report_path
+                # For non-invoice documents, ocr_text and rapport remain None
+                # filename stored in DB should be the user-provided display name (without timestamp)
+                display_filename = final_filename
+                
+
                 document_id = db.create_document_with_ocr_data(
                     owner_id=current_user_id,
                     company_id=company_id,
                     doctype_id=doctype_id,
-                    filename=unique_final_filename,
+                    filename=display_filename,
+                    original_filename=original_uploaded_name,
                     file_path=final_file_path,
                     file_size=file_size,
                     is_invoice=is_invoice,
@@ -1666,13 +1771,12 @@ def confirm_document():
                 
                 company = db.get_company_by_id(company_id)
                 doctype = db.get_doctype_by_id(doctype_id)
-                # Define json_path for saving document summary
-                json_filename = f"{os.path.splitext(unique_final_filename)[0]}_summary.json"
-                json_path = os.path.join(summary_folder, json_filename)
+                
                 with open(json_path, 'w', encoding='utf-8') as json_file:
                     json.dump({
-                        'filename': unique_final_filename,
-                        'original_filename': final_filename,
+                        'filename': display_filename,
+                        'stored_filename': unique_final_filename,
+                        'original_filename': original_uploaded_name,
                         'processing_date': datetime.now().isoformat(),
                         'company': {
                             'id': company_id,
@@ -1709,8 +1813,9 @@ def confirm_document():
                 
                 saved_documents.append({
                     'document_id': document_id,
-                    'filename': unique_final_filename,
-                    'original_filename': final_filename,
+                    'filename': display_filename,
+                    'stored_filename': unique_final_filename,
+                    'original_filename': original_uploaded_name,
                     'is_invoice': is_invoice,
                     'partner_id': partner_id,
                     'group_id': group_id,
@@ -2147,6 +2252,7 @@ def download_document_ocr_text(document_id):
 @jwt_required()
 def update_document(document_id):
     """Update document fields: name, partner, invoice fields, etc."""
+    print("in")
     current_user_claims = get_jwt()
     data = request.get_json()
     if not data:
@@ -2160,32 +2266,43 @@ def update_document(document_id):
         partner_id = data.get('partner_id') or (
         data.get('confirmed_data', {}).get('partner_id') if data.get('confirmed_data') else None
         )
+        document_date = data.get('document_date')
         confirmed_data = data.get('confirmed_data')
+        due_date = confirmed_data.get('due_date')
+        print("due_date :", due_date)
         # If confirmed_data is present, extract invoice fields
         invoice_fields = {}
         if confirmed_data:
             invoice_fields['is_invoice'] = confirmed_data.get('is_invoice')
             invoice_fields['invoice_number'] = confirmed_data.get('invoice_number')
-            invoice_fields['date'] = confirmed_data.get('date')
+            
             invoice_fields['total_ht'] = confirmed_data.get('total_ht')
             invoice_fields['tva'] = confirmed_data.get('tva')
             invoice_fields['total_ttc'] = confirmed_data.get('total_ttc')
             invoice_fields['partner'] = confirmed_data.get('partner')
             invoice_fields['partner_id'] = confirmed_data.get('partner_id')
+            invoice_fields['currency'] = confirmed_data.get('currency')
         else:
             invoice_fields = None
+        # Extract company and doctype if provided (top-level or inside confirmed_data)
+        company_id = data.get('company_id') or (confirmed_data.get('company_id') if confirmed_data else None)
+        doctype_id = data.get('doctype_id') or (confirmed_data.get('doctype_id') if confirmed_data else None)
         # Update all fields in the DB
         success = db.update_document(
             document_id,
             name=name,
             partner_id=partner_id,
-            
+            document_date=document_date,
             is_invoice=invoice_fields.get('is_invoice') if invoice_fields else None,
             invoice_number=invoice_fields.get('invoice_number') if invoice_fields else None,
-            document_date=invoice_fields.get('date') if invoice_fields else None,
+            
+            due_date=due_date,
             total_ht=invoice_fields.get('total_ht') if invoice_fields else None,
             tva=invoice_fields.get('tva') if invoice_fields else None,
-            total_ttc=invoice_fields.get('total_ttc') if invoice_fields else None
+            total_ttc=invoice_fields.get('total_ttc') if invoice_fields else None,   
+            currency=invoice_fields.get('currency') if invoice_fields else None,
+            company_id=company_id,
+            doctype_id=doctype_id
         )
         if success:
             log_activity(
@@ -2802,10 +2919,12 @@ L'équipe RAN ESMERALD
     except Exception as e:
         print(f"Unexpected error in send_document_email: {e}")
         return jsonify({"msg": f"Erreur inattendue: {str(e)}"}), 500
+    
 @app.route('/documents/send-multiple-email', methods=['POST'])
 @jwt_required()
 def send_multiple_documents():
     """Send multiple documents via email to selected users (same file types and destinations for all)"""
+    
     try:
         current_user_claims = get_jwt()
         current_user_id = current_user_claims.get('id')
@@ -2839,8 +2958,11 @@ def send_multiple_documents():
         documents_info = []
         for doc_id in document_ids:
             try:
+                app.logger.debug(f"Fetching document details for id={doc_id}")
                 document = db.get_document_with_details(doc_id)
+                
                 if not document:
+                    app.logger.warning(f"Document id={doc_id} not found, skipping")
                     continue
                 documents_info.append(document)
                 for email_type in email_types:
@@ -2855,6 +2977,7 @@ def send_multiple_documents():
                     elif email_type == 'ocr_text' and document.get('ocr_text'):
                         attachment_path = document['ocr_text']
                         attachment_name = f"{os.path.splitext(document['filename'])[0]}_ocr.txt"
+                    app.logger.debug(f"Evaluating attachment for doc={doc_id} type={email_type} -> path={attachment_path}")
                     if attachment_path and os.path.exists(attachment_path):
                         attachments.append({
                             'path': attachment_path,
@@ -2862,8 +2985,13 @@ def send_multiple_documents():
                             'type': email_type,
                             'doc_id': doc_id
                         })
+                        app.logger.debug(f"Added attachment: {attachment_name} (path={attachment_path}) for doc={doc_id}")
+                    else:
+                        if attachment_path:
+                            app.logger.warning(f"Attachment path does not exist: {attachment_path} (doc={doc_id}, type={email_type})")
             except Exception as e:
-                print(f"Error fetching document {doc_id}: {e}")
+                app.logger.error(f"Error fetching document {doc_id}: {e}")
+                app.logger.error(traceback.format_exc())
 
         if not attachments:
             return jsonify({"msg": "Aucun fichier disponible pour les types sélectionnés"}), 404
@@ -2888,6 +3016,7 @@ Détails des documents:\n"""
         email_body += f"\n\nFichiers joints:\n"
         for attachment in attachments:
             email_body += f"- {attachment['name']} (doc_id: {attachment['doc_id']}, type: {attachment['type']})\n"
+        app.logger.debug(f"Prepared email body. Attachments count: {len(attachments)}")
 
         email_body += f"""
 Envoyé par: {current_username}
@@ -2907,6 +3036,7 @@ L'équipe RAN ESMERALD
         failed_sends = []
         for recipient_email in recipient_emails:
             try:
+                app.logger.debug(f"Preparing email to {recipient_email}")
                 msg = MIMEMultipart()
                 msg["From"] = smtp_user
                 msg["To"] = recipient_email
@@ -2914,6 +3044,7 @@ L'équipe RAN ESMERALD
                 msg.attach(MIMEText(email_body, "plain", "utf-8"))
                 for attachment in attachments:
                     try:
+                        app.logger.debug(f"Attaching file {attachment['path']} for recipient {recipient_email}")
                         with open(attachment['path'], "rb") as attachment_file:
                             part = MIMEBase('application', 'octet-stream')
                             part.set_payload(attachment_file.read())
@@ -2924,34 +3055,43 @@ L'équipe RAN ESMERALD
                             )
                             msg.attach(part)
                     except FileNotFoundError:
+                        app.logger.error(f"File not found during attachment: {attachment['path']}")
                         failed_sends.append({"email": recipient_email, "error": f"Fichier non trouvé: {attachment['path']}"})
                         continue
                     except Exception as file_error:
+                        app.logger.error(f"Error attaching file {attachment.get('path')}: {file_error}")
+                        app.logger.error(traceback.format_exc())
                         failed_sends.append({"email": recipient_email, "error": f"Erreur lors de l'attachement du fichier: {str(file_error)}"})
                         continue
+                app.logger.debug(f"Connecting to SMTP {smtp_host}:{smtp_port} (user hidden)")
                 server = smtplib.SMTP(smtp_host, smtp_port)
                 server.starttls()
                 server.login(smtp_user, smtp_pass)
                 server.sendmail(smtp_user, recipient_email, msg.as_string())
                 server.quit()
                 successful_sends.append(recipient_email)
+                app.logger.info(f"Email sent to {recipient_email}")
             except Exception as e:
                 error_msg = str(e)
-                print(f"Error sending email to {recipient_email}: {error_msg}")
+                app.logger.error(f"Error sending email to {recipient_email}: {error_msg}")
+                app.logger.error(traceback.format_exc())
                 failed_sends.append({"email": recipient_email, "error": error_msg})
 
         # Log activity for each document
         for document in documents_info:
             try:
+                if not isinstance(document, dict) or 'id' not in document:
+                    print(f"[ERROR] Invalid document in documents_info: {document}")
+                    continue
                 db.log_email_activity(document['id'], current_user_id, recipient_emails, email_types, "sent" if successful_sends and not failed_sends else "failed")
             except Exception as log_error:
-                print(f"Error logging email activity for doc {document['id']}: {log_error}")
-
+                print(f"Error logging email activity for doc {getattr(document, 'id', None)}: {log_error}")
+        print("pass")
         # Log global activity
         log_activity(
             actor=current_username,
             action="envoi d'Email (multiple)",
-            resource_type="document",
+            resource_type="documents",  # <-- use a new type
             resource_data={
                 'ids': document_ids,
                 'email_type': email_types,
@@ -2959,7 +3099,7 @@ L'équipe RAN ESMERALD
                 'failed_count': len(failed_sends)
             }
         )
-
+        print("pass2")
         if successful_sends and not failed_sends:
             return jsonify({
                 "msg": f"Email envoyé avec succès à {len(successful_sends)} destinataire(s)",
@@ -3142,11 +3282,31 @@ def delete_temp_document(doc_id):
     except Exception as e:
         return jsonify({'msg': str(e)}), 500
 
-@app.route('/temp_documents/<int:doc_id>/file', methods=['GET'])
+
+
+@app.route('/temp_documents/<path:doc_id>/file', methods=['GET'])
 @jwt_required()
 def download_temp_document(doc_id):
     try:
-        temp_doc = db.execute_query("SELECT * FROM temp_documents WHERE id = %s", (doc_id,), fetch=True)
+        # Accept doc_id formats like "123" or "123_timestamp" and extract numeric prefix
+        numeric_id = None
+        if isinstance(doc_id, str):
+            if '_' in doc_id:
+                prefix = doc_id.split('_', 1)[0]
+                if prefix.isdigit():
+                    numeric_id = int(prefix)
+            elif doc_id.isdigit():
+                numeric_id = int(doc_id)
+        else:
+            try:
+                numeric_id = int(doc_id)
+            except Exception:
+                numeric_id = None
+
+        if numeric_id is None:
+            return jsonify({'msg': 'Invalid document id'}), 404
+
+        temp_doc = db.execute_query("SELECT * FROM temp_documents WHERE id = %s", (numeric_id,), fetch=True)
         if not temp_doc:
             return jsonify({'msg': 'Document not found'}), 404
         file_path = temp_doc[0]['file_path']
@@ -3262,9 +3422,6 @@ def search_documents_filtered():
 if __name__ == '__main__':
     # Ensure log directory exists when app starts
     ensure_log_dir()
-    
-    # Print all registered routes for debugging
-    
     
     
     app.run(host='0.0.0.0', debug=True)

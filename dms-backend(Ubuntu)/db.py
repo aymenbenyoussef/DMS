@@ -19,6 +19,15 @@ DB_CONFIG = {
 }
 
 class DatabaseManager:
+    def delete_multiple_documents(self, document_ids):
+        if not document_ids:
+            return 0
+        query = "UPDATE documents SET flag = FALSE WHERE id IN (%s)" % (', '.join(['%s'] * len(document_ids)))
+        try:
+            self.execute_query(query, tuple(document_ids))
+            return len(document_ids)
+        except:
+            return 0
     def __init__(self):
         self.pool = pooling.MySQLConnectionPool(pool_name='mypool', pool_size=20, **DB_CONFIG)
 
@@ -183,6 +192,7 @@ class DatabaseManager:
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS documents (
                     id INT AUTO_INCREMENT PRIMARY KEY,
+                    original_filename VARCHAR(255),
                     filename VARCHAR(255) NOT NULL,
                     owner_id INT NOT NULL,
                     company_id INT,
@@ -196,9 +206,11 @@ class DatabaseManager:
                     is_invoice BOOLEAN DEFAULT FALSE,   
                     invoice_number VARCHAR(100),
                     document_date DATE,
+                    due_date Date,
                     total_ht DECIMAL(10,2),
                     tva DECIMAL(10,2),
                     total_ttc DECIMAL(10,2),
+                    currency varchar(50),
                     file_size INT DEFAULT 0,
                     flag BOOLEAN DEFAULT TRUE,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -208,6 +220,18 @@ class DatabaseManager:
                     FOREIGN KEY (doctype_id) REFERENCES doctype(id) ON DELETE CASCADE,
                     FOREIGN KEY (partner_id) REFERENCES partners(id) ON DELETE CASCADE
                 )""")
+
+            # Ensure original_filename column exists (for existing installations)
+            try:
+                cursor.execute("""
+                    ALTER TABLE documents ADD COLUMN IF NOT EXISTS original_filename VARCHAR(255)
+                """)
+            except Exception:
+                # Some MySQL/MariaDB versions don't support IF NOT EXISTS; fall back to checking
+                cursor.execute("SHOW COLUMNS FROM documents LIKE 'original_filename'")
+                exists = cursor.fetchone()
+                if not exists:
+                    cursor.execute("ALTER TABLE documents ADD COLUMN original_filename VARCHAR(255)")
 
             # Create groups table
             cursor.execute("""
@@ -1118,10 +1142,11 @@ class DatabaseManager:
                 LEFT JOIN users u ON d.owner_id = u.id
                 LEFT JOIN folders f ON d.folder_id = f.id
                 WHERE d.company_id = %s AND d.flag = TRUE
-                ORDER BY d.created_at DESC
+                ORDER BY d.created_at DESCh
             """
             return self.execute_query(query, (company_id,), fetch=True)
-    def update_document(self, document_id, name=None, partner_id=None):
+        
+    def update_document(self, document_id, name=None, partner_id=None,  is_invoice=None, invoice_number=None, document_date=None, due_date=None, total_ht=None, tva=None, total_ttc=None, currency=None, company_id=None, doctype_id=None):
         updates = []
         params = []
         if name is not None:
@@ -1130,6 +1155,37 @@ class DatabaseManager:
         if partner_id is not None:
             updates.append("partner_id = %s")
             params.append(partner_id)
+        # Allow moving document between companies and doctypes
+        if company_id is not None:
+            updates.append("company_id = %s")
+            params.append(company_id)
+        if doctype_id is not None:
+            updates.append("doctype_id = %s")
+            params.append(doctype_id)
+        if is_invoice is not None:
+            updates.append("is_invoice = %s")
+            params.append(is_invoice)
+        if invoice_number is not None:
+            updates.append("invoice_number = %s")
+            params.append(invoice_number)
+        if document_date is not None:
+            updates.append("document_date = %s")
+            params.append(document_date)
+        if due_date is not None:
+            updates.append("due_date = %s")
+            params.append(due_date)
+        if total_ht is not None:
+            updates.append("total_ht = %s")
+            params.append(total_ht)
+        if tva is not None:
+            updates.append("tva = %s")
+            params.append(tva)
+        if total_ttc is not None:
+            updates.append("total_ttc = %s")
+            params.append(total_ttc)
+        if currency is not None:
+            updates.append("currency = %s")
+            params.append(currency)
         if not updates:
             return False
         updates.append("updated_at = CURRENT_TIMESTAMP")
@@ -1151,7 +1207,7 @@ class DatabaseManager:
             return False
 
 
-    def create_document_with_ocr_data(self, owner_id, company_id, doctype_id, filename, file_path, file_size,
+    def create_document_with_ocr_data(self, owner_id, company_id, doctype_id, filename, original_filename, file_path, file_size,
                                 is_invoice=False, extracted_data=None, extracted_text=None, partner_id=None, rapport=None, ocr_text=None):
         """Create a document with OCR extracted data"""
         try:
@@ -1161,6 +1217,7 @@ class DatabaseManager:
             total_ht = None
             tva = None
             total_ttc = None
+            currency_value = None
             
             if extracted_data:
                 invoice_number = extracted_data.get("invoice_number")
@@ -1168,17 +1225,19 @@ class DatabaseManager:
                 total_ht = extracted_data.get("total_ht")
                 tva = extracted_data.get("tva")
                 total_ttc = extracted_data.get("total_ttc")
-            
+                currency_value = extracted_data.get("currency")
+                due_date = extracted_data.get("due_date")
             query = """
                 INSERT INTO documents (
-                    filename, owner_id, company_id, doctype_id, file_path, file_size,
-                    extracted_data, extracted_text, rapport ,is_invoice, invoice_number, document_date,
-                    partner_id, total_ht, tva, total_ttc, ocr_text
+                    filename, original_filename, owner_id, company_id, doctype_id, file_path, file_size,
+                    extracted_data, extracted_text, rapport ,is_invoice, invoice_number, document_date, due_date,
+                    partner_id, total_ht, tva, total_ttc, currency, ocr_text
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) 
             """
             params = (
-                filename, 
+                filename,
+                original_filename,
                 owner_id, 
                 company_id, 
                 doctype_id, 
@@ -1190,10 +1249,12 @@ class DatabaseManager:
                 is_invoice, 
                 invoice_number, 
                 document_date,
+                due_date,
                 partner_id,  # This will properly insert into partner_id column
                 total_ht, 
                 tva, 
                 total_ttc,
+                currency_value,
                 ocr_text
             )
             return self.execute_query(query, params)
@@ -1205,7 +1266,7 @@ class DatabaseManager:
         """Get document by ID"""
         query = """
             SELECT d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size, d.file_path, 
-                   d.is_invoice, d.ocr_text, d.extracted_text, d.rapport, d.document_date, d.total_ht, d.tva, d.total_ttc, 
+                   d.is_invoice, d.ocr_text, d.extracted_text, d.rapport, d.document_date,d.due_date, d.total_ht, d.tva, d.total_ttc, d.currency,
                    d.owner_id, u.username as owner_name, g.name as group_name
             FROM documents d
             LEFT JOIN users u ON d.owner_id = u.id
@@ -1408,8 +1469,8 @@ class DatabaseManager:
     def get_documents_by_company_all_types(self, company_id, start_date=None, end_date=None):
         """Get all documents for a company regardless of document type, with optional date filtering"""
         query = """
-            SELECT d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size, d.file_path, d.extracted_text, d.is_invoice, d.ocr_text, d.rapport, d.document_date, d.total_ht, d.tva, d.total_ttc, d.owner_id, p.company_name as partner_name,
-                   u.username as owner_name,
+            SELECT d.id,d.invoice_number,d.partner_id, d.filename, d.company_id, d.doctype_id,d.due_date, d.created_at, d.file_size, d.file_path, d.extracted_text, d.is_invoice, d.ocr_text, d.rapport, d.document_date, d.total_ht, d.tva, d.total_ttc, d.currency, d.owner_id, p.company_name as partner_name,
+                   u.username as owner_name,u.surname as owner_surname ,
                    GROUP_CONCAT(g.name SEPARATOR ', ') as group_name
             FROM documents d
             LEFT JOIN partners p ON d.partner_id = p.id
@@ -1417,7 +1478,7 @@ class DatabaseManager:
             LEFT JOIN documents_group dg ON d.id = dg.document_id
             LEFT JOIN `groups` g ON dg.group_id = g.id
             WHERE d.company_id = %s AND d.flag = TRUE
-            GROUP BY d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size, d.file_path, d.extracted_text, d.is_invoice, d.ocr_text, d.rapport, d.document_date, d.total_ht, d.tva, d.total_ttc, d.owner_id, p.company_name, u.username
+            GROUP BY d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size, d.file_path, d.extracted_text, d.is_invoice, d.ocr_text, d.rapport, d.document_date, d.total_ht, d.tva, d.total_ttc, d.owner_id, p.company_name, u.username,u.surname
             ORDER BY d.created_at DESC
         """
         params = [company_id]
@@ -1446,7 +1507,7 @@ class DatabaseManager:
     def get_documents_by_company_and_type(self, company_id, doctype_id):
         """Get only the columns needed for the document archive table, including company_id and doctype_id for file URL construction"""
         query = """
-            SELECT d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size, d.file_path, d.is_invoice, d.ocr_text, d.extracted_text, d.rapport, d.document_date, d.total_ht, d.tva, d.total_ttc, d.owner_id, p.company_name as partner_name,
+            SELECT d.id, d.filename, d.company_id, d.doctype_id, d.created_at,d.currency,d.due_date, d.file_size, d.file_path, d.is_invoice, d.ocr_text, d.extracted_text, d.rapport, d.document_date, d.total_ht, d.tva, d.total_ttc, d.owner_id, p.company_name as partner_name,d.invoice_number,d.partner_id,
                    u.username as owner_name,
                    GROUP_CONCAT(g.name SEPARATOR ', ') as group_name
             FROM documents d
@@ -1455,7 +1516,7 @@ class DatabaseManager:
             LEFT JOIN documents_group dg ON d.id = dg.document_id
             LEFT JOIN `groups` g ON dg.group_id = g.id
             WHERE d.company_id = %s AND d.doctype_id = %s AND d.flag = TRUE
-            GROUP BY d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size, d.file_path, d.is_invoice, d.ocr_text, d.extracted_text, d.rapport, d.document_date, d.total_ht, d.tva, d.total_ttc, d.owner_id, p.company_name, u.username
+            GROUP BY d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size, d.file_path, d.is_invoice, d.ocr_text, d.extracted_text, d.rapport, d.document_date,d.due_date, d.total_ht, d.tva, d.total_ttc,d.currency, d.owner_id, p.company_name, u.username
             ORDER BY d.created_at DESC
         """
         return self.execute_query(query, (company_id, doctype_id), fetch=True)
@@ -1553,7 +1614,7 @@ class DatabaseManager:
         """Get all documents in a specific group"""
         try:
             query = """
-                SELECT d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size, d.file_path, d.is_invoice, d.ocr_text, d.extracted_text, d.rapport, d.document_date, d.total_ht, d.tva, d.total_ttc, dg.created_at as added_to_group_at
+                SELECT d.id, d.filename, d.company_id, d.doctype_id, d.created_at, d.file_size,d.due_date, d.file_path, d.is_invoice, d.ocr_text, d.extracted_text, d.rapport, d.document_date, d.total_ht, d.tva, d.total_ttc,d.currency, dg.created_at as added_to_group_at
                 FROM documents d
                 JOIN documents_group dg ON d.id = dg.document_id
                 WHERE dg.group_id = %s AND d.flag = TRUE
@@ -1708,7 +1769,7 @@ class DatabaseManager:
 
     def get_all_temp_documents(self, start_date=None, end_date=None, owner_id=None, user_role=None):
         query = """
-            SELECT td.*, u.username as owner_name 
+            SELECT td.*, u.username as owner_name , u.surname as owner_surname
             FROM temp_documents td 
             LEFT JOIN users u ON td.owner_id = u.id 
             WHERE 1=1
